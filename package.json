@@ -2,14 +2,17 @@
   "name": "sldreader",
   "version": "0.0.0",
   "description": "SLD reader and formatter for openlayers",
-  "main": "build/main.js",
+  "main": "dist/bundle.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c"
   },
   "files": [
-    "dist/bundle.js"
+    "dist/"
   ],
+  "bugs": {
+    "url": "https://github.com/NieuwlandGeo/SLDReader/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/NieuwlandGeo/SLDReader"
