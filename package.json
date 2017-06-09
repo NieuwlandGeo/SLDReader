@@ -6,7 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Allart Kooiman (Nieuwland)",
+  "author": {
+      "name": "Allart Kooiman",
+      "email": "akooiman@nieuwland.nl"
+  },
   "license": "ISC",
   "devDependencies": {
     "eslint": "^3.19.0",

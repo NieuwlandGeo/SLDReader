@@ -1,6 +1,6 @@
 {
   "extends": [
-    "openlayers",
+    "openlayers"
   ],
   "parserOptions": {
     "ecmaVersion": 6,
@@ -11,6 +11,6 @@
   },
   "rules": {
     "quote-props": ["error", "as-needed"],
-    "no-multi-spaces": "error",    
+    "no-multi-spaces": "error"
   }
 }

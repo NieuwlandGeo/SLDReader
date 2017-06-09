@@ -1,1 +1,4 @@
-import {parser} from './parser';
+import {Parser} from './parser';
+
+
+new Parser('sld');
