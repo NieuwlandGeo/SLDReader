@@ -7,9 +7,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c"
   },
-  "files": [
-    "dist/"
-  ],
   "bugs": {
     "url": "https://github.com/NieuwlandGeo/SLDReader/issues"
   },
