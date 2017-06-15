@@ -3,10 +3,20 @@ SLDReader
 
 TODO: everything..
 
-Build
+
+test
 -----
+
+```
+npm test
+```
+
+Build
+--------
+
+
 
 
 ```
-rollup src/main.js --format cjs
+npm build
 ```
