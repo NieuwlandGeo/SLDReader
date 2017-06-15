@@ -34,6 +34,7 @@
     "karma-mocha-reporter": "^2.2.3",
     "mocha": "^3.4.2",
     "rollup": "^0.42.0",
-    "watchify": "^3.9.0"
+    "watchify": "^3.9.0",
+    "xml2js": "^0.4.17"
   }
 }

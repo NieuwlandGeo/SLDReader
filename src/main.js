@@ -1,4 +1,4 @@
-import {Parser} from './parser';
+import {Reader} from './reader';
 
 
-new Parser('sld');
+new Reader('sld');
