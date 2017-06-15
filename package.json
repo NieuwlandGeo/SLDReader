@@ -5,7 +5,7 @@
   "main": "dist/bundle.js",
   "scripts": {
     "test": "./node_modules/karma/bin/karma start karma.conf.js",
-    "build": "rollup -c"
+    "build": "./node_modules/browserify/bin/cmd.js ./src/main.js  -d -o dist/bundle.js -t [babelify --presets es2015]"
   },
   "bugs": {
     "url": "https://github.com/NieuwlandGeo/SLDReader/issues"
@@ -21,6 +21,7 @@
   "license": "ISC",
   "devDependencies": {
     "babel-preset-es2015": "^6.24.1",
+    "babel-preset-latest": "^6.24.1",
     "babelify": "^7.3.0",
     "browserify": "^14.4.0",
     "chai": "^4.0.2",
@@ -33,8 +34,10 @@
     "karma-mocha": "^1.3.0",
     "karma-mocha-reporter": "^2.2.3",
     "mocha": "^3.4.2",
-    "rollup": "^0.42.0",
     "watchify": "^3.9.0",
-    "xml2js": "^0.4.17"
+    "sax": "^1.2.2"
+  },
+  "dependencies": {
+
   }
 }

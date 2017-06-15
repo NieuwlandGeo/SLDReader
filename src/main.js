@@ -1,4 +1,4 @@
-import {Reader} from './reader';
+import {reader} from './reader';
 
 
-new Reader('sld');
+export {reader};
