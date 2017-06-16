@@ -9,6 +9,6 @@ beforeEach(() => {
 
 describe('Reads xml', function() {
   it('returns object', function() {
-    expect(result).to.be.an.instanceof(Object);
+    expect(result).to.be.an.instanceof(Array);
   });
 });

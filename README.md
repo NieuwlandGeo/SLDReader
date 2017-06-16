@@ -8,15 +8,14 @@ test
 -----
 
 ```
+npm install 
 npm test
 ```
 
 Build
 --------
 
-
-
-
 ```
+npm install
 npm build
 ```
