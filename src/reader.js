@@ -3,8 +3,9 @@
 var result = {};
 
 var parsers = {
-  NamedLayer: function(obj) {
-    // let layername = obj.getElementsByTagName('sld:Name').item(0).innerHTML;
+  NamedLayer: (element) => {
+    let layername = getText(element, 'sld:Name');
+    result[layername] = {};
   }
 };
 
@@ -14,6 +15,10 @@ function readNode(node) {
       parsers[n.localName](n);
     }
   }
+}
+
+function getText(element, tagName) {
+  return element.getElementsByTagName(tagName).item(0).textContent;
 }
 
 
