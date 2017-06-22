@@ -9,6 +9,7 @@ beforeEach(() => {
 
 describe('Reads xml', function() {
   it('returns object', function() {
-    expect(result).to.be.an.instanceof(Array);
+    expect(result).to.be.an.instanceof(Object);
+    expect(result.version).to.equal('1.0.0');
   });
 });

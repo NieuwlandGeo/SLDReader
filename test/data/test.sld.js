@@ -1,5 +1,4 @@
-export var sld = `
-<?xml version="1.0" encoding="UTF-8"?>
+export var sld = `<?xml version="1.0" encoding="UTF-8"?>
 <sld:StyledLayerDescriptor version="1.0.0"
     xmlns:sld="http://www.opengis.net/sld"
     xmlns:ogc="http://www.opengis.net/ogc"
