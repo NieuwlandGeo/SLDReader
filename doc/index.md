@@ -27,7 +27,7 @@ a typedef for StyledLayerDescriptor
 **Properties**
 
 -   `version` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** sld version
--   `layers` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** info extracted from NamedLayer element
+-   `layers` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Layer](#layer)>** info extracted from NamedLayer element
 
 ## Layer
 
