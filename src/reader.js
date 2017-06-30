@@ -2,11 +2,13 @@
 
 var parsers = {
   NamedLayer: (element, obj) => {
-    let layername = getText(element, 'sld:Name');
-    obj[layername] = {
+    obj.layers = obj.layers || [];
+    let layer = {
+      name: getText(element, 'sld:Name'),
       styles: []
     };
-    readNode(element, obj[layername]);
+    readNode(element, layer);
+    obj.layers.push(layer);
   },
   UserStyle: (element, obj) => {
     let style = {
