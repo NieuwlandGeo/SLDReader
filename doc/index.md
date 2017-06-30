@@ -8,7 +8,9 @@
 -   [FeatureTypeStyle](#featuretypestyle)
 -   [Rule](#rule)
 -   [Filter](#filter)
--   [Symbolizer](#symbolizer)
+-   [PolygonSymbolizer](#polygonsymbolizer)
+-   [LineSymbolizer](#linesymbolizer)
+-   [PointSymbolizer](#pointsymbolizer)
 
 ## reader
 
@@ -54,7 +56,9 @@ a typedef for Rule to match a feature
 
 -   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** rule name
 -   `filters` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Filter](#filter)>** 
--   `symbolizers` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Symbolizer](#symbolizer)>** 
+-   `polygonsymbolizer` **[PolygonSymbolizer](#polygonsymbolizer)?** 
+-   `LineSymbolizer` **[LineSymbolizer](#linesymbolizer)?** 
+-   `PointSymbolizer` **[PointSymbolizer](#pointsymbolizer)?** 
 
 ## Filter
 
@@ -63,8 +67,34 @@ a typedef for Filter to match a feature
 **Properties**
 
 -   `type` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** filter type, see [ogc filter](http://schemas.opengis.net/filter/1.1.0/filter.xsd) for possible values
--   `value` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** depends on value of type.
+-   `value` **([Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object) \| [string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String))** depends on value of type. String for AbstractIdType, object keys follow sld spec otherwise
 
-## Symbolizer
+## PolygonSymbolizer
 
-a typedef for [Symbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+
+**Properties**
+
+-   `fill` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `fill.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+-   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+
+## LineSymbolizer
+
+a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+
+**Properties**
+
+-   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+
+## PointSymbolizer
+
+a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+
+**Properties**
+
+-   `graphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `graphic.externalgraphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+        -   `graphic.externalgraphic.onlineresource` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
