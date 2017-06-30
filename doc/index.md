@@ -97,4 +97,4 @@ a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.x
 
 -   `graphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `graphic.externalgraphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-        -   `graphic.externalgraphic.onlineresource` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+        -   `graphic.externalgraphic.onlineresource` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 

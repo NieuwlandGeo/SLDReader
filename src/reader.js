@@ -175,5 +175,5 @@ export function reader(sld) {
 * @description a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
 * @property {Object} graphic
 * @property {Object} graphic.externalgraphic
-* @property {Object} graphic.externalgraphic.onlineresource
+* @property {string} graphic.externalgraphic.onlineresource
 **/
