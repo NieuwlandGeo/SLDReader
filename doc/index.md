@@ -3,6 +3,9 @@
 ### Table of Contents
 
 -   [reader](#reader)
+-   [StyledLayerDescriptor](#styledlayerdescriptor)
+-   [Layer](#layer)
+-   [Rule](#rule)
 
 ## reader
 
@@ -10,4 +13,34 @@
 
 -   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
 
-Returns **[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** object representing sld style
+Returns **[StyledLayerDescriptor](#styledlayerdescriptor)** object representing sld style
+
+## StyledLayerDescriptor
+
+a typedef for StyledLayerDescriptor
+
+**Properties**
+
+-   `version` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** sld version
+-   `layers` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** info extracted from NamedLayer element
+
+## Layer
+
+a typedef for Layer, the actual style object for a single layer
+
+**Properties**
+
+-   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** layer name
+-   `styles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)>** 
+    -   `styles[].default` **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
+    -   `styles[].featuretypestyles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+    -   `styles[].featuretypestyles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Rule](#rule)>** \[].rules
+
+## Rule
+
+a typedef for Rule to match a feature
+
+**Properties**
+
+-   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** rule name
+-   `filters` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)>** 

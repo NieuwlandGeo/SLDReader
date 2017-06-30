@@ -66,7 +66,7 @@ function getBool(element, tagName) {
 
 /**
  * @param  {string} sld xml string
- * @return {object}  object representing sld style
+ * @return {StyledLayerDescriptor}  object representing sld style
  */
 export function reader(sld) {
   var result = {};
@@ -79,3 +79,32 @@ export function reader(sld) {
   }
   return result;
 }
+
+
+/**
+ * @typedef StyledLayerDescriptor
+ * @name StyledLayerDescriptor
+ * @description a typedef for StyledLayerDescriptor
+ * @property {string} version sld version
+ * @property {array} layers info extracted from NamedLayer element
+ */
+
+/**
+* @typedef Layer
+* @name Layer
+* @description a typedef for Layer, the actual style object for a single layer
+* @property {string} name layer name
+* @property {Object[]} styles
+* @property {Boolean} styles[].default
+* @property {Array} styles[].featuretypestyles
+* @property {Rule[]} styles[].featuretypestyles[].rules
+*/
+
+
+/**
+* @typedef Rule
+* @name Rule
+* @description a typedef for Rule to match a feature
+* @property {string} name rule name
+* @property {Object[]} filters
+**/
