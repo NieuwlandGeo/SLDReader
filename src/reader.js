@@ -42,13 +42,34 @@ var parsers = {
       value: element.getAttribute('fid')
     });
   },
-  Name: (element, obj) => getText(element, 'sld:Name')
+  Name: (element, obj) => getText(element, 'sld:Name'),
+  MaxScaleDenominator: (element, obj) => getText(element, 'sld:MaxScaleDenominator'),
+  PolygonSymbolizer: addProp,
+  LineSymbolizer: addProp,
+  PointSymbolizer: addProp,
+  Fill: addProp,
+  Stroke: addProp,
+  ExternalGraphic: addProp,
+  OnlineResource: element => getText(element, 'sld:OnlineResource'),
+  CssParameter: (element, obj) => {
+    obj.css = obj.css || [];
+    obj.css.push({
+      name: element.getAttribute('name'),
+      value: element.textContent.trim()
+    });
+  }
 };
 
-function readNode(node, obj) {
+function addProp(node, obj, prop) {
+  prop = prop.toLowerCase();
+  obj[prop] = {};
+  readNode(node, obj[prop]);
+}
+
+function readNode(node, obj, prop) {
   for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
     if (parsers[n.localName]) {
-      parsers[n.localName](n, obj);
+      parsers[n.localName](n, obj, n.localName);
     }
   }
 }
@@ -115,7 +136,9 @@ export function reader(sld) {
 * @description a typedef for Rule to match a feature
 * @property {string} name rule name
 * @property {Filter[]} filters
-* @property {Symbolizer[]} symbolizers
+* @property {PolygonSymbolizer} [polygonsymbolizer]
+* @property {LineSymbolizer}  [LineSymbolizer]
+* @property {PointSymbolizer} [PointSymbolizer]
 **/
 
 /**
@@ -123,12 +146,33 @@ export function reader(sld) {
 * @name Filter
 * @description a typedef for Filter to match a feature
 * @property {string} type filter type, see [ogc filter]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) for possible values
-* @property {Object} value depends on value of type.
+* @property {Object|string} value depends on value of type. String for AbstractIdType, object keys follow sld spec otherwise
 **/
 
 
 /**
-* @typedef Symbolizer
-* @name Symbolizer
-* @description a typedef for [Symbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+* @typedef PolygonSymbolizer
+* @name PolygonSymbolizer
+* @description a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+* @property {Object} fill
+* @property {array} fill.css
+* @property {Object} stroke
+* @property {array} stroke.css
+**/
+
+/**
+* @typedef LineSymbolizer
+* @name LineSymbolizer
+* @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+* @property {Object} stroke
+* @property {array} stroke.css
+**/
+
+
+/**
+* @typedef PointSymbolizer
+* @name PointSymbolizer
+* @description a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+* @property {Object} graphic
+* @property {Object} graphic.externalgraphic.onlineresource
 **/
