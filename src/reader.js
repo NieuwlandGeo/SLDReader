@@ -109,7 +109,7 @@ export function reader(sld) {
  * @name StyledLayerDescriptor
  * @description a typedef for StyledLayerDescriptor
  * @property {string} version sld version
- * @property {array} layers info extracted from NamedLayer element
+ * @property {Layer[]} layers info extracted from NamedLayer element
  */
 
 /**
