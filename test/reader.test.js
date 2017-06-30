@@ -23,8 +23,19 @@ describe('Reads xml', function() {
     expect(wbstyles).to.be.an.instanceof(Array);
     expect(wbstyles).to.have.length(12);
   });
-  it('default has featuretypestyle', function() {
+  it('style has props', function() {
     const style = result['WaterBodies'].styles['0'];
-    expect(style.featuretypestyle).to.be.an.instanceof(Object);
+    expect(style.featuretypestyles).to.be.an.instanceof(Array);
+    expect(style.default).to.be.true;
+  });
+  it('featuretypestyles has rules', function() {
+    const featuretypestyle = result['WaterBodies'].styles['0'].featuretypestyles['0'];
+    expect(featuretypestyle.rules).to.be.an.instanceof(Array);
+  });
+  it('rules have filter for featureid', function() {
+    const filter = result['WaterBodies'].styles['0'].featuretypestyles['0'].rules['0'].filters['0'];
+    expect(filter).to.be.an.instanceof(Object);
+    expect(filter.type).to.equal('FeatureId');
+    expect(filter.value).to.equal('tasmania_water_bodies.2');
   });
 });

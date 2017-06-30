@@ -11,17 +11,36 @@ var parsers = {
   UserStyle: (element, obj) => {
     let style = {
       name: getText(element, 'sld:Name'),
-      default: getBool(element, 'sld:IsDefault')
+      default: getBool(element, 'sld:IsDefault'),
+      featuretypestyles: []
     };
     readNode(element, style);
     obj.styles.push(style);
   },
   FeatureTypeStyle: (element, obj) => {
-    obj.featuretypestyle = {
+    let featuretypestyle = {
       rules: []
     };
-    readNode(element, obj);
-  }
+    readNode(element, featuretypestyle);
+    obj.featuretypestyles.push(featuretypestyle);
+
+  },
+  Rule: (element, obj) => {
+    const rule = {};
+    readNode(element, rule);
+    obj.rules.push(rule);
+  },
+  Filter: (element, obj) => {
+    obj.filters = [];
+    readNode(element, obj.filters);
+  },
+  FeatureId: (element, obj) => {
+    obj.push({
+      type: 'FeatureId',
+      value: element.getAttribute('fid')
+    });
+  },
+  Name: (element, obj) => getText(element, 'sld:Name')
 };
 
 function readNode(node, obj) {
@@ -40,7 +59,7 @@ function getText(element, tagName) {
 function getBool(element, tagName) {
   const collection = element.getElementsByTagName(tagName);
   if (collection.length) {
-    return (collection.item(0).textContent);
+    return (collection.item(0).textContent == true);
   }
   return false;
 }

@@ -3,12 +3,11 @@ SLDReader
 
 TODO: everything..
 
-
 test
 -----
 
 ```
-npm install 
+npm install
 npm test
 ```
 
