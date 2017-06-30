@@ -96,8 +96,14 @@ export function reader(sld) {
 * @property {string} name layer name
 * @property {Object[]} styles
 * @property {Boolean} styles[].default
-* @property {Array} styles[].featuretypestyles
-* @property {Rule[]} styles[].featuretypestyles[].rules
+* @property {FeatureTypeStyle[]} styles[].featuretypestyles
+*/
+
+/**
+* @typedef FeatureTypeStyle
+* @name FeatureTypeStyle
+* @description a typedef for FeatureTypeStyle
+* @property {Rule[]} rules
 */
 
 
@@ -106,5 +112,21 @@ export function reader(sld) {
 * @name Rule
 * @description a typedef for Rule to match a feature
 * @property {string} name rule name
-* @property {Object[]} filters
+* @property {Filter[]} filters
+* @property {Symbolizer[]} symbolizers
+**/
+
+/**
+* @typedef Filter
+* @name Filter
+* @description a typedef for Filter to match a feature
+* @property {string} type filter type, see [ogc filter]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) for possible values
+* @property {Object} value depends on value of type.
+**/
+
+
+/**
+* @typedef Symbolizer
+* @name Symbolizer
+* @description a typedef for [Symbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
 **/
