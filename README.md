@@ -1,20 +1,16 @@
-SLDReader
-=========
+# SLDReader
 
-TODO: everything..
+Under construction
 
-test
------
+## Development
+
+
+### Commands
+
+To, test, build and document
 
 ```
-npm install
 npm test
-```
-
-Build
---------
-
-```
-npm install
 npm build
+npm run-script doc
 ```

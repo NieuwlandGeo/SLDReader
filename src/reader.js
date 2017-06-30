@@ -64,7 +64,10 @@ function getBool(element, tagName) {
   return false;
 }
 
-
+/**
+ * @param  {string} sld xml string
+ * @return {object}  object representing sld style
+ */
 export function reader(sld) {
   var result = {};
   var parser = new DOMParser();
