@@ -1,12 +1,11 @@
-import {reader} from './reader';
+import Style from 'ol/style/style';
+import Fill from 'ol/style/fill';
+import Stroke from 'ol/style/stroke';
 
 /**
  * Openlayers styler
  */
-class OLStyle {
-  read(sld) {
-    this.sdobj = reader(sld);
-  }
+class OLStyle extends Style {
 
   /**
    * An ol.styleFunction
@@ -15,7 +14,9 @@ class OLStyle {
    * @return {ol.style.Style} openlayers style
    */
   styleFunction(feature, resolution) {
-    return {};
+    return new Style({
+
+    });
   }
 
 }

@@ -36,6 +36,7 @@
     "karma-mocha": "^1.3.0",
     "karma-mocha-reporter": "^2.2.3",
     "mocha": "^3.4.2",
+    "ol": "^4.2.0",
     "watchify": "^3.9.0"
   },
   "dependencies": {}

@@ -1,7 +1,5 @@
-/**
- * Key matches sld tag
- * @type {Object}
- */
+
+
 var parsers = {
   NamedLayer: (element, obj) => {
     obj.layers = obj.layers || [];
@@ -90,7 +88,6 @@ function getBool(element, tagName) {
 }
 
 /**
- * TODO, filter on layername?
  * @param  {string} sld xml string
  * @return {StyledLayerDescriptor}  object representing sld style
  */
