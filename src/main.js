@@ -1,4 +1,5 @@
 import {reader} from './reader';
+import {ol} from './ol';
 
 
-export {reader};
+export {reader, ol};

@@ -2,15 +2,29 @@
 
 ### Table of Contents
 
+-   [PolygonSymbolizer](#polygonsymbolizer)
 -   [reader](#reader)
--   [StyledLayerDescriptor](#styledlayerdescriptor)
 -   [Layer](#layer)
 -   [FeatureTypeStyle](#featuretypestyle)
 -   [Rule](#rule)
 -   [Filter](#filter)
--   [PolygonSymbolizer](#polygonsymbolizer)
+-   [StyledLayerDescriptor](#styledlayerdescriptor)
 -   [LineSymbolizer](#linesymbolizer)
 -   [PointSymbolizer](#pointsymbolizer)
+-   [OLStyle](#olstyle)
+    -   [styleFunction](#stylefunction)
+-   [ol.Feature](#olfeature)
+
+## PolygonSymbolizer
+
+a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+
+**Properties**
+
+-   `fill` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `fill.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+-   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
 
 ## reader
 
@@ -19,15 +33,6 @@
 -   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
 
 Returns **[StyledLayerDescriptor](#styledlayerdescriptor)** object representing sld style
-
-## StyledLayerDescriptor
-
-a typedef for StyledLayerDescriptor
-
-**Properties**
-
--   `version` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** sld version
--   `layers` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Layer](#layer)>** info extracted from NamedLayer element
 
 ## Layer
 
@@ -69,16 +74,14 @@ a typedef for Filter to match a feature
 -   `type` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** filter type, see [ogc filter](http://schemas.opengis.net/filter/1.1.0/filter.xsd) for possible values
 -   `value` **([Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object) \| [string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String))** depends on value of type. String for AbstractIdType, object keys follow sld spec otherwise
 
-## PolygonSymbolizer
+## StyledLayerDescriptor
 
-a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+a typedef for StyledLayerDescriptor
 
 **Properties**
 
--   `fill` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `fill.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
--   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+-   `version` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** sld version
+-   `layers` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Layer](#layer)>** info extracted from NamedLayer element
 
 ## LineSymbolizer
 
@@ -98,3 +101,24 @@ a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.x
 -   `graphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `graphic.externalgraphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
         -   `graphic.externalgraphic.onlineresource` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+
+## OLStyle
+
+Openlayers styler
+
+### styleFunction
+
+An ol.styleFunction
+
+**Parameters**
+
+-   `feature` **[ol.Feature](#olfeature)** openlayers feature to style
+-   `resolution` **[number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** views resolution
+
+Returns **ol.style.Style** [ol.style.Style](http://openlayers.org/en/latest/apidoc/ol.style.Style.html)
+
+## ol.Feature
+
+-   **See: <http://openlayers.org/en/latest/apidoc/ol.Feature.html>**
+
+The built in string object.
