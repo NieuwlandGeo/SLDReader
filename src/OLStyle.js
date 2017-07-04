@@ -1,11 +1,12 @@
+import {Style as Base} from './Style';
 import Style from 'ol/style/style';
-import Fill from 'ol/style/fill';
-import Stroke from 'ol/style/stroke';
+// import Fill from 'ol/style/fill';
+// import Stroke from 'ol/style/stroke';
 
 /**
  * Openlayers styler
  */
-class OLStyle extends Style {
+class OLStyle extends Base {
 
   /**
    * An ol.styleFunction

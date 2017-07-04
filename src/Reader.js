@@ -1,4 +1,21 @@
 
+/**
+ * Creates a object from an sld xml string
+ * @param  {string} sld xml string
+ * @return {StyledLayerDescriptor}  object representing sld style
+ */
+export function Reader(sld) {
+  var result = {};
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(sld, 'application/xml');
+
+  for (let n = doc.firstChild; n; n = n.nextSibling) {
+    result.version = n.getAttribute('version');
+    readNode(n, result);
+  }
+  return result;
+}
+
 
 var parsers = {
   NamedLayer: (element, obj) => {
@@ -85,22 +102,6 @@ function getBool(element, tagName) {
     return (collection.item(0).textContent == true);
   }
   return false;
-}
-
-/**
- * @param  {string} sld xml string
- * @return {StyledLayerDescriptor}  object representing sld style
- */
-export function reader(sld) {
-  var result = {};
-  var parser = new DOMParser();
-  var doc = parser.parseFromString(sld, 'application/xml');
-
-  for (let n = doc.firstChild; n; n = n.nextSibling) {
-    result.version = n.getAttribute('version');
-    readNode(n, result);
-  }
-  return result;
 }
 
 

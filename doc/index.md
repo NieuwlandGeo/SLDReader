@@ -2,78 +2,86 @@
 
 ### Table of Contents
 
--   [PolygonSymbolizer](#polygonsymbolizer)
--   [reader](#reader)
--   [Layer](#layer)
--   [FeatureTypeStyle](#featuretypestyle)
--   [Rule](#rule)
--   [Filter](#filter)
--   [StyledLayerDescriptor](#styledlayerdescriptor)
--   [LineSymbolizer](#linesymbolizer)
--   [PointSymbolizer](#pointsymbolizer)
 -   [OLStyle](#olstyle)
     -   [styleFunction](#stylefunction)
--   [ol.Feature](#olfeature)
 -   [ol.style.Style](#olstylestyle)
+-   [ol.Feature](#olfeature)
+-   [Style](#style)
+    -   [read](#read)
+    -   [getRule](#getrule)
+-   [Reader](#reader)
+-   [StyledLayerDescriptor](#styledlayerdescriptor)
+-   [LineSymbolizer](#linesymbolizer)
+-   [PolygonSymbolizer](#polygonsymbolizer)
+-   [Filter](#filter)
+-   [Rule](#rule)
+-   [FeatureTypeStyle](#featuretypestyle)
+-   [Layer](#layer)
+-   [PointSymbolizer](#pointsymbolizer)
 
-## PolygonSymbolizer
+## OLStyle
 
-a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+**Extends Base**
 
-**Properties**
+Openlayers styler
 
--   `fill` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `fill.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
--   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+### styleFunction
 
-## reader
+An ol.styleFunction
+
+**Parameters**
+
+-   `feature` **[ol.Feature](#olfeature)** openlayers feature to style
+-   `resolution` **[number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** views resolution
+
+Returns **[ol.style.Style](#olstylestyle)** openlayers style
+
+## ol.style.Style
+
+-   **See: <http://openlayers.org/en/latest/apidoc/ol.style.Style.html>**
+
+Openlayers style
+
+## ol.Feature
+
+-   **See: <http://openlayers.org/en/latest/apidoc/ol.Feature.html>**
+
+Openlayers feature
+
+## Style
+
+Base class for library specific style functions
+
+### read
+
+Read xml file
+
+**Parameters**
+
+-   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
+-   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select layer matching layername, defaults to first layer
+
+Returns **void** 
+
+### getRule
+
+get sld rules for feature
+
+**Parameters**
+
+-   `properties` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** feature properties
+
+Returns **[Rule](#rule)** filtered sld rules
+
+## Reader
+
+Creates a object from an sld xml string
 
 **Parameters**
 
 -   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
 
 Returns **[StyledLayerDescriptor](#styledlayerdescriptor)** object representing sld style
-
-## Layer
-
-a typedef for Layer, the actual style object for a single layer
-
-**Properties**
-
--   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** layer name
--   `styles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)>** 
-    -   `styles[].default` **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
-    -   `styles[].featuretypestyles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[FeatureTypeStyle](#featuretypestyle)>** 
-
-## FeatureTypeStyle
-
-a typedef for FeatureTypeStyle
-
-**Properties**
-
--   `rules` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Rule](#rule)>** 
-
-## Rule
-
-a typedef for Rule to match a feature
-
-**Properties**
-
--   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** rule name
--   `filters` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Filter](#filter)>** 
--   `polygonsymbolizer` **[PolygonSymbolizer](#polygonsymbolizer)?** 
--   `LineSymbolizer` **[LineSymbolizer](#linesymbolizer)?** 
--   `PointSymbolizer` **[PointSymbolizer](#pointsymbolizer)?** 
-
-## Filter
-
-a typedef for Filter to match a feature
-
-**Properties**
-
--   `type` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** filter type, see [ogc filter](http://schemas.opengis.net/filter/1.1.0/filter.xsd) for possible values
--   `value` **([Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object) \| [string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String))** depends on value of type. String for AbstractIdType, object keys follow sld spec otherwise
 
 ## StyledLayerDescriptor
 
@@ -93,6 +101,57 @@ a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xs
 -   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
 
+## PolygonSymbolizer
+
+a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+
+**Properties**
+
+-   `fill` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `fill.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+-   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+
+## Filter
+
+a typedef for Filter to match a feature
+
+**Properties**
+
+-   `type` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** filter type, see [ogc filter](http://schemas.opengis.net/filter/1.1.0/filter.xsd) for possible values
+-   `value` **([Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object) \| [string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String))** depends on value of type. String for AbstractIdType, object keys follow sld spec otherwise
+
+## Rule
+
+a typedef for Rule to match a feature
+
+**Properties**
+
+-   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** rule name
+-   `filters` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Filter](#filter)>** 
+-   `polygonsymbolizer` **[PolygonSymbolizer](#polygonsymbolizer)?** 
+-   `LineSymbolizer` **[LineSymbolizer](#linesymbolizer)?** 
+-   `PointSymbolizer` **[PointSymbolizer](#pointsymbolizer)?** 
+
+## FeatureTypeStyle
+
+a typedef for FeatureTypeStyle
+
+**Properties**
+
+-   `rules` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Rule](#rule)>** 
+
+## Layer
+
+a typedef for Layer, the actual style object for a single layer
+
+**Properties**
+
+-   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** layer name
+-   `styles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)>** 
+    -   `styles[].default` **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
+    -   `styles[].featuretypestyles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[FeatureTypeStyle](#featuretypestyle)>** 
+
 ## PointSymbolizer
 
 a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
@@ -102,32 +161,3 @@ a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.x
 -   `graphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `graphic.externalgraphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
         -   `graphic.externalgraphic.onlineresource` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
-
-## OLStyle
-
-**Extends Style**
-
-Openlayers styler
-
-### styleFunction
-
-An ol.styleFunction
-
-**Parameters**
-
--   `feature` **[ol.Feature](#olfeature)** openlayers feature to style
--   `resolution` **[number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** views resolution
-
-Returns **[ol.style.Style](#olstylestyle)** openlayers style
-
-## ol.Feature
-
--   **See: <http://openlayers.org/en/latest/apidoc/ol.Feature.html>**
-
-Openlayers feature
-
-## ol.style.Style
-
--   **See: <http://openlayers.org/en/latest/apidoc/ol.style.Style.html>**
-
-Openlayers style

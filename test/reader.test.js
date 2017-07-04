@@ -1,10 +1,10 @@
 /* global describe it expect beforeEach */
-import {reader} from 'reader';
+import {Reader} from 'Reader';
 import {sld} from './data/test.sld';
 
 var result;
 beforeEach(() => {
-  result = reader(sld);
+  result = Reader(sld);
 });
 
 describe('Reads xml', function() {

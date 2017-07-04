@@ -1,6 +1,8 @@
-import {reader} from './reader';
+import {Reader} from './Reader';
 
-
+/**
+ * Base class for library specific style functions
+ */
 class Style {
   /**
    * Read xml file
@@ -9,7 +11,7 @@ class Style {
    * @return {void}
    */
   read(sld) {
-    this.sld = reader(sld);
+    this.sld = Reader(sld);
   }
 
 
