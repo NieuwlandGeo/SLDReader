@@ -1,5 +1,5 @@
-import {reader} from './reader';
-import {ol} from './ol';
+import {reader} from './Reader';
+import {OLStyle} from './OLStyle';
 
 
-export {reader, ol};
+export {reader, OLStyle};
