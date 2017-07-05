@@ -2,7 +2,7 @@
 
 ### Table of Contents
 
--   [OLStyle](#olstyle)
+-   [OlSLDStyle](#olsldstyle)
     -   [styleFunction](#stylefunction)
 -   [ol.style.Style](#olstylestyle)
 -   [ol.Feature](#olfeature)
@@ -20,9 +20,9 @@
 -   [Layer](#layer)
 -   [PointSymbolizer](#pointsymbolizer)
 
-## OLStyle
+## OlSLDStyle
 
-**Extends Base**
+**Extends Style**
 
 Openlayers styler
 

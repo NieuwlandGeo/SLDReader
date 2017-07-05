@@ -1,12 +1,12 @@
-import {Style as Base} from './Style';
-import Style from 'ol/style/style';
+import {Style} from './Style';
+import OLStyle from 'ol/style/style';
 // import Fill from 'ol/style/fill';
 // import Stroke from 'ol/style/stroke';
 
 /**
  * Openlayers styler
  */
-class OLStyle extends Base {
+class OlSLDStyle extends Style {
 
   /**
    * An ol.styleFunction
@@ -15,7 +15,7 @@ class OLStyle extends Base {
    * @return {ol.style.Style} openlayers style
    */
   styleFunction(feature, resolution) {
-    return new Style({
+    return new OLStyle({
 
     });
   }
@@ -23,7 +23,7 @@ class OLStyle extends Base {
 }
 
 
-export {OLStyle};
+export {OlSLDStyle};
 
 
 /**
