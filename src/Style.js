@@ -10,27 +10,25 @@ class Style {
    * @param {string} [layername] Select layer matching lowercased layername, defaults to first layer
    * @return {void}
    */
-  read(sld, layername) {
+  read(sld, layername, stylename) {
     this.sld = Reader(sld);
-    if (layername) {
-      this.layer = this.sld.layer.filter(l => {
-        if (layername) {
-          return (l.name.toLowerCase() == layername);
-        }
-      })['0'];
-    } else {
-      this.layer = this.sld.layer['0'];
-    }
+    this.setStyle(layername, stylename);
   }
   /**
-   * Change selected layer to style
+   * Change selected layer and style from sld to use
    * @param {string} layername  Select layer matching lowercased layername
+   * @param {string} stylename style to use
    */
-  setLayer(layername) {
-    this.layer = this.sld.layer.filter(l => {
-      if (layername) {
-        return (l.name.toLowerCase() == layername);
-      }
+  setStyle(layername, stylename) {
+    let filteredlayers;
+    if (layername) {
+      filteredlayers = this.sld.layers.filter(l => {
+        return (l.name.toLowerCase() == layername.toLowerCase());
+      });
+    }
+    this.layer = (filteredlayers) ? filteredlayers['0'] : this.sld.layers['0'];
+    this.style = this.layer.styles.filter(s => {
+      return (stylename) ? (s.name.toLowerCase() == stylename.toLowerCase) : s.default;
     })['0'];
   }
 
