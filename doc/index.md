@@ -60,8 +60,8 @@ Read xml file
 **Parameters**
 
 -   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
--   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select layer matching lowercased layername, defaults to first layer
--   `stylename`  
+-   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select layer matching case insensitive, defaults to first layer
+-   `stylename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select style case insensitive, defaults to first layer
 
 Returns **void** 
 
@@ -71,8 +71,8 @@ Change selected layer and style from sld to use
 
 **Parameters**
 
--   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Select layer matching lowercased layername
--   `stylename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** style to use
+-   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select layer matching lowercased layername
+-   `stylename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** style to use
 
 ### getRule
 
