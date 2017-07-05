@@ -8,6 +8,7 @@
 -   [ol.Feature](#olfeature)
 -   [Style](#style)
     -   [read](#read)
+    -   [setStyle](#setstyle)
     -   [getRule](#getrule)
 -   [Reader](#reader)
 -   [StyledLayerDescriptor](#styledlayerdescriptor)
@@ -59,9 +60,19 @@ Read xml file
 **Parameters**
 
 -   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
--   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select layer matching layername, defaults to first layer
+-   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select layer matching lowercased layername, defaults to first layer
+-   `stylename`  
 
 Returns **void** 
+
+### setStyle
+
+Change selected layer and style from sld to use
+
+**Parameters**
+
+-   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Select layer matching lowercased layername
+-   `stylename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** style to use
 
 ### getRule
 
