@@ -17,11 +17,11 @@ export function Reader(sld) {
 }
 
 
-var parsers = {
+const parsers = {
   NamedLayer: (element, obj) => {
     obj.layers = obj.layers || [];
     let layer = {
-      name: getText(element, 'sld:Name'),
+      // name: getText(element, 'sld:Name'),
       styles: []
     };
     readNode(element, layer);
@@ -29,7 +29,7 @@ var parsers = {
   },
   UserStyle: (element, obj) => {
     let style = {
-      name: getText(element, 'sld:Name'),
+      // name: getText(element, 'sld:Name'),
       default: getBool(element, 'sld:IsDefault'),
       featuretypestyles: []
     };
@@ -59,8 +59,12 @@ var parsers = {
       value: element.getAttribute('fid')
     });
   },
-  Name: (element, obj) => getText(element, 'sld:Name'),
-  MaxScaleDenominator: (element, obj) => getText(element, 'sld:MaxScaleDenominator'),
+  Name: (element, obj) => {
+    obj.name = element.textContent;
+  },
+  MaxScaleDenominator: (element, obj) => {
+    obj.maxscaledenominator = element.textContent;
+  },
   PolygonSymbolizer: addProp,
   LineSymbolizer: addProp,
   PointSymbolizer: addProp,
@@ -118,7 +122,7 @@ function getBool(element, tagName) {
 * @name Layer
 * @description a typedef for Layer, the actual style object for a single layer
 * @property {string} name layer name
-* @property {Object[]} styles
+* @property {Object[]} styles [UserStyle](http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html)
 * @property {Boolean} styles[].default
 * @property {FeatureTypeStyle[]} styles[].featuretypestyles
 */

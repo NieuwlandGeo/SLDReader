@@ -19,6 +19,9 @@ describe('Base styler class', function() {
   });
 
   it('selects rule', () => {
+    const rules = s.getRules({fid: 'tasmania_water_bodies.2'});
+    expect(rules).to.be.an.instanceof(Array);
+    expect(rules[0].name).to.equal('testRuleName');
 
   });
 });

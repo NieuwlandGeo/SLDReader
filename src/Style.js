@@ -1,5 +1,13 @@
 import {Reader} from './Reader';
 
+const Filters = {
+  FeatureId: (value, props) => {
+    return (value === props.fid);
+  }
+
+};
+
+
 /**
  * Base class for library specific style functions
  */
@@ -39,8 +47,32 @@ class Style {
    * @param  {Object} properties feature properties
    * @return {Rule} filtered sld rules
    */
-  getRule(properties) {
-    return {};
+  getRules(properties) {
+    if (!this.style) {
+      throw new Error('Set a style to use');
+    }
+    const result = [];
+    const FeatureTypeStyleLength = this.style.featuretypestyles.length;
+    for (let i = 0; i < FeatureTypeStyleLength; i += 1) {
+      let fttypestyle = this.style.featuretypestyles[i];
+      for (let j = 0; j < fttypestyle.rules.length; j += 1) {
+        let rule = fttypestyle.rules[j];
+        if (rule.filters) {
+          for (let k = 0; k < rule.filters.length; k += 1) {
+            let {value, type} = rule.filters[k];
+            if (Filters[type]) {
+              if (Filters[type](value, properties)) {
+                result.push(rule);
+              }
+            } else {
+              throw new Error(`Unkown filter ${rule.filters[k].type}`);
+            }
+          }
+        }
+
+      }
+    }
+    return result;
   }
 }
 

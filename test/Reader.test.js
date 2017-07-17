@@ -40,8 +40,9 @@ describe('Reads xml', function() {
     expect(filter.type).to.equal('FeatureId');
     expect(filter.value).to.equal('tasmania_water_bodies.2');
   });
-  it('rules have symbolizers', function() {
+  it('rules have props', function() {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    expect(rule.maxscaledenominator).to.equal('3000000');
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill.css['0']).to.be.an.instanceof(Object);
