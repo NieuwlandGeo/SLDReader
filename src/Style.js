@@ -14,7 +14,8 @@ const Filters = {
 
 
 /**
- * Base class for library specific style functions
+ * Base class for library specific style classes
+ * After creating an instance you should call the read method.
  */
 class Style {
   /**

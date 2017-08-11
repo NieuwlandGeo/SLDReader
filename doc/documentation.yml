@@ -1,0 +1,18 @@
+toc:
+  - OlSLDStyle
+  - Style
+  - Reader
+  - name: Types
+    description: |
+      Types are the javascript representation of the ogc sld structure
+  - LineSymbolizer
+  - Layer
+  - FeatureTypeStyle
+  - Rule
+  - Filter
+  - PolygonSymbolizer
+  - PointSymbolizer
+  - name: Openlayers
+    description: |
+      Used openlayers classes
+  - ol.StyleFunction  

@@ -4,7 +4,7 @@ import OLStyle from 'ol/style/style';
 // import Stroke from 'ol/style/stroke';
 
 /**
- * Openlayers styler
+ * The OlSLDStyle class is the entry point for openlayers users.
  */
 class OlSLDStyle extends Style {
 
@@ -26,15 +26,8 @@ class OlSLDStyle extends Style {
 export {OlSLDStyle};
 
 
-/**
- * Openlayers feature
- * @external ol.Feature
- * @see {@link http://openlayers.org/en/latest/apidoc/ol.Feature.html}
- */
-
-
  /**
-  * Openlayers style
-  * @external ol.style.Style
-  * @see {@link http://openlayers.org/en/latest/apidoc/ol.style.Style.html}
+  * Openlayers stylefunction
+  * @external ol.StyleFunction
+  * @see {@link http://openlayers.org/en/latest/apidoc/ol.html#.StyleFunction}
   */
