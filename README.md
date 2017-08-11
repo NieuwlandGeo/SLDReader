@@ -4,7 +4,7 @@ Under construction
 
 ## Api docs
 
-[Api docs](doc/index.md)
+[Api docs](https://nieuwlandgeo.github.io/SLDReader/)
 
 
 ## Development
