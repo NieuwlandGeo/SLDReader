@@ -50,14 +50,12 @@ const parsers = {
     obj.rules.push(rule);
   },
   Filter: (element, obj) => {
-    obj.filters = [];
-    readNode(element, obj.filters);
+    obj.filter = {};
+    readNode(element, obj.filter);
   },
   FeatureId: (element, obj) => {
-    obj.push({
-      type: 'FeatureId',
-      value: element.getAttribute('fid')
-    });
+    obj.featureid = obj.featureid || [];
+    obj.featureid.push(element.getAttribute('fid'));
   },
   Name: (element, obj) => {
     obj.name = element.textContent;
@@ -130,7 +128,7 @@ function getBool(element, tagName) {
 /**
 * @typedef FeatureTypeStyle
 * @name FeatureTypeStyle
-* @description a typedef for FeatureTypeStyle {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
+* @description a typedef for FeatureTypeStyle: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
 * @property {Rule[]} rules
 */
 
@@ -138,9 +136,9 @@ function getBool(element, tagName) {
 /**
 * @typedef Rule
 * @name Rule
-* @description a typedef for Rule to match a feature {@link http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd xsd}
+* @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd xsd}
 * @property {string} name rule name
-* @property {Filter[]} filters
+* @property {Filter} filter
 * @property {PolygonSymbolizer} [polygonsymbolizer]
 * @property {LineSymbolizer}  [LineSymbolizer]
 * @property {PointSymbolizer} [PointSymbolizer]
@@ -151,7 +149,7 @@ function getBool(element, tagName) {
 * @name Filter
 * @description a typedef for Filter to match a feature
 * @property {string} type filter type, see [ogc filter]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) for possible values
-* @property {Object|string} value depends on value of type. String for AbstractIdType, object keys follow sld spec otherwise
+* @property {Object|string|array} value depends on type. Array of strings for ogc:_Id, eg FeatureId
 **/
 
 

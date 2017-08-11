@@ -1,8 +1,13 @@
 import {Reader} from './Reader';
 
 const Filters = {
-  FeatureId: (value, props) => {
-    return (value === props.fid);
+  featureid: (value, props) => {
+    for (let i = 0; i < value.length; i += 1) {
+      if (value[i] === props.fid) {
+        return true;
+      }
+    }
+    return false;
   }
 
 };
@@ -57,20 +62,18 @@ class Style {
       let fttypestyle = this.style.featuretypestyles[i];
       for (let j = 0; j < fttypestyle.rules.length; j += 1) {
         let rule = fttypestyle.rules[j];
-        if (rule.filters) {
-          for (let k = 0; k < rule.filters.length; k += 1) {
-            let {value, type} = rule.filters[k];
-            if (Filters[type]) {
-              if (Filters[type](value, properties)) {
-                result.push(rule);
-              }
-            } else {
-              throw new Error(`Unkown filter ${rule.filters[k].type}`);
+        if (rule.filter) {
+          const type = Object.keys(rule.filter)['0'];
+          if (Filters[type]) {
+            if (Filters[type](rule.filter[type], properties)) {
+              result.push(rule);
             }
+          } else {
+            throw new Error(`Unkown filter ${type}`);
           }
         }
-
       }
+
     }
     return result;
   }

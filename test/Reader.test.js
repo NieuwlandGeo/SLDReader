@@ -35,10 +35,10 @@ describe('Reads xml', function() {
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
   it('rules have filter for featureid', function() {
-    const filter = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].filters['0'];
+    const filter = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].filter;
     expect(filter).to.be.an.instanceof(Object);
-    expect(filter.type).to.equal('FeatureId');
-    expect(filter.value).to.equal('tasmania_water_bodies.2');
+    expect(filter.featureid).to.be.an.instanceof(Array);
+    expect(filter.featureid).to.include('tasmania_water_bodies.2');
   });
   it('rules have props', function() {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
