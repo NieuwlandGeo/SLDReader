@@ -113,9 +113,9 @@
               
                 
                 <li><a
-                  href='#linesymbolizer'
+                  href='#styledlayerdescriptor'
                   class="">
-                  LineSymbolizer
+                  StyledLayerDescriptor
                   
                 </a>
                 
@@ -126,6 +126,16 @@
                   href='#layer'
                   class="">
                   Layer
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#linesymbolizer'
+                  class="">
+                  LineSymbolizer
                   
                 </a>
                 
@@ -196,16 +206,6 @@
                   href='#olstylefunction'
                   class="">
                   ol.StyleFunction
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#'
-                  class="">
-                  
                   
                 </a>
                 
@@ -651,7 +651,7 @@ After creating an instance you should call the read method.</p>
   <p>Creates a object from an sld xml string</p>
 
 
-  <div class='pre p1 fill-light mt0'>new Reader(sld: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): StyledLayerDescriptor</div>
+  <div class='pre p1 fill-light mt0'>new Reader(sld: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="#styledlayerdescriptor">StyledLayerDescriptor</a></div>
   
   
 
@@ -683,7 +683,7 @@ After creating an instance you should call the read method.</p>
   
     
       <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>StyledLayerDescriptor</code>:
+      <code><a href="#styledlayerdescriptor">StyledLayerDescriptor</a></code>:
         object representing sld style
 
       
@@ -724,18 +724,18 @@ After creating an instance you should call the read method.</p>
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='linesymbolizer'>
-      LineSymbolizer
+    <h3 class='fl m0' id='styledlayerdescriptor'>
+      StyledLayerDescriptor
     </h3>
     
     
   </div>
   
 
-  <p>a typedef for <a href="http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">LineSymbolizer</a></p>
+  <p>a typedef for StyledLayerDescriptor <a href="http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd">xsd</a></p>
 
 
-  <div class='pre p1 fill-light mt0'>LineSymbolizer</div>
+  <div class='pre p1 fill-light mt0'>StyledLayerDescriptor</div>
   
   
 
@@ -753,16 +753,16 @@ After creating an instance you should call the read method.</p>
     <div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>stroke</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+          <span class='code bold'>version</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          : sld version
+
           
-          
-            <ul>
-              
-                <li><code>stroke.css</code> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>
-                  
-                  </li>
-              
-            </ul>
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>layers</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#layer">Layer</a>>)</code>
+          : info extracted from NamedLayer element
+
           
         </div>
       
@@ -827,7 +827,8 @@ After creating an instance you should call the read method.</p>
       
         <div class='space-bottom0'>
           <span class='code bold'>styles</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>>)</code>
-          : <a href="http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html">UserStyle</a>
+          : See explanation at 
+<a href="http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html">Geoserver docs</a>
 
           
             <ul>
@@ -837,6 +838,72 @@ After creating an instance you should call the read method.</p>
                   </li>
               
                 <li><code>styles[].featuretypestyles</code> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#featuretypestyle">FeatureTypeStyle</a>>
+                  
+                  </li>
+              
+            </ul>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='linesymbolizer'>
+      LineSymbolizer
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>a typedef for <a href="http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">LineSymbolizer</a></p>
+
+
+  <div class='pre p1 fill-light mt0'>LineSymbolizer</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>stroke</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+          
+          
+            <ul>
+              
+                <li><code>stroke.css</code> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>
                   
                   </li>
               
@@ -1262,72 +1329,6 @@ After creating an instance you should call the read method.</p>
 
   
 
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id=''>
-      
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>a typedef for StyledLayerDescriptor <a href="http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd">xsd</a></p>
-
-
-  <div class='pre p1 fill-light mt0'></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Properties</div>
-    <div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>version</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-          : sld version
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>layers</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#layer">Layer</a>>)</code>
-          : info extracted from NamedLayer element
-
-          
-        </div>
-      
-    </div>
   
 
   

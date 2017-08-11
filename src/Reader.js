@@ -109,7 +109,7 @@ function getBool(element, tagName) {
 
 /**
  * @typedef StyledLayerDescriptor
- * @name StyledLayerDescriptor *
+ * @name StyledLayerDescriptor
  * @description a typedef for StyledLayerDescriptor {@link http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd xsd}
  * @property {string} version sld version
  * @property {Layer[]} layers info extracted from NamedLayer element
@@ -120,7 +120,7 @@ function getBool(element, tagName) {
 * @name Layer
 * @description a typedef for Layer, the actual style object for a single layer
 * @property {string} name layer name
-* @property {Object[]} styles [UserStyle](http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html)
+* @property {Object[]} styles See explanation at [Geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html)
 * @property {Boolean} styles[].default
 * @property {FeatureTypeStyle[]} styles[].featuretypestyles
 */

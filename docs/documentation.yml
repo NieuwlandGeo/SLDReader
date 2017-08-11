@@ -5,8 +5,9 @@ toc:
   - name: Types
     description: |
       Types are the javascript representation of the ogc sld structure
-  - LineSymbolizer
+  - StyledLayerDescriptor
   - Layer
+  - LineSymbolizer  
   - FeatureTypeStyle
   - Rule
   - Filter
@@ -15,4 +16,4 @@ toc:
   - name: Openlayers
     description: |
       Used openlayers classes
-  - ol.StyleFunction  
+  - ol.StyleFunction
