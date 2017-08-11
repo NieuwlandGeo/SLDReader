@@ -17,5 +17,5 @@ To, test, build and document
 ```
 npm test
 npm build
-npm run-script doc
+npm run-script docs
 ```

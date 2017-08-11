@@ -1,4 +1,4 @@
 node_modules
 dist
-doc/*
-!doc/documentation.yml
+docs/*
+!docs/documentation.yml
