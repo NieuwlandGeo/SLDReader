@@ -111,8 +111,8 @@ function getBool(element, tagName) {
 
 /**
  * @typedef StyledLayerDescriptor
- * @name StyledLayerDescriptor
- * @description a typedef for StyledLayerDescriptor
+ * @name StyledLayerDescriptor *
+ * @description a typedef for StyledLayerDescriptor {@link http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd xsd}
  * @property {string} version sld version
  * @property {Layer[]} layers info extracted from NamedLayer element
  */
@@ -130,7 +130,7 @@ function getBool(element, tagName) {
 /**
 * @typedef FeatureTypeStyle
 * @name FeatureTypeStyle
-* @description a typedef for FeatureTypeStyle
+* @description a typedef for FeatureTypeStyle {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
 * @property {Rule[]} rules
 */
 
@@ -138,7 +138,7 @@ function getBool(element, tagName) {
 /**
 * @typedef Rule
 * @name Rule
-* @description a typedef for Rule to match a feature
+* @description a typedef for Rule to match a feature {@link http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd xsd}
 * @property {string} name rule name
 * @property {Filter[]} filters
 * @property {PolygonSymbolizer} [polygonsymbolizer]

@@ -9,9 +9,8 @@
 -   [Style](#style)
     -   [read](#read)
     -   [setStyle](#setstyle)
-    -   [getRule](#getrule)
+    -   [getRules](#getrules)
 -   [Reader](#reader)
--   [StyledLayerDescriptor](#styledlayerdescriptor)
 -   [LineSymbolizer](#linesymbolizer)
 -   [PolygonSymbolizer](#polygonsymbolizer)
 -   [Filter](#filter)
@@ -61,7 +60,7 @@ Read xml file
 
 -   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
 -   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select layer matching case insensitive, defaults to first layer
--   `stylename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select style case insensitive, defaults to first layer
+-   `stylename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select style case insensitive, defaults to first style
 
 Returns **void** 
 
@@ -74,7 +73,7 @@ Change selected layer and style from sld to use
 -   `layername` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Select layer matching lowercased layername
 -   `stylename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** style to use
 
-### getRule
+### getRules
 
 get sld rules for feature
 
@@ -92,11 +91,11 @@ Creates a object from an sld xml string
 
 -   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
 
-Returns **[StyledLayerDescriptor](#styledlayerdescriptor)** object representing sld style
+Returns **StyledLayerDescriptor** object representing sld style
 
-## StyledLayerDescriptor
+## 
 
-a typedef for StyledLayerDescriptor
+a typedef for StyledLayerDescriptor [xsd](http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd)
 
 **Properties**
 
@@ -134,7 +133,7 @@ a typedef for Filter to match a feature
 
 ## Rule
 
-a typedef for Rule to match a feature
+a typedef for Rule to match a feature [xsd](http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd)
 
 **Properties**
 
@@ -146,7 +145,7 @@ a typedef for Rule to match a feature
 
 ## FeatureTypeStyle
 
-a typedef for FeatureTypeStyle
+a typedef for FeatureTypeStyle [xsd](http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd)
 
 **Properties**
 
@@ -159,7 +158,7 @@ a typedef for Layer, the actual style object for a single layer
 **Properties**
 
 -   `name` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** layer name
--   `styles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)>** 
+-   `styles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)>** [UserStyle](http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html)
     -   `styles[].default` **[Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
     -   `styles[].featuretypestyles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[FeatureTypeStyle](#featuretypestyle)>** 
 

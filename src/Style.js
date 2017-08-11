@@ -16,7 +16,7 @@ class Style {
    * Read xml file
    * @param  {string} sld xml string
    * @param {string} [layername] Select layer matching case insensitive, defaults to first layer
-   * @param {string} [stylename] Select style case insensitive, defaults to first layer
+   * @param {string} [stylename] Select style case insensitive, defaults to first style
    * @return {void}
    */
   read(sld, layername, stylename) {
