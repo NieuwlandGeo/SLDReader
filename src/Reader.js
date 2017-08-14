@@ -55,6 +55,24 @@ const parsers = {
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
   },
+  Or: (element, obj) => {
+    obj.or = obj.or || [];
+    const or = {};
+    readNode(element, or);
+    obj.or.push(or);
+  },
+  And: addProp,
+  Not: addProp,
+  PropertyIsEqualTo: (element, obj) => {
+    obj.propertyisequalto = {};
+    readNode(element, obj.propertyisequalto);
+  },
+  PropertyName: (element, obj) => {
+    obj.propertyname = element.textContent;
+  },
+  Literal: (element, obj) => {
+    obj.literal = element.textContent;
+  },
   FeatureId: (element, obj) => {
     obj.featureid = obj.featureid || [];
     obj.featureid.push(element.getAttribute('fid'));
@@ -91,7 +109,7 @@ function readNode(node, obj) {
 
 
 /**
- * Creates a object from an sld xml string
+ * Creates a object from an sld xml string, for internal usage
  * @param  {string} sld xml string
  * @return {StyledLayerDescriptor}  object representing sld style
  */

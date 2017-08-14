@@ -39,11 +39,18 @@ describe('Base styler class', () => {
     expect(s.style.name).to.equal('Hover Styler');
   });
 
-  // it('set testRuleNameHoverElse rule', () => {
-  //   s.setStyle('WaterBodies', 'Hover Styler');
-  //   const rules = s.getRules({ fid: 'tasmania_water_bodies.5' });
-  //   expect(rules).to.be.an.instanceof(Array);
-  //   expect(rules).to.have.lengthOf(1);
-  //   expect(rules[0].name).to.equal('testRuleNameHoverElse');
-  // });
+  it('set testRuleNameHover rule', () => {
+    s.setStyle('WaterBodies', 'Hover Styler');
+    const rules = s.getRules({ PERIMETER: '1', AREA: 1 });
+    expect(rules).to.be.an.instanceof(Array);
+    expect(rules).to.have.lengthOf(1);
+    expect(rules[0].name).to.equal('testRuleNameHover');
+  });
+  it('set testRuleNameHoverElse rule', () => {
+    s.setStyle('WaterBodies', 'Hover Styler');
+    const rules = s.getRules({ PERIMETER: '1071304933', AREA: 1 });
+    expect(rules).to.be.an.instanceof(Array);
+    expect(rules).to.have.lengthOf(1);
+    expect(rules[0].name).to.equal('testRuleNameHoverElse');
+  });
 });

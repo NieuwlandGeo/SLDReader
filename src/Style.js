@@ -9,8 +9,30 @@ const Filters = {
     }
     return false;
   },
-
+  not: (value, props) => !filterSelector(value, props),
+  or: (value, props) => {
+    for (let i = 0; i < value.length; i += 1) {
+      if (filterSelector(value[i], props)) {
+        return true;
+      }
+    }
+    return false;
+  },
+  propertyisequalto: (value, props) => (props[value.propertyname] &&
+    props[value.propertyname] === value.literal),
 };
+
+function filterSelector(filter, properties) {
+  const type = Object.keys(filter)['0'];
+  if (Filters[type]) {
+    if (Filters[type](filter[type], properties)) {
+      return true;
+    }
+  } else {
+    throw new Error(`Unkown filter ${type}`);
+  }
+  return false;
+}
 
 
 /**
@@ -60,18 +82,11 @@ class Style {
       const fttypestyle = this.style.featuretypestyles[i];
       for (let j = 0; j < fttypestyle.rules.length; j += 1) {
         const rule = fttypestyle.rules[j];
-        if (rule.filter) {
-          const type = Object.keys(rule.filter)['0'];
-          if (Filters[type]) {
-            if (Filters[type](rule.filter[type], properties)) {
-              result.push(rule);
-            }
-          } else {
-            throw new Error(`Unkown filter ${type}`);
-          }
+        if (rule.filter && filterSelector(rule.filter, properties)) {
+          result.push(rule);
         } else if (rule.elsefilter && result.length === 0) {
           result.push(rule);
-        } else if (!rule.elsefilter) {
+        } else if (!rule.elsefilter && !rule.filter) {
           result.push(rule);
         }
       }
