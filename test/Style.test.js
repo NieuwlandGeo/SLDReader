@@ -1,14 +1,14 @@
 /* global describe it expect beforeEach */
-import {Style} from 'Style';
-import {sld} from './data/test.sld';
+import Style from 'Style';
+import { sld } from './data/test.sld';
 
-var s;
+let s;
 beforeEach(() => {
   s = new Style();
   s.read(sld);
 });
 
-describe('Base styler class', function() {
+describe('Base styler class', () => {
   it('reads', () => {
     expect(s.sld.version).to.equal('1.0.0');
   });
@@ -19,13 +19,13 @@ describe('Base styler class', function() {
   });
 
   it('selects rule', () => {
-    const rules = s.getRules({fid: 'tasmania_water_bodies.2'});
+    const rules = s.getRules({ fid: 'tasmania_water_bodies.2' });
     expect(rules).to.be.an.instanceof(Array);
     expect(rules).to.have.lengthOf(1);
     expect(rules[0].name).to.equal('testRuleName');
   });
   it('does not select rule for other feature name', () => {
-    const rules = s.getRules({fid: 'tasmania_water_bodies.5'});
+    const rules = s.getRules({ fid: 'tasmania_water_bodies.5' });
     expect(rules).to.be.an.instanceof(Array);
     expect(rules).to.have.lengthOf(0);
   });

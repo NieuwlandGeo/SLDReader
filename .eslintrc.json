@@ -11,10 +11,7 @@
     "es6": true
   },
   "rules": {
-    "quote-props": ["error", "as-needed"],
-    "no-multi-spaces": "error",
-    "object-shorthand": ["error", "always"],
-    "prefer-template": "error",
-    "prefer-const": "error"
+    "no-param-reassign": [2, { "props": false }],
+    "import/no-extraneous-dependencies": ["error", {"devDependencies": false, "optionalDependencies": false, "peerDependencies": false}]
   }
 }

@@ -1,5 +1,5 @@
-import {Style} from './Style';
 import OLStyle from 'ol/style/style';
+import Style from './Style';
 // import Fill from 'ol/style/fill';
 // import Stroke from 'ol/style/stroke';
 
@@ -23,7 +23,7 @@ class OlSLDStyle extends Style {
 }
 
 
-export {OlSLDStyle};
+export default OlSLDStyle;
 
 
  /**

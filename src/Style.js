@@ -1,4 +1,4 @@
-import {Reader} from './Reader';
+import Reader from './Reader';
 
 const Filters = {
   featureid: (value, props) => {
@@ -8,7 +8,7 @@ const Filters = {
       }
     }
     return false;
-  }
+  },
 
 };
 
@@ -37,14 +37,11 @@ class Style {
   setStyle(layername, stylename) {
     let filteredlayers;
     if (layername) {
-      filteredlayers = this.sld.layers.filter(l => {
-        return (l.name.toLowerCase() == layername.toLowerCase());
-      });
+      filteredlayers = this.sld.layers.filter(l =>
+        (l.name.toLowerCase() === layername.toLowerCase()));
     }
     this.layer = (filteredlayers) ? filteredlayers['0'] : this.sld.layers['0'];
-    this.style = this.layer.styles.filter(s => {
-      return (stylename) ? (s.name.toLowerCase() == stylename.toLowerCase) : s.default;
-    })['0'];
+    this.style = this.layer.styles.filter(s => (stylename) ? (s.name.toLowerCase() === stylename.toLowerCase) : s.default)['0'];
   }
 
 
@@ -60,9 +57,9 @@ class Style {
     const result = [];
     const FeatureTypeStyleLength = this.style.featuretypestyles.length;
     for (let i = 0; i < FeatureTypeStyleLength; i += 1) {
-      let fttypestyle = this.style.featuretypestyles[i];
+      const fttypestyle = this.style.featuretypestyles[i];
       for (let j = 0; j < fttypestyle.rules.length; j += 1) {
-        let rule = fttypestyle.rules[j];
+        const rule = fttypestyle.rules[j];
         if (rule.filter) {
           const type = Object.keys(rule.filter)['0'];
           if (Filters[type]) {
@@ -74,11 +71,10 @@ class Style {
           }
         }
       }
-
     }
     return result;
   }
 }
 
 
-export {Style};
+export default Style;

@@ -1,46 +1,46 @@
 /* global describe it expect beforeEach */
-import {Reader} from 'Reader';
-import {sld} from './data/test.sld';
+import Reader from 'Reader';
+import { sld } from './data/test.sld';
 
-var result;
+let result;
 beforeEach(() => {
   result = Reader(sld);
 });
 
-describe('Reads xml', function() {
+describe('Reads xml', () => {
   it('returns object', () => {
     expect(result).to.be.an.instanceof(Object);
     expect(result.version).to.equal('1.0.0');
     expect(result.layers).to.be.an.instanceof(Array);
   });
   it('returns object for the layers', () => {
-    var layernames = ['WaterBodies', 'Roads', 'Cities', 'Land'];
+    const layernames = ['WaterBodies', 'Roads', 'Cities', 'Land'];
     expect(result.layers).to.have.length(4);
-    for (let i in result.layers) {
+    for (const i in result.layers) {
       expect(result.layers[i].name).to.equal(layernames[i]);
     }
   });
-  it('has style for waterbodies', function() {
+  it('has style for waterbodies', () => {
     const wbstyles = result.layers['0'].styles;
     expect(wbstyles).to.be.an.instanceof(Array);
     expect(wbstyles).to.have.length(12);
   });
-  it('style has props', function() {
+  it('style has props', () => {
     const style = result.layers['0'].styles['0'];
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
     expect(style.default).to.be.true;
   });
-  it('featuretypestyles has rules', function() {
+  it('featuretypestyles has rules', () => {
     const featuretypestyle = result.layers['0'].styles['0'].featuretypestyles['0'];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
-  it('rules have filter for featureid', function() {
+  it('rules have filter for featureid', () => {
     const filter = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].filter;
     expect(filter).to.be.an.instanceof(Object);
     expect(filter.featureid).to.be.an.instanceof(Array);
     expect(filter.featureid).to.include('tasmania_water_bodies.2');
   });
-  it('rules have props', function() {
+  it('rules have props', () => {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule.maxscaledenominator).to.equal('3000000');
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
@@ -53,5 +53,4 @@ describe('Reads xml', function() {
     expect(rule.polygonsymbolizer.stroke.css['0']).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.stroke.css['0'].name).to.equal('stroke');
   });
-
 });
