@@ -63,10 +63,12 @@ const parsers = {
   },
   And: addProp,
   Not: addProp,
-  PropertyIsEqualTo: (element, obj) => {
-    obj.propertyisequalto = {};
-    readNode(element, obj.propertyisequalto);
-  },
+  PropertyIsEqualTo: addProp,
+  PropertyIsNotEqualTo: addProp,
+  PropertyIsLessThan: addProp,
+  PropertyIsLessThanOrEqualTo: addProp,
+  PropertyIsGreaterThan: addProp,
+  PropertyIsGreaterThanOrEqualTo: addProp,
   PropertyName: (element, obj) => {
     obj.propertyname = element.textContent;
   },
