@@ -18,15 +18,16 @@ describe('Base styler class', () => {
     expect(s.style.name).to.equal('RoadsDefault');
   });
 
-  it('selects rule', () => {
+  it('selects rule testRuleName for fid 2', () => {
     const rules = s.getRules({ fid: 'tasmania_water_bodies.2' });
     expect(rules).to.be.an.instanceof(Array);
     expect(rules).to.have.lengthOf(1);
     expect(rules[0].name).to.equal('testRuleName');
   });
-  it('does not select rule for other feature name', () => {
+  it('select rule with name testRuleNameElse for other feature', () => {
     const rules = s.getRules({ fid: 'tasmania_water_bodies.5' });
     expect(rules).to.be.an.instanceof(Array);
-    expect(rules).to.have.lengthOf(0);
+    expect(rules).to.have.lengthOf(1);
+    expect(rules[0].name).to.equal('testRuleNameElse');
   });
 });

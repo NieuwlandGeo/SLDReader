@@ -69,6 +69,10 @@ class Style {
           } else {
             throw new Error(`Unkown filter ${type}`);
           }
+        } else if (rule.elsefilter && result.length === 0) {
+          result.push(rule);
+        } else if (!rule.elsefilter) {
+          result.push(rule);
         }
       }
     }

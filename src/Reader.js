@@ -52,6 +52,9 @@ const parsers = {
     obj.filter = {};
     readNode(element, obj.filter);
   },
+  ElseFilter: (element, obj) => {
+    obj.elsefilter = true;
+  },
   FeatureId: (element, obj) => {
     obj.featureid = obj.featureid || [];
     obj.featureid.push(element.getAttribute('fid'));
@@ -134,7 +137,7 @@ export default function Reader(sld) {
 /**
 * @typedef Rule
 * @name Rule
-* @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd xsd}
+* @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
 * @property {string} name rule name
 * @property {Filter} filter
 * @property {PolygonSymbolizer} [polygonsymbolizer]
