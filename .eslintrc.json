@@ -1,6 +1,7 @@
 {
   "extends": [
-    "openlayers"
+    "openlayers",
+    "eslint-config-airbnb-base"
   ],
   "parserOptions": {
     "ecmaVersion": 6,
@@ -11,6 +12,9 @@
   },
   "rules": {
     "quote-props": ["error", "as-needed"],
-    "no-multi-spaces": "error"
+    "no-multi-spaces": "error",
+    "object-shorthand": ["error", "always"],
+    "prefer-template": "error",
+    "prefer-const": "error"
   }
 }
