@@ -1,4 +1,9 @@
 toc:
+  - name: Intro
+    file: "../README.md"
+  - name: Api
+    description: |
+        All classes of this package.
   - OlSLDStyle
   - Style
   - Reader
@@ -7,7 +12,7 @@ toc:
       Types are the javascript representation of the ogc sld structure
   - StyledLayerDescriptor
   - Layer
-  - LineSymbolizer  
+  - LineSymbolizer
   - FeatureTypeStyle
   - Rule
   - Filter

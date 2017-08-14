@@ -1,16 +1,18 @@
 # SLDReader
 
-Under construction
+A javascript package that aims to bring styling from a sld document to popular mapping
+tools.
+
+More information about the standards:
+* [Symbology](http://www.opengeospatial.org/standards/symbol/)
+* [SLD](http://www.opengeospatial.org/standards/sld)
 
 ## Api docs
 
-[Api docs](https://nieuwlandgeo.github.io/SLDReader/)
+[Api docs](https://nieuwlandgeo.github.io/SLDReader#api)
 
 
-## Development
-
-
-### Commands
+## Commands
 
 To, test, build and document
 
