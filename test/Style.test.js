@@ -12,11 +12,6 @@ describe('Base styler class', () => {
   it('reads', () => {
     expect(s.sld.version).to.equal('1.0.0');
   });
-  it('selects layer', () => {
-    s.setStyle('Roads');
-    expect(s.layer.name).to.equal('Roads');
-    expect(s.style.name).to.equal('RoadsDefault');
-  });
 
   it('selects rule testRuleName for fid 2', () => {
     const rules = s.getRules({ fid: 'tasmania_water_bodies.2' });
@@ -30,4 +25,25 @@ describe('Base styler class', () => {
     expect(rules).to.have.lengthOf(1);
     expect(rules[0].name).to.equal('testRuleNameElse');
   });
+
+
+  it('set layer with default style', () => {
+    s.setStyle('Roads');
+    expect(s.layer.name).to.equal('Roads');
+    expect(s.style.name).to.equal('RoadsDefault');
+  });
+
+  it('set style of layer', () => {
+    s.setStyle('WaterBodies', 'Hover Styler');
+    expect(s.layer.name).to.equal('WaterBodies');
+    expect(s.style.name).to.equal('Hover Styler');
+  });
+
+  // it('set testRuleNameHoverElse rule', () => {
+  //   s.setStyle('WaterBodies', 'Hover Styler');
+  //   const rules = s.getRules({ fid: 'tasmania_water_bodies.5' });
+  //   expect(rules).to.be.an.instanceof(Array);
+  //   expect(rules).to.have.lengthOf(1);
+  //   expect(rules[0].name).to.equal('testRuleNameHoverElse');
+  // });
 });

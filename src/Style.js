@@ -41,7 +41,7 @@ class Style {
         (l.name.toLowerCase() === layername.toLowerCase()));
     }
     this.layer = (filteredlayers) ? filteredlayers['0'] : this.sld.layers['0'];
-    this.style = this.layer.styles.filter(s => (stylename) ? (s.name.toLowerCase() === stylename.toLowerCase) : s.default)['0'];
+    this.style = this.layer.styles.filter(s => ((stylename) ? (s.name.toLowerCase() === stylename.toLowerCase()) : s.default))['0'];
   }
 
 
