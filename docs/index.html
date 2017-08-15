@@ -153,16 +153,6 @@
               
                 
                 <li><a
-                  href='#linesymbolizer'
-                  class="">
-                  LineSymbolizer
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
                   href='#featuretypestyle'
                   class="">
                   FeatureTypeStyle
@@ -186,6 +176,16 @@
                   href='#filter'
                   class="">
                   Filter
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#linesymbolizer'
+                  class="">
+                  LineSymbolizer
                   
                 </a>
                 
@@ -713,7 +713,7 @@ After creating an instance you should call the read method.</p>
   </div>
   
 
-  <p>Creates a object from an sld xml string</p>
+  <p>Creates a object from an sld xml string, for internal usage</p>
 
 
   <div class='pre p1 fill-light mt0'>new Reader(sld: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="#styledlayerdescriptor">StyledLayerDescriptor</a></div>
@@ -934,72 +934,6 @@ After creating an instance you should call the read method.</p>
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='linesymbolizer'>
-      LineSymbolizer
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>a typedef for <a href="http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">LineSymbolizer</a></p>
-
-
-  <div class='pre p1 fill-light mt0'>LineSymbolizer</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Properties</div>
-    <div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>stroke</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-          
-          
-            <ul>
-              
-                <li><code>stroke.css</code> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>
-                  
-                  </li>
-              
-            </ul>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
     <h3 class='fl m0' id='featuretypestyle'>
       FeatureTypeStyle
     </h3>
@@ -1094,7 +1028,25 @@ After creating an instance you should call the read method.</p>
         </div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>filter</span> <code class='quiet'>(<a href="#filter">Filter</a>)</code>
+          <span class='code bold'>filter</span> <code class='quiet'>(<a href="#filter">Filter</a>?)</code>
+          
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>elsefilter</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
+          
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>minscaledenominator</span> <code class='quiet'>(integer?)</code>
+          
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>maxscaledenominator</span> <code class='quiet'>(integer?)</code>
           
           
         </div>
@@ -1106,13 +1058,13 @@ After creating an instance you should call the read method.</p>
         </div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>LineSymbolizer</span> <code class='quiet'>(<a href="#linesymbolizer">LineSymbolizer</a>?)</code>
+          <span class='code bold'>linesymbolizer</span> <code class='quiet'>(<a href="#linesymbolizer">LineSymbolizer</a>?)</code>
           
           
         </div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>PointSymbolizer</span> <code class='quiet'>(<a href="#pointsymbolizer">PointSymbolizer</a>?)</code>
+          <span class='code bold'>pointsymbolizer</span> <code class='quiet'>(<a href="#pointsymbolizer">PointSymbolizer</a>?)</code>
           
           
         </div>
@@ -1149,7 +1101,7 @@ After creating an instance you should call the read method.</p>
   </div>
   
 
-  <p>a typedef for Filter to match a feature</p>
+  <p>a typedef for <a href="http://schemas.opengis.net/filter/1.1.0/filter.xsd">ogc filters</a></p>
 
 
   <div class='pre p1 fill-light mt0'>Filter</div>
@@ -1170,18 +1122,103 @@ After creating an instance you should call the read method.</p>
     <div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>type</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-          : filter type, see 
-<a href="http://schemas.opengis.net/filter/1.1.0/filter.xsd">ogc filter</a>
- for possible values
+          <span class='code bold'>featureid</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>?)</code>
+          : filter
 
           
         </div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>value</span> <code class='quiet'>((<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a> | <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>))</code>
-          : depends on type. Array of strings for ogc:_Id, eg FeatureId
+          <span class='code bold'>or</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>?)</code>
+          : filter
 
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>and</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>?)</code>
+          : filter
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>not</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>?)</code>
+          : filter
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>propertyisequalto</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>?)</code>
+          : filter
+
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='linesymbolizer'>
+      LineSymbolizer
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>a typedef for <a href="http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">LineSymbolizer</a></p>
+
+
+  <div class='pre p1 fill-light mt0'>LineSymbolizer</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>stroke</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+          
+          
+            <ul>
+              
+                <li><code>stroke.css</code> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>
+                  
+                  </li>
+              
+            </ul>
           
         </div>
       

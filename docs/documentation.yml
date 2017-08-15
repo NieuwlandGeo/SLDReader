@@ -12,10 +12,10 @@ toc:
       Types are the javascript representation of the ogc sld structure
   - StyledLayerDescriptor
   - Layer
-  - LineSymbolizer
   - FeatureTypeStyle
   - Rule
   - Filter
+  - LineSymbolizer
   - PolygonSymbolizer
   - PointSymbolizer
   - name: Openlayers

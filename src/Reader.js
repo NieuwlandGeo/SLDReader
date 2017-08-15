@@ -1,3 +1,11 @@
+function addPropArray(node, obj, prop) {
+  const property = prop.toLowerCase();
+  obj[property] = obj[property] || [];
+  const item = {};
+  readNode(node, item);
+  obj[property].push(item);
+}
+
 function addProp(node, obj, prop) {
   const property = prop.toLowerCase();
   obj[property] = {};
@@ -55,20 +63,15 @@ const parsers = {
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
   },
-  Or: (element, obj) => {
-    obj.or = obj.or || [];
-    const or = {};
-    readNode(element, or);
-    obj.or.push(or);
-  },
+  Or: addProp,
   And: addProp,
   Not: addProp,
-  PropertyIsEqualTo: addProp,
-  PropertyIsNotEqualTo: addProp,
-  PropertyIsLessThan: addProp,
-  PropertyIsLessThanOrEqualTo: addProp,
-  PropertyIsGreaterThan: addProp,
-  PropertyIsGreaterThanOrEqualTo: addProp,
+  PropertyIsEqualTo: addPropArray,
+  PropertyIsNotEqualTo: addPropArray,
+  PropertyIsLessThan: addPropArray,
+  PropertyIsLessThanOrEqualTo: addPropArray,
+  PropertyIsGreaterThan: addPropArray,
+  PropertyIsGreaterThanOrEqualTo: addPropArray,
   PropertyName: (element, obj) => {
     obj.propertyname = element.textContent;
   },
@@ -159,18 +162,24 @@ export default function Reader(sld) {
 * @name Rule
 * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
 * @property {string} name rule name
-* @property {Filter} filter
+* @property {Filter} [filter]
+* @property {boolean} [elsefilter]
+* @property {integer} [minscaledenominator]
+* @property {integer} [maxscaledenominator]
 * @property {PolygonSymbolizer} [polygonsymbolizer]
-* @property {LineSymbolizer}  [LineSymbolizer]
-* @property {PointSymbolizer} [PointSymbolizer]
+* @property {LineSymbolizer}  [linesymbolizer]
+* @property {PointSymbolizer} [pointsymbolizer]
 * */
 
 /**
 * @typedef Filter
 * @name Filter
-* @description a typedef for Filter to match a feature
-* @property {string} type filter type, see [ogc filter]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) for possible values
-* @property {Object|string|array} value depends on type. Array of strings for ogc:_Id, eg FeatureId
+* @description a typedef for [ogc filters]( http://schemas.opengis.net/filter/1.1.0/filter.xsd)
+* @property {array} [featureid] filter
+* @property {object} [or]  filter
+* @property {object} [and]  filter
+* @property {object} [not]  filter
+* @property {array} [propertyisequalto]  filter
 * */
 
 
