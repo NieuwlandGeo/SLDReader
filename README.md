@@ -9,7 +9,7 @@ More information about the standards:
 
 ## Examples
 
-https://nieuwlandgeo.github.io/SLDReader/examples
+https://nieuwlandgeo.github.io/SLDReader/examples/
 
 ## Api docs
 
