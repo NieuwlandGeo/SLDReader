@@ -5,7 +5,7 @@
   "main": "dist/bundle.js",
   "scripts": {
     "test": "./node_modules/karma/bin/karma start karma.conf.js",
-    "build": "./node_modules/browserify/bin/cmd.js ./src/main.js  -d -o dist/bundle.js -t [babelify --presets es2015] -s SLDReader",
+    "build": "./node_modules/browserify/bin/cmd.js ./src/index.js  -d -o dist/bundle.js -t [babelify --presets es2015] -s SLDReader",
     "docs": "./node_modules/documentation/bin/documentation.js build src/index.js -c docs/documentation.yml -f html --output docs/"
   },
   "bugs": {
