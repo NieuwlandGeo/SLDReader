@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.3.1/ol.css" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" type="text/css">
+    <style>
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        #olmap {
+            height: 50vh;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.3.1/ol.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div id="olmap"></div>
+    </div>
+    <script type="text/javascript">
+        var map = new ol.Map({
+            target: olmap,
+            view: new ol.View({
+                center: [0, 0],
+                zoom: 1
+            })
+        });
+    </script>
+</body>
+
+</html>
