@@ -3,6 +3,8 @@
 A javascript package that aims to bring styling from a sld document to popular mapping
 tools.
 
+NOT READY TO USE, CONTRIBUTIONS WELCOME!
+
 More information about the standards:
 * [Symbology](http://www.opengeospatial.org/standards/symbol/)
 * [SLD](http://www.opengeospatial.org/standards/sld)
