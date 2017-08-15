@@ -39,16 +39,23 @@ describe('Base styler class', () => {
     expect(s.style.name).to.equal('Hover Styler');
   });
 
-  it('set testRuleNameHover rule', () => {
+  it('set testRuleNameHover rule for not matching permimeter and area', () => {
     s.setStyle('WaterBodies', 'Hover Styler');
-    const rules = s.getRules({ PERIMETER: '1', AREA: 1 });
+    const rules = s.getRules({ PERIMETER: '1', AREA: '1065512599' });
     expect(rules).to.be.an.instanceof(Array);
     expect(rules).to.have.lengthOf(1);
     expect(rules[0].name).to.equal('testRuleNameHover');
   });
-  it('set testRuleNameHoverElse rule', () => {
+  it('set testRuleNameHoverElse for perimeter eq 1071304933 rule', () => {
     s.setStyle('WaterBodies', 'Hover Styler');
-    const rules = s.getRules({ PERIMETER: '1071304933', AREA: 1 });
+    const rules = s.getRules({ PERIMETER: '1071304933', AREA: '1065512599' });
+    expect(rules).to.be.an.instanceof(Array);
+    expect(rules).to.have.lengthOf(1);
+    expect(rules[0].name).to.equal('testRuleNameHoverElse');
+  });
+  it('set testRuleNameHoverElse for area <  1065512599 rule', () => {
+    s.setStyle('WaterBodies', 'Hover Styler');
+    const rules = s.getRules({ PERIMETER: '1', AREA: '1' });
     expect(rules).to.be.an.instanceof(Array);
     expect(rules).to.have.lengthOf(1);
     expect(rules[0].name).to.equal('testRuleNameHoverElse');

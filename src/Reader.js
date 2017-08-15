@@ -174,7 +174,7 @@ export default function Reader(sld) {
 /**
 * @typedef Filter
 * @name Filter
-* @description a typedef for [ogc filters]( http://schemas.opengis.net/filter/1.1.0/filter.xsd)
+* @description [ogc filters]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) should have only one prop
 * @property {array} [featureid] filter
 * @property {object} [or]  filter
 * @property {object} [and]  filter
