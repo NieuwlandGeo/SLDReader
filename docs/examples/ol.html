@@ -52,6 +52,20 @@
         var ext = map.getView().calculateExtent();
         map.getView().fit([ -44.048828125, 143.8, -40, 148.5]);
         map.addControl(new ol.control.MousePosition());
+        fetch("sld-tasmania.xml").then(function(response) {
+            return response.text();
+        }).then(function(text) {
+            var styler = new SLDReader.OlSLDStyle();
+            styler.read(text);
+            layers.forEach(function(l) {
+                var layername = l.getSource().getUrl().replace(/\.xml|Tasmania/g,'');
+                if(styler.hasLayer(layername)) {
+                    styler.setStyle(layername);
+                    l.setStyle(styler.styleFunction);
+                }
+            });
+        });
+
     </script>
 </body>
 

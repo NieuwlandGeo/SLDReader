@@ -20,7 +20,7 @@ See docs/examples folder, or run gulp watch
 
 ## Commands
 
-To, install dependecies, test, build and document
+To, install dependencies, test, build and document
 
 ```
 npm install

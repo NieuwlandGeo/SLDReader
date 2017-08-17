@@ -1,4 +1,3 @@
-import OLStyle from 'ol/style/style';
 import Style from './Style';
 
 /**
@@ -13,9 +12,7 @@ class OlSLDStyle extends Style {
    * @return {ol.style.Style} openlayers style
    */
   styleFunction(feature, resolution) {
-    return new OLStyle({
-
-    });
+    console.log(feature, resolution);
   }
 
 }

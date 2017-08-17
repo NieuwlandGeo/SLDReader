@@ -64,6 +64,16 @@ class Style {
     this.sld = Reader(sld);
     this.setStyle(layername, stylename);
   }
+
+  /**
+   * is layer defined in sld?
+   * @return {Boolean} [description]
+   */
+  hasLayer(layername) {
+    const index = this.sld.layers.findIndex(l =>
+      (l.name.toLowerCase() === layername.toLowerCase()));
+    return (index > -1);
+  }
   /**
    * Change selected layer and style from sld to use
    * @param {string} [layername]  Select layer matching lowercased layername
@@ -74,6 +84,9 @@ class Style {
     if (layername) {
       filteredlayers = this.sld.layers.filter(l =>
         (l.name.toLowerCase() === layername.toLowerCase()));
+      if (!filteredlayers.length) {
+        throw Error(`layer ${layername} not found in sld`);
+      }
     }
     this.layer = (filteredlayers) ? filteredlayers['0'] : this.sld.layers['0'];
     this.style = this.layer.styles.filter(s => ((stylename) ? (s.name.toLowerCase() === stylename.toLowerCase()) : s.default))['0'];
