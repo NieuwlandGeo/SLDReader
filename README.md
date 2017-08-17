@@ -11,7 +11,7 @@ More information about the standards:
 
 ## Examples
 
-https://nieuwlandgeo.github.io/SLDReader/examples/
+See docs/examples folder
 
 ## Api docs
 

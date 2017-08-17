@@ -1,7 +1,5 @@
 import OLStyle from 'ol/style/style';
 import Style from './Style';
-// import Fill from 'ol/style/fill';
-// import Stroke from 'ol/style/stroke';
 
 /**
  * The OlSLDStyle class is the entry point for openlayers users.

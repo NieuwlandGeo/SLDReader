@@ -12,7 +12,7 @@
   },
   "rules": {
     "no-param-reassign": [2, { "props": false }],
-    "import/no-extraneous-dependencies": ["error", {"devDependencies": false, "optionalDependencies": false, "peerDependencies": false}],
+    "import/no-extraneous-dependencies": ["error", {"devDependencies": true, "optionalDependencies": false, "peerDependencies": false}],
     "no-use-before-define": ["error","nofunc"]
   }
 }

@@ -1,4 +1,4 @@
-import {OlSLDStyle} from './OlSLDStyle';
+import OlSLDStyle from './OlSLDStyle';
 
 
-export {OlSLDStyle};
+export { OlSLDStyle };
