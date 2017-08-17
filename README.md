@@ -3,7 +3,7 @@
 A javascript package that aims to bring styling from a sld document to popular mapping
 tools.
 
-NOT READY TO USE, CONTRIBUTIONS WELCOME!
+**NOT READY TO USE, CONTRIBUTIONS WELCOME!**
 
 More information about the standards:
 * [Symbology](http://www.opengeospatial.org/standards/symbol/)
@@ -11,7 +11,7 @@ More information about the standards:
 
 ## Examples
 
-See docs/examples folder
+See docs/examples folder, or run gulp watch
 
 ## Api docs
 
@@ -20,9 +20,10 @@ See docs/examples folder
 
 ## Commands
 
-To, test, build and document
+To, install dependecies, test, build and document
 
 ```
+npm install
 npm test
 npm build
 npm run-script docs
