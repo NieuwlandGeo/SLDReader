@@ -25,10 +25,19 @@ gulp.task('build', () => {
     debug: true,
     standalone: 'SLDReader',
   });
-  return b.transform('babelify', { presets: ['es2015'] })
-    .bundle()
-    .pipe(source('bundle.js'))
-    .pipe(buffer())
-    .pipe(gulp.dest('./dist/'))
-    .pipe(connect.reload());
+  return b.transform('babelify', {
+    presets: ['es2015'],
+    plugins: [
+      ['babel-plugin-merge-imports', {
+        pkg: 'openlayers',
+        pkgVar: '__ol',
+        regex: '^ol(?:/(.*))?$',
+      }],
+    ],
+  }).transform('browserify-shim')
+  .bundle()
+  .pipe(source('bundle.js'))
+  .pipe(buffer())
+  .pipe(gulp.dest('./dist/'))
+  .pipe(connect.reload());
 });

@@ -53,6 +53,11 @@ function filterSelector(filter, properties, key = 0) {
  * After creating an instance you should call the read method.
  */
 class Style {
+
+  constructor() {
+    this.getRules = this.getRules.bind(this);
+  }
+
   /**
    * Read xml file
    * @param  {string} sld xml string
