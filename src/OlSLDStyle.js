@@ -3,6 +3,7 @@ import OlFill from 'ol/style/fill';
 import OlCircle from 'ol/style/circle';
 import OlStroke from 'ol/style/stroke';
 import Style from './Style';
+import rulesConverter from './rulesConverter';
 
 
 /**
@@ -22,12 +23,13 @@ class OlSLDStyle extends Style {
    */
   styleFunction(feature, resolution) {
     const rules = this.getRules(feature.getProperties());
+    const style = rulesConverter(rules);
     const fill = new OlFill({
-      color: 'rgba(255,255,255,0.4)',
+      color: style.fillColor,
     });
     const stroke = new OlStroke({
-      color: '#3399CC',
-      width: 1.25,
+      color: style.strokeColor,
+      width: style.strokeWidth,
     });
     const styles = [
       new OlStyle({
