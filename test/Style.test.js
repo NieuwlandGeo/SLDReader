@@ -26,6 +26,13 @@ describe('Base styler class', () => {
     expect(rules[0].name).to.equal('testRuleNameElse');
   });
 
+  it.only('set testRuleNameElse for fid 2 and resolution > 840', () => {
+    const rules = s.getRules({ fid: 'tasmania_water_bodies.2' }, 850);
+    expect(rules).to.be.an.instanceof(Array);
+    expect(rules).to.have.lengthOf(1);
+    expect(rules[0].name).to.equal('testRuleNameElse');
+  });
+
 
   it('set layer with default style', () => {
     s.setStyle('Roads');

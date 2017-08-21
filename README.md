@@ -11,7 +11,13 @@ More information about the standards:
 
 ## Examples
 
-See docs/examples folder, or run gulp watch
+[Live example](https://nieuwlandgeo.github.io/SLDReader/examples)
+
+See docs/examples folder, to serve them locally
+
+```
+gulp watch
+```
 
 ## Api docs
 
