@@ -15,7 +15,8 @@
         }
 
         #olmap {
-            height: 70vh;
+            border: 1px solid;
+            height: 80vh;
         }
     </style>
 
@@ -61,7 +62,7 @@
                 var layername = l.getSource().getUrl().replace(/\.xml|Tasmania/g,'');
                 if(styler.hasLayer(layername)) {
                     styler.setStyle(layername);
-                    l.setStyle(styler.styleFunction);
+                    l.setStyle((feature,resolution) => styler.styleFunction(feature,resolution*111034));
                 }
             });
         });

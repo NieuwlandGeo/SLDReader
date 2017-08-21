@@ -47,6 +47,30 @@ function filterSelector(filter, properties, key = 0) {
   return false;
 }
 
+/**
+ * [scaleSelector description]
+ * The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
+ * @param  {Rule} rule
+ * @param  {number} resolution  m/px
+ * @return {boolean}
+ */
+function scaleSelector(rule, resolution) {
+  if (rule.maxscaledenominator !== undefined && rule.minscaledenominator !== undefined) {
+    if ((resolution / 0.00028) < rule.maxscaledenominator &&
+      (resolution / 0.00028) > rule.minscaledenominator) {
+      return true;
+    }
+    return false;
+  }
+  if (rule.maxscaledenominator !== undefined) {
+    return ((resolution / 0.00028) < rule.maxscaledenominator);
+  }
+  if (rule.minscaledenominator !== undefined) {
+    return ((resolution / 0.00028) > rule.minscaledenominator);
+  }
+  return true;
+}
+
 
 /**
  * Base class for library specific style classes
@@ -101,7 +125,7 @@ class Style {
   /**
    * get sld rules for feature
    * @param  {Object} properties feature properties
-   * @param {number}
+   * @param {number} resolution unit/px
    * @return {Rule} filtered sld rules
    */
   getRules(properties, resolution) {
@@ -114,7 +138,8 @@ class Style {
       const fttypestyle = this.style.featuretypestyles[i];
       for (let j = 0; j < fttypestyle.rules.length; j += 1) {
         const rule = fttypestyle.rules[j];
-        if (rule.filter && filterSelector(rule.filter, properties)) {
+        if (rule.filter && scaleSelector(rule, resolution) &&
+          filterSelector(rule.filter, properties)) {
           result.push(rule);
         } else if (rule.elsefilter && result.length === 0) {
           result.push(rule);

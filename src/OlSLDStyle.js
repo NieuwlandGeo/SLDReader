@@ -18,13 +18,14 @@ class OlSLDStyle extends Style {
   /**
    * An ol.styleFunction
    * @param {ol.Feature} feature openlayers feature to style
-   * @param {number} resolution views resolution
+   * @param {number} resolution views resolution in meters/px, recalculate if your
+   * layer use different units!
    * @return {ol.style.Style} openlayers style
    */
   styleFunction(feature, resolution) {
     const props = feature.getProperties();
     props.fid = feature.getId();
-    const rules = this.getRules(props);
+    const rules = this.getRules(props, resolution);
     const style = rulesConverter(rules);
     const fill = new OlFill({
       color: style.fillColor,
