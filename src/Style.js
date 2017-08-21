@@ -101,9 +101,10 @@ class Style {
   /**
    * get sld rules for feature
    * @param  {Object} properties feature properties
+   * @param {number}
    * @return {Rule} filtered sld rules
    */
-  getRules(properties) {
+  getRules(properties, resolution) {
     if (!this.style) {
       throw new Error('Set a style to use');
     }

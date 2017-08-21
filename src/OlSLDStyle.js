@@ -22,7 +22,9 @@ class OlSLDStyle extends Style {
    * @return {ol.style.Style} openlayers style
    */
   styleFunction(feature, resolution) {
-    const rules = this.getRules(feature.getProperties());
+    const props = feature.getProperties();
+    props.fid = feature.getId();
+    const rules = this.getRules(props);
     const style = rulesConverter(rules);
     const fill = new OlFill({
       color: style.fillColor,
