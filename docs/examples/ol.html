@@ -29,7 +29,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.3.1/ol.js"></script>
     <script src="bundle.js"></script>
     <script type="text/javascript">
-        var sourceurls = ['TasmaniaCities.xml','TasmaniaRoads.xml','TasmaniaStateBoundaries.xml','TasmaniaWaterBodies.xml'];
+        var sourceurls = ['TasmaniaLand.xml','TasmaniaCities.xml','TasmaniaRoads.xml','TasmaniaWaterBodies.xml'];
         var vectorsources = sourceurls.map(function(s) {
             return new ol.source.Vector({
                 format: new ol.format.GML2(),
@@ -62,7 +62,7 @@
                 let layername = l.getSource().getUrl().replace(/\.xml|Tasmania/g,'');
                 if(styler.hasLayer(layername)) {
                     l.setStyle(function(feature,resolution) {
-                        //TODO not in loop                        
+                        //TODO not in loop
                         styler.setStyle(layername);
                         return styler.styleFunction(feature,resolution*111034);
                     });
