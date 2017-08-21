@@ -59,10 +59,13 @@
             var styler = new SLDReader.OlSLDStyle();
             styler.read(text);
             layers.forEach(function(l) {
-                var layername = l.getSource().getUrl().replace(/\.xml|Tasmania/g,'');
+                let layername = l.getSource().getUrl().replace(/\.xml|Tasmania/g,'');
                 if(styler.hasLayer(layername)) {
-                    styler.setStyle(layername);
-                    l.setStyle((feature,resolution) => styler.styleFunction(feature,resolution*111034));
+                    l.setStyle(function(feature,resolution) {
+                        //TODO not in loop                        
+                        styler.setStyle(layername);
+                        return styler.styleFunction(feature,resolution*111034);
+                    });
                 }
             });
         });

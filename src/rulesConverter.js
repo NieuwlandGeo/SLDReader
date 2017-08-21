@@ -14,6 +14,10 @@ function rulesConverter(rules) {
       const stroke = rules[i].polygonsymbolizer.stroke;
       strokeRules(stroke, result);
     }
+    if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
+      const stroke = rules[i].linesymbolizer.stroke;
+      strokeRules(stroke, result);
+    }
   }
   return result;
 }
