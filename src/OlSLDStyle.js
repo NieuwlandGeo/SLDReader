@@ -28,7 +28,8 @@ class OlSLDStyle extends Style {
     const rules = this.getRules(props, resolution);
     const style = rulesConverter(rules);
     const fill = new OlFill({
-      color: (style.fillColor) && hexToRGB(style.fillColor, style.fillOpacity),
+      color: (style.fillOpacity && style.fillColor && style.fillColor.slice(0, 1) === '#')
+        ? hexToRGB(style.fillColor, style.fillOpacity) : style.fillColor,
     });
     const stroke = new OlStroke({
       color: style.strokeColor,
