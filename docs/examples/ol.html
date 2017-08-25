@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.3.1/ol.css" type="text/css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" type="text/css">
     <style>
         html,
         body {
@@ -23,13 +23,29 @@
 </head>
 
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-primary text-white">
+        <div class="container">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link text-white" href="ol.html">openlayers</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
     <div class="container">
         <div id="olmap"></div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.3.1/ol.js"></script>
     <script src="bundle.js"></script>
     <script type="text/javascript">
-        var sourceurls = ['TasmaniaLand.xml','TasmaniaCities.xml','TasmaniaRoads.xml','TasmaniaWaterBodies.xml'];
+        //Coords in gml are xy
+        var proj = new ol.proj.Projection({
+            code: 'http://www.opengis.net/gml/srs/epsg.xml#4326',
+            axis: 'neu'
+        });
+        ol.proj.addEquivalentProjections([ol.proj.get('EPSG:4326'), proj]);
+
+        var sourceurls = ['TasmaniaLand.xml', 'TasmaniaCities.xml', 'TasmaniaRoads.xml', 'TasmaniaWaterBodies.xml'];
         var vectorsources = sourceurls.map(function(s) {
             return new ol.source.Vector({
                 format: new ol.format.GML2(),
@@ -38,20 +54,20 @@
         });
         var layers = vectorsources.map(function(s) {
             return new ol.layer.Vector({
-                source:s
+                source: s
             });
         })
         var map = new ol.Map({
             target: olmap,
             view: new ol.View({
-                center: [ -40,143],
-                zoom: 5,
+                center: [145, -44],
+                zoom: 12,
                 projection: 'EPSG:4326'
             }),
             layers: layers
         });
-        var ext = map.getView().calculateExtent();
-        map.getView().fit([ -44.048828125, 143.8, -40, 148.5]);
+        // var ext = map.getView().calculateExtent();
+        map.getView().fit([143.8, -44.048828125, 148.5, -40]);
         map.addControl(new ol.control.MousePosition());
         fetch("sld-tasmania.xml").then(function(response) {
             return response.text();
@@ -59,17 +75,16 @@
             var styler = new SLDReader.OlSLDStyle();
             styler.read(text);
             layers.forEach(function(l) {
-                let layername = l.getSource().getUrl().replace(/\.xml|Tasmania/g,'');
-                if(styler.hasLayer(layername)) {
-                    l.setStyle(function(feature,resolution) {
+                let layername = l.getSource().getUrl().replace(/\.xml|Tasmania/g, '');
+                if (styler.hasLayer(layername)) {
+                    l.setStyle(function(feature, resolution) {
                         //TODO not in loop
                         styler.setStyle(layername);
-                        return styler.styleFunction(feature,resolution*111034);
+                        return styler.styleFunction(feature, resolution * 111034);
                     });
                 }
             });
         });
-
     </script>
 </body>
 
