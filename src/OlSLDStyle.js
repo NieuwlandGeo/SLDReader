@@ -28,7 +28,7 @@ class OlSLDStyle extends Style {
     const rules = this.getRules(props, resolution);
     const style = rulesConverter(rules);
     const fill = new OlFill({
-      color: style.fillColor,
+      color: (style.fillColor) ? hexToRGB(style.fillColor, style.fillOpacity) : undefined,
     });
     const stroke = new OlStroke({
       color: style.strokeColor,
@@ -53,6 +53,21 @@ class OlSLDStyle extends Style {
 
 export default OlSLDStyle;
 
+/**
+ * @private
+ * @param  {string} hex   eg #AA00FF
+ * @param  {Number} alpha eg 0.5
+ * @return {string}       rgba(0,0,0,0)
+ */
+function hexToRGB(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  if (alpha) {
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return `rgb(${r}, ${g}, ${b})`;
+}
 
  /**
   * Openlayers stylefunction
