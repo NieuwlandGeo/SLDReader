@@ -28,11 +28,15 @@ class OlSLDStyle extends Style {
     const rules = this.getRules(props, resolution);
     const style = rulesConverter(rules);
     const fill = new OlFill({
-      color: (style.fillColor) ? hexToRGB(style.fillColor, style.fillOpacity) : undefined,
+      color: (style.fillColor) && hexToRGB(style.fillColor, style.fillOpacity),
     });
     const stroke = new OlStroke({
       color: style.strokeColor,
       width: style.strokeWidth,
+      lineCap: (style.strokeLinecap) && style.strokeDasharray,
+      lineDash: (style.strokeDasharray) && style.strokeDasharray.split(' '),
+      lineDashOffset: (style.strokeDashoffset) && style.strokeDashoffset,
+      lineJoin: (style.strokeLinejoin) && style.strokeLinejoin,
     });
     const styles = [
       new OlStyle({

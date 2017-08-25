@@ -28,13 +28,10 @@ function strokeRules(stroke, result) {
       case 'stroke':
         result.strokeColor = stroke.css[j].value;
         break;
-      case 'stroke-opacity':
-        result.strokeOpacity = stroke.css[j].value;
-        break;
-      case 'stroke-width':
-        result.strokeWidth = stroke.css[j].value;
-        break;
-      default:
+      default: {
+        const key = stroke.css[j].name.toLowerCase().replace(/-(.)/g, (match, group1) => group1.toUpperCase());
+        result[key] = stroke.css[j].value;
+      }
     }
   }
 }
