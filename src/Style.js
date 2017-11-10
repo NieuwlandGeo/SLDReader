@@ -96,12 +96,21 @@ class Style {
 
   /**
    * is layer defined in sld?
+   * @deprecated use getLayer
    * @return {Boolean} [description]
    */
   hasLayer(layername) {
-    const index = this.sld.layers.findIndex(l =>
-      (l.name.toLowerCase() === layername.toLowerCase()));
-    return (index > -1);
+    return (this.getLayer(layername));
+  }
+
+
+  getLayer(layername) {
+    for (let i = 0; i < this.sld.layers.length; i += 1) {
+      if (this.sld.layers[i].name.toLowerCase() === layername.toLowerCase()) {
+        return this.sld.layers[i];
+      }
+    }
+    return false;
   }
   /**
    * Change selected layer and style from sld to use
@@ -109,15 +118,7 @@ class Style {
    * @param {string} [stylename] style to use
    */
   setStyle(layername, stylename) {
-    let filteredlayers;
-    if (layername) {
-      filteredlayers = this.sld.layers.filter(l =>
-        (l.name.toLowerCase() === layername.toLowerCase()));
-      if (!filteredlayers.length) {
-        throw Error(`layer ${layername} not found in sld`);
-      }
-    }
-    this.layer = (filteredlayers) ? filteredlayers['0'] : this.sld.layers['0'];
+    this.layer = (layername) ? this.getLayer(layername) : this.sld.layers['0'];
     this.style = this.layer.styles.filter(s => ((stylename) ? (s.name.toLowerCase() === stylename.toLowerCase()) : s.default))['0'];
   }
 
