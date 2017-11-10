@@ -1,3 +1,10 @@
+/**
+ * Generic parser for elements with maxOccurs > 1
+ * @private
+ * @param {Element} node the xml element to parse
+ * @param {object} obj  the object to modify
+ * @param {string} prop key on obj to hold array
+ */
 function addPropArray(node, obj, prop) {
   const property = prop.toLowerCase();
   obj[property] = obj[property] || [];
@@ -6,6 +13,13 @@ function addPropArray(node, obj, prop) {
   obj[property].push(item);
 }
 
+/**
+ * Generic parser fir maxOccurs = 1
+ * @private
+ * @param {Element} node the xml element to parse
+ * @param {object} obj  the object to modify
+ * @param {string} prop key on obj to hold empty object
+ */
 function addProp(node, obj, prop) {
   const property = prop.toLowerCase();
   obj[property] = {};
