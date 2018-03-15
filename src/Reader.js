@@ -181,7 +181,9 @@ export default function Reader(sld) {
  * @property {string} name layer name
  * @property {Object[]} styles See explanation at [Geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html)
  * @property {Boolean} styles[].default
- * @property {FeatureTypeStyle[]} styles[].featuretypestyles
+ * @property {String} [styles[].name]
+ * @property {FeatureTypeStyle[]} styles[].featuretypestyles Geoserver will draw multiple,
+ * libraries as openlayers can only use one definition!
  */
 
 /**
