@@ -1,3 +1,4 @@
+import { scaleSelector, filterSelector } from './Filter';
 /**
  * get all layer names in sld
  * @param {StyledLayerDescriptor} sld
@@ -30,18 +31,33 @@ export function getStyleNames(layer) {
  * null is no style found
  * @param  {Layer} layer [description]
  * @param {string} name of style
- * @return {FeatureTypeStyle[]}       [description]
+ * @return {object} the style with matching name
  */
 export function getStyle(layer, name) {
-  return layer.styles.find(s => s.name === name);
+  if (name) {
+    return layer.styles.find(s => s.name === name);
+  }
+  return layer.styles.find(s => s.default);
 }
 
 /**
- * get rule for feature, it uses last FeatureTypeStyle matching
- * @param  {FeatureTypeStyle[]} styles [description]
+ * get rules for specific feature after applying filters
+ * @param  {FeatureTypeStyle} featureTypeStyle [description]
  * @param  {object} feature          a geojson feature
- * @return {Rule}
+ * @return {Rule[]}
  */
-export function getFeatureTypeStyle(styles, feature) {
+export function getRules(featureTypeStyle, feature, resolution) {
   const { properties } = feature;
+  const result = [];
+  for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
+    const rule = featureTypeStyle.rules[j];
+    if (rule.filter && scaleSelector(rule, resolution) && filterSelector(rule.filter, properties)) {
+      result.push(rule);
+    } else if (rule.elsefilter && result.length === 0) {
+      result.push(rule);
+    } else if (!rule.elsefilter && !rule.filter) {
+      result.push(rule);
+    }
+  }
+  return result;
 }
