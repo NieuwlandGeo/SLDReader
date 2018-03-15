@@ -1,3 +1,4 @@
-export { Reader } from './Reader';
-export * from './Filter';
+import Reader from './Reader';
+
 export * from './Utils';
+export { Reader };

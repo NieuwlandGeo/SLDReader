@@ -2,29 +2,57 @@
 <html>
 
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" type="text/css">
+  <title>Openlayers SLD Example</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.3.1/ol.css" type="text/css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" type="text/css">
+  <style>
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    #olmap {
+      border: 1px solid;
+      height: 80vh;
+    }
+  </style>
+
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-primary text-white">
-        <div class="container">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link text-white" href="ol.html">openlayers</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+  <nav class="navbar navbar-expand-lg navbar-light bg-primary text-white">
     <div class="container">
-      <ul>
-          <li>
-              <a class="" href="ol.html">openlayers</a>
-          </li>
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link text-white" href="ol.html">openlayers</a>
+        </li>
       </ul>
     </div>
+  </nav>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="form-group">
+          <label for="style_chooser">Choose a style for the waterbodies</label>
+          <select id="style_chooser" class="form-control">
+
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <div id="olmap"></div>
+      </div>
+    </div>
+    Example tries to replicate <a href="http://dev.openlayers.org/releases/OpenLayers-2.13.1/examples/sld.html">openlayer 2.13 example</a>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.3.1/ol.js"></script>
+  <script src="bundle.js"></script>
+  <script src="ol.js"></script>
 </body>
 
 </html>
