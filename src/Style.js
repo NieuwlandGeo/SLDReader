@@ -124,7 +124,7 @@ class Style {
 
 
   /**
-   * get sld rules for feature
+   * get sld rules for currently selected style
    * @param  {Object} properties feature properties
    * @param {number} resolution unit/px
    * @return {Rule} filtered sld rules

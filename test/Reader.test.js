@@ -1,5 +1,5 @@
 /* global describe it expect beforeEach */
-import Reader from 'Reader';
+import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 
 let result;
@@ -16,7 +16,7 @@ describe('Reads xml', () => {
   it('returns object for the layers', () => {
     const layernames = ['WaterBodies', 'Roads', 'Cities', 'Land'];
     expect(result.layers).to.have.length(4);
-    for (const i in result.layers) {
+    for (let i = 0; i < result.layers.length; i += 1) {
       expect(result.layers[i].name).to.equal(layernames[i]);
     }
   });

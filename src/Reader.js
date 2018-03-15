@@ -28,11 +28,25 @@ function addProp(node, obj, prop) {
   readNode(node, obj[property]);
 }
 
+/**
+ * recieves textcontent of element with tagName
+ * @private
+ * @param  {Element} element [description]
+ * @param  {string} tagName [description]
+ * @return {string}
+ */
 function getText(element, tagName) {
   const collection = element.getElementsByTagName(tagName);
   return collection.length ? collection.item(0).textContent : '';
 }
 
+/**
+ * recieves boolean of element with tagName
+ * @private
+ * @param  {Element} element [description]
+ * @param  {string} tagName [description]
+ * @return {boolean}
+ */
 function getBool(element, tagName) {
   const collection = element.getElementsByTagName(tagName);
   if (collection.length) {
@@ -41,17 +55,17 @@ function getBool(element, tagName) {
   return false;
 }
 
+/**
+ * Each propname is a tag in the sld that should be converted to plain object
+ * @private
+ * @type {Object}
+ */
 const parsers = {
   NamedLayer: (element, obj) => {
-    obj.layers = obj.layers || [];
-    const layer = {
-      // name: getText(element, 'sld:Name'),
-      styles: [],
-    };
-    readNode(element, layer);
-    obj.layers.push(layer);
+    addPropArray(element, obj, 'layers');
   },
   UserStyle: (element, obj) => {
+    obj.styles = obj.styles || [];
     const style = {
       // name: getText(element, 'sld:Name'),
       default: getBool(element, 'sld:IsDefault'),
