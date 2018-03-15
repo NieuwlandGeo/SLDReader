@@ -3,9 +3,9 @@
 function styleSelector(sldObject) {
   const layer = SLDReader.getLayer(sldObject, 'WaterBodies');
   const styleNames = SLDReader.getStyleNames(layer);
-  var chooser = document.getElementById('style_chooser');
+  const chooser = document.getElementById('style_chooser');
   for (let i = 0; i < styleNames.length; i += 1) {
-    var newOption = document.createElement('option');
+    const newOption = document.createElement('option');
     newOption.value = styleNames[i];
     newOption.text = styleNames[i];
     chooser.add(newOption);
@@ -37,6 +37,7 @@ const layers = vectorsources.map(
       source: s,
     }),
 );
+
 const map = new ol.Map({
   target: 'olmap',
   view: new ol.View({
@@ -52,16 +53,22 @@ map.addControl(new ol.control.MousePosition());
 fetch('sld-tasmania.xml')
   .then(response => response.text())
   .then(text => {
-    console.log(SLDReader);
     const sldObject = SLDReader.Reader(text);
     styleSelector(sldObject);
-    // layers.forEach((l) => {
-    //   const layername = l.getSource().getUrl().replace(/\.xml|Tasmania/g, '');
-    //   if (styler.hasLayer(layername)) {
-    //     l.setStyle((feature, resolution) => {
-    //       styler.setStyle(layername);
-    //       return styler.styleFunction(feature, resolution * 111034);
-    //     });
-    //   }
-    // });
+    layers.forEach(l => {
+      const layername = l
+        .getSource()
+        .getUrl()
+        .replace(/\.xml|Tasmania/g, '');
+      const sldLayer = SLDReader.getLayer(sldObject, layername);
+      if (sldLayer) {
+        const style = SLDReader.getStyle(sldLayer);
+        const format = new ol.format.GeoJSON();
+        l.setStyle((feature, resolution) => {
+          const geojson = JSON.parse(format.writeFeature(feature));
+          const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, resolution);
+          return SLDReader.OlStyler(ol.style, SLDReader.rulesConverter(rules));
+        });
+      }
+    });
   });

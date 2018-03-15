@@ -1,4 +1,5 @@
 /**
+ * TODO write typedef for return value better function names
  * @private
  * @param  {Rule[]} rules [description]
  * @return {object}       see leaflet path for inspiration
@@ -29,7 +30,9 @@ function strokeRules(stroke, result) {
         result.strokeColor = stroke.css[j].value;
         break;
       default: {
-        const key = stroke.css[j].name.toLowerCase().replace(/-(.)/g, (match, group1) => group1.toUpperCase());
+        const key = stroke.css[j].name
+          .toLowerCase()
+          .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
         result[key] = stroke.css[j].value;
       }
     }
@@ -56,6 +59,5 @@ function fillRules(fill, result) {
     }
   }
 }
-
 
 export default rulesConverter;
