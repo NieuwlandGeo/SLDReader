@@ -45,83 +45,79 @@
               
                 
                 <li><a
-                  href='#olsldstyle'
-                  class=" toggle-sibling">
-                  OlSLDStyle
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  
-                    <ul class='list-reset py1-ul pl1'>
-                      <li class='h5'><span>Instance members</span></li>
-                      
-                      <li><a
-                        href='#OlSLDStyle#styleFunction'
-                        class='regular pre-open'>
-                        #styleFunction
-                      </a></li>
-                      
-                    </ul>
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#style'
-                  class=" toggle-sibling">
-                  Style
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  
-                    <ul class='list-reset py1-ul pl1'>
-                      <li class='h5'><span>Instance members</span></li>
-                      
-                      <li><a
-                        href='#Style#read'
-                        class='regular pre-open'>
-                        #read
-                      </a></li>
-                      
-                      <li><a
-                        href='#Style#hasLayer'
-                        class='regular pre-open'>
-                        #hasLayer
-                      </a></li>
-                      
-                      <li><a
-                        href='#Style#setStyle'
-                        class='regular pre-open'>
-                        #setStyle
-                      </a></li>
-                      
-                      <li><a
-                        href='#Style#getRules'
-                        class='regular pre-open'>
-                        #getRules
-                      </a></li>
-                      
-                    </ul>
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
                   href='#reader'
                   class="">
                   Reader
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getlayernames'
+                  class="">
+                  getLayerNames
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getlayer'
+                  class="">
+                  getLayer
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getstylenames'
+                  class="">
+                  getStyleNames
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getstyle'
+                  class="">
+                  getStyle
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getrules'
+                  class="">
+                  getRules
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#getstyledescription'
+                  class="">
+                  getStyleDescription
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#olstyler'
+                  class="">
+                  OlStyler
                   
                 </a>
                 
@@ -219,29 +215,19 @@
               
                 
                 <li><a
-                  href='#openlayers'
-                  class="h5 bold black caps">
-                  Openlayers
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#olstylefunction'
-                  class="">
-                  ol.StyleFunction
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
                   href='#scaleselector'
                   class="">
                   scaleSelector
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#styledescription'
+                  class="">
+                  StyleDescription
                   
                 </a>
                 
@@ -314,499 +300,6 @@ npm run-script docs
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='olsldstyle'>
-      OlSLDStyle
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>The OlSLDStyle class is the entry point for openlayers users.</p>
-
-
-  <div class='pre p1 fill-light mt0'>new OlSLDStyle()</div>
-  
-  
-    <p>
-      Extends
-      
-        <a href="#style">Style</a>
-      
-    </p>
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='OlSLDStyle#styleFunction'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>styleFunction(feature, resolution)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>An ol.styleFunction</p>
-
-
-  <div class='pre p1 fill-light mt0'>styleFunction(feature: ol.Feature, resolution: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): ol.style.Style</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>feature</span> <code class='quiet'>(ol.Feature)</code>
-	    openlayers feature to style
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>resolution</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    views resolution in meters/px, recalculate if your
-layer use different units!
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>ol.style.Style</code>:
-        openlayers style
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-</div>
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='style'>
-      Style
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>Base class for library specific style classes
-After creating an instance you should call the read method.</p>
-
-
-  <div class='pre p1 fill-light mt0'>new Style()</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='Style#read'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>read(sld, layername?, stylename?)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Read xml file</p>
-
-
-  <div class='pre p1 fill-light mt0'>read(sld: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, layername: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?, stylename: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>sld</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    xml string
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>layername</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
-	    Select layer matching case insensitive, defaults to first layer
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>stylename</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
-	    Select style case insensitive, defaults to first style
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>:
-        
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='Style#hasLayer'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>hasLayer(layername)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>is layer defined in sld?</p>
-
-
-  <div class='pre p1 fill-light mt0'>hasLayer(layername: any): <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">Boolean</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>layername</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">Boolean</a></code>:
-        [
-description
-]
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='Style#setStyle'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setStyle(layername?, stylename?)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Change selected layer and style from sld to use</p>
-
-
-  <div class='pre p1 fill-light mt0'>setStyle(layername: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?, stylename: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>layername</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
-	    Select layer matching lowercased layername
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>stylename</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?)</code>
-	    style to use
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='Style#getRules'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getRules(properties, resolution)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>get sld rules for feature</p>
-
-
-  <div class='pre p1 fill-light mt0'>getRules(properties: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, resolution: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="#rule">Rule</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>properties</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-	    feature properties
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>resolution</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    unit/px
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#rule">Rule</a></code>:
-        filtered sld rules
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-</div>
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
     <h3 class='fl m0' id='reader'>
       Reader
     </h3>
@@ -852,6 +345,550 @@ description
       <div class='py1 quiet mt1 prose-big'>Returns</div>
       <code><a href="#styledlayerdescriptor">StyledLayerDescriptor</a></code>:
         object representing sld style
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getlayernames'>
+      getLayerNames
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>get all layer names in sld</p>
+
+
+  <div class='pre p1 fill-light mt0'>getLayerNames(sld: <a href="#styledlayerdescriptor">StyledLayerDescriptor</a>): <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>sld</span> <code class='quiet'>(<a href="#styledlayerdescriptor">StyledLayerDescriptor</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>></code>:
+        registered layernames
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getlayer'>
+      getLayer
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>getlayer with name</p>
+
+
+  <div class='pre p1 fill-light mt0'>getLayer(sld: <a href="#styledlayerdescriptor">StyledLayerDescriptor</a>, layername: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="#layer">Layer</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>sld</span> <code class='quiet'>(<a href="#styledlayerdescriptor">StyledLayerDescriptor</a>)</code>
+	    [
+description
+]
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>layername</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    [
+description
+]
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#layer">Layer</a></code>:
+        [
+description
+]
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getstylenames'>
+      getStyleNames
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>getStyleNames, notice name is not required for userstyle, you might get undefined</p>
+
+
+  <div class='pre p1 fill-light mt0'>getStyleNames(layer: <a href="#layer">Layer</a>): <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>layer</span> <code class='quiet'>(<a href="#layer">Layer</a>)</code>
+	    [
+description
+]
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>></code>:
+        [
+description
+]
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getstyle'>
+      getStyle
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>get style, if name is undefined it returns default style.
+null is no style found</p>
+
+
+  <div class='pre p1 fill-light mt0'>getStyle(layer: <a href="#layer">Layer</a>, name: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>layer</span> <code class='quiet'>(<a href="#layer">Layer</a>)</code>
+	    [
+description
+]
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    of style
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>:
+        the style with matching name
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getrules'>
+      getRules
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>get rules for specific feature after applying filters</p>
+
+
+  <div class='pre p1 fill-light mt0'>getRules(featureTypeStyle: <a href="#featuretypestyle">FeatureTypeStyle</a>, feature: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>, resolution: any): <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#rule">Rule</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>featureTypeStyle</span> <code class='quiet'>(<a href="#featuretypestyle">FeatureTypeStyle</a>)</code>
+	    [
+description
+]
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>feature</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>)</code>
+	    a geojson feature
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>resolution</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#rule">Rule</a>></code>:
+        
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='getstyledescription'>
+      getStyleDescription
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>TODO write typedef for return value better function names</p>
+
+
+  <div class='pre p1 fill-light mt0'>getStyleDescription(rules: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#rule">Rule</a>>): <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>rules</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#rule">Rule</a>>)</code>
+	    [
+description
+]
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>:
+        see leaflet path for inspiration
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='olstyler'>
+      OlStyler
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Create openlayers style from object returned by rulesConverter</p>
+
+
+  <div class='pre p1 fill-light mt0'>new OlStyler(olstyle: ol.style, styleDescription: <a href="#styledescription">StyleDescription</a>): any</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>olstyle</span> <code class='quiet'>(ol.style)</code>
+	    ol.style 
+<a href="http://openlayers.org/en/latest/apidoc/ol.style.html">http://openlayers.org/en/latest/apidoc/ol.style.html</a>
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>styleDescription</span> <code class='quiet'>(<a href="#styledescription">StyleDescription</a>)</code>
+	    rulesconverter
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>any</code>:
+        ol.Style.Style
 
       
     
@@ -1004,9 +1041,15 @@ description
                   
                   </li>
               
-                <li><code>styles[].featuretypestyles</code> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#featuretypestyle">FeatureTypeStyle</a>>
+                <li><code>styles[].name</code> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">String</a>?
                   
                   </li>
+              
+                <li><code>styles[].featuretypestyles</code> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#featuretypestyle">FeatureTypeStyle</a>>
+                  
+                  <p>Geoserver will draw multiple,
+libraries as openlayers can only use one definition!</p>
+</li>
               
             </ul>
           
@@ -1224,9 +1267,8 @@ description
     <div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>featureid</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>?)</code>
-          : filter
-
+          <span class='code bold'>featureid</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>?)</code>
+          
           
         </div>
       
@@ -1252,8 +1294,15 @@ description
         </div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>propertyisequalto</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a>?)</code>
-          : filter
+          <span class='code bold'>propertyisequalto</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>>?)</code>
+          : propertyname &#x26; literal
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>propertyislessthan</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>>?)</code>
+          : propertyname &#x26; literal
 
           
         </div>
@@ -1489,68 +1538,6 @@ description
           
         
           
-            <div class='keyline-top-not py2'><section class='py2 clearfix'>
-
-  <h2 id='openlayers' class='mt0'>
-    Openlayers
-  </h2>
-
-  
-    <p>Used openlayers classes</p>
-
-  
-</section>
-</div>
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='olstylefunction'>
-      ol.StyleFunction
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>Openlayers stylefunction</p>
-
-
-  <div class='pre p1 fill-light mt0'>ol.StyleFunction</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
             <section class='p2 mb2 clearfix bg-white minishadow'>
 
   
@@ -1613,6 +1600,70 @@ The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm</p>
 
       
     
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='styledescription'>
+      StyleDescription
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>a flat object of props extracted from an array of rul;es</p>
+
+
+  <div class='pre p1 fill-light mt0'>StyleDescription</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>fillColor</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>fillOpacity</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          
+          
+        </div>
+      
+    </div>
+  
+
   
 
   
