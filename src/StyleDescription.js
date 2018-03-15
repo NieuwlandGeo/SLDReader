@@ -1,9 +1,9 @@
 /**
- * @private
+ * TODO write typedef for return value better function names
  * @param  {Rule[]} rules [description]
  * @return {object}       see leaflet path for inspiration
  */
-function rulesConverter(rules) {
+function getStyleDescription(rules) {
   const result = {};
   for (let i = 0; i < rules.length; i += 1) {
     if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.fill) {
@@ -29,7 +29,9 @@ function strokeRules(stroke, result) {
         result.strokeColor = stroke.css[j].value;
         break;
       default: {
-        const key = stroke.css[j].name.toLowerCase().replace(/-(.)/g, (match, group1) => group1.toUpperCase());
+        const key = stroke.css[j].name
+          .toLowerCase()
+          .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
         result[key] = stroke.css[j].value;
       }
     }
@@ -57,5 +59,12 @@ function fillRules(fill, result) {
   }
 }
 
+export default getStyleDescription;
 
-export default rulesConverter;
+/**
+ * @typedef StyleDescription
+ * @name StyleDescription
+ * @description a flat object of props extracted from an array of rul;es
+ * @property {string} fillColor
+ * @property {string} fillOpacity
+ */

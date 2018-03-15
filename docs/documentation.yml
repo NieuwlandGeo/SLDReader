@@ -4,9 +4,14 @@ toc:
   - name: Api
     description: |
         All classes of this package.
-  - OlSLDStyle
-  - Style
   - Reader
+  - getLayerNames
+  - getLayer
+  - getStyleNames
+  - getStyle
+  - getRules  
+  - getStyleDescription
+  - OlStyler
   - name: Types
     description: |
       Types are the javascript representation of the ogc sld structure
@@ -18,7 +23,3 @@ toc:
   - LineSymbolizer
   - PolygonSymbolizer
   - PointSymbolizer
-  - name: Openlayers
-    description: |
-      Used openlayers classes
-  - ol.StyleFunction

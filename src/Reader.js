@@ -181,7 +181,9 @@ export default function Reader(sld) {
  * @property {string} name layer name
  * @property {Object[]} styles See explanation at [Geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html)
  * @property {Boolean} styles[].default
- * @property {FeatureTypeStyle[]} styles[].featuretypestyles
+ * @property {String} [styles[].name]
+ * @property {FeatureTypeStyle[]} styles[].featuretypestyles Geoserver will draw multiple,
+ * libraries as openlayers can only use one definition!
  */
 
 /**
@@ -209,11 +211,12 @@ export default function Reader(sld) {
  * @typedef Filter
  * @name Filter
  * @description [ogc filters]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) should have only one prop
- * @property {array} [featureid] filter
+ * @property {string[]} [featureid]
  * @property {object} [or]  filter
  * @property {object} [and]  filter
  * @property {object} [not]  filter
- * @property {array} [propertyisequalto]  filter
+ * @property {object[]} [propertyisequalto]  propertyname & literal
+ * @property {object[]} [propertyislessthan]  propertyname & literal
  * */
 
 /**

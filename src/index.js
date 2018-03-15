@@ -1,4 +1,6 @@
-import OlSLDStyle from './OlSLDStyle';
+import Reader from './Reader';
+import OlStyler from './OlStyler';
+import getStyleDescription from './StyleDescription';
 
-
-export { OlSLDStyle };
+export * from './Utils';
+export { Reader, getStyleDescription, OlStyler };
