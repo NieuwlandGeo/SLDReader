@@ -4,7 +4,7 @@
  * @param  {Rule[]} rules [description]
  * @return {object}       see leaflet path for inspiration
  */
-function rulesConverter(rules) {
+function getStyleDescription(rules) {
   const result = {};
   for (let i = 0; i < rules.length; i += 1) {
     if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.fill) {
@@ -60,4 +60,12 @@ function fillRules(fill, result) {
   }
 }
 
-export default rulesConverter;
+export default getStyleDescription;
+
+/**
+ * @typedef StyleDescription
+ * @name StyleDescription
+ * @description a flat object of props extracted from an array of rul;es
+ * @property {string} fillColor
+ * @property {string} fillOpacity
+ */

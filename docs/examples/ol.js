@@ -67,7 +67,7 @@ fetch('sld-tasmania.xml')
         l.setStyle((feature, resolution) => {
           const geojson = JSON.parse(format.writeFeature(feature));
           const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, resolution);
-          return SLDReader.OlStyler(ol.style, SLDReader.rulesConverter(rules));
+          return SLDReader.OlStyler(ol.style, SLDReader.getStyleDescription(rules));
         });
       }
     });
