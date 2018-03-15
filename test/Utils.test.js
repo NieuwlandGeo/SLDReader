@@ -1,7 +1,7 @@
 /* global describe it expect */
 import * as Utils from '../src/Utils';
 
-describe.only('reads info from StyledLayerDescriptor object', () => {
+describe('reads info from StyledLayerDescriptor object', () => {
   it('get layer names', () => {
     const sld = {
       layers: [

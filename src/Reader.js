@@ -211,11 +211,12 @@ export default function Reader(sld) {
  * @typedef Filter
  * @name Filter
  * @description [ogc filters]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) should have only one prop
- * @property {array} [featureid] filter
+ * @property {string[]} [featureid]
  * @property {object} [or]  filter
  * @property {object} [and]  filter
  * @property {object} [not]  filter
- * @property {array} [propertyisequalto]  filter
+ * @property {object[]} [propertyisequalto]  propertyname & literal
+ * @property {object[]} [propertyislessthan]  propertyname & literal
  * */
 
 /**
