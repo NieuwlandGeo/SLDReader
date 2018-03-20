@@ -36,7 +36,7 @@ function addProp(node, obj, prop) {
  * @return {string}
  */
 function getText(element, tagName) {
-  const collection = element.getElementsByTagName(tagName);
+  const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
   return collection.length ? collection.item(0).textContent : '';
 }
 
@@ -48,7 +48,7 @@ function getText(element, tagName) {
  * @return {boolean}
  */
 function getBool(element, tagName) {
-  const collection = element.getElementsByTagName(tagName);
+  const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
   if (collection.length) {
     return Boolean(collection.item(0).textContent);
   }
@@ -67,8 +67,7 @@ const parsers = {
   UserStyle: (element, obj) => {
     obj.styles = obj.styles || [];
     const style = {
-      // name: getText(element, 'sld:Name'),
-      default: getBool(element, 'sld:IsDefault'),
+      default: getBool(element, 'IsDefault'),
       featuretypestyles: [],
     };
     readNode(element, style);
