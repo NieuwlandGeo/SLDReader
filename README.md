@@ -6,6 +6,7 @@ tools.
 **NOT READY TO USE, CONTRIBUTIONS WELCOME!**
 
 More information about the standards:
+
 * [Symbology](http://www.opengeospatial.org/standards/symbol/)
 * [SLD](http://www.opengeospatial.org/standards/sld)
 
@@ -23,6 +24,9 @@ gulp watch
 
 [Api docs](https://nieuwlandgeo.github.io/SLDReader#api)
 
+## Browsers
+
+Some older browsers like IE need polyfills! E.g. array.prototype.find
 
 ## Commands
 

@@ -10,8 +10,8 @@ module.exports = function (config) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['browserify', 'mocha', 'chai'],
 
-    // list of files / patterns to load in the browser
-    files: ['test/**/*.test.js'],
+    // list of files / patterns to load in the browser, includes polyfill
+    files: ['node_modules/babel-polyfill/dist/polyfill.js', 'test/**/*.test.js'],
 
     // list of files to exclude
     exclude: [],
