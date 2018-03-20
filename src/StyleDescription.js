@@ -1,7 +1,7 @@
 /**
  * TODO write typedef for return value better function names
  * @param  {Rule[]} rules [description]
- * @return {object}       see leaflet path for inspiration
+ * @return {StyleDescription}
  */
 function getStyleDescription(rules) {
   const result = {};

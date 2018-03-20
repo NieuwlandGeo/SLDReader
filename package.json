@@ -7,7 +7,8 @@
     "prepublish": "npm run doc && npm run build",
     "test": "./node_modules/karma/bin/karma start karma.conf.js",
     "build": "gulp build",
-    "docs": "./node_modules/documentation/bin/documentation.js build src/index.js -c docs/documentation.yml -f html --output docs/ && cp dist/bundle.js docs/examples/"
+    "docs":
+      "documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md && cp dist/bundle.js docs/examples/"
   },
   "bugs": {
     "url": "https://github.com/NieuwlandGeo/SLDReader/issues"

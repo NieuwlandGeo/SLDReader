@@ -1,6 +1,4 @@
 toc:
-  - name: Intro
-    file: "../README.md"
   - name: Api
     description: |
         All classes of this package.
@@ -9,7 +7,7 @@ toc:
   - getLayer
   - getStyleNames
   - getStyle
-  - getRules  
+  - getRules
   - getStyleDescription
   - OlStyler
   - name: Types
