@@ -5,10 +5,9 @@
   "main": "dist/bundle.js",
   "scripts": {
     "prepublish": "npm run doc && npm run build",
-    "test": "./node_modules/karma/bin/karma start karma.conf.js",
+    "test": "karma start karma.conf.js",
     "build": "gulp build",
-    "docs":
-      "documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md && cp dist/bundle.js docs/examples/"
+    "docs": "documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md && cp dist/bundle.js docs/examples/"
   },
   "bugs": {
     "url": "https://github.com/NieuwlandGeo/SLDReader/issues"
@@ -40,9 +39,9 @@
     "karma": "^1.7.0",
     "karma-browserify": "^5.1.1",
     "karma-chai": "^0.1.0",
-    "karma-firefox-launcher": "^1.0.1",
     "karma-mocha": "^1.3.0",
     "karma-mocha-reporter": "^2.2.3",
+    "karma-phantomjs-launcher": "^1.0.4",
     "mocha": "^3.4.2",
     "ol": "^4.2.0",
     "vinyl-buffer": "^1.0.0",
