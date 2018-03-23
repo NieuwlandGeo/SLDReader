@@ -5,7 +5,7 @@
   "main": "dist/bundle.js",
   "scripts": {
     "test": "karma start karma.conf.js",
-    "build": "gulp build",
+    "build": "rollup -c",
     "docs": "documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md && cp dist/bundle.js docs/examples/"
   },
   "bugs": {
@@ -37,6 +37,8 @@
     "karma-mocha-reporter": "^2.2.3",
     "karma-phantomjs-launcher": "^1.0.4",
     "mocha": "^3.4.2",
+    "rollup": "^0.57.1",
+    "rollup-plugin-buble": "^0.19.2",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
   },
