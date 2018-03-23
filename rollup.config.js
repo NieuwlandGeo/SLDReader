@@ -5,7 +5,7 @@ export default {
   output: {
     file: 'dist/sldreader.js',
     format: 'umd',
-    name: 'sldreader',
+    name: 'SLDReader',
   },
   plugins: [buble()],
 };
