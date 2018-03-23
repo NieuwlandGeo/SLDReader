@@ -28,11 +28,11 @@ gulp.task('build', () => {
   return b.transform('babelify', {
     presets: ['es2015'],
     plugins: [
-      ['babel-plugin-merge-imports', {
-        pkg: 'openlayers',
-        pkgVar: '__ol',
-        regex: '^ol(?:/(.*))?$',
-      }],
+      // ['babel-plugin-merge-imports', {
+      //   pkg: 'openlayers',
+      //   pkgVar: '__ol',
+      //   regex: '^ol(?:/(.*))?$',
+      // }],
     ],
   }).transform('browserify-shim')
   .bundle()
