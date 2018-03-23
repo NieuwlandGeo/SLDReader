@@ -4,7 +4,6 @@
   "description": "SLD reader and formatter for openlayers",
   "main": "dist/bundle.js",
   "scripts": {
-    "prepublish": "npm run doc && npm run build",
     "test": "karma start karma.conf.js",
     "build": "gulp build",
     "docs": "documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md && cp dist/bundle.js docs/examples/"
@@ -22,7 +21,6 @@
   },
   "license": "ISC",
   "devDependencies": {
-    "babel-plugin-merge-imports": "github:ghettovoice/babel-plugin-merge-imports",
     "babel-polyfill": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-latest": "^6.24.1",
@@ -44,12 +42,14 @@
     "karma-mocha-reporter": "^2.2.3",
     "karma-phantomjs-launcher": "^1.0.4",
     "mocha": "^3.4.2",
-    "ol": "^4.2.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
     "watchify": "^3.9.0"
   },
   "dependencies": {},
+  "peerDependencies": {
+    "ol": "^4.2.0"
+  },
   "browserify-shim": {
     "openlayers": "global:ol"
   }
