@@ -17,12 +17,12 @@ More information about the standards:
 See docs/examples folder, to serve them locally
 
 ```
-gulp watch
+npm start
 ```
 
 ## Api docs
 
-[Api docs](https://nieuwlandgeo.github.io/SLDReader#api)
+[Api docs](docs/api.md)
 
 ## Browsers
 

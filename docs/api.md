@@ -2,41 +2,36 @@
 
 ### Table of Contents
 
--   [Api](#api)
--   [Reader](#reader)
+-   [Methods](#methods)
+-   [Types](#types)
 -   [getLayerNames](#getlayernames)
 -   [getLayer](#getlayer)
 -   [getStyleNames](#getstylenames)
 -   [getStyle](#getstyle)
 -   [getRules](#getrules)
--   [getStyleDescription](#getstyledescription)
--   [OlStyler](#olstyler)
--   [Types](#types)
--   [StyledLayerDescriptor](#styledlayerdescriptor)
+-   [scaleSelector](#scaleselector)
 -   [Layer](#layer)
--   [FeatureTypeStyle](#featuretypestyle)
+-   [PointSymbolizer](#pointsymbolizer)
 -   [Rule](#rule)
 -   [Filter](#filter)
--   [LineSymbolizer](#linesymbolizer)
+-   [FeatureTypeStyle](#featuretypestyle)
 -   [PolygonSymbolizer](#polygonsymbolizer)
--   [PointSymbolizer](#pointsymbolizer)
--   [scaleSelector](#scaleselector)
+-   [LineSymbolizer](#linesymbolizer)
+-   [StyledLayerDescriptor](#styledlayerdescriptor)
+-   [Reader](#reader)
+-   [OlStyler](#olstyler)
+-   [getStyleDescription](#getstyledescription)
 -   [StyleDescription](#styledescription)
 
-## Api
+## Methods
 
 All classes of this package.
 
 
-## Reader
+## Types
 
-Creates a object from an sld xml string, for internal usage
+Types are the javascript representation of the ogc sld structure
 
-**Parameters**
-
--   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
-
-Returns **[StyledLayerDescriptor](#styledlayerdescriptor)** object representing sld style
 
 ## getLayerNames
 
@@ -93,40 +88,17 @@ get rules for specific feature after applying filters
 
 Returns **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Rule](#rule)>** 
 
-## getStyleDescription
+## scaleSelector
 
-TODO write typedef for return value better function names
-
-**Parameters**
-
--   `rules` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Rule](#rule)>** [description]
-
-Returns **[StyleDescription](#styledescription)** 
-
-## OlStyler
-
-Create openlayers style from object returned by rulesConverter
+[scaleSelector description]
+The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
 
 **Parameters**
 
--   `olstyle` **ol.style** ol.style <http://openlayers.org/en/latest/apidoc/ol.style.html>
--   `styleDescription` **[StyleDescription](#styledescription)** rulesconverter
+-   `rule` **[Rule](#rule)** 
+-   `resolution` **[number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** m/px
 
-Returns **any** ol.Style.Style
-
-## Types
-
-Types are the javascript representation of the ogc sld structure
-
-
-## StyledLayerDescriptor
-
-a typedef for StyledLayerDescriptor [xsd](http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd)
-
-**Properties**
-
--   `version` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** sld version
--   `layers` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Layer](#layer)>** info extracted from NamedLayer element
+Returns **[boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
 
 ## Layer
 
@@ -141,13 +113,15 @@ a typedef for Layer, the actual style object for a single layer
     -   `styles[].featuretypestyles` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[FeatureTypeStyle](#featuretypestyle)>** Geoserver will draw multiple,
         libraries as openlayers can only use one definition!
 
-## FeatureTypeStyle
+## PointSymbolizer
 
-a typedef for FeatureTypeStyle: [xsd](http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd)
+a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
 
 **Properties**
 
--   `rules` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Rule](#rule)>** 
+-   `graphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `graphic.externalgraphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+        -   `graphic.externalgraphic.onlineresource` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
 
 ## Rule
 
@@ -177,14 +151,13 @@ a typedef for Rule to match a feature: [xsd](http://schemas.opengis.net/se/1.1.0
 -   `propertyisequalto` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)>?** propertyname & literal
 -   `propertyislessthan` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)>?** propertyname & literal
 
-## LineSymbolizer
+## FeatureTypeStyle
 
-a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+a typedef for FeatureTypeStyle: [xsd](http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd)
 
 **Properties**
 
--   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
+-   `rules` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Rule](#rule)>** 
 
 ## PolygonSymbolizer
 
@@ -197,27 +170,54 @@ a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer
 -   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
     -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
 
-## PointSymbolizer
+## LineSymbolizer
 
-a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
 
 **Properties**
 
--   `graphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-    -   `graphic.externalgraphic` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
-        -   `graphic.externalgraphic.onlineresource` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `stroke` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** 
+    -   `stroke.css` **[array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)** 
 
-## scaleSelector
+## StyledLayerDescriptor
 
-[scaleSelector description]
-The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
+a typedef for StyledLayerDescriptor [xsd](http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd)
+
+**Properties**
+
+-   `version` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** sld version
+-   `layers` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Layer](#layer)>** info extracted from NamedLayer element
+
+## Reader
+
+Creates a object from an sld xml string, for internal usage
 
 **Parameters**
 
--   `rule` **[Rule](#rule)** 
--   `resolution` **[number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** m/px
+-   `sld` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** xml string
 
-Returns **[boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean)** 
+Returns **[StyledLayerDescriptor](#styledlayerdescriptor)** object representing sld style
+
+## OlStyler
+
+Create openlayers style from object returned by rulesConverter
+
+**Parameters**
+
+-   `olstyle` **ol.style** ol.style <http://openlayers.org/en/latest/apidoc/ol.style.html>
+-   `styleDescription` **[StyleDescription](#styledescription)** rulesconverter
+
+Returns **any** ol.Style.Style
+
+## getStyleDescription
+
+TODO write typedef for return value better function names
+
+**Parameters**
+
+-   `rules` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[Rule](#rule)>** [description]
+
+Returns **[StyleDescription](#styledescription)** 
 
 ## StyleDescription
 

@@ -1,23 +1,25 @@
 toc:
-  - name: Api
+  - name: Methods
     description: |
         All classes of this package.
-  - Reader
-  - getLayerNames
-  - getLayer
-  - getStyleNames
-  - getStyle
-  - getRules
-  - getStyleDescription
-  - OlStyler
+    children:
+      - Reader
+      - getLayerNames
+      - getLayer
+      - getStyleNames
+      - getStyle
+      - getRules
+      - getStyleDescription
+      - OlStyler
   - name: Types
     description: |
       Types are the javascript representation of the ogc sld structure
-  - StyledLayerDescriptor
-  - Layer
-  - FeatureTypeStyle
-  - Rule
-  - Filter
-  - LineSymbolizer
-  - PolygonSymbolizer
-  - PointSymbolizer
+    children:
+      - StyledLayerDescriptor
+      - Layer
+      - FeatureTypeStyle
+      - Rule
+      - Filter
+      - LineSymbolizer
+      - PolygonSymbolizer
+      - PointSymbolizer
