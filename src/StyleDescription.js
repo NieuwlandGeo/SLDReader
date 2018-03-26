@@ -4,58 +4,35 @@
  * @return {StyleDescription}
  */
 function getStyleDescription(rules) {
-  const result = {};
+  const result = {
+    polygon: {},
+    line: {},
+    point: {},
+  };
   for (let i = 0; i < rules.length; i += 1) {
     if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.fill) {
-      const fill = rules[i].polygonsymbolizer.fill;
-      fillRules(fill, result);
+      setCssParams(result.polygon, rules[i].polygonsymbolizer.fill.css);
     }
     if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.stroke) {
-      const stroke = rules[i].polygonsymbolizer.stroke;
-      strokeRules(stroke, result);
+      setCssParams(result.polygon, rules[i].polygonsymbolizer.stroke.css);
     }
     if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
-      const stroke = rules[i].linesymbolizer.stroke;
-      strokeRules(stroke, result);
+      setCssParams(result.line, rules[i].polygonsymbolizer.stroke.css);
     }
   }
   return result;
 }
 
-function strokeRules(stroke, result) {
-  for (let j = 0; j < stroke.css.length; j += 1) {
-    switch (stroke.css[j].name) {
-      case 'stroke':
-        result.strokeColor = stroke.css[j].value;
-        break;
-      default: {
-        const key = stroke.css[j].name
-          .toLowerCase()
-          .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
-        result[key] = stroke.css[j].value;
-      }
-    }
-  }
-}
-
 /**
- * [fill description]
- * @private
- * @param  {object} fill [description]
- * @param {object} result props will be added to
- * @return {void}      [description]
+ * @param {object} result    [description]
+ * @param {object[]} cssparams [description]
  */
-function fillRules(fill, result) {
-  for (let j = 0; j < fill.css.length; j += 1) {
-    switch (fill.css[j].name) {
-      case 'fill':
-        result.fillColor = fill.css[j].value;
-        break;
-      case 'fill-opacity':
-        result.fillOpacity = fill.css[j].value;
-        break;
-      default:
-    }
+function setCssParams(result, cssparams) {
+  for (let j = 0; j < cssparams.length; j += 1) {
+    const key = cssparams[j].name
+      .toLowerCase()
+      .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
+    result[key] = cssparams[j].value;
   }
 }
 
@@ -64,7 +41,8 @@ export default getStyleDescription;
 /**
  * @typedef StyleDescription
  * @name StyleDescription
- * @description a flat object of props extracted from an array of rul;es
- * @property {string} fillColor
- * @property {string} fillOpacity
+ * @description a flat object per symbolizer type, with values assigned to camelcased props.
+ * @property {object} polygon merged polygonsymbolizers
+ * @property {object} line merged linesymbolizers
+ * @property {object} point merged pointsymbolizers, props are camelcased.
  */

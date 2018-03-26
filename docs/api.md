@@ -21,7 +21,8 @@
     -   [PolygonSymbolizer][17]
     -   [PointSymbolizer][18]
 -   [scaleSelector][19]
--   [StyleDescription][20]
+-   [setCssParams][20]
+-   [StyleDescription][21]
 
 ## Methods
 
@@ -35,9 +36,9 @@ Creates a object from an sld xml string, for internal usage
 
 **Parameters**
 
--   `sld` **[string][21]** xml string
+-   `sld` **[string][22]** xml string
 
-Returns **[StyledLayerDescriptor][22]** object representing sld style
+Returns **[StyledLayerDescriptor][23]** object representing sld style
 
 ### getLayerNames
 
@@ -45,9 +46,9 @@ get all layer names in sld
 
 **Parameters**
 
--   `sld` **[StyledLayerDescriptor][22]** 
+-   `sld` **[StyledLayerDescriptor][23]** 
 
-Returns **[Array][23]&lt;[string][21]>** registered layernames
+Returns **[Array][24]&lt;[string][22]>** registered layernames
 
 ### getLayer
 
@@ -55,10 +56,10 @@ getlayer with name
 
 **Parameters**
 
--   `sld` **[StyledLayerDescriptor][22]** [description]
--   `layername` **[string][21]** [description]
+-   `sld` **[StyledLayerDescriptor][23]** [description]
+-   `layername` **[string][22]** [description]
 
-Returns **[Layer][24]** [description]
+Returns **[Layer][25]** [description]
 
 ### getStyleNames
 
@@ -66,9 +67,9 @@ getStyleNames, notice name is not required for userstyle, you might get undefine
 
 **Parameters**
 
--   `layer` **[Layer][24]** [description]
+-   `layer` **[Layer][25]** [description]
 
-Returns **[Array][23]&lt;[string][21]>** [description]
+Returns **[Array][24]&lt;[string][22]>** [description]
 
 ### getStyle
 
@@ -77,10 +78,10 @@ null is no style found
 
 **Parameters**
 
--   `layer` **[Layer][24]** [description]
--   `name` **[string][21]** of style
+-   `layer` **[Layer][25]** [description]
+-   `name` **[string][22]** of style
 
-Returns **[object][25]** the style with matching name
+Returns **[object][26]** the style with matching name
 
 ### getRules
 
@@ -88,11 +89,11 @@ get rules for specific feature after applying filters
 
 **Parameters**
 
--   `featureTypeStyle` **[FeatureTypeStyle][26]** [description]
--   `feature` **[object][25]** a geojson feature
+-   `featureTypeStyle` **[FeatureTypeStyle][27]** [description]
+-   `feature` **[object][26]** a geojson feature
 -   `resolution`  
 
-Returns **[Array][23]&lt;[Rule][27]>** 
+Returns **[Array][24]&lt;[Rule][28]>** 
 
 ### getStyleDescription
 
@@ -100,9 +101,9 @@ TODO write typedef for return value better function names
 
 **Parameters**
 
--   `rules` **[Array][23]&lt;[Rule][27]>** [description]
+-   `rules` **[Array][24]&lt;[Rule][28]>** [description]
 
-Returns **[StyleDescription][28]** 
+Returns **[StyleDescription][29]** 
 
 ### OlStyler
 
@@ -110,8 +111,8 @@ Create openlayers style from object returned by rulesConverter
 
 **Parameters**
 
--   `olstyle` **ol.style** ol.style [http://openlayers.org/en/latest/apidoc/ol.style.html][29]
--   `styleDescription` **[StyleDescription][28]** rulesconverter
+-   `olstyle` **ol.style** ol.style [http://openlayers.org/en/latest/apidoc/ol.style.html][30]
+-   `styleDescription` **[StyleDescription][29]** rulesconverter
 
 Returns **any** ol.Style.Style
 
@@ -122,12 +123,12 @@ Types are the javascript representation of the ogc sld structure
 
 ### StyledLayerDescriptor
 
-a typedef for StyledLayerDescriptor [xsd][30]
+a typedef for StyledLayerDescriptor [xsd][31]
 
 **Properties**
 
--   `version` **[string][21]** sld version
--   `layers` **[Array][23]&lt;[Layer][24]>** info extracted from NamedLayer element
+-   `version` **[string][22]** sld version
+-   `layers` **[Array][24]&lt;[Layer][25]>** info extracted from NamedLayer element
 
 ### Layer
 
@@ -135,78 +136,78 @@ a typedef for Layer, the actual style object for a single layer
 
 **Properties**
 
--   `name` **[string][21]** layer name
--   `styles` **[Array][23]&lt;[Object][25]>** See explanation at [Geoserver docs][31]
-    -   `styles[].default` **[Boolean][32]** 
-    -   `styles[].name` **[String][21]?** 
-    -   `styles[].featuretypestyles` **[Array][23]&lt;[FeatureTypeStyle][26]>** Geoserver will draw multiple,
+-   `name` **[string][22]** layer name
+-   `styles` **[Array][24]&lt;[Object][26]>** See explanation at [Geoserver docs][32]
+    -   `styles[].default` **[Boolean][33]** 
+    -   `styles[].name` **[String][22]?** 
+    -   `styles[].featuretypestyles` **[Array][24]&lt;[FeatureTypeStyle][27]>** Geoserver will draw multiple,
         libraries as openlayers can only use one definition!
 
 ### FeatureTypeStyle
 
-a typedef for FeatureTypeStyle: [xsd][33]
+a typedef for FeatureTypeStyle: [xsd][34]
 
 **Properties**
 
--   `rules` **[Array][23]&lt;[Rule][27]>** 
+-   `rules` **[Array][24]&lt;[Rule][28]>** 
 
 ### Rule
 
-a typedef for Rule to match a feature: [xsd][33]
+a typedef for Rule to match a feature: [xsd][34]
 
 **Properties**
 
--   `name` **[string][21]** rule name
--   `filter` **[Filter][34]?** 
--   `elsefilter` **[boolean][32]?** 
+-   `name` **[string][22]** rule name
+-   `filter` **[Filter][35]?** 
+-   `elsefilter` **[boolean][33]?** 
 -   `minscaledenominator` **integer?** 
 -   `maxscaledenominator` **integer?** 
--   `polygonsymbolizer` **[PolygonSymbolizer][35]?** 
--   `linesymbolizer` **[LineSymbolizer][36]?** 
--   `pointsymbolizer` **[PointSymbolizer][37]?** 
+-   `polygonsymbolizer` **[PolygonSymbolizer][36]?** 
+-   `linesymbolizer` **[LineSymbolizer][37]?** 
+-   `pointsymbolizer` **[PointSymbolizer][38]?** 
 
 ### Filter
 
-[ogc filters][38] should have only one prop
+[ogc filters][39] should have only one prop
 
 **Properties**
 
--   `featureid` **[Array][23]&lt;[string][21]>?** 
--   `or` **[object][25]?** filter
--   `and` **[object][25]?** filter
--   `not` **[object][25]?** filter
--   `propertyisequalto` **[Array][23]&lt;[object][25]>?** propertyname & literal
--   `propertyislessthan` **[Array][23]&lt;[object][25]>?** propertyname & literal
+-   `featureid` **[Array][24]&lt;[string][22]>?** 
+-   `or` **[object][26]?** filter
+-   `and` **[object][26]?** filter
+-   `not` **[object][26]?** filter
+-   `propertyisequalto` **[Array][24]&lt;[object][26]>?** propertyname & literal
+-   `propertyislessthan` **[Array][24]&lt;[object][26]>?** propertyname & literal
 
 ### LineSymbolizer
 
-a typedef for [LineSymbolizer][39]
+a typedef for [LineSymbolizer][40]
 
 **Properties**
 
--   `stroke` **[Object][25]** 
-    -   `stroke.css` **[array][23]** 
+-   `stroke` **[Object][26]** 
+    -   `stroke.css` **[Array][24]&lt;[Object][26]>** with name & value Names are camelcased CssParameter names
 
 ### PolygonSymbolizer
 
-a typedef for [PolygonSymbolizer][39]
+a typedef for [PolygonSymbolizer][40]
 
 **Properties**
 
--   `fill` **[Object][25]** 
-    -   `fill.css` **[array][23]** 
--   `stroke` **[Object][25]** 
-    -   `stroke.css` **[array][23]** 
+-   `fill` **[Object][26]** 
+    -   `fill.css` **[array][24]** 
+-   `stroke` **[Object][26]** 
+    -   `stroke.css` **[Array][24]&lt;[Object][26]>** with name & value
 
 ### PointSymbolizer
 
-a typedef for [PointSymbolizer][39]
+a typedef for [PointSymbolizer][40]
 
 **Properties**
 
--   `graphic` **[Object][25]** 
-    -   `graphic.externalgraphic` **[Object][25]** 
-        -   `graphic.externalgraphic.onlineresource` **[string][21]** 
+-   `graphic` **[Object][26]** 
+    -   `graphic.externalgraphic` **[Object][26]** 
+        -   `graphic.externalgraphic.onlineresource` **[string][22]** 
 
 ## scaleSelector
 
@@ -215,19 +216,27 @@ The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
 
 **Parameters**
 
--   `rule` **[Rule][27]** 
--   `resolution` **[number][40]** m/px
+-   `rule` **[Rule][28]** 
+-   `resolution` **[number][41]** m/px
 
-Returns **[boolean][32]** 
+Returns **[boolean][33]** 
+
+## setCssParams
+
+**Parameters**
+
+-   `result` **[object][26]** [description]
+-   `cssparams` **[Array][24]&lt;[object][26]>** [description]
 
 ## StyleDescription
 
-a flat object of props extracted from an array of rul;es
+a flat object per symbolizer type, with values assigned to camelcased props.
 
 **Properties**
 
--   `fillColor` **[string][21]** 
--   `fillOpacity` **[string][21]** 
+-   `polygon` **[object][26]** merged polygonsymbolizers
+-   `line` **[object][26]** merged linesymbolizers
+-   `point` **[object][26]** merged pointsymbolizers, props are camelcased.
 
 [1]: #methods
 
@@ -267,44 +276,46 @@ a flat object of props extracted from an array of rul;es
 
 [19]: #scaleselector
 
-[20]: #styledescription
+[20]: #setcssparams
 
-[21]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[21]: #styledescription
 
-[22]: #styledlayerdescriptor
+[22]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[23]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[23]: #styledlayerdescriptor
 
-[24]: #layer
+[24]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
-[25]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[25]: #layer
 
-[26]: #featuretypestyle
+[26]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-[27]: #rule
+[27]: #featuretypestyle
 
-[28]: #styledescription
+[28]: #rule
 
-[29]: http://openlayers.org/en/latest/apidoc/ol.style.html
+[29]: #styledescription
 
-[30]: http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd
+[30]: http://openlayers.org/en/latest/apidoc/ol.style.html
 
-[31]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html
+[31]: http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd
 
-[32]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[32]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html
 
-[33]: http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd
+[33]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
 
-[34]: #filter
+[34]: http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd
 
-[35]: #polygonsymbolizer
+[35]: #filter
 
-[36]: #linesymbolizer
+[36]: #polygonsymbolizer
 
-[37]: #pointsymbolizer
+[37]: #linesymbolizer
 
-[38]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
+[38]: #pointsymbolizer
 
-[39]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
+[39]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
 
-[40]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[40]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
+
+[41]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number

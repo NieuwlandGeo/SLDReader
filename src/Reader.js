@@ -225,7 +225,7 @@ export default function Reader(sld) {
  * @property {Object} fill
  * @property {array} fill.css
  * @property {Object} stroke
- * @property {array} stroke.css
+ * @property {Object[]} stroke.css with name & value
  * */
 
 /**
@@ -233,7 +233,7 @@ export default function Reader(sld) {
  * @name LineSymbolizer
  * @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
  * @property {Object} stroke
- * @property {array} stroke.css
+ * @property {Object[]} stroke.css with name & value Names are camelcased CssParameter names
  * */
 
 /**
