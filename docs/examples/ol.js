@@ -55,17 +55,18 @@ fetch('sld-tasmania.xml')
   .then((text) => {
     const sldObject = SLDReader.Reader(text);
     styleSelector(sldObject);
-    layers.forEach((l) => {
-      const layername = l
+
+    const setLayerStyle = (layer, stylename) => {
+      const layername = layer
         .getSource()
         .getUrl()
         .replace(/\.xml|Tasmania/g, '');
       const sldLayer = SLDReader.getLayer(sldObject, layername);
       if (sldLayer) {
-        const style = SLDReader.getStyle(sldLayer);
+        const style = SLDReader.getStyle(sldLayer, stylename);
         const format = new ol.format.GeoJSON();
         // 111034 = from EPSG:4326 to meters for the location of tasmania
-        l.setStyle((feature, resolution) => {
+        layer.setStyle((feature, resolution) => {
           const geojson = JSON.parse(format.writeFeature(feature));
           const rules = SLDReader.getRules(
             style.featuretypestyles['0'],
@@ -75,5 +76,10 @@ fetch('sld-tasmania.xml')
           return SLDReader.OlStyler(SLDReader.getStyleDescription(rules), geojson.geometry.type);
         });
       }
+    };
+    layers.forEach(l => setLayerStyle(l));
+    document.getElementById('style_chooser').addEventListener('change', (e) => {
+      const styleName = e.target.value;
+      setLayerStyle(layers['3'], styleName);
     });
   });
