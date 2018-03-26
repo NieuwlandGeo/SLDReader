@@ -44,6 +44,7 @@ export function getStyle(layer, name) {
  * get rules for specific feature after applying filters
  * @param  {FeatureTypeStyle} featureTypeStyle [description]
  * @param  {object} feature          a geojson feature
+ * @param  {number} resolution m/px
  * @return {Rule[]}
  */
 export function getRules(featureTypeStyle, feature, resolution) {

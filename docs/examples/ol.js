@@ -52,10 +52,10 @@ map.getView().fit([143.8, -44.048828125, 148.5, -40]);
 map.addControl(new ol.control.MousePosition());
 fetch('sld-tasmania.xml')
   .then(response => response.text())
-  .then(text => {
+  .then((text) => {
     const sldObject = SLDReader.Reader(text);
     styleSelector(sldObject);
-    layers.forEach(l => {
+    layers.forEach((l) => {
       const layername = l
         .getSource()
         .getUrl()
@@ -67,7 +67,7 @@ fetch('sld-tasmania.xml')
         l.setStyle((feature, resolution) => {
           const geojson = JSON.parse(format.writeFeature(feature));
           const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, resolution);
-          return SLDReader.OlStyler(ol.style, SLDReader.getStyleDescription(rules));
+          return SLDReader.OlStyler(SLDReader.getStyleDescription(rules), geojson.geometry.type);
         });
       }
     });

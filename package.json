@@ -44,16 +44,13 @@
     "karma-rollup-preprocessor": "^5.1.1",
     "mocha": "^3.5.3",
     "npm-run-all": "^4.1.2",
+    "ol": "^4.6.5",
     "rollup": "^0.57.1",
     "rollup-plugin-buble": "^0.19.2",
+    "rollup-plugin-node-resolve": "^3.3.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
   },
   "dependencies": {},
-  "peerDependencies": {
-    "ol": "^4.2.0"
-  },
-  "browserify-shim": {
-    "openlayers": "global:ol"
-  }
+  "peerDependencies": {}
 }

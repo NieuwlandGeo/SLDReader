@@ -1,5 +1,5 @@
 /**
- * TODO write typedef for return value better function names
+ * Merges style props of rules, last defined rule props win
  * @param  {Rule[]} rules [description]
  * @return {StyleDescription}
  */
@@ -17,7 +17,7 @@ function getStyleDescription(rules) {
       setCssParams(result.polygon, rules[i].polygonsymbolizer.stroke.css);
     }
     if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
-      setCssParams(result.line, rules[i].polygonsymbolizer.stroke.css);
+      setCssParams(result.line, rules[i].linesymbolizer.stroke.css);
     }
   }
   return result;

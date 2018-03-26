@@ -1,5 +1,7 @@
 import buble from 'rollup-plugin-buble';
 
+const resolve = require('rollup-plugin-node-resolve');
+
 export default {
   input: 'src/index.js',
   output: {
@@ -7,5 +9,5 @@ export default {
     format: 'umd',
     name: 'SLDReader',
   },
-  plugins: [buble()],
+  plugins: [buble(), resolve()],
 };

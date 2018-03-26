@@ -1,3 +1,8 @@
+import Style from 'ol/style/style';
+import Fill from 'ol/style/fill';
+import Stroke from 'ol/style/stroke';
+import Circle from 'ol/style/circle';
+
 /**
  * @private
  * @param  {string} hex   eg #AA00FF
@@ -16,37 +21,57 @@ function hexToRGB(hex, alpha) {
 
 /**
  * Create openlayers style from object returned by rulesConverter
- * @param {ol.style} olstyle ol.style http://openlayers.org/en/latest/apidoc/ol.style.html
  * @param {StyleDescription} styleDescription rulesconverter
- * @return ol.Style.Style
+ * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
+ * @return ol.style.Style or array of it
  */
-export default function OlStyler(olstyle, styleDescription) {
-  const fill = new olstyle.Fill({
-    color:
-      styleDescription.fillOpacity &&
-      styleDescription.fillColor &&
-      styleDescription.fillColor.slice(0, 1) === '#'
-        ? hexToRGB(styleDescription.fillColor, styleDescription.fillOpacity)
-        : styleDescription.fillColor,
-  });
-  const stroke = new olstyle.Stroke({
-    color: styleDescription.strokeColor,
-    width: styleDescription.strokeWidth,
-    lineCap: styleDescription.strokeLinecap && styleDescription.strokeDasharray,
-    lineDash: styleDescription.strokeDasharray && styleDescription.strokeDasharray.split(' '),
-    lineDashOffset: styleDescription.strokeDashoffset && styleDescription.strokeDashoffset,
-    lineJoin: styleDescription.strokeLinejoin && styleDescription.strokeLinejoin,
-  });
-  const styles = [
-    new olstyle.Style({
-      image: new olstyle.Circle({
-        fill,
-        stroke,
-        radius: 5,
-      }),
-      fill,
-      stroke,
-    }),
-  ];
-  return styles;
+export default function OlStyler(styleDescription, type = 'Polygon') {
+  const { polygon, line } = styleDescription;
+  switch (type) {
+    case 'Polygon':
+    case 'MultiPolygon':
+      return [
+        new Style({
+          fill: new Fill({
+            color:
+              polygon.fillOpacity && polygon.fill && polygon.fill.slice(0, 1) === '#'
+                ? hexToRGB(polygon.fill, polygon.fillOpacity)
+                : polygon.fill,
+          }),
+          stroke: new Stroke({
+            color: polygon.stroke || '#3399CC',
+            width: polygon.strokeWidth || 1.25,
+            lineCap: polygon.strokeLinecap && polygon.strokeLinecap,
+            lineDash: polygon.strokeDasharray && polygon.strokeDasharray.split(' '),
+            lineDashOffset: polygon.strokeDashoffset && polygon.strokeDashoffset,
+            lineJoin: polygon.strokeLinejoin && polygon.strokeLinejoin,
+          }),
+        }),
+      ];
+    case 'LineString':
+    case 'MultiLineString':
+      return [
+        new Style({
+          stroke: new Stroke({
+            color: line.stroke || '#3399CC',
+            width: line.strokeWidth || 1.25,
+            lineCap: line.strokeLinecap && line.strokeLinecap,
+            lineDash: line.strokeDasharray && line.strokeDasharray.split(' '),
+            lineDashOffset: line.strokeDashoffset && line.strokeDashoffset,
+            lineJoin: line.strokeLinejoin && line.strokeLinejoin,
+          }),
+        }),
+      ];
+    default:
+      return [
+        new Style({
+          image: new Circle({
+            radius: 2,
+            fill: new Fill({
+              color: 'blue',
+            }),
+          }),
+        }),
+      ];
+  }
 }
