@@ -4,7 +4,8 @@
   "description": "SLD reader and formatter for openlayers",
   "main": "dist/bundle.js",
   "scripts": {
-    "test": "karma start karma.conf.js",
+    "test": "karma  start karma.conf.js",
+    "test:watch": "karma start --no-single-run karma.conf.js",
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "serve": "browser-sync start --config bs-config.js",

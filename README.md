@@ -1,5 +1,7 @@
 # SLDReader
 
+[![Build Status](https://travis-ci.org/NieuwlandGeo/SLDReader.svg?branch=master)](https://travis-ci.org/NieuwlandGeo/SLDReader)
+
 A javascript package that aims to bring styling from a sld document to popular mapping
 tools.
 
