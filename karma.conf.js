@@ -1,17 +1,24 @@
+const buble = require('rollup-plugin-buble');
 // Karma configuration
 // Generated on Thu Jun 15 2017 14:53:58 GMT+0200 (CEST)
 
-module.exports = function (config) {
+module.exports = function kc(config) {
   config.set({
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['browserify', 'mocha', 'chai'],
+    frameworks: ['mocha', 'chai'],
 
     // list of files / patterns to load in the browser, includes polyfill
-    files: ['node_modules/babel-polyfill/dist/polyfill.js', 'test/**/*.test.js'],
+    files: [
+      'node_modules/core-js/client/shim.min.js',
+      {
+        pattern: 'test/**/*.test.js',
+        watched: false,
+      },
+    ],
 
     // list of files to exclude
     exclude: [],
@@ -19,20 +26,14 @@ module.exports = function (config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/**/*test.js': ['browserify'],
+      'test/**/*test.js': ['rollup'],
     },
 
-    browserify: {
-      debug: true,
-      paths: ['./src'],
-      transform: [
-        [
-          'babelify',
-          {
-            presets: ['es2015'],
-          },
-        ],
-      ],
+    rollupPreprocessor: {
+      plugins: [buble()],
+      format: 'iife', // Helps prevent naming collisions.
+      name: 'SLDReader', // Required for 'iife' format.
+      sourcemap: 'inline', // Sensible for testing.
     },
 
     // test results reporter to use
@@ -47,7 +48,6 @@ module.exports = function (config) {
     colors: true,
 
     // level of logging
-    // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
     logLevel: config.LOG_INFO,
 
     // enable / disable watching file and executing tests whenever any file changes

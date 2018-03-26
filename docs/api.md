@@ -25,7 +25,8 @@
 
 ## Methods
 
-All classes of this package.
+All methods of this package. If you include the build directly they are props
+of the global var SLDReader.
 
 
 ### Reader

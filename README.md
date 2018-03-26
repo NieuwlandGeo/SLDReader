@@ -3,7 +3,7 @@
 A javascript package that aims to bring styling from a sld document to popular mapping
 tools.
 
-**NOT READY TO USE, CONTRIBUTIONS WELCOME!**
+**CONTRIBUTIONS WELCOME!**
 
 More information about the standards:
 
@@ -24,9 +24,9 @@ npm start
 
 [Api docs](docs/api.md)
 
-## Browsers
+## Old Browsers
 
-Some older browsers like IE need polyfills! E.g. array.prototype.find
+Some older browsers need polyfills to use this library. E.g. [es6.array.find](https://www.npmjs.com/package/core-js#ecmascript-6-array)
 
 ## Commands
 
@@ -36,5 +36,5 @@ To, install dependencies, test, build and document
 npm install
 npm test
 npm build
-npm run-script docs
+npm run docs
 ```
