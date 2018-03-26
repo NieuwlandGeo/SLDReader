@@ -377,19 +377,19 @@
    */
 
   var Filters = {
-    featureid: function (value, props) {
+    featureid: function (value, feature) {
       for (var i = 0; i < value.length; i += 1) {
-        if (value[i] === props.fid) {
+        if (value[i] === feature.id) {
           return true;
         }
       }
       return false;
     },
-    not: function (value, props) { return !filterSelector(value, props); },
-    or: function (value, props) {
+    not: function (value, feature) { return !filterSelector(value, feature); },
+    or: function (value, feature) {
       var keys = Object.keys(value);
       for (var i = 0; i < keys.length; i += 1) {
-        if (value[keys[i]].length === 1 && filterSelector(value, props, i)) {
+        if (value[keys[i]].length === 1 && filterSelector(value, feature, i)) {
           return true;
         } else if (value[keys[i]].length !== 1) {
           throw new Error('multiple ops of same type not implemented yet');
@@ -397,25 +397,26 @@
       }
       return false;
     },
-    propertyisequalto: function (value, props) { return props[value['0'].propertyname] && props[value['0'].propertyname] === value['0'].literal; },
-    propertyislessthan: function (value, props) { return props[value['0'].propertyname] &&
-      Number(props[value['0'].propertyname]) < Number(value['0'].literal); },
+    propertyisequalto: function (value, feature) { return feature.properties[value['0'].propertyname] &&
+      feature.properties[value['0'].propertyname] === value['0'].literal; },
+    propertyislessthan: function (value, feature) { return feature.properties[value['0'].propertyname] &&
+      Number(feature.properties[value['0'].propertyname]) < Number(value['0'].literal); },
   };
 
   /**
    * [filterSelector description]
    * @private
    * @param  {Filter} filter
-   * @param  {object} properties feature properties
+   * @param  {object} feature feature
    * @param {number} key index of property to use
    * @return {boolean}
    */
-  function filterSelector(filter, properties, key) {
+  function filterSelector(filter, feature, key) {
     if ( key === void 0 ) key = 0;
 
     var type = Object.keys(filter)[key];
     if (Filters[type]) {
-      if (Filters[type](filter[type], properties)) {
+      if (Filters[type](filter[type], feature)) {
         return true;
       }
     } else {
@@ -494,16 +495,15 @@
   /**
    * get rules for specific feature after applying filters
    * @param  {FeatureTypeStyle} featureTypeStyle [description]
-   * @param  {object} feature          a geojson feature
+   * @param  {object} feature
    * @param  {number} resolution m/px
    * @return {Rule[]}
    */
   function getRules(featureTypeStyle, feature, resolution) {
-    var properties = feature.properties;
     var result = [];
     for (var j = 0; j < featureTypeStyle.rules.length; j += 1) {
       var rule = featureTypeStyle.rules[j];
-      if (rule.filter && scaleSelector(rule, resolution) && filterSelector(rule.filter, properties)) {
+      if (rule.filter && scaleSelector(rule, resolution) && filterSelector(rule.filter, feature)) {
         result.push(rule);
       } else if (rule.elsefilter && result.length === 0) {
         result.push(rule);

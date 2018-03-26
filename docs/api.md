@@ -90,7 +90,7 @@ get rules for specific feature after applying filters
 **Parameters**
 
 -   `featureTypeStyle` **[FeatureTypeStyle][27]** [description]
--   `feature` **[object][26]** a geojson feature
+-   `feature` **[object][26]** 
 -   `resolution` **[number][28]** m/px
 
 Returns **[Array][24]&lt;[Rule][29]>** 
