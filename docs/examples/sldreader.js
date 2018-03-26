@@ -1,8 +1,13 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-  typeof define === 'function' && define.amd ? define(['exports'], factory) :
-  (factory((global.SLDReader = {})));
-}(this, (function (exports) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle'], factory) :
+  (factory((global.SLDReader = {}),global.ol.style.Style,global.ol.style.Fill,global.ol.style.Stroke,global.ol.style.Circle));
+}(this, (function (exports,Style,Fill,Stroke,Circle) { 'use strict';
+
+  Style = Style && Style.hasOwnProperty('default') ? Style['default'] : Style;
+  Fill = Fill && Fill.hasOwnProperty('default') ? Fill['default'] : Fill;
+  Stroke = Stroke && Stroke.hasOwnProperty('default') ? Stroke['default'] : Stroke;
+  Circle = Circle && Circle.hasOwnProperty('default') ? Circle['default'] : Circle;
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -231,7 +236,7 @@
    * @property {Object} fill
    * @property {array} fill.css
    * @property {Object} stroke
-   * @property {array} stroke.css
+   * @property {Object[]} stroke.css with name & value
    * */
 
   /**
@@ -239,7 +244,7 @@
    * @name LineSymbolizer
    * @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
    * @property {Object} stroke
-   * @property {array} stroke.css
+   * @property {Object[]} stroke.css with name & value Names are camelcased CssParameter names
    * */
 
   /**
@@ -269,107 +274,106 @@
 
   /**
    * Create openlayers style from object returned by rulesConverter
-   * @param {ol.style} olstyle ol.style http://openlayers.org/en/latest/apidoc/ol.style.html
    * @param {StyleDescription} styleDescription rulesconverter
-   * @return ol.Style.Style
+   * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
+   * @return ol.style.Style or array of it
    */
-  function OlStyler(olstyle, styleDescription) {
-    var fill = new olstyle.Fill({
-      color:
-        styleDescription.fillOpacity &&
-        styleDescription.fillColor &&
-        styleDescription.fillColor.slice(0, 1) === '#'
-          ? hexToRGB(styleDescription.fillColor, styleDescription.fillOpacity)
-          : styleDescription.fillColor,
-    });
-    var stroke = new olstyle.Stroke({
-      color: styleDescription.strokeColor,
-      width: styleDescription.strokeWidth,
-      lineCap: styleDescription.strokeLinecap && styleDescription.strokeDasharray,
-      lineDash: styleDescription.strokeDasharray && styleDescription.strokeDasharray.split(' '),
-      lineDashOffset: styleDescription.strokeDashoffset && styleDescription.strokeDashoffset,
-      lineJoin: styleDescription.strokeLinejoin && styleDescription.strokeLinejoin,
-    });
-    var styles = [
-      new olstyle.Style({
-        image: new olstyle.Circle({
-          fill: fill,
-          stroke: stroke,
-          radius: 5,
-        }),
-        fill: fill,
-        stroke: stroke,
-      }) ];
-    return styles;
+  function OlStyler(styleDescription, type) {
+    if ( type === void 0 ) type = 'Polygon';
+
+    var polygon = styleDescription.polygon;
+    var line = styleDescription.line;
+    switch (type) {
+      case 'Polygon':
+      case 'MultiPolygon':
+        return [
+          new Style({
+            fill: new Fill({
+              color:
+                polygon.fillOpacity && polygon.fill && polygon.fill.slice(0, 1) === '#'
+                  ? hexToRGB(polygon.fill, polygon.fillOpacity)
+                  : polygon.fill,
+            }),
+            stroke: new Stroke({
+              color: polygon.stroke || '#3399CC',
+              width: polygon.strokeWidth || 1.25,
+              lineCap: polygon.strokeLinecap && polygon.strokeLinecap,
+              lineDash: polygon.strokeDasharray && polygon.strokeDasharray.split(' '),
+              lineDashOffset: polygon.strokeDashoffset && polygon.strokeDashoffset,
+              lineJoin: polygon.strokeLinejoin && polygon.strokeLinejoin,
+            }),
+          }) ];
+      case 'LineString':
+      case 'MultiLineString':
+        return [
+          new Style({
+            stroke: new Stroke({
+              color: line.stroke || '#3399CC',
+              width: line.strokeWidth || 1.25,
+              lineCap: line.strokeLinecap && line.strokeLinecap,
+              lineDash: line.strokeDasharray && line.strokeDasharray.split(' '),
+              lineDashOffset: line.strokeDashoffset && line.strokeDashoffset,
+              lineJoin: line.strokeLinejoin && line.strokeLinejoin,
+            }),
+          }) ];
+      default:
+        return [
+          new Style({
+            image: new Circle({
+              radius: 2,
+              fill: new Fill({
+                color: 'blue',
+              }),
+            }),
+          }) ];
+    }
   }
 
   /**
-   * TODO write typedef for return value better function names
+   * Merges style props of rules, last defined rule props win
    * @param  {Rule[]} rules [description]
    * @return {StyleDescription}
    */
   function getStyleDescription(rules) {
-    var result = {};
+    var result = {
+      polygon: {},
+      line: {},
+      point: {},
+    };
     for (var i = 0; i < rules.length; i += 1) {
       if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.fill) {
-        var fill = rules[i].polygonsymbolizer.fill;
-        fillRules(fill, result);
+        setCssParams(result.polygon, rules[i].polygonsymbolizer.fill.css);
       }
       if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.stroke) {
-        var stroke = rules[i].polygonsymbolizer.stroke;
-        strokeRules(stroke, result);
+        setCssParams(result.polygon, rules[i].polygonsymbolizer.stroke.css);
       }
       if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
-        var stroke$1 = rules[i].linesymbolizer.stroke;
-        strokeRules(stroke$1, result);
+        setCssParams(result.line, rules[i].linesymbolizer.stroke.css);
       }
     }
     return result;
   }
 
-  function strokeRules(stroke, result) {
-    for (var j = 0; j < stroke.css.length; j += 1) {
-      switch (stroke.css[j].name) {
-        case 'stroke':
-          result.strokeColor = stroke.css[j].value;
-          break;
-        default: {
-          var key = stroke.css[j].name
-            .toLowerCase()
-            .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
-          result[key] = stroke.css[j].value;
-        }
-      }
-    }
-  }
-
   /**
-   * [fill description]
-   * @private
-   * @param  {object} fill [description]
-   * @param {object} result props will be added to
-   * @return {void}      [description]
+   * @param {object} result    [description]
+   * @param {object[]} cssparams [description]
    */
-  function fillRules(fill, result) {
-    for (var j = 0; j < fill.css.length; j += 1) {
-      switch (fill.css[j].name) {
-        case 'fill':
-          result.fillColor = fill.css[j].value;
-          break;
-        case 'fill-opacity':
-          result.fillOpacity = fill.css[j].value;
-          break;
-        default:
-      }
+  function setCssParams(result, cssparams) {
+    for (var j = 0; j < cssparams.length; j += 1) {
+      var key = cssparams[j].name
+        .toLowerCase()
+        .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
+      result[key] = cssparams[j].value;
     }
   }
 
   /**
    * @typedef StyleDescription
    * @name StyleDescription
-   * @description a flat object of props extracted from an array of rul;es
-   * @property {string} fillColor
-   * @property {string} fillOpacity
+   * @description a flat object per symbolizer type, with values assigned to camelcased props.
+   * @property {object} polygon merged polygonsymbolizers
+   * @property {object} line merged linesymbolizers
+   * @property {object} point merged pointsymbolizers, props are camelcased.
    */
 
   var Filters = {
@@ -491,6 +495,7 @@
    * get rules for specific feature after applying filters
    * @param  {FeatureTypeStyle} featureTypeStyle [description]
    * @param  {object} feature          a geojson feature
+   * @param  {number} resolution m/px
    * @return {Rule[]}
    */
   function getRules(featureTypeStyle, feature, resolution) {

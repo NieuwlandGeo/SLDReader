@@ -1,17 +1,17 @@
 const Filters = {
-  featureid: (value, props) => {
+  featureid: (value, feature) => {
     for (let i = 0; i < value.length; i += 1) {
-      if (value[i] === props.fid) {
+      if (value[i] === feature.id) {
         return true;
       }
     }
     return false;
   },
-  not: (value, props) => !filterSelector(value, props),
-  or: (value, props) => {
+  not: (value, feature) => !filterSelector(value, feature),
+  or: (value, feature) => {
     const keys = Object.keys(value);
     for (let i = 0; i < keys.length; i += 1) {
-      if (value[keys[i]].length === 1 && filterSelector(value, props, i)) {
+      if (value[keys[i]].length === 1 && filterSelector(value, feature, i)) {
         return true;
       } else if (value[keys[i]].length !== 1) {
         throw new Error('multiple ops of same type not implemented yet');
@@ -19,25 +19,26 @@ const Filters = {
     }
     return false;
   },
-  propertyisequalto: (value, props) =>
-    props[value['0'].propertyname] && props[value['0'].propertyname] === value['0'].literal,
-  propertyislessthan: (value, props) =>
-    props[value['0'].propertyname] &&
-    Number(props[value['0'].propertyname]) < Number(value['0'].literal),
+  propertyisequalto: (value, feature) =>
+    feature.properties[value['0'].propertyname] &&
+    feature.properties[value['0'].propertyname] === value['0'].literal,
+  propertyislessthan: (value, feature) =>
+    feature.properties[value['0'].propertyname] &&
+    Number(feature.properties[value['0'].propertyname]) < Number(value['0'].literal),
 };
 
 /**
  * [filterSelector description]
  * @private
  * @param  {Filter} filter
- * @param  {object} properties feature properties
+ * @param  {object} feature feature
  * @param {number} key index of property to use
  * @return {boolean}
  */
-export function filterSelector(filter, properties, key = 0) {
+export function filterSelector(filter, feature, key = 0) {
   const type = Object.keys(filter)[key];
   if (Filters[type]) {
-    if (Filters[type](filter[type], properties)) {
+    if (Filters[type](filter[type], feature)) {
       return true;
     }
   } else {

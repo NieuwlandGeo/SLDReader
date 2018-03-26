@@ -43,16 +43,15 @@ export function getStyle(layer, name) {
 /**
  * get rules for specific feature after applying filters
  * @param  {FeatureTypeStyle} featureTypeStyle [description]
- * @param  {object} feature          a geojson feature
+ * @param  {object} feature
  * @param  {number} resolution m/px
  * @return {Rule[]}
  */
 export function getRules(featureTypeStyle, feature, resolution) {
-  const { properties } = feature;
   const result = [];
   for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
     const rule = featureTypeStyle.rules[j];
-    if (rule.filter && scaleSelector(rule, resolution) && filterSelector(rule.filter, properties)) {
+    if (rule.filter && scaleSelector(rule, resolution) && filterSelector(rule.filter, feature)) {
       result.push(rule);
     } else if (rule.elsefilter && result.length === 0) {
       result.push(rule);

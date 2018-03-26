@@ -64,9 +64,14 @@ fetch('sld-tasmania.xml')
       if (sldLayer) {
         const style = SLDReader.getStyle(sldLayer);
         const format = new ol.format.GeoJSON();
+        // 111034 = from EPSG:4326 to meters for the location of tasmania
         l.setStyle((feature, resolution) => {
           const geojson = JSON.parse(format.writeFeature(feature));
-          const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, resolution);
+          const rules = SLDReader.getRules(
+            style.featuretypestyles['0'],
+            geojson,
+            resolution * 111034,
+          );
           return SLDReader.OlStyler(SLDReader.getStyleDescription(rules), geojson.geometry.type);
         });
       }

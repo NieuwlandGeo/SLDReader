@@ -91,19 +91,19 @@ get rules for specific feature after applying filters
 
 -   `featureTypeStyle` **[FeatureTypeStyle][27]** [description]
 -   `feature` **[object][26]** a geojson feature
--   `resolution`  
+-   `resolution` **[number][28]** m/px
 
-Returns **[Array][24]&lt;[Rule][28]>** 
+Returns **[Array][24]&lt;[Rule][29]>** 
 
 ### getStyleDescription
 
-TODO write typedef for return value better function names
+Merges style props of rules, last defined rule props win
 
 **Parameters**
 
--   `rules` **[Array][24]&lt;[Rule][28]>** [description]
+-   `rules` **[Array][24]&lt;[Rule][29]>** [description]
 
-Returns **[StyleDescription][29]** 
+Returns **[StyleDescription][30]** 
 
 ### OlStyler
 
@@ -111,10 +111,10 @@ Create openlayers style from object returned by rulesConverter
 
 **Parameters**
 
--   `olstyle` **ol.style** ol.style [http://openlayers.org/en/latest/apidoc/ol.style.html][30]
--   `styleDescription` **[StyleDescription][29]** rulesconverter
+-   `styleDescription` **[StyleDescription][30]** rulesconverter
+-   `type` **[string][22]** geometry type, @see [geojson][31] (optional, default `'Polygon'`)
 
-Returns **any** ol.Style.Style
+Returns **any** ol.style.Style or array of it
 
 ## Types
 
@@ -123,7 +123,7 @@ Types are the javascript representation of the ogc sld structure
 
 ### StyledLayerDescriptor
 
-a typedef for StyledLayerDescriptor [xsd][31]
+a typedef for StyledLayerDescriptor [xsd][32]
 
 **Properties**
 
@@ -137,38 +137,38 @@ a typedef for Layer, the actual style object for a single layer
 **Properties**
 
 -   `name` **[string][22]** layer name
--   `styles` **[Array][24]&lt;[Object][26]>** See explanation at [Geoserver docs][32]
-    -   `styles[].default` **[Boolean][33]** 
+-   `styles` **[Array][24]&lt;[Object][26]>** See explanation at [Geoserver docs][33]
+    -   `styles[].default` **[Boolean][34]** 
     -   `styles[].name` **[String][22]?** 
     -   `styles[].featuretypestyles` **[Array][24]&lt;[FeatureTypeStyle][27]>** Geoserver will draw multiple,
         libraries as openlayers can only use one definition!
 
 ### FeatureTypeStyle
 
-a typedef for FeatureTypeStyle: [xsd][34]
+a typedef for FeatureTypeStyle: [xsd][35]
 
 **Properties**
 
--   `rules` **[Array][24]&lt;[Rule][28]>** 
+-   `rules` **[Array][24]&lt;[Rule][29]>** 
 
 ### Rule
 
-a typedef for Rule to match a feature: [xsd][34]
+a typedef for Rule to match a feature: [xsd][35]
 
 **Properties**
 
 -   `name` **[string][22]** rule name
--   `filter` **[Filter][35]?** 
--   `elsefilter` **[boolean][33]?** 
+-   `filter` **[Filter][36]?** 
+-   `elsefilter` **[boolean][34]?** 
 -   `minscaledenominator` **integer?** 
 -   `maxscaledenominator` **integer?** 
--   `polygonsymbolizer` **[PolygonSymbolizer][36]?** 
--   `linesymbolizer` **[LineSymbolizer][37]?** 
--   `pointsymbolizer` **[PointSymbolizer][38]?** 
+-   `polygonsymbolizer` **[PolygonSymbolizer][37]?** 
+-   `linesymbolizer` **[LineSymbolizer][38]?** 
+-   `pointsymbolizer` **[PointSymbolizer][39]?** 
 
 ### Filter
 
-[ogc filters][39] should have only one prop
+[ogc filters][40] should have only one prop
 
 **Properties**
 
@@ -181,7 +181,7 @@ a typedef for Rule to match a feature: [xsd][34]
 
 ### LineSymbolizer
 
-a typedef for [LineSymbolizer][40]
+a typedef for [LineSymbolizer][41]
 
 **Properties**
 
@@ -190,7 +190,7 @@ a typedef for [LineSymbolizer][40]
 
 ### PolygonSymbolizer
 
-a typedef for [PolygonSymbolizer][40]
+a typedef for [PolygonSymbolizer][41]
 
 **Properties**
 
@@ -201,7 +201,7 @@ a typedef for [PolygonSymbolizer][40]
 
 ### PointSymbolizer
 
-a typedef for [PointSymbolizer][40]
+a typedef for [PointSymbolizer][41]
 
 **Properties**
 
@@ -216,10 +216,10 @@ The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
 
 **Parameters**
 
--   `rule` **[Rule][28]** 
--   `resolution` **[number][41]** m/px
+-   `rule` **[Rule][29]** 
+-   `resolution` **[number][28]** m/px
 
-Returns **[boolean][33]** 
+Returns **[boolean][34]** 
 
 ## setCssParams
 
@@ -292,30 +292,30 @@ a flat object per symbolizer type, with values assigned to camelcased props.
 
 [27]: #featuretypestyle
 
-[28]: #rule
+[28]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
 
-[29]: #styledescription
+[29]: #rule
 
-[30]: http://openlayers.org/en/latest/apidoc/ol.style.html
+[30]: #styledescription
 
-[31]: http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd
+[31]: http://geojson.org
 
-[32]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html
+[32]: http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd
 
-[33]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[33]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html
 
-[34]: http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd
+[34]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
 
-[35]: #filter
+[35]: http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd
 
-[36]: #polygonsymbolizer
+[36]: #filter
 
-[37]: #linesymbolizer
+[37]: #polygonsymbolizer
 
-[38]: #pointsymbolizer
+[38]: #linesymbolizer
 
-[39]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
+[39]: #pointsymbolizer
 
-[40]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
+[40]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
 
-[41]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[41]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
