@@ -9,7 +9,7 @@
     "watch": "rollup -c -w",
     "serve": "browser-sync start --config bs-config.js",
     "start": "npm-run-all -p serve watch",
-    "docs": "documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md && cp dist/sldreader.js docs/examples/"
+    "docs": "documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md"
   },
   "bugs": {
     "url": "https://github.com/NieuwlandGeo/SLDReader/issues"
