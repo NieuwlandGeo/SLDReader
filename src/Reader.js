@@ -122,8 +122,11 @@ const parsers = {
   PointSymbolizer: addProp,
   Fill: addProp,
   Stroke: addProp,
+  Graphic: addProp,
   ExternalGraphic: addProp,
-  OnlineResource: element => getText(element, 'sld:OnlineResource'),
+  OnlineResource: (element, obj) => {
+    obj.onlineresource = element.getAttribute('xlink:href');
+  },
   CssParameter: (element, obj) => {
     obj.css = obj.css || [];
     obj.css.push({

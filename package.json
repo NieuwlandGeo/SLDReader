@@ -32,7 +32,7 @@
     "chai": "^4.1.2",
     "core-js": "^2.5.3",
     "documentation": "^6.1.0",
-    "eslint": "^3.19.0",
+    "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^11.3.1",
     "eslint-config-openlayers": "^7.0.0",
     "eslint-plugin-import": "^2.7.0",
