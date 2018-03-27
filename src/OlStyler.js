@@ -19,6 +19,38 @@ function hexToRGB(hex, alpha) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+function polygonStyle(style) {
+  return new Style({
+    fill: new Fill({
+      color:
+        style.fillOpacity && style.fill && style.fill.slice(0, 1) === '#'
+          ? hexToRGB(style.fill, style.fillOpacity)
+          : style.fill,
+    }),
+    stroke: new Stroke({
+      color: style.stroke || '#3399CC',
+      width: style.strokeWidth || 1.25,
+      lineCap: style.strokeLinecap && style.strokeLinecap,
+      lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
+      lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
+      lineJoin: style.strokeLinejoin && style.strokeLinejoin,
+    }),
+  });
+}
+
+function lineStyle(style) {
+  return new Style({
+    stroke: new Stroke({
+      color: style.stroke || '#3399CC',
+      width: style.strokeWidth || 1.25,
+      lineCap: style.strokeLinecap && style.strokeLinecap,
+      lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
+      lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
+      lineJoin: style.strokeLinejoin && style.strokeLinejoin,
+    }),
+  });
+}
+
 /**
  * Create openlayers style from object returned by rulesConverter
  * @param {StyleDescription} styleDescription rulesconverter
@@ -27,41 +59,20 @@ function hexToRGB(hex, alpha) {
  */
 export default function OlStyler(styleDescription, type = 'Polygon') {
   const { polygon, line } = styleDescription;
+  const styles = [];
   switch (type) {
     case 'Polygon':
     case 'MultiPolygon':
-      return [
-        new Style({
-          fill: new Fill({
-            color:
-              polygon.fillOpacity && polygon.fill && polygon.fill.slice(0, 1) === '#'
-                ? hexToRGB(polygon.fill, polygon.fillOpacity)
-                : polygon.fill,
-          }),
-          stroke: new Stroke({
-            color: polygon.stroke || '#3399CC',
-            width: polygon.strokeWidth || 1.25,
-            lineCap: polygon.strokeLinecap && polygon.strokeLinecap,
-            lineDash: polygon.strokeDasharray && polygon.strokeDasharray.split(' '),
-            lineDashOffset: polygon.strokeDashoffset && polygon.strokeDashoffset,
-            lineJoin: polygon.strokeLinejoin && polygon.strokeLinejoin,
-          }),
-        }),
-      ];
+      for (let i = 0; i < polygon.length; i += 1) {
+        styles.push(polygonStyle(polygon[i]));
+      }
+      return styles;
     case 'LineString':
     case 'MultiLineString':
-      return [
-        new Style({
-          stroke: new Stroke({
-            color: line.stroke || '#3399CC',
-            width: line.strokeWidth || 1.25,
-            lineCap: line.strokeLinecap && line.strokeLinecap,
-            lineDash: line.strokeDasharray && line.strokeDasharray.split(' '),
-            lineDashOffset: line.strokeDashoffset && line.strokeDashoffset,
-            lineJoin: line.strokeLinejoin && line.strokeLinejoin,
-          }),
-        }),
-      ];
+      for (let j = 0; j < line.length; j += 1) {
+        styles.push(lineStyle(line[j]));
+      }
+      return styles;
     default:
       return [
         new Style({

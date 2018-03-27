@@ -58,13 +58,14 @@ describe('create styledescription from rules array', () => {
 
   it('polygon symbolizer has css params', () => {
     const description = StyleDescription(rules);
-    expect(description.polygon).to.have.property('fill');
-    expect(description.polygon).to.have.property('fillOpacity');
-    expect(description.polygon).to.have.property('stroke');
-    expect(description.polygon).to.have.property('strokeLinecap');
-    expect(description.polygon).to.have.property('strokeLinejoin');
-    expect(description.polygon).to.have.property('strokeOpacity');
-    expect(description.polygon).to.have.property('strokeWidth');
-    expect(description.polygon).to.have.property('strokeDashoffset');
+    const polygon = description.polygon['0'];
+    expect(polygon).to.have.property('fill');
+    expect(polygon).to.have.property('fillOpacity');
+    expect(polygon).to.have.property('stroke');
+    expect(polygon).to.have.property('strokeLinecap');
+    expect(polygon).to.have.property('strokeLinejoin');
+    expect(polygon).to.have.property('strokeOpacity');
+    expect(polygon).to.have.property('strokeWidth');
+    expect(polygon).to.have.property('strokeDashoffset');
   });
 });

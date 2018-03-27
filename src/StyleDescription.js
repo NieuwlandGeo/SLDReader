@@ -5,19 +5,23 @@
  */
 function getStyleDescription(rules) {
   const result = {
-    polygon: {},
-    line: {},
-    point: {},
+    polygon: [],
+    line: [],
+    point: [],
   };
   for (let i = 0; i < rules.length; i += 1) {
-    if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.fill) {
-      setCssParams(result.polygon, rules[i].polygonsymbolizer.fill.css);
-    }
-    if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.stroke) {
-      setCssParams(result.polygon, rules[i].polygonsymbolizer.stroke.css);
+    if (rules[i].polygonsymbolizer) {
+      let style = {};
+      if (rules[i].polygonsymbolizer.fill) {
+        style = Object.assign(style, getCssParams(rules[i].polygonsymbolizer.fill.css));
+      }
+      if (rules[i].polygonsymbolizer.stroke) {
+        style = Object.assign(style, getCssParams(rules[i].polygonsymbolizer.stroke.css));
+      }
+      result.polygon.push(style);
     }
     if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
-      setCssParams(result.line, rules[i].linesymbolizer.stroke.css);
+      result.line.push(getCssParams(rules[i].linesymbolizer.stroke.css));
     }
   }
   return result;
@@ -26,14 +30,17 @@ function getStyleDescription(rules) {
 /**
  * @param {object} result    [description]
  * @param {object[]} cssparams [description]
+ * @return {object} with camelCase key and css valye
  */
-function setCssParams(result, cssparams) {
+function getCssParams(cssparams) {
+  const result = {};
   for (let j = 0; j < cssparams.length; j += 1) {
     const key = cssparams[j].name
       .toLowerCase()
       .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
     result[key] = cssparams[j].value;
   }
+  return result;
 }
 
 export default getStyleDescription;
@@ -42,7 +49,9 @@ export default getStyleDescription;
  * @typedef StyleDescription
  * @name StyleDescription
  * @description a flat object per symbolizer type, with values assigned to camelcased props.
- * @property {object} polygon merged polygonsymbolizers
- * @property {object} line merged linesymbolizers
- * @property {object} point merged pointsymbolizers, props are camelcased.
+ * @property {object[]} polygon polygonsymbolizers, see
+ * {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html#cssparameter|polygon css parameters}
+ * and {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|stroke css parameters}
+ * @property {object[]} line linesymbolizers {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|strok css parameters}
+ * @property {object[]} point pointsymbolizers, props are camelcased.
  */

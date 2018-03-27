@@ -4,13 +4,21 @@ import OlStyler from '../src/OlStyler';
 
 describe('create ol style object from styledescription', () => {
   const styleDescription = {
-    polygon: {},
-    line: {},
-    point: {},
+    polygon: [
+      {
+        fill: 'blue',
+      },
+    ],
+    line: [
+      {
+        stroke: 'red',
+      },
+    ],
+    point: [],
   };
   it('returns object', () => {
     const style = OlStyler(styleDescription);
-    expect(style).to.be.an.object;
+    expect(style).to.be.an.array;
   });
   it('returns object with polygon style', () => {
     const style = OlStyler(styleDescription, 'Polygon');
