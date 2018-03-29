@@ -1,5 +1,5 @@
 {
-  "name": "sldreader",
+  "name": "@nieuwlandgeo/sldreader",
   "version": "0.0.1-1",
   "description": "SLD reader and formatter for openlayers",
   "main": "dist/sldreader.js",
@@ -19,12 +19,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/NieuwlandGeo/SLDReader"
+    "url": "git+https://github.com/NieuwlandGeo/SLDReader.git"
   },
-  "author": {
-    "name": "Allart Kooiman",
-    "email": "akooiman@nieuwland.nl"
-  },
+  "author": "Allart Kooiman <akooiman@nieuwland.nl>",
   "license": "ISC",
   "devDependencies": {
     "babel-preset-es2015": "^6.24.1",
@@ -54,5 +51,10 @@
     "vinyl-source-stream": "^1.1.0"
   },
   "dependencies": {},
-  "peerDependencies": {}
+  "peerDependencies": {},
+  "homepage": "https://github.com/NieuwlandGeo/SLDReader#readme",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  }
 }
