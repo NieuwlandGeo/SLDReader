@@ -10,7 +10,7 @@
     "watch": "rollup -c -w",
     "serve": "browser-sync start --config bs-config.js",
     "start": "npm-run-all -p serve watch",
-    "docs": "npm run build && cp dist/sldreader.js docs/examples/sldreader.js && documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md",
+    "docs": "npm run build && cp dist/sldreader.js docs/assets/sldreader.js && documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md",
     "version": "npm run build && git add -Af dist",
     "postversion": "git push --tags && git rm -r dist && git commit -m 'remove dist' && git push"
   },

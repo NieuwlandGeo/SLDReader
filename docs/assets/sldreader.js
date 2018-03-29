@@ -40,18 +40,6 @@
   }
 
   /**
-   * recieves textcontent of element with tagName
-   * @private
-   * @param  {Element} element [description]
-   * @param  {string} tagName [description]
-   * @return {string}
-   */
-  function getText(element, tagName) {
-    var collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
-    return collection.length ? collection.item(0).textContent : '';
-  }
-
-  /**
    * recieves boolean of element with tagName
    * @private
    * @param  {Element} element [description]
@@ -133,8 +121,11 @@
     PointSymbolizer: addProp,
     Fill: addProp,
     Stroke: addProp,
+    Graphic: addProp,
     ExternalGraphic: addProp,
-    OnlineResource: function (element) { return getText(element, 'sld:OnlineResource'); },
+    OnlineResource: function (element, obj) {
+      obj.onlineresource = element.getAttribute('xlink:href');
+    },
     CssParameter: function (element, obj) {
       obj.css = obj.css || [];
       obj.css.push({
@@ -272,6 +263,38 @@
     return ("rgb(" + r + ", " + g + ", " + b + ")");
   }
 
+  function polygonStyle(style) {
+    return new Style({
+      fill: new Fill({
+        color:
+          style.fillOpacity && style.fill && style.fill.slice(0, 1) === '#'
+            ? hexToRGB(style.fill, style.fillOpacity)
+            : style.fill,
+      }),
+      stroke: new Stroke({
+        color: style.stroke || '#3399CC',
+        width: style.strokeWidth || 1.25,
+        lineCap: style.strokeLinecap && style.strokeLinecap,
+        lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
+        lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
+        lineJoin: style.strokeLinejoin && style.strokeLinejoin,
+      }),
+    });
+  }
+
+  function lineStyle(style) {
+    return new Style({
+      stroke: new Stroke({
+        color: style.stroke || '#3399CC',
+        width: style.strokeWidth || 1.25,
+        lineCap: style.strokeLinecap && style.strokeLinecap,
+        lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
+        lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
+        lineJoin: style.strokeLinejoin && style.strokeLinejoin,
+      }),
+    });
+  }
+
   /**
    * Create openlayers style from object returned by rulesConverter
    * @param {StyleDescription} styleDescription rulesconverter
@@ -283,41 +306,22 @@
 
     var polygon = styleDescription.polygon;
     var line = styleDescription.line;
+    var styles = [];
     switch (type) {
       case 'Polygon':
       case 'MultiPolygon':
-        return [
-          new Style({
-            fill: new Fill({
-              color:
-                polygon.fillOpacity && polygon.fill && polygon.fill.slice(0, 1) === '#'
-                  ? hexToRGB(polygon.fill, polygon.fillOpacity)
-                  : polygon.fill,
-            }),
-            stroke: new Stroke({
-              color: polygon.stroke || '#3399CC',
-              width: polygon.strokeWidth || 1.25,
-              lineCap: polygon.strokeLinecap && polygon.strokeLinecap,
-              lineDash: polygon.strokeDasharray && polygon.strokeDasharray.split(' '),
-              lineDashOffset: polygon.strokeDashoffset && polygon.strokeDashoffset,
-              lineJoin: polygon.strokeLinejoin && polygon.strokeLinejoin,
-            }),
-          }) ];
+        for (var i = 0; i < polygon.length; i += 1) {
+          styles.push(polygonStyle(polygon[i]));
+        }
+        break;
       case 'LineString':
       case 'MultiLineString':
-        return [
-          new Style({
-            stroke: new Stroke({
-              color: line.stroke || '#3399CC',
-              width: line.strokeWidth || 1.25,
-              lineCap: line.strokeLinecap && line.strokeLinecap,
-              lineDash: line.strokeDasharray && line.strokeDasharray.split(' '),
-              lineDashOffset: line.strokeDashoffset && line.strokeDashoffset,
-              lineJoin: line.strokeLinejoin && line.strokeLinejoin,
-            }),
-          }) ];
+        for (var j = 0; j < line.length; j += 1) {
+          styles.push(lineStyle(line[j]));
+        }
+        break;
       default:
-        return [
+        styles = [
           new Style({
             image: new Circle({
               radius: 2,
@@ -327,6 +331,7 @@
             }),
           }) ];
     }
+    return styles;
   }
 
   /**
@@ -336,44 +341,54 @@
    */
   function getStyleDescription(rules) {
     var result = {
-      polygon: {},
-      line: {},
-      point: {},
+      polygon: [],
+      line: [],
+      point: [],
     };
     for (var i = 0; i < rules.length; i += 1) {
-      if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.fill) {
-        setCssParams(result.polygon, rules[i].polygonsymbolizer.fill.css);
-      }
-      if (rules[i].polygonsymbolizer && rules[i].polygonsymbolizer.stroke) {
-        setCssParams(result.polygon, rules[i].polygonsymbolizer.stroke.css);
+      if (rules[i].polygonsymbolizer) {
+        var style = {};
+        if (rules[i].polygonsymbolizer.fill) {
+          style = Object.assign(style, getCssParams(rules[i].polygonsymbolizer.fill.css));
+        }
+        if (rules[i].polygonsymbolizer.stroke) {
+          style = Object.assign(style, getCssParams(rules[i].polygonsymbolizer.stroke.css));
+        }
+        result.polygon.push(style);
       }
       if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
-        setCssParams(result.line, rules[i].linesymbolizer.stroke.css);
+        result.line.push(getCssParams(rules[i].linesymbolizer.stroke.css));
       }
     }
     return result;
   }
 
   /**
+   * @private
    * @param {object} result    [description]
    * @param {object[]} cssparams [description]
+   * @return {object} with camelCase key and css valye
    */
-  function setCssParams(result, cssparams) {
+  function getCssParams(cssparams) {
+    var result = {};
     for (var j = 0; j < cssparams.length; j += 1) {
       var key = cssparams[j].name
         .toLowerCase()
         .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
       result[key] = cssparams[j].value;
     }
+    return result;
   }
 
   /**
    * @typedef StyleDescription
    * @name StyleDescription
    * @description a flat object per symbolizer type, with values assigned to camelcased props.
-   * @property {object} polygon merged polygonsymbolizers
-   * @property {object} line merged linesymbolizers
-   * @property {object} point merged pointsymbolizers, props are camelcased.
+   * @property {object[]} polygon polygonsymbolizers, see
+   * {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html#cssparameter|polygon css parameters}
+   * and {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|stroke css parameters}
+   * @property {object[]} line linesymbolizers {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|strok css parameters}
+   * @property {object[]} point pointsymbolizers, props are camelcased.
    */
 
   var Filters = {
@@ -428,6 +443,7 @@
   /**
    * [scaleSelector description]
    * The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
+   * @private
    * @param  {Rule} rule
    * @param  {number} resolution  m/px
    * @return {boolean}

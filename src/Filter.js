@@ -50,6 +50,7 @@ export function filterSelector(filter, feature, key = 0) {
 /**
  * [scaleSelector description]
  * The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
+ * @private
  * @param  {Rule} rule
  * @param  {number} resolution  m/px
  * @return {boolean}

@@ -24,3 +24,4 @@ toc:
       - LineSymbolizer
       - PolygonSymbolizer
       - PointSymbolizer
+      - StyleDescription

@@ -28,6 +28,7 @@ function getStyleDescription(rules) {
 }
 
 /**
+ * @private
  * @param {object} result    [description]
  * @param {object[]} cssparams [description]
  * @return {object} with camelCase key and css valye
