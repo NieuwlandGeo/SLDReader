@@ -48,7 +48,13 @@
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.5.3/core.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol-debug.js"></script>
-  <script src="assets/sldreader.js"></script>
+  <script>
+  if (window.location.hostname === 'localhost') {
+  document.write('<scr' + 'ipt src="sldreader.js"></scr' + 'ipt>');
+} else {
+  document.write('<scr' + 'ipt src="assets/sldreader.js"></scr' + 'ipt>');
+}
+</script>
   <script src="assets/ol.js"></script>
 </body>
 
