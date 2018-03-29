@@ -19,6 +19,6 @@ module.exports = {
     'change',
     'add',
   ],
-  server: ['dist', 'docs/examples'],
+  server: ['dist', 'docs'],
   proxy: false,
 };

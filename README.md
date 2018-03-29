@@ -14,7 +14,7 @@ More information about the standards:
 
 ## Examples
 
-[Live example](https://nieuwlandgeo.github.io/SLDReader/examples)
+[Live example](https://nieuwlandgeo.github.io/SLDReader)
 
 See docs/examples folder, to serve them locally
 

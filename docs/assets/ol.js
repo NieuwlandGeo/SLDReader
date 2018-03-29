@@ -19,23 +19,23 @@ const proj = new ol.proj.Projection({
 ol.proj.addEquivalentProjections([ol.proj.get('EPSG:4326'), proj]);
 
 const sourceurls = [
-  'TasmaniaLand.xml',
-  'TasmaniaCities.xml',
-  'TasmaniaRoads.xml',
-  'TasmaniaWaterBodies.xml',
+  'assets/TasmaniaLand.xml',
+  'assets/TasmaniaCities.xml',
+  'assets/TasmaniaRoads.xml',
+  'assets/TasmaniaWaterBodies.xml',
 ];
 const vectorsources = sourceurls.map(
   s =>
     new ol.source.Vector({
       format: new ol.format.GML2(),
       url: s,
-    }),
+    })
 );
 const layers = vectorsources.map(
   s =>
     new ol.layer.Vector({
       source: s,
-    }),
+    })
 );
 
 const map = new ol.Map({
@@ -50,9 +50,9 @@ const map = new ol.Map({
 // var ext = map.getView().calculateExtent();
 map.getView().fit([143.8, -44.048828125, 148.5, -40]);
 map.addControl(new ol.control.MousePosition());
-fetch('sld-tasmania.xml')
+fetch('assets/sld-tasmania.xml')
   .then(response => response.text())
-  .then((text) => {
+  .then(text => {
     const sldObject = SLDReader.Reader(text);
     styleSelector(sldObject);
 
@@ -60,7 +60,7 @@ fetch('sld-tasmania.xml')
       const layername = layer
         .getSource()
         .getUrl()
-        .replace(/\.xml|Tasmania/g, '');
+        .replace(/\.xml|assets\/Tasmania/g, '');
       const sldLayer = SLDReader.getLayer(sldObject, layername);
       if (sldLayer) {
         const style = SLDReader.getStyle(sldLayer, stylename);
@@ -71,14 +71,14 @@ fetch('sld-tasmania.xml')
           const rules = SLDReader.getRules(
             style.featuretypestyles['0'],
             geojson,
-            resolution * 111034,
+            resolution * 111034
           );
           return SLDReader.OlStyler(SLDReader.getStyleDescription(rules), geojson.geometry.type);
         });
       }
     };
     layers.forEach(l => setLayerStyle(l));
-    document.getElementById('style_chooser').addEventListener('change', (e) => {
+    document.getElementById('style_chooser').addEventListener('change', e => {
       const styleName = e.target.value;
       setLayerStyle(layers['3'], styleName);
     });
