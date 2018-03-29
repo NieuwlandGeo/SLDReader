@@ -59,22 +59,22 @@ function lineStyle(style) {
  */
 export default function OlStyler(styleDescription, type = 'Polygon') {
   const { polygon, line } = styleDescription;
-  const styles = [];
+  let styles = [];
   switch (type) {
     case 'Polygon':
     case 'MultiPolygon':
       for (let i = 0; i < polygon.length; i += 1) {
         styles.push(polygonStyle(polygon[i]));
       }
-      return styles;
+      break;
     case 'LineString':
     case 'MultiLineString':
       for (let j = 0; j < line.length; j += 1) {
         styles.push(lineStyle(line[j]));
       }
-      return styles;
+      break;
     default:
-      return [
+      styles = [
         new Style({
           image: new Circle({
             radius: 2,
@@ -85,4 +85,5 @@ export default function OlStyler(styleDescription, type = 'Polygon') {
         }),
       ];
   }
+  return styles;
 }

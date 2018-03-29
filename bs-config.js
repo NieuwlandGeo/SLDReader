@@ -14,7 +14,7 @@
  */
 module.exports = {
   ui: false,
-  files: ['dist'],
+  files: ['dist', 'docs'],
   watchEvents: [
     'change',
     'add',
