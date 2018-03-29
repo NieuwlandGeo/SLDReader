@@ -10,6 +10,9 @@ function styleSelector(sldObject) {
     newOption.text = styleNames[i];
     chooser.add(newOption);
   }
+  if (window.location.hash) {
+    chooser.value = window.location.hash.substr(1);
+  }
 }
 // Coords in gml are xy
 const proj = new ol.proj.Projection({
@@ -77,9 +80,17 @@ fetch('assets/sld-tasmania.xml')
         });
       }
     };
-    layers.forEach(l => setLayerStyle(l));
+    layers.forEach((l, i) => {
+      // waterbodies layer
+      if (i === 3) {
+        setLayerStyle(l, document.getElementById('style_chooser').value);
+      } else {
+        setLayerStyle(l);
+      }
+    });
     document.getElementById('style_chooser').addEventListener('change', e => {
       const styleName = e.target.value;
       setLayerStyle(layers['3'], styleName);
+      window.location.hash = styleName;
     });
   });
