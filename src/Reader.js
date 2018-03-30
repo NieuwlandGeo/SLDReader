@@ -29,15 +29,15 @@ function addProp(node, obj, prop) {
 }
 
 /**
- * recieves textcontent of element with tagName
+ * Assigns textcontnet to obj.prop
  * @private
- * @param  {Element} element [description]
- * @param  {string} tagName [description]
- * @return {string}
+ * @param {Element} node [description]
+ * @param {object} obj  [description]
+ * @param {string} prop [description]
  */
-function getText(element, tagName) {
-  const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
-  return collection.length ? collection.item(0).textContent : '';
+function addPropWithTextContent(node, obj, prop) {
+  const property = prop.toLowerCase();
+  obj[property] = node.textContent;
 }
 
 /**
@@ -101,22 +101,14 @@ const parsers = {
   PropertyIsLessThanOrEqualTo: addPropArray,
   PropertyIsGreaterThan: addPropArray,
   PropertyIsGreaterThanOrEqualTo: addPropArray,
-  PropertyName: (element, obj) => {
-    obj.propertyname = element.textContent;
-  },
-  Literal: (element, obj) => {
-    obj.literal = element.textContent;
-  },
+  PropertyName: addPropWithTextContent,
+  Literal: addPropWithTextContent,
   FeatureId: (element, obj) => {
     obj.featureid = obj.featureid || [];
     obj.featureid.push(element.getAttribute('fid'));
   },
-  Name: (element, obj) => {
-    obj.name = element.textContent;
-  },
-  MaxScaleDenominator: (element, obj) => {
-    obj.maxscaledenominator = element.textContent;
-  },
+  Name: addPropWithTextContent,
+  MaxScaleDenominator: addPropWithTextContent,
   PolygonSymbolizer: addProp,
   LineSymbolizer: addProp,
   PointSymbolizer: addProp,
@@ -124,6 +116,9 @@ const parsers = {
   Stroke: addProp,
   Graphic: addProp,
   ExternalGraphic: addProp,
+  Mark: addProp,
+  Size: addPropWithTextContent,
+  WellKnownName: addPropWithTextContent,
   OnlineResource: (element, obj) => {
     obj.onlineresource = element.getAttribute('xlink:href');
   },
@@ -242,8 +237,16 @@ export default function Reader(sld) {
 /**
  * @typedef PointSymbolizer
  * @name PointSymbolizer
- * @description a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+ * @description a typedef for PointSymbolizer [xsd](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+ * & [geoserver docs](http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html)
  * @property {Object} graphic
  * @property {Object} graphic.externalgraphic
  * @property {string} graphic.externalgraphic.onlineresource
+ * @property {Object} graphic.mark
+ * @property {string} graphic.mark.wellknownname
+ * @property {Object} graphic.mark.fill
+ * @property {Object} graphic.mark.stroke
+ * @property {Number} graphic.opacity
+ * @property {Number} graphic.size
+ * @property {Number} graphic.rotation
  * */

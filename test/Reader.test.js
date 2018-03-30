@@ -53,7 +53,7 @@ describe('Reads xml', () => {
     expect(rule.polygonsymbolizer.stroke.css['0']).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.stroke.css['0'].name).to.equal('stroke');
   });
-  it('cities layer has PointSymbolizer with graphic', () => {
+  it('cities layer has PointSymbolizer with external graphic', () => {
     const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule).to.have.property('pointsymbolizer');
     expect(rule.pointsymbolizer).to.have.property('graphic');
@@ -62,5 +62,14 @@ describe('Reads xml', () => {
     expect(rule.pointsymbolizer.graphic.externalgraphic.onlineresource).to.equal(
       '../img/marker.png'
     );
+  });
+  it('cities layer has pointsymbolizer with graphic mark', () => {
+    const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
+    expect(rule).to.have.property('pointsymbolizer');
+    expect(rule.pointsymbolizer).to.have.property('graphic');
+    expect(rule.pointsymbolizer.graphic).to.have.property('mark');
+    expect(rule.pointsymbolizer.graphic).to.have.property('size');
+    expect(rule.pointsymbolizer.graphic.mark).to.have.property('wellknownname');
+    expect(rule.pointsymbolizer.graphic.mark.wellknownname).to.equal('cross');
   });
 });
