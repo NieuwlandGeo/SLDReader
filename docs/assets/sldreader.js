@@ -341,7 +341,8 @@
   }
 
   /**
-   * Create openlayers style from object returned by rulesConverter
+   * Create openlayers style
+   * @example OlStyler(getStyleDescription(rules), geojson.geometry.type);
    * @param {StyleDescription} styleDescription rulesconverter
    * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
    * @return ol.style.Style or array of it
@@ -387,7 +388,7 @@
   }
 
   /**
-   * Merges style props of rules, last defined rule props win
+   * Get styling from rules
    * @param  {Rule[]} rules [description]
    * @return {StyleDescription}
    */
@@ -555,11 +556,11 @@
     return layer.styles.map(function (s) { return s.name; });
   }
   /**
-   * get style, if name is undefined it returns default style.
+   * get style from array layer.styles, if name is undefined it returns default style.
    * null is no style found
    * @param  {Layer} layer [description]
    * @param {string} name of style
-   * @return {object} the style with matching name
+   * @return {object} the style from layer.styles matching the name
    */
   function getStyle(layer, name) {
     if (name) {
@@ -570,8 +571,11 @@
 
   /**
    * get rules for specific feature after applying filters
-   * @param  {FeatureTypeStyle} featureTypeStyle [description]
-   * @param  {object} feature
+   * @example
+   * const style = getStyle(sldLayer, stylename);
+   * getRules(style.featuretypestyles['0'], geojson,resolution);
+   * @param  {FeatureTypeStyle} featureTypeStyle
+   * @param  {object} feature geojson
    * @param  {number} resolution m/px
    * @return {Rule[]}
    */

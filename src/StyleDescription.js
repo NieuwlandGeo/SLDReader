@@ -1,5 +1,5 @@
 /**
- * Merges style props of rules, last defined rule props win
+ * Get styling from rules
  * @param  {Rule[]} rules [description]
  * @return {StyleDescription}
  */

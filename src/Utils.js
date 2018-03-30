@@ -27,11 +27,11 @@ export function getStyleNames(layer) {
   return layer.styles.map(s => s.name);
 }
 /**
- * get style, if name is undefined it returns default style.
+ * get style from array layer.styles, if name is undefined it returns default style.
  * null is no style found
  * @param  {Layer} layer [description]
  * @param {string} name of style
- * @return {object} the style with matching name
+ * @return {object} the style from layer.styles matching the name
  */
 export function getStyle(layer, name) {
   if (name) {
@@ -42,8 +42,11 @@ export function getStyle(layer, name) {
 
 /**
  * get rules for specific feature after applying filters
- * @param  {FeatureTypeStyle} featureTypeStyle [description]
- * @param  {object} feature
+ * @example
+ * const style = getStyle(sldLayer, stylename);
+ * getRules(style.featuretypestyles['0'], geojson,resolution);
+ * @param  {FeatureTypeStyle} featureTypeStyle
+ * @param  {object} feature geojson
  * @param  {number} resolution m/px
  * @return {Rule[]}
  */

@@ -82,7 +82,8 @@ function pointStyle(style) {
 }
 
 /**
- * Create openlayers style from object returned by rulesConverter
+ * Create openlayers style
+ * @example OlStyler(getStyleDescription(rules), geojson.geometry.type);
  * @param {StyleDescription} styleDescription rulesconverter
  * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
  * @return ol.style.Style or array of it

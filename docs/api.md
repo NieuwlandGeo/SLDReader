@@ -71,7 +71,7 @@ Returns **[Array][22]&lt;[string][20]>** [description]
 
 ### getStyle
 
-get style, if name is undefined it returns default style.
+get style from array layer.styles, if name is undefined it returns default style.
 null is no style found
 
 **Parameters**
@@ -79,7 +79,7 @@ null is no style found
 -   `layer` **[Layer][23]** [description]
 -   `name` **[string][20]** of style
 
-Returns **[object][24]** the style with matching name
+Returns **[object][24]** the style from layer.styles matching the name
 
 ### getRules
 
@@ -87,15 +87,22 @@ get rules for specific feature after applying filters
 
 **Parameters**
 
--   `featureTypeStyle` **[FeatureTypeStyle][25]** [description]
--   `feature` **[object][24]** 
+-   `featureTypeStyle` **[FeatureTypeStyle][25]** 
+-   `feature` **[object][24]** geojson
 -   `resolution` **[number][26]** m/px
+
+**Examples**
+
+```javascript
+const style = getStyle(sldLayer, stylename);
+getRules(style.featuretypestyles['0'], geojson,resolution);
+```
 
 Returns **[Array][22]&lt;[Rule][27]>** 
 
 ### getStyleDescription
 
-Merges style props of rules, last defined rule props win
+Get styling from rules
 
 **Parameters**
 
@@ -105,12 +112,18 @@ Returns **[StyleDescription][28]**
 
 ### OlStyler
 
-Create openlayers style from object returned by rulesConverter
+Create openlayers style
 
 **Parameters**
 
 -   `styleDescription` **[StyleDescription][28]** rulesconverter
 -   `type` **[string][20]** geometry type, @see [geojson][29] (optional, default `'Polygon'`)
+
+**Examples**
+
+```javascript
+OlStyler(getStyleDescription(rules), geojson.geometry.type);
+```
 
 Returns **any** ol.style.Style or array of it
 
