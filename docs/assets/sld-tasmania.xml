@@ -230,7 +230,7 @@
         </sld:Rule>
       </sld:FeatureTypeStyle>
     </sld:UserStyle>
-    
+
     <sld:UserStyle>
       <sld:Name>Styler Test WATER_TYPE</sld:Name>
       <sld:Title>Styler Test WATER_TYPE</sld:Title>
@@ -407,7 +407,7 @@
         </sld:Rule>
       </sld:FeatureTypeStyle>
     </sld:UserStyle>
-    
+
     <sld:UserStyle>
       <sld:Name>Styler Test PropertyIsLike</sld:Name>
       <sld:Title>Styler Test PropertyIsLike</sld:Title>
@@ -506,7 +506,20 @@
                 <ogc:Literal>red</ogc:Literal>
               </sld:CssParameter>
               <sld:CssParameter name="stroke-width">
-                <ogc:Literal>2</ogc:Literal>
+                <ogc:Literal>4</ogc:Literal>
+              </sld:CssParameter>
+            </sld:Stroke>
+          </sld:LineSymbolizer>
+        </sld:Rule>
+        <sld:Rule>
+          <sld:Name>justASecondStyler</sld:Name>
+          <sld:LineSymbolizer>
+            <sld:Stroke>
+              <sld:CssParameter name="stroke">
+                <ogc:Literal>yellow</ogc:Literal>
+              </sld:CssParameter>
+              <sld:CssParameter name="stroke-width">
+                <ogc:Literal>1</ogc:Literal>
               </sld:CssParameter>
             </sld:Stroke>
           </sld:LineSymbolizer>
@@ -528,7 +541,7 @@
           <sld:PointSymbolizer>
             <sld:Graphic>
               <sld:ExternalGraphic>
-                <sld:OnlineResource xlink:href="../img/marker.png"/>
+                <sld:OnlineResource xlink:href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon.png"/>
                 <sld:Format>image/png</sld:Format>
               </sld:ExternalGraphic>
               <sld:Opacity>0.7</sld:Opacity>
@@ -584,5 +597,5 @@
       </sld:FeatureTypeStyle>
     </sld:UserStyle>
   </sld:NamedLayer>
-  
+
 </sld:StyledLayerDescriptor>

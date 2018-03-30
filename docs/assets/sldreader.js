@@ -1,13 +1,14 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle'], factory) :
-  (factory((global.SLDReader = {}),global.ol.style.Style,global.ol.style.Fill,global.ol.style.Stroke,global.ol.style.Circle));
-}(this, (function (exports,Style,Fill,Stroke,Circle) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle'), require('ol/style/icon')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle', 'ol/style/icon'], factory) :
+  (factory((global.SLDReader = {}),global.ol.style.Style,global.ol.style.Fill,global.ol.style.Stroke,global.ol.style.Circle,global.ol.style.Icon));
+}(this, (function (exports,Style,Fill,Stroke,Circle,Icon) { 'use strict';
 
   Style = Style && Style.hasOwnProperty('default') ? Style['default'] : Style;
   Fill = Fill && Fill.hasOwnProperty('default') ? Fill['default'] : Fill;
   Stroke = Stroke && Stroke.hasOwnProperty('default') ? Stroke['default'] : Stroke;
   Circle = Circle && Circle.hasOwnProperty('default') ? Circle['default'] : Circle;
+  Icon = Icon && Icon.hasOwnProperty('default') ? Icon['default'] : Icon;
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -295,6 +296,22 @@
     });
   }
 
+  function pointStyle(style) {
+    if (style.externalgraphic) {
+      return new Style({
+        image: new Icon({ src: style.externalgraphic }),
+      });
+    }
+    return new Style({
+      image: new Circle({
+        radius: 2,
+        fill: new Fill({
+          color: 'blue',
+        }),
+      }),
+    });
+  }
+
   /**
    * Create openlayers style from object returned by rulesConverter
    * @param {StyleDescription} styleDescription rulesconverter
@@ -306,6 +323,7 @@
 
     var polygon = styleDescription.polygon;
     var line = styleDescription.line;
+    var point = styleDescription.point;
     var styles = [];
     switch (type) {
       case 'Polygon':
@@ -318,6 +336,12 @@
       case 'MultiLineString':
         for (var j = 0; j < line.length; j += 1) {
           styles.push(lineStyle(line[j]));
+        }
+        break;
+      case 'Point':
+      case 'MultiPoint':
+        for (var j$1 = 0; j$1 < point.length; j$1 += 1) {
+          styles.push(pointStyle(point[j$1]));
         }
         break;
       default:
@@ -358,6 +382,18 @@
       }
       if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
         result.line.push(getCssParams(rules[i].linesymbolizer.stroke.css));
+      }
+      if (rules[i].pointsymbolizer) {
+        var ref = rules[i];
+        var pointsymbolizer = ref.pointsymbolizer;
+        if (
+          pointsymbolizer.graphic.externalgraphic &&
+          pointsymbolizer.graphic.externalgraphic.onlineresource
+        ) {
+          result.point.push({
+            externalgraphic: pointsymbolizer.graphic.externalgraphic.onlineresource,
+          });
+        }
       }
     }
     return result;
