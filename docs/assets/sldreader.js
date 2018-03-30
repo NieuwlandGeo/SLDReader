@@ -389,6 +389,7 @@
    * and {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|stroke css parameters}
    * @property {object[]} line linesymbolizers {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|strok css parameters}
    * @property {object[]} point pointsymbolizers, props are camelcased.
+   * @property {string} point.externalgraphic url from ExternalGraphic
    */
 
   var Filters = {

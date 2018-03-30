@@ -46,6 +46,11 @@ describe('create styledescription from rules array', () => {
           ],
         },
       },
+      pointsymbolizer: {
+        externalgraphic: {
+          onlineresource: 'img.png',
+        },
+      },
     },
   ];
 
@@ -56,7 +61,7 @@ describe('create styledescription from rules array', () => {
     expect(description).to.have.property('point');
   });
 
-  it('polygon symbolizer has css params', () => {
+  it('polygon prop receives has css params', () => {
     const description = StyleDescription(rules);
     const polygon = description.polygon['0'];
     expect(polygon).to.have.property('fill');
@@ -67,5 +72,12 @@ describe('create styledescription from rules array', () => {
     expect(polygon).to.have.property('strokeOpacity');
     expect(polygon).to.have.property('strokeWidth');
     expect(polygon).to.have.property('strokeDashoffset');
+  });
+
+  it('point prop receives graphic ', () => {
+    const description = StyleDescription(rules);
+    const point = description.point['0'];
+    expect(point).to.have.property('externalgraphic');
+    expect(point.externalgraphic).to.equal('img.png');
   });
 });

@@ -218,6 +218,7 @@ a flat object per symbolizer type, with values assigned to camelcased props.
     and [stroke css parameters][41]
 -   `line` **[Array][22]&lt;[object][24]>** linesymbolizers [strok css parameters][41]
 -   `point` **[Array][22]&lt;[object][24]>** pointsymbolizers, props are camelcased.
+    -   `point.externalgraphic` **[string][20]** url from ExternalGraphic
 
 [1]: #methods
 

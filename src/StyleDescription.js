@@ -23,6 +23,16 @@ function getStyleDescription(rules) {
     if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
       result.line.push(getCssParams(rules[i].linesymbolizer.stroke.css));
     }
+    if (rules[i].pointsymbolizer) {
+      if (
+        rules[i].pointsymbolizer.externalgraphic &&
+        rules[i].pointsymbolizer.externalgraphic.onlineresource
+      ) {
+        result.point.push({
+          externalgraphic: rules[i].pointsymbolizer.externalgraphic.onlineresource,
+        });
+      }
+    }
   }
   return result;
 }
@@ -55,4 +65,5 @@ export default getStyleDescription;
  * and {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|stroke css parameters}
  * @property {object[]} line linesymbolizers {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|strok css parameters}
  * @property {object[]} point pointsymbolizers, props are camelcased.
+ * @property {string} point.externalgraphic url from ExternalGraphic
  */
