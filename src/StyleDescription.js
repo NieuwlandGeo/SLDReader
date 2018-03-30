@@ -24,12 +24,13 @@ function getStyleDescription(rules) {
       result.line.push(getCssParams(rules[i].linesymbolizer.stroke.css));
     }
     if (rules[i].pointsymbolizer) {
+      const { pointsymbolizer } = rules[i];
       if (
-        rules[i].pointsymbolizer.externalgraphic &&
-        rules[i].pointsymbolizer.externalgraphic.onlineresource
+        pointsymbolizer.graphic.externalgraphic &&
+        pointsymbolizer.graphic.externalgraphic.onlineresource
       ) {
         result.point.push({
-          externalgraphic: rules[i].pointsymbolizer.externalgraphic.onlineresource,
+          externalgraphic: pointsymbolizer.graphic.externalgraphic.onlineresource,
         });
       }
     }

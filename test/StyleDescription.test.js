@@ -47,8 +47,10 @@ describe('create styledescription from rules array', () => {
         },
       },
       pointsymbolizer: {
-        externalgraphic: {
-          onlineresource: 'img.png',
+        graphic: {
+          externalgraphic: {
+            onlineresource: 'img.png',
+          },
         },
       },
     },

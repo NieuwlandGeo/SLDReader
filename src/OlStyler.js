@@ -2,6 +2,7 @@ import Style from 'ol/style/style';
 import Fill from 'ol/style/fill';
 import Stroke from 'ol/style/stroke';
 import Circle from 'ol/style/circle';
+import Icon from 'ol/style/icon';
 
 /**
  * @private
@@ -51,6 +52,22 @@ function lineStyle(style) {
   });
 }
 
+function pointStyle(style) {
+  if (style.externalgraphic) {
+    return new Style({
+      image: new Icon({ src: style.externalgraphic }),
+    });
+  }
+  return new Style({
+    image: new Circle({
+      radius: 2,
+      fill: new Fill({
+        color: 'blue',
+      }),
+    }),
+  });
+}
+
 /**
  * Create openlayers style from object returned by rulesConverter
  * @param {StyleDescription} styleDescription rulesconverter
@@ -58,7 +75,7 @@ function lineStyle(style) {
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(styleDescription, type = 'Polygon') {
-  const { polygon, line } = styleDescription;
+  const { polygon, line, point } = styleDescription;
   let styles = [];
   switch (type) {
     case 'Polygon':
@@ -71,6 +88,12 @@ export default function OlStyler(styleDescription, type = 'Polygon') {
     case 'MultiLineString':
       for (let j = 0; j < line.length; j += 1) {
         styles.push(lineStyle(line[j]));
+      }
+      break;
+    case 'Point':
+    case 'MultiPoint':
+      for (let j = 0; j < point.length; j += 1) {
+        styles.push(pointStyle(point[j]));
       }
       break;
     default:
