@@ -25,14 +25,7 @@ function getStyleDescription(rules) {
     }
     if (rules[i].pointsymbolizer) {
       const { pointsymbolizer } = rules[i];
-      if (
-        pointsymbolizer.graphic.externalgraphic &&
-        pointsymbolizer.graphic.externalgraphic.onlineresource
-      ) {
-        result.point.push({
-          externalgraphic: pointsymbolizer.graphic.externalgraphic.onlineresource,
-        });
-      }
+      result.point.push(pointsymbolizer.graphic);
     }
   }
   return result;
@@ -65,6 +58,8 @@ export default getStyleDescription;
  * {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html#cssparameter|polygon css parameters}
  * and {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|stroke css parameters}
  * @property {object[]} line linesymbolizers {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|strok css parameters}
- * @property {object[]} point pointsymbolizers, props are camelcased.
- * @property {string} point.externalgraphic url from ExternalGraphic
+ * @property {object[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
+ * @property {object} point.externalgraphic
+ * @property {string} point.externalgraphic.onlineresource url from ExternalGraphic
+ * @property {object} point.mark
  */

@@ -199,13 +199,21 @@ a typedef for [PolygonSymbolizer][39]
 
 ### PointSymbolizer
 
-a typedef for [PointSymbolizer][39]
+a typedef for PointSymbolizer [xsd][39]
+& [geoserver docs][40]
 
 **Properties**
 
 -   `graphic` **[Object][24]** 
     -   `graphic.externalgraphic` **[Object][24]** 
         -   `graphic.externalgraphic.onlineresource` **[string][20]** 
+    -   `graphic.mark` **[Object][24]** 
+        -   `graphic.mark.wellknownname` **[string][20]** 
+        -   `graphic.mark.fill` **[Object][24]** 
+        -   `graphic.mark.stroke` **[Object][24]** 
+    -   `graphic.opacity` **[Number][26]** 
+    -   `graphic.size` **[Number][26]** 
+    -   `graphic.rotation` **[Number][26]** 
 
 ### StyleDescription
 
@@ -214,11 +222,13 @@ a flat object per symbolizer type, with values assigned to camelcased props.
 **Properties**
 
 -   `polygon` **[Array][22]&lt;[object][24]>** polygonsymbolizers, see
-    [polygon css parameters][40]
-    and [stroke css parameters][41]
--   `line` **[Array][22]&lt;[object][24]>** linesymbolizers [strok css parameters][41]
--   `point` **[Array][22]&lt;[object][24]>** pointsymbolizers, props are camelcased.
-    -   `point.externalgraphic` **[string][20]** url from ExternalGraphic
+    [polygon css parameters][41]
+    and [stroke css parameters][42]
+-   `line` **[Array][22]&lt;[object][24]>** linesymbolizers [strok css parameters][42]
+-   `point` **[Array][22]&lt;[object][24]>** pointsymbolizers, same as graphic prop from PointSymbolizer
+    -   `point.externalgraphic` **[object][24]** 
+        -   `point.externalgraphic.onlineresource` **[string][20]** url from ExternalGraphic
+    -   `point.mark` **[object][24]** 
 
 [1]: #methods
 
@@ -298,6 +308,8 @@ a flat object per symbolizer type, with values assigned to camelcased props.
 
 [39]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
 
-[40]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html#cssparameter
+[40]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html
 
-[41]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter
+[41]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html#cssparameter
+
+[42]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter

@@ -3,6 +3,7 @@ import Fill from 'ol/style/fill';
 import Stroke from 'ol/style/stroke';
 import Circle from 'ol/style/circle';
 import Icon from 'ol/style/icon';
+import RegularShape from 'ol/style/regularshape';
 
 /**
  * @private
@@ -53,14 +54,26 @@ function lineStyle(style) {
 }
 
 function pointStyle(style) {
-  if (style.externalgraphic) {
+  if (style.externalgraphic && style.externalgraphic.onlineresource) {
     return new Style({
-      image: new Icon({ src: style.externalgraphic }),
+      image: new Icon({ src: style.externalgraphic.onlineresource }),
+    });
+  }
+  if (style.mark && style.mark.wellknownname === 'cross') {
+    return new Style({
+      image: new RegularShape({
+        fill: new Fill({ color: 'red' }),
+        stroke: new Stroke({ color: 'black', width: 2 }),
+        points: 4,
+        radius: 10,
+        radius2: 0,
+        angle: 0,
+      }),
     });
   }
   return new Style({
     image: new Circle({
-      radius: 2,
+      radius: 4,
       fill: new Fill({
         color: 'blue',
       }),

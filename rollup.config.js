@@ -15,6 +15,7 @@ export default {
       'ol/style/stroke': 'ol.style.Stroke',
       'ol/style/circle': 'ol.style.Circle',
       'ol/style/icon': 'ol.style.Icon',
+      'ol/style/regularshape': 'ol.style.RegularShape',
     },
   },
   plugins: [buble(), resolve()],

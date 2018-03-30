@@ -80,6 +80,7 @@ describe('create styledescription from rules array', () => {
     const description = StyleDescription(rules);
     const point = description.point['0'];
     expect(point).to.have.property('externalgraphic');
-    expect(point.externalgraphic).to.equal('img.png');
+    expect(point.externalgraphic).to.have.property('onlineresource');
+    expect(point.externalgraphic.onlineresource).to.equal('img.png');
   });
 });

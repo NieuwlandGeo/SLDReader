@@ -1,14 +1,15 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle'), require('ol/style/icon')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle', 'ol/style/icon'], factory) :
-  (factory((global.SLDReader = {}),global.ol.style.Style,global.ol.style.Fill,global.ol.style.Stroke,global.ol.style.Circle,global.ol.style.Icon));
-}(this, (function (exports,Style,Fill,Stroke,Circle,Icon) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle'), require('ol/style/icon'), require('ol/style/regularshape')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle', 'ol/style/icon', 'ol/style/regularshape'], factory) :
+  (factory((global.SLDReader = {}),global.ol.style.Style,global.ol.style.Fill,global.ol.style.Stroke,global.ol.style.Circle,global.ol.style.Icon,global.ol.style.RegularShape));
+}(this, (function (exports,Style,Fill,Stroke,Circle,Icon,RegularShape) { 'use strict';
 
   Style = Style && Style.hasOwnProperty('default') ? Style['default'] : Style;
   Fill = Fill && Fill.hasOwnProperty('default') ? Fill['default'] : Fill;
   Stroke = Stroke && Stroke.hasOwnProperty('default') ? Stroke['default'] : Stroke;
   Circle = Circle && Circle.hasOwnProperty('default') ? Circle['default'] : Circle;
   Icon = Icon && Icon.hasOwnProperty('default') ? Icon['default'] : Icon;
+  RegularShape = RegularShape && RegularShape.hasOwnProperty('default') ? RegularShape['default'] : RegularShape;
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -38,6 +39,18 @@
     var property = prop.toLowerCase();
     obj[property] = {};
     readNode(node, obj[property]);
+  }
+
+  /**
+   * Assigns textcontnet to obj.prop
+   * @private
+   * @param {Element} node [description]
+   * @param {object} obj  [description]
+   * @param {string} prop [description]
+   */
+  function addPropWithTextContent(node, obj, prop) {
+    var property = prop.toLowerCase();
+    obj[property] = node.textContent;
   }
 
   /**
@@ -101,22 +114,14 @@
     PropertyIsLessThanOrEqualTo: addPropArray,
     PropertyIsGreaterThan: addPropArray,
     PropertyIsGreaterThanOrEqualTo: addPropArray,
-    PropertyName: function (element, obj) {
-      obj.propertyname = element.textContent;
-    },
-    Literal: function (element, obj) {
-      obj.literal = element.textContent;
-    },
+    PropertyName: addPropWithTextContent,
+    Literal: addPropWithTextContent,
     FeatureId: function (element, obj) {
       obj.featureid = obj.featureid || [];
       obj.featureid.push(element.getAttribute('fid'));
     },
-    Name: function (element, obj) {
-      obj.name = element.textContent;
-    },
-    MaxScaleDenominator: function (element, obj) {
-      obj.maxscaledenominator = element.textContent;
-    },
+    Name: addPropWithTextContent,
+    MaxScaleDenominator: addPropWithTextContent,
     PolygonSymbolizer: addProp,
     LineSymbolizer: addProp,
     PointSymbolizer: addProp,
@@ -124,6 +129,9 @@
     Stroke: addProp,
     Graphic: addProp,
     ExternalGraphic: addProp,
+    Mark: addProp,
+    Size: addPropWithTextContent,
+    WellKnownName: addPropWithTextContent,
     OnlineResource: function (element, obj) {
       obj.onlineresource = element.getAttribute('xlink:href');
     },
@@ -242,10 +250,18 @@
   /**
    * @typedef PointSymbolizer
    * @name PointSymbolizer
-   * @description a typedef for [PointSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+   * @description a typedef for PointSymbolizer [xsd](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+   * & [geoserver docs](http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html)
    * @property {Object} graphic
    * @property {Object} graphic.externalgraphic
    * @property {string} graphic.externalgraphic.onlineresource
+   * @property {Object} graphic.mark
+   * @property {string} graphic.mark.wellknownname
+   * @property {Object} graphic.mark.fill
+   * @property {Object} graphic.mark.stroke
+   * @property {Number} graphic.opacity
+   * @property {Number} graphic.size
+   * @property {Number} graphic.rotation
    * */
 
   /**
@@ -297,14 +313,26 @@
   }
 
   function pointStyle(style) {
-    if (style.externalgraphic) {
+    if (style.externalgraphic && style.externalgraphic.onlineresource) {
       return new Style({
-        image: new Icon({ src: style.externalgraphic }),
+        image: new Icon({ src: style.externalgraphic.onlineresource }),
+      });
+    }
+    if (style.mark && style.mark.wellknownname === 'cross') {
+      return new Style({
+        image: new RegularShape({
+          fill: new Fill({ color: 'red' }),
+          stroke: new Stroke({ color: 'black', width: 2 }),
+          points: 4,
+          radius: 10,
+          radius2: 0,
+          angle: 0,
+        }),
       });
     }
     return new Style({
       image: new Circle({
-        radius: 2,
+        radius: 4,
         fill: new Fill({
           color: 'blue',
         }),
@@ -386,14 +414,7 @@
       if (rules[i].pointsymbolizer) {
         var ref = rules[i];
         var pointsymbolizer = ref.pointsymbolizer;
-        if (
-          pointsymbolizer.graphic.externalgraphic &&
-          pointsymbolizer.graphic.externalgraphic.onlineresource
-        ) {
-          result.point.push({
-            externalgraphic: pointsymbolizer.graphic.externalgraphic.onlineresource,
-          });
-        }
+        result.point.push(pointsymbolizer.graphic);
       }
     }
     return result;
@@ -424,8 +445,10 @@
    * {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html#cssparameter|polygon css parameters}
    * and {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|stroke css parameters}
    * @property {object[]} line linesymbolizers {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|strok css parameters}
-   * @property {object[]} point pointsymbolizers, props are camelcased.
-   * @property {string} point.externalgraphic url from ExternalGraphic
+   * @property {object[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
+   * @property {object} point.externalgraphic
+   * @property {string} point.externalgraphic.onlineresource url from ExternalGraphic
+   * @property {object} point.mark
    */
 
   var Filters = {
