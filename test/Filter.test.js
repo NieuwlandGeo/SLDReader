@@ -1,5 +1,5 @@
 /* global describe it expect */
-import { filterSelector } from '../src/Filter';
+import { filterSelector, scaleSelector } from '../src/Filter';
 
 describe('filter rules', () => {
   it('filter fid', () => {
@@ -41,7 +41,9 @@ describe('filter rules', () => {
   });
   it('propertyislessthanorequalto', () => {
     const feature = { properties: { PERIMETER: 1071304933 } };
-    const filter = { propertyislessthanorequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
+    const filter = {
+      propertyislessthanorequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }],
+    };
     expect(filterSelector(filter, feature)).to.be.true;
     const featurels = { properties: { PERIMETER: 1071304932 } };
     expect(filterSelector(filter, featurels)).to.be.true;
@@ -55,7 +57,18 @@ describe('filter rules', () => {
   });
   it('propertyisgreaterthanorequalto', () => {
     const feature = { properties: { PERIMETER: 1071304933 } };
-    const filter = { propertyisgreaterthanorequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
+    const filter = {
+      propertyisgreaterthanorequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }],
+    };
     expect(filterSelector(filter, feature)).to.be.true;
+  });
+});
+
+describe('scale selector', () => {
+  it('return false when resultion is greater as rule maxscaledenominator', () => {
+    const rule = {
+      maxscaledenominator: 999,
+    };
+    expect(scaleSelector(rule, 1000 * 0.00028)).to.be.false;
   });
 });
