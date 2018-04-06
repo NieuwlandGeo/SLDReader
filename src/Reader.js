@@ -101,6 +101,14 @@ const parsers = {
   PropertyIsLessThanOrEqualTo: addPropArray,
   PropertyIsGreaterThan: addPropArray,
   PropertyIsGreaterThanOrEqualTo: addPropArray,
+  PropertyIsBetween: addPropArray,
+  PropertyIsLike: (element, obj) => {
+    addPropArray(element, obj, 'propertyislike');
+    const current = obj.propertyislike[obj.propertyislike.length - 1];
+    current.wildcard = element.getAttribute('wildCard');
+    current.singlechar = element.getAttribute('singleChar');
+    current.escape = element.getAttribute('escape');
+  },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
   FeatureId: (element, obj) => {
@@ -218,6 +226,7 @@ export default function Reader(sld) {
  * @property {object[]} [propertyislessthanorequalto]  propertyname & literal
  * @property {object[]} [propertyisgreaterthan]  propertyname & literal
  * @property {object[]} [propertyisgreaterthanorequalto]  propertyname & literal
+ * @property {object[]} [propertyislike]
  * */
 
 /**
