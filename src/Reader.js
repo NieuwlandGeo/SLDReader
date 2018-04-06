@@ -213,7 +213,11 @@ export default function Reader(sld) {
  * @property {object} [and]  filter
  * @property {object} [not]  filter
  * @property {object[]} [propertyisequalto]  propertyname & literal
+ * @property {object[]} [propertyisnotequalto]  propertyname & literal
  * @property {object[]} [propertyislessthan]  propertyname & literal
+ * @property {object[]} [propertyislessthanorequalto]  propertyname & literal
+ * @property {object[]} [propertyisgreaterthan]  propertyname & literal
+ * @property {object[]} [propertyisgreaterthanorequalto]  propertyname & literal
  * */
 
 /**

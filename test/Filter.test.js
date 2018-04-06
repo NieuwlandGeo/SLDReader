@@ -62,6 +62,44 @@ describe('filter rules', () => {
     };
     expect(filterSelector(filter, feature)).to.be.true;
   });
+  it('and filter', () => {
+    const filter = {
+      and: {
+        propertyisequalto: [
+          {
+            propertyname: 'WATER_TYPE',
+            literal: 'Lake',
+          },
+        ],
+        propertyisgreaterthanorequalto: [
+          {
+            propertyname: 'area',
+            literal: 1067509088,
+          },
+        ],
+      },
+    };
+    const feature = { properties: { WATER_TYPE: 'Lake', area: 1067509088 } };
+    expect(filterSelector(filter, feature)).to.be.true;
+  });
+  it('and filter with 2 child filters of same type', () => {
+    const filter = {
+      and: {
+        propertyisequalto: [
+          {
+            propertyname: 'WATER_TYPE',
+            literal: 'Lake',
+          },
+          {
+            propertyname: 'area',
+            literal: 1067509088,
+          },
+        ],
+      },
+    };
+    const feature = { properties: { WATER_TYPE: 'Lake', area: 1067509088 } };
+    expect(filterSelector(filter, feature)).to.be.true;
+  });
 });
 
 describe('scale selector', () => {

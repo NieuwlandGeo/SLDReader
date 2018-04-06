@@ -14,10 +14,14 @@ const Filters = {
       if (value[keys[i]].length === 1 && filterSelector(value, feature, i)) {
         return true;
       } else if (value[keys[i]].length !== 1) {
-        throw new Error('multiple ops of same type not implemented yet');
+        throw new Error('multiple filters of same type inside or are not implemented yet');
       }
     }
     return false;
+  },
+  and: (value, feature) => {
+    const keys = Object.keys(value);
+    return keys.every((key, i) => filterSelector(value, feature, i));
   },
   propertyisequalto: (value, feature) =>
     feature.properties[value['0'].propertyname] &&
@@ -36,7 +40,8 @@ const Filters = {
 };
 
 /**
- * [filterSelector description]
+ * Calls functions from Filter object to test if feature passes filter.
+ * Functions are called with filter part they match and feature.
  * @private
  * @param  {Filter} filter
  * @param  {object} feature feature
