@@ -22,9 +22,16 @@ const Filters = {
   propertyisequalto: (value, feature) =>
     feature.properties[value['0'].propertyname] &&
     feature.properties[value['0'].propertyname] === value['0'].literal,
+  propertyisnotequalto: (value, feature) => !(Filters.propertyisequalto(value, feature)),
   propertyislessthan: (value, feature) =>
     feature.properties[value['0'].propertyname] &&
     Number(feature.properties[value['0'].propertyname]) < Number(value['0'].literal),
+  propertyislessthanorequalto: (value, feature) =>
+    Filters.propertyisequalto(value, feature) || Filters.propertyislessthan(value, feature),
+  propertyisgreaterthan: (value, feature) => feature.properties[value['0'].propertyname] &&
+    Number(feature.properties[value['0'].propertyname]) > Number(value['0'].literal),
+  propertyisgreaterthanorequalto: (value, feature) =>
+    Filters.propertyisequalto(value, feature) || Filters.propertyisgreaterthan(value, feature),
 };
 
 /**

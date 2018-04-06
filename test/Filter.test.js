@@ -32,4 +32,30 @@ describe('filter rules', () => {
     const filter = { propertyisequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
     expect(filterSelector(filter, feature)).to.be.false;
   });
+  it('propertyisnotequalto', () => {
+    const featureeq = { properties: { PERIMETER: 1071304933 } };
+    const filter = { propertyisnotequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
+    expect(filterSelector(filter, featureeq)).to.be.false;
+    const featureuneq = { properties: { PERIMETER: 1071304900 } };
+    expect(filterSelector(filter, featureuneq)).to.be.true;
+  });
+  it('propertyislessthanorequalto', () => {
+    const feature = { properties: { PERIMETER: 1071304933 } };
+    const filter = { propertyislessthanorequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
+    expect(filterSelector(filter, feature)).to.be.true;
+    const featurels = { properties: { PERIMETER: 1071304932 } };
+    expect(filterSelector(filter, featurels)).to.be.true;
+    const featuregt = { properties: { PERIMETER: 1071304934 } };
+    expect(filterSelector(filter, featuregt)).to.be.false;
+  });
+  it('propertyisgreaterthan', () => {
+    const feature = { properties: { PERIMETER: 1071304933 } };
+    const filter = { propertyisgreaterthan: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
+    expect(filterSelector(filter, feature)).to.be.false;
+  });
+  it('propertyisgreaterthanorequalto', () => {
+    const feature = { properties: { PERIMETER: 1071304933 } };
+    const filter = { propertyisgreaterthanorequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
+    expect(filterSelector(filter, feature)).to.be.true;
+  });
 });

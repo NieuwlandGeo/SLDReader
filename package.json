@@ -3,7 +3,9 @@
   "version": "0.0.1-2",
   "description": "SLD reader and formatter for openlayers",
   "main": "dist/sldreader.js",
-  "keywords": ["openlayers"],
+  "keywords": [
+    "openlayers"
+  ],
   "scripts": {
     "test": "karma  start karma.conf.js",
     "test:watch": "karma start --no-single-run karma.conf.js",
