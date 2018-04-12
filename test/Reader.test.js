@@ -45,13 +45,10 @@ describe('Reads xml', () => {
     expect(rule.maxscaledenominator).to.equal('3000000');
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.css['0']).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.css['0'].name).to.equal('fill');
-    expect(rule.polygonsymbolizer.fill.css['0'].value).to.equal('blue');
-    expect(rule.polygonsymbolizer.fill.css['1'].name).to.equal('fill-opacity');
-    expect(rule.polygonsymbolizer.fill.css['1'].value).to.equal('1.0');
-    expect(rule.polygonsymbolizer.stroke.css['0']).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.stroke.css['0'].name).to.equal('stroke');
+    expect(rule.polygonsymbolizer.fill.css).to.be.an.instanceof(Object);
+    expect(rule.polygonsymbolizer.fill.css.fill).to.equal('blue');
+    expect(rule.polygonsymbolizer.fill.css.fillOpacity).to.equal('1.0');
+    expect(rule.polygonsymbolizer.stroke.css.stroke).to.equal('#C0C0C0');
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
     const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];

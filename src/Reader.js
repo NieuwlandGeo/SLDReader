@@ -123,11 +123,12 @@ const parsers = {
     obj.onlineresource = element.getAttribute('xlink:href');
   },
   CssParameter: (element, obj) => {
-    obj.css = obj.css || [];
-    obj.css.push({
-      name: element.getAttribute('name'),
-      value: element.textContent.trim(),
-    });
+    obj.css = obj.css || {};
+    const name = element
+      .getAttribute('name')
+      .toLowerCase()
+      .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
+    obj.css[name] = element.textContent.trim();
   },
 };
 
@@ -219,19 +220,21 @@ export default function Reader(sld) {
 /**
  * @typedef PolygonSymbolizer
  * @name PolygonSymbolizer
- * @description a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+ * @description a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
+ * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html)
  * @property {Object} fill
- * @property {array} fill.css
+ * @property {array} fill.css one object per CssParameter with props name (camelcased) & value
  * @property {Object} stroke
- * @property {Object[]} stroke.css with name & value
+ * @property {Object[]} stroke.css with camelcased name & value
  * */
 
 /**
  * @typedef LineSymbolizer
  * @name LineSymbolizer
- * @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+ * @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
+ * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
  * @property {Object} stroke
- * @property {Object[]} stroke.css with name & value Names are camelcased CssParameter names
+ * @property {Object[]} stroke.css one object per CssParameter with props name (camelcased) & value
  * */
 
 /**

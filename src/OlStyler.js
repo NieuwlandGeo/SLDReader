@@ -83,13 +83,13 @@ function pointStyle(style) {
 
 /**
  * Create openlayers style
- * @example OlStyler(getStyleDescription(rules), geojson.geometry.type);
- * @param {StyleDescription} styleDescription rulesconverter
+ * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
+ * @param {GeometryStyles} GeometryStyles rulesconverter
  * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
  * @return ol.style.Style or array of it
  */
-export default function OlStyler(styleDescription, type = 'Polygon') {
-  const { polygon, line, point } = styleDescription;
+export default function OlStyler(GeometryStyles, type = 'Polygon') {
+  const { polygon, line, point } = GeometryStyles;
   let styles = [];
   switch (type) {
     case 'Polygon':
