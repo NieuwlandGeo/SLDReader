@@ -6,12 +6,20 @@ describe('create ol style object from styledescription', () => {
   const styleDescription = {
     polygon: [
       {
-        fill: 'blue',
+        fill: {
+          css: {
+            fill: 'blue',
+          },
+        },
       },
     ],
     line: [
       {
-        stroke: 'red',
+        stroke: {
+          css: {
+            stroke: 'red',
+          },
+        },
       },
     ],
     point: [],
@@ -24,8 +32,16 @@ describe('create ol style object from styledescription', () => {
     const style = OlStyler(styleDescription, 'Polygon');
     expect(style['0']).to.be.an.instanceof(Style);
   });
+  it('returns object with polygon fill', () => {
+    const style = OlStyler(styleDescription, 'Polygon');
+    expect(style['0'].getFill().getColor()).to.equal('blue');
+  });
   it('returns object linestring style', () => {
     const style = OlStyler(styleDescription, 'LineString');
     expect(style['0']).to.be.an.instanceof(Style);
+  });
+  it('returns object with polygon fill', () => {
+    const style = OlStyler(styleDescription, 'LineString');
+    expect(style['0'].getStroke().getColor()).to.equal('red');
   });
 });

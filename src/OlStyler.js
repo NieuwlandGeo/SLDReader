@@ -22,13 +22,38 @@ function hexToRGB(hex, alpha) {
 }
 
 function polygonStyle(style) {
+  const { css: stroke } = style.stroke || {};
+  const { css: fill } = style.fill || {};
   return new Style({
-    fill: new Fill({
-      color:
-        style.fillOpacity && style.fill && style.fill.slice(0, 1) === '#'
-          ? hexToRGB(style.fill, style.fillOpacity)
-          : style.fill,
-    }),
+    fill:
+      fill &&
+      new Fill({
+        color:
+          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+            ? hexToRGB(fill.fill, fill.fillOpacity)
+            : fill.fill,
+      }),
+    stroke:
+      stroke &&
+      new Stroke({
+        color: stroke.stroke || '#3399CC',
+        width: stroke.strokeWidth || 1.25,
+        lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
+        lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
+        lineDashOffset: stroke.strokeDashoffset && stroke.strokeDashoffset,
+        lineJoin: stroke.strokeLinejoin && stroke.strokeLinejoin,
+      }),
+  });
+}
+
+/**
+ * @private
+ * @param  {LineSymbolizer} linesymbolizer [description]
+ * @return {object} openlayers style
+ */
+function lineStyle(linesymbolizer) {
+  const { css: style } = linesymbolizer.stroke;
+  return new Style({
     stroke: new Stroke({
       color: style.stroke || '#3399CC',
       width: style.strokeWidth || 1.25,
@@ -40,20 +65,8 @@ function polygonStyle(style) {
   });
 }
 
-function lineStyle(style) {
-  return new Style({
-    stroke: new Stroke({
-      color: style.stroke || '#3399CC',
-      width: style.strokeWidth || 1.25,
-      lineCap: style.strokeLinecap && style.strokeLinecap,
-      lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
-      lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
-      lineJoin: style.strokeLinejoin && style.strokeLinejoin,
-    }),
-  });
-}
-
-function pointStyle(style) {
+function pointStyle(pointsymbolizer) {
+  const { graphic: style } = pointsymbolizer;
   if (style.externalgraphic && style.externalgraphic.onlineresource) {
     return new Style({
       image: new Icon({ src: style.externalgraphic.onlineresource }),

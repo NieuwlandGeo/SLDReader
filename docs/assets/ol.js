@@ -76,7 +76,7 @@ fetch('assets/sld-tasmania.xml')
             geojson,
             resolution * 111034
           );
-          return SLDReader.OlStyler(SLDReader.getStyleDescription(rules), geojson.geometry.type);
+          return SLDReader.OlStyler(SLDReader.getGeometryStyles(rules), geojson.geometry.type);
         });
       }
     };
