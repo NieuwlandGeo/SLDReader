@@ -1,5 +1,5 @@
 /* global describe it expect */
-import { filterSelector } from '../src/Filter';
+import { filterSelector, scaleSelector } from '../src/Filter';
 
 describe('filter rules', () => {
   it('filter fid', () => {
@@ -31,5 +31,82 @@ describe('filter rules', () => {
     const feature = { properties: { PERIMETEEER: 1071304933 } };
     const filter = { propertyisequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
     expect(filterSelector(filter, feature)).to.be.false;
+  });
+  it('propertyisnotequalto', () => {
+    const featureeq = { properties: { PERIMETER: 1071304933 } };
+    const filter = { propertyisnotequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
+    expect(filterSelector(filter, featureeq)).to.be.false;
+    const featureuneq = { properties: { PERIMETER: 1071304900 } };
+    expect(filterSelector(filter, featureuneq)).to.be.true;
+  });
+  it('propertyislessthanorequalto', () => {
+    const feature = { properties: { PERIMETER: 1071304933 } };
+    const filter = {
+      propertyislessthanorequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }],
+    };
+    expect(filterSelector(filter, feature)).to.be.true;
+    const featurels = { properties: { PERIMETER: 1071304932 } };
+    expect(filterSelector(filter, featurels)).to.be.true;
+    const featuregt = { properties: { PERIMETER: 1071304934 } };
+    expect(filterSelector(filter, featuregt)).to.be.false;
+  });
+  it('propertyisgreaterthan', () => {
+    const feature = { properties: { PERIMETER: 1071304933 } };
+    const filter = { propertyisgreaterthan: [{ propertyname: 'PERIMETER', literal: 1071304933 }] };
+    expect(filterSelector(filter, feature)).to.be.false;
+  });
+  it('propertyisgreaterthanorequalto', () => {
+    const feature = { properties: { PERIMETER: 1071304933 } };
+    const filter = {
+      propertyisgreaterthanorequalto: [{ propertyname: 'PERIMETER', literal: 1071304933 }],
+    };
+    expect(filterSelector(filter, feature)).to.be.true;
+  });
+  it('and filter', () => {
+    const filter = {
+      and: {
+        propertyisequalto: [
+          {
+            propertyname: 'WATER_TYPE',
+            literal: 'Lake',
+          },
+        ],
+        propertyisgreaterthanorequalto: [
+          {
+            propertyname: 'area',
+            literal: 1067509088,
+          },
+        ],
+      },
+    };
+    const feature = { properties: { WATER_TYPE: 'Lake', area: 1067509088 } };
+    expect(filterSelector(filter, feature)).to.be.true;
+  });
+  it('and filter with 2 child filters of same type', () => {
+    const filter = {
+      and: {
+        propertyisequalto: [
+          {
+            propertyname: 'WATER_TYPE',
+            literal: 'Lake',
+          },
+          {
+            propertyname: 'area',
+            literal: 1067509088,
+          },
+        ],
+      },
+    };
+    const feature = { properties: { WATER_TYPE: 'Lake', area: 1067509088 } };
+    expect(filterSelector(filter, feature)).to.be.true;
+  });
+});
+
+describe('scale selector', () => {
+  it('return false when resultion is greater as rule maxscaledenominator', () => {
+    const rule = {
+      maxscaledenominator: 999,
+    };
+    expect(scaleSelector(rule, 1000 * 0.00028)).to.be.false;
   });
 });

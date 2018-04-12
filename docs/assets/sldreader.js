@@ -227,7 +227,11 @@
    * @property {object} [and]  filter
    * @property {object} [not]  filter
    * @property {object[]} [propertyisequalto]  propertyname & literal
+   * @property {object[]} [propertyisnotequalto]  propertyname & literal
    * @property {object[]} [propertyislessthan]  propertyname & literal
+   * @property {object[]} [propertyislessthanorequalto]  propertyname & literal
+   * @property {object[]} [propertyisgreaterthan]  propertyname & literal
+   * @property {object[]} [propertyisgreaterthanorequalto]  propertyname & literal
    * */
 
   /**
@@ -321,15 +325,46 @@
         image: new Icon({ src: style.externalgraphic.onlineresource }),
       });
     }
+    var fill = new Fill({
+      color: 'black',
+    });
+    var stroke = new Stroke({
+      color: 'black',
+      width: 2,
+    });
     if (style.mark && style.mark.wellknownname === 'cross') {
       return new Style({
         image: new RegularShape({
-          fill: new Fill({ color: 'red' }),
-          stroke: new Stroke({ color: 'black', width: 2 }),
+          fill: fill,
+          stroke: stroke,
           points: 4,
-          radius: 10,
+          radius: style.size || 10,
           radius2: 0,
           angle: 0,
+        }),
+      });
+    }
+    if (style.mark && style.mark.wellknownname === 'x') {
+      return new Style({
+        image: new RegularShape({
+          fill: fill,
+          stroke: stroke,
+          points: 4,
+          radius: style.size || 10,
+          radius2: 0,
+          angle: 45,
+        }),
+      });
+    }
+    if (style.mark && style.mark.wellknownname === 'star') {
+      return new Style({
+        image: new RegularShape({
+          fill: fill,
+          stroke: stroke,
+          points: 5,
+          radius: style.size || 10,
+          radius2: 4,
+          angle: 45,
         }),
       });
     }
@@ -442,19 +477,29 @@
         if (value[keys[i]].length === 1 && filterSelector(value, feature, i)) {
           return true;
         } else if (value[keys[i]].length !== 1) {
-          throw new Error('multiple ops of same type not implemented yet');
+          throw new Error('multiple filters of same type inside or are not implemented yet');
         }
       }
       return false;
     },
+    and: function (value, feature) {
+      var keys = Object.keys(value);
+      return keys.every(function (key, i) { return filterSelector(value, feature, i); });
+    },
     propertyisequalto: function (value, feature) { return feature.properties[value['0'].propertyname] &&
       feature.properties[value['0'].propertyname] === value['0'].literal; },
+    propertyisnotequalto: function (value, feature) { return !Filters.propertyisequalto(value, feature); },
     propertyislessthan: function (value, feature) { return feature.properties[value['0'].propertyname] &&
       Number(feature.properties[value['0'].propertyname]) < Number(value['0'].literal); },
+    propertyislessthanorequalto: function (value, feature) { return Filters.propertyisequalto(value, feature) || Filters.propertyislessthan(value, feature); },
+    propertyisgreaterthan: function (value, feature) { return feature.properties[value['0'].propertyname] &&
+      Number(feature.properties[value['0'].propertyname]) > Number(value['0'].literal); },
+    propertyisgreaterthanorequalto: function (value, feature) { return Filters.propertyisequalto(value, feature) || Filters.propertyisgreaterthan(value, feature); },
   };
 
   /**
-   * [filterSelector description]
+   * Calls functions from Filter object to test if feature passes filter.
+   * Functions are called with filter part they match and feature.
    * @private
    * @param  {Filter} filter
    * @param  {object} feature feature

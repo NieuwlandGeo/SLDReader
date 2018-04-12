@@ -23,8 +23,8 @@ ol.proj.addEquivalentProjections([ol.proj.get('EPSG:4326'), proj]);
 
 const sourceurls = [
   'assets/TasmaniaLand.xml',
-  'assets/TasmaniaCities.xml',
   'assets/TasmaniaRoads.xml',
+  'assets/TasmaniaCities.xml',
   'assets/TasmaniaWaterBodies.xml',
 ];
 const vectorsources = sourceurls.map(

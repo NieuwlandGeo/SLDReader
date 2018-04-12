@@ -188,7 +188,11 @@ a typedef for Rule to match a feature: [xsd][33]
 -   `and` **[object][24]?** filter
 -   `not` **[object][24]?** filter
 -   `propertyisequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
+-   `propertyisnotequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
 -   `propertyislessthan` **[Array][22]&lt;[object][24]>?** propertyname & literal
+-   `propertyislessthanorequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
+-   `propertyisgreaterthan` **[Array][22]&lt;[object][24]>?** propertyname & literal
+-   `propertyisgreaterthanorequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
 
 ### LineSymbolizer
 

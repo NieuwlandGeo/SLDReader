@@ -16,7 +16,7 @@
 
     #olmap {
       border: 1px solid;
-      height: 80vh;
+      height: calc(100vh - 220px);
     }
   </style>
 
@@ -24,13 +24,20 @@
 
 <body>
   <div class="container">
+    <nav class="navbar navbar-dark bg-success navbar-expand-md">
+      <a class="navbar-brand" href="#">SLDReader</a>
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/NieuwlandGeo/SLDReader">github</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/NieuwlandGeo/SLDReader/blob/master/docs/api.md">api</a>
+        </li>
+      </ul>
+    </nav>
     <div class="row">
       <div class="col-md-12">
-        <h1>Openlayers example</h1>
-        <ul>
-          <li><a href="https://github.com/NieuwlandGeo/SLDReader">github</a></li>
-          <li><a href="https://github.com/NieuwlandGeo/SLDReader/blob/master/docs/api.md">api</a></li>
-        </ul>
+        <h2 class="pt-3">Openlayers SLD example</h2>
         <div class="form-group">
           <label for="style_chooser">Choose a style for the waterbodies</label>
           <select id="style_chooser" class="form-control">
@@ -44,7 +51,9 @@
         <div id="olmap"></div>
       </div>
     </div>
-    Example tries to replicate <a href="http://dev.openlayers.org/releases/OpenLayers-2.13.1/examples/sld.html">openlayer 2.13 example</a>
+    <p>
+      Example tries to replicate <a href="http://dev.openlayers.org/releases/OpenLayers-2.13.1/examples/sld.html">openlayer 2.13 example</a> Road style uses two overlaying lines.
+    </p>
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.5.3/core.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol-debug.js"></script>

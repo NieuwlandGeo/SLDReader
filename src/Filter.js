@@ -13,30 +13,50 @@ const Filters = {
     for (let i = 0; i < keys.length; i += 1) {
       if (value[keys[i]].length === 1 && filterSelector(value, feature, i)) {
         return true;
-      } else if (value[keys[i]].length !== 1) {
-        throw new Error('multiple ops of same type not implemented yet');
       }
     }
     return false;
   },
-  propertyisequalto: (value, feature) =>
-    feature.properties[value['0'].propertyname] &&
-    feature.properties[value['0'].propertyname] === value['0'].literal,
-  propertyislessthan: (value, feature) =>
-    feature.properties[value['0'].propertyname] &&
-    Number(feature.properties[value['0'].propertyname]) < Number(value['0'].literal),
+  and: (value, feature) => {
+    const keys = Object.keys(value);
+    return keys.every((key, i) => filterSelector(value, feature, i));
+  },
+  propertyisequalto: (values, feature) =>
+    values.every(
+      value =>
+        feature.properties[value.propertyname] &&
+        feature.properties[value.propertyname] === value.literal
+    ),
+  propertyisnotequalto: (value, feature) => !Filters.propertyisequalto(value, feature),
+  propertyislessthan: (values, feature) =>
+    values.every(
+      value =>
+        feature.properties[value.propertyname] &&
+        Number(feature.properties[value.propertyname]) < Number(value.literal)
+    ),
+  propertyislessthanorequalto: (value, feature) =>
+    Filters.propertyisequalto(value, feature) || Filters.propertyislessthan(value, feature),
+  propertyisgreaterthan: (values, feature) =>
+    values.every(
+      value =>
+        feature.properties[value.propertyname] &&
+        Number(feature.properties[value.propertyname]) > Number(value.literal)
+    ),
+  propertyisgreaterthanorequalto: (value, feature) =>
+    Filters.propertyisequalto(value, feature) || Filters.propertyisgreaterthan(value, feature),
 };
 
 /**
- * [filterSelector description]
+ * Calls functions from Filter object to test if feature passes filter.
+ * Functions are called with filter part they match and feature.
  * @private
  * @param  {Filter} filter
  * @param  {object} feature feature
- * @param {number} key index of property to use
+ * @param {number} keyindex index of filter object keys to use
  * @return {boolean}
  */
-export function filterSelector(filter, feature, key = 0) {
-  const type = Object.keys(filter)[key];
+export function filterSelector(filter, feature, keyindex = 0) {
+  const type = Object.keys(filter)[keyindex];
   if (Filters[type]) {
     if (Filters[type](filter[type], feature)) {
       return true;

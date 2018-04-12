@@ -59,15 +59,46 @@ function pointStyle(style) {
       image: new Icon({ src: style.externalgraphic.onlineresource }),
     });
   }
+  const fill = new Fill({
+    color: 'black',
+  });
+  const stroke = new Stroke({
+    color: 'black',
+    width: 2,
+  });
   if (style.mark && style.mark.wellknownname === 'cross') {
     return new Style({
       image: new RegularShape({
-        fill: new Fill({ color: 'red' }),
-        stroke: new Stroke({ color: 'black', width: 2 }),
+        fill,
+        stroke,
         points: 4,
-        radius: 10,
+        radius: style.size || 10,
         radius2: 0,
         angle: 0,
+      }),
+    });
+  }
+  if (style.mark && style.mark.wellknownname === 'x') {
+    return new Style({
+      image: new RegularShape({
+        fill,
+        stroke,
+        points: 4,
+        radius: style.size || 10,
+        radius2: 0,
+        angle: 45,
+      }),
+    });
+  }
+  if (style.mark && style.mark.wellknownname === 'star') {
+    return new Style({
+      image: new RegularShape({
+        fill,
+        stroke,
+        points: 5,
+        radius: style.size || 10,
+        radius2: 4,
+        angle: 45,
       }),
     });
   }
