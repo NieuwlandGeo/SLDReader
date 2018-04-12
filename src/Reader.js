@@ -148,7 +148,7 @@ function readNode(node, obj) {
 }
 
 /**
- * Creates a object from an sld xml string, for internal usage
+ * Creates a object from an sld xml string,
  * @param  {string} sld xml string
  * @return {StyledLayerDescriptor}  object representing sld style
  */

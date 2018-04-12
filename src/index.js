@@ -1,6 +1,6 @@
 import Reader from './Reader';
 import OlStyler from './OlStyler';
-import getStyleDescription from './StyleDescription';
+import getGeometryStyles from './GeometryStyles';
 
 export * from './Utils';
-export { Reader, getStyleDescription, OlStyler };
+export { Reader, getGeometryStyles, OlStyler };

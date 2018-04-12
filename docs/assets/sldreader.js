@@ -136,11 +136,12 @@
       obj.onlineresource = element.getAttribute('xlink:href');
     },
     CssParameter: function (element, obj) {
-      obj.css = obj.css || [];
-      obj.css.push({
-        name: element.getAttribute('name'),
-        value: element.textContent.trim(),
-      });
+      obj.css = obj.css || {};
+      var name = element
+        .getAttribute('name')
+        .toLowerCase()
+        .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
+      obj.css[name] = element.textContent.trim();
     },
   };
 
@@ -160,7 +161,7 @@
   }
 
   /**
-   * Creates a object from an sld xml string, for internal usage
+   * Creates a object from an sld xml string,
    * @param  {string} sld xml string
    * @return {StyledLayerDescriptor}  object representing sld style
    */
@@ -232,19 +233,21 @@
   /**
    * @typedef PolygonSymbolizer
    * @name PolygonSymbolizer
-   * @description a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+   * @description a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
+   * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html)
    * @property {Object} fill
-   * @property {array} fill.css
+   * @property {array} fill.css one object per CssParameter with props name (camelcased) & value
    * @property {Object} stroke
-   * @property {Object[]} stroke.css with name & value
+   * @property {Object[]} stroke.css with camelcased name & value
    * */
 
   /**
    * @typedef LineSymbolizer
    * @name LineSymbolizer
-   * @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+   * @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
+   * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
    * @property {Object} stroke
-   * @property {Object[]} stroke.css with name & value Names are camelcased CssParameter names
+   * @property {Object[]} stroke.css one object per CssParameter with props name (camelcased) & value
    * */
 
   /**
@@ -342,17 +345,17 @@
 
   /**
    * Create openlayers style
-   * @example OlStyler(getStyleDescription(rules), geojson.geometry.type);
-   * @param {StyleDescription} styleDescription rulesconverter
+   * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
+   * @param {GeometryStyles} GeometryStyles rulesconverter
    * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
    * @return ol.style.Style or array of it
    */
-  function OlStyler(styleDescription, type) {
+  function OlStyler(GeometryStyles, type) {
     if ( type === void 0 ) type = 'Polygon';
 
-    var polygon = styleDescription.polygon;
-    var line = styleDescription.line;
-    var point = styleDescription.point;
+    var polygon = GeometryStyles.polygon;
+    var line = GeometryStyles.line;
+    var point = GeometryStyles.point;
     var styles = [];
     switch (type) {
       case 'Polygon':
@@ -388,11 +391,11 @@
   }
 
   /**
-   * Get styling from rules
+   * Get styling from rules per geometry type
    * @param  {Rule[]} rules [description]
-   * @return {StyleDescription}
+   * @return {GeometryStyles}
    */
-  function getStyleDescription(rules) {
+  function getGeometryStyles(rules) {
     var result = {
       polygon: [],
       line: [],
@@ -400,56 +403,27 @@
     };
     for (var i = 0; i < rules.length; i += 1) {
       if (rules[i].polygonsymbolizer) {
-        var style = {};
-        if (rules[i].polygonsymbolizer.fill) {
-          style = Object.assign(style, getCssParams(rules[i].polygonsymbolizer.fill.css));
-        }
-        if (rules[i].polygonsymbolizer.stroke) {
-          style = Object.assign(style, getCssParams(rules[i].polygonsymbolizer.stroke.css));
-        }
-        result.polygon.push(style);
+        result.polygon.push(rules[i].polygonsymbolizer);
       }
-      if (rules[i].linesymbolizer && rules[i].linesymbolizer.stroke) {
-        result.line.push(getCssParams(rules[i].linesymbolizer.stroke.css));
+      if (rules[i].linesymbolizer && rules[i].linesymbolizer) {
+        result.line.push(rules[i].linesymbolizer);
       }
       if (rules[i].pointsymbolizer) {
         var ref = rules[i];
         var pointsymbolizer = ref.pointsymbolizer;
-        result.point.push(pointsymbolizer.graphic);
+        result.point.push(pointsymbolizer);
       }
     }
     return result;
   }
 
   /**
-   * @private
-   * @param {object} result    [description]
-   * @param {object[]} cssparams [description]
-   * @return {object} with camelCase key and css valye
-   */
-  function getCssParams(cssparams) {
-    var result = {};
-    for (var j = 0; j < cssparams.length; j += 1) {
-      var key = cssparams[j].name
-        .toLowerCase()
-        .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
-      result[key] = cssparams[j].value;
-    }
-    return result;
-  }
-
-  /**
-   * @typedef StyleDescription
-   * @name StyleDescription
-   * @description a flat object per symbolizer type, with values assigned to camelcased props.
-   * @property {object[]} polygon polygonsymbolizers, see
-   * {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html#cssparameter|polygon css parameters}
-   * and {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|stroke css parameters}
-   * @property {object[]} line linesymbolizers {@link http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter|strok css parameters}
-   * @property {object[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
-   * @property {object} point.externalgraphic
-   * @property {string} point.externalgraphic.onlineresource url from ExternalGraphic
-   * @property {object} point.mark
+   * @typedef GeometryStyles
+   * @name GeometryStyles
+   * @description contains for each geometry type the symbolizer from an array of rules
+   * @property {PolygonSymbolizer[]} polygon polygonsymbolizers
+   * @property {LineSymbolizer[]} line linesymbolizers
+   * @property {PointSymbolizer[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
    */
 
   var Filters = {
@@ -595,7 +569,7 @@
   }
 
   exports.Reader = Reader;
-  exports.getStyleDescription = getStyleDescription;
+  exports.getGeometryStyles = getGeometryStyles;
   exports.OlStyler = OlStyler;
   exports.getLayerNames = getLayerNames;
   exports.getLayer = getLayer;

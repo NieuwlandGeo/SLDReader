@@ -9,7 +9,7 @@
     -   [getStyleNames][5]
     -   [getStyle][6]
     -   [getRules][7]
-    -   [getStyleDescription][8]
+    -   [getGeometryStyles][8]
     -   [OlStyler][9]
 -   [Types][10]
     -   [StyledLayerDescriptor][11]
@@ -20,7 +20,7 @@
     -   [LineSymbolizer][16]
     -   [PolygonSymbolizer][17]
     -   [PointSymbolizer][18]
-    -   [StyleDescription][19]
+    -   [GeometryStyles][19]
 
 ## Methods
 
@@ -30,7 +30,7 @@ of the global var SLDReader.
 
 ### Reader
 
-Creates a object from an sld xml string, for internal usage
+Creates a object from an sld xml string,
 
 **Parameters**
 
@@ -100,15 +100,15 @@ getRules(style.featuretypestyles['0'], geojson,resolution);
 
 Returns **[Array][22]&lt;[Rule][27]>** 
 
-### getStyleDescription
+### getGeometryStyles
 
-Get styling from rules
+Get styling from rules per geometry type
 
 **Parameters**
 
 -   `rules` **[Array][22]&lt;[Rule][27]>** [description]
 
-Returns **[StyleDescription][28]** 
+Returns **[GeometryStyles][28]** 
 
 ### OlStyler
 
@@ -116,13 +116,13 @@ Create openlayers style
 
 **Parameters**
 
--   `styleDescription` **[StyleDescription][28]** rulesconverter
+-   `GeometryStyles` **[GeometryStyles][28]** rulesconverter
 -   `type` **[string][20]** geometry type, @see [geojson][29] (optional, default `'Polygon'`)
 
 **Examples**
 
 ```javascript
-OlStyler(getStyleDescription(rules), geojson.geometry.type);
+OlStyler(getGeometryStyles(rules), geojson.geometry.type);
 ```
 
 Returns **any** ol.style.Style or array of it
@@ -192,28 +192,30 @@ a typedef for Rule to match a feature: [xsd][33]
 
 ### LineSymbolizer
 
-a typedef for [LineSymbolizer][39]
+a typedef for [LineSymbolizer][39], see also
+[geoserver docs][40]
 
 **Properties**
 
 -   `stroke` **[Object][24]** 
-    -   `stroke.css` **[Array][22]&lt;[Object][24]>** with name & value Names are camelcased CssParameter names
+    -   `stroke.css` **[Array][22]&lt;[Object][24]>** one object per CssParameter with props name (camelcased) & value
 
 ### PolygonSymbolizer
 
-a typedef for [PolygonSymbolizer][39]
+a typedef for [PolygonSymbolizer][39], see also
+[geoserver docs][41]
 
 **Properties**
 
 -   `fill` **[Object][24]** 
-    -   `fill.css` **[array][22]** 
+    -   `fill.css` **[array][22]** one object per CssParameter with props name (camelcased) & value
 -   `stroke` **[Object][24]** 
-    -   `stroke.css` **[Array][22]&lt;[Object][24]>** with name & value
+    -   `stroke.css` **[Array][22]&lt;[Object][24]>** with camelcased name & value
 
 ### PointSymbolizer
 
 a typedef for PointSymbolizer [xsd][39]
-& [geoserver docs][40]
+& [geoserver docs][42]
 
 **Properties**
 
@@ -228,20 +230,15 @@ a typedef for PointSymbolizer [xsd][39]
     -   `graphic.size` **[Number][26]** 
     -   `graphic.rotation` **[Number][26]** 
 
-### StyleDescription
+### GeometryStyles
 
-a flat object per symbolizer type, with values assigned to camelcased props.
+contains for each geometry type the symbolizer from an array of rules
 
 **Properties**
 
--   `polygon` **[Array][22]&lt;[object][24]>** polygonsymbolizers, see
-    [polygon css parameters][41]
-    and [stroke css parameters][42]
--   `line` **[Array][22]&lt;[object][24]>** linesymbolizers [strok css parameters][42]
--   `point` **[Array][22]&lt;[object][24]>** pointsymbolizers, same as graphic prop from PointSymbolizer
-    -   `point.externalgraphic` **[object][24]** 
-        -   `point.externalgraphic.onlineresource` **[string][20]** url from ExternalGraphic
-    -   `point.mark` **[object][24]** 
+-   `polygon` **[Array][22]&lt;[PolygonSymbolizer][35]>** polygonsymbolizers
+-   `line` **[Array][22]&lt;[LineSymbolizer][36]>** linesymbolizers
+-   `point` **[Array][22]&lt;[PointSymbolizer][37]>** pointsymbolizers, same as graphic prop from PointSymbolizer
 
 [1]: #methods
 
@@ -257,7 +254,7 @@ a flat object per symbolizer type, with values assigned to camelcased props.
 
 [7]: #getrules
 
-[8]: #getstyledescription
+[8]: #getgeometrystyles
 
 [9]: #olstyler
 
@@ -279,7 +276,7 @@ a flat object per symbolizer type, with values assigned to camelcased props.
 
 [18]: #pointsymbolizer
 
-[19]: #styledescription
+[19]: #geometrystyles
 
 [20]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
@@ -297,7 +294,7 @@ a flat object per symbolizer type, with values assigned to camelcased props.
 
 [27]: #rule
 
-[28]: #styledescription
+[28]: #geometrystyles
 
 [29]: http://geojson.org
 
@@ -321,8 +318,8 @@ a flat object per symbolizer type, with values assigned to camelcased props.
 
 [39]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
 
-[40]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html
+[40]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer
 
-[41]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html#cssparameter
+[41]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html
 
-[42]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#cssparameter
+[42]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html

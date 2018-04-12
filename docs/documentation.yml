@@ -10,7 +10,7 @@ toc:
       - getStyleNames
       - getStyle
       - getRules
-      - getStyleDescription
+      - getGeometryStyles
       - OlStyler
   - name: Types
     description: |
@@ -24,4 +24,4 @@ toc:
       - LineSymbolizer
       - PolygonSymbolizer
       - PointSymbolizer
-      - StyleDescription
+      - GeometryStyles
