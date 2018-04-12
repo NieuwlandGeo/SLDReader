@@ -46,7 +46,6 @@ fetch('assets/sld-provincies.xml')
     vector.setStyle((feature, resolution) => {
       const geojson = JSON.parse(format.writeFeature(feature));
       const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, resolution * 111034);
-      console.log(rules);
       return SLDReader.OlStyler(SLDReader.getGeometryStyles(rules), geojson.geometry.type);
     });
   });

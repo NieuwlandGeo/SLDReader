@@ -69,6 +69,24 @@
   }
 
   /**
+   * css and svg params
+   * @private
+   * @param  {[type]} element          [description]
+   * @param  {[type]} obj              [description]
+   * @param  {String} [propname='css'] [description]
+   * @return {[type]}                  [description]
+   */
+  function parameters(element, obj, prop) {
+    var propname = prop === 'SvgParameter' ? 'svg' : 'css';
+    obj[propname] = obj[propname] || {};
+    var name = element
+      .getAttribute('name')
+      .toLowerCase()
+      .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
+    obj[propname][name] = element.textContent.trim();
+  }
+
+  /**
    * Each propname is a tag in the sld that should be converted to plain object
    * @private
    * @type {Object}
@@ -143,14 +161,8 @@
     OnlineResource: function (element, obj) {
       obj.onlineresource = element.getAttribute('xlink:href');
     },
-    CssParameter: function (element, obj) {
-      obj.css = obj.css || {};
-      var name = element
-        .getAttribute('name')
-        .toLowerCase()
-        .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
-      obj.css[name] = element.textContent.trim();
-    },
+    CssParameter: parameters,
+    SvgParameter: parameters,
   };
 
   /**
@@ -297,10 +309,14 @@
   }
 
   function polygonStyle(style) {
-    var ref = style.stroke || {};
-    var stroke = ref.css;
-    var ref$1 = style.fill || {};
-    var fill = ref$1.css;
+    var stroke = {};
+    if (style.stroke) {
+      stroke = style.stroke.css || style.stroke.svg;
+    }
+    var fill = {};
+    if (style.fill) {
+      fill = style.fill.css || style.fill.svg;
+    }
     return new Style({
       fill:
         fill &&
@@ -329,8 +345,10 @@
    * @return {object} openlayers style
    */
   function lineStyle(linesymbolizer) {
-    var ref = linesymbolizer.stroke;
-    var style = ref.css;
+    var style = {};
+    if (linesymbolizer.stroke) {
+      style = linesymbolizer.stroke.css || linesymbolizer.stroke.svg;
+    }
     return new Style({
       stroke: new Stroke({
         color: style.stroke || '#3399CC',

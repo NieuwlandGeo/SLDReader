@@ -22,8 +22,14 @@ function hexToRGB(hex, alpha) {
 }
 
 function polygonStyle(style) {
-  const { css: stroke } = style.stroke || {};
-  const { css: fill } = style.fill || {};
+  let stroke = {};
+  if (style.stroke) {
+    stroke = style.stroke.css || style.stroke.svg;
+  }
+  let fill = {};
+  if (style.fill) {
+    fill = style.fill.css || style.fill.svg;
+  }
   return new Style({
     fill:
       fill &&
@@ -52,7 +58,10 @@ function polygonStyle(style) {
  * @return {object} openlayers style
  */
 function lineStyle(linesymbolizer) {
-  const { css: style } = linesymbolizer.stroke;
+  let style = {};
+  if (linesymbolizer.stroke) {
+    style = linesymbolizer.stroke.css || linesymbolizer.stroke.svg;
+  }
   return new Style({
     stroke: new Stroke({
       color: style.stroke || '#3399CC',
