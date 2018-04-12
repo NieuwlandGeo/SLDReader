@@ -193,6 +193,7 @@ a typedef for Rule to match a feature: [xsd][33]
 -   `propertyislessthanorequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
 -   `propertyisgreaterthan` **[Array][22]&lt;[object][24]>?** propertyname & literal
 -   `propertyisgreaterthanorequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
+-   `propertyislike` **[Array][22]&lt;[object][24]>?** 
 
 ### LineSymbolizer
 

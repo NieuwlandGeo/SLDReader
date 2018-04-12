@@ -114,6 +114,14 @@
     PropertyIsLessThanOrEqualTo: addPropArray,
     PropertyIsGreaterThan: addPropArray,
     PropertyIsGreaterThanOrEqualTo: addPropArray,
+    PropertyIsBetween: addPropArray,
+    PropertyIsLike: function (element, obj) {
+      addPropArray(element, obj, 'propertyislike');
+      var current = obj.propertyislike[obj.propertyislike.length - 1];
+      current.wildcard = element.getAttribute('wildCard');
+      current.singlechar = element.getAttribute('singleChar');
+      current.escape = element.getAttribute('escape');
+    },
     PropertyName: addPropWithTextContent,
     Literal: addPropWithTextContent,
     FeatureId: function (element, obj) {
@@ -232,6 +240,7 @@
    * @property {object[]} [propertyislessthanorequalto]  propertyname & literal
    * @property {object[]} [propertyisgreaterthan]  propertyname & literal
    * @property {object[]} [propertyisgreaterthanorequalto]  propertyname & literal
+   * @property {object[]} [propertyislike]
    * */
 
   /**
@@ -288,13 +297,41 @@
   }
 
   function polygonStyle(style) {
+    var ref = style.stroke || {};
+    var stroke = ref.css;
+    var ref$1 = style.fill || {};
+    var fill = ref$1.css;
     return new Style({
-      fill: new Fill({
-        color:
-          style.fillOpacity && style.fill && style.fill.slice(0, 1) === '#'
-            ? hexToRGB(style.fill, style.fillOpacity)
-            : style.fill,
-      }),
+      fill:
+        fill &&
+        new Fill({
+          color:
+            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+              ? hexToRGB(fill.fill, fill.fillOpacity)
+              : fill.fill,
+        }),
+      stroke:
+        stroke &&
+        new Stroke({
+          color: stroke.stroke || '#3399CC',
+          width: stroke.strokeWidth || 1.25,
+          lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
+          lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
+          lineDashOffset: stroke.strokeDashoffset && stroke.strokeDashoffset,
+          lineJoin: stroke.strokeLinejoin && stroke.strokeLinejoin,
+        }),
+    });
+  }
+
+  /**
+   * @private
+   * @param  {LineSymbolizer} linesymbolizer [description]
+   * @return {object} openlayers style
+   */
+  function lineStyle(linesymbolizer) {
+    var ref = linesymbolizer.stroke;
+    var style = ref.css;
+    return new Style({
       stroke: new Stroke({
         color: style.stroke || '#3399CC',
         width: style.strokeWidth || 1.25,
@@ -306,20 +343,8 @@
     });
   }
 
-  function lineStyle(style) {
-    return new Style({
-      stroke: new Stroke({
-        color: style.stroke || '#3399CC',
-        width: style.strokeWidth || 1.25,
-        lineCap: style.strokeLinecap && style.strokeLinecap,
-        lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
-        lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
-        lineJoin: style.strokeLinejoin && style.strokeLinejoin,
-      }),
-    });
-  }
-
-  function pointStyle(style) {
+  function pointStyle(pointsymbolizer) {
+    var style = pointsymbolizer.graphic;
     if (style.externalgraphic && style.externalgraphic.onlineresource) {
       return new Style({
         image: new Icon({ src: style.externalgraphic.onlineresource }),
@@ -476,8 +501,6 @@
       for (var i = 0; i < keys.length; i += 1) {
         if (value[keys[i]].length === 1 && filterSelector(value, feature, i)) {
           return true;
-        } else if (value[keys[i]].length !== 1) {
-          throw new Error('multiple filters of same type inside or are not implemented yet');
         }
       }
       return false;
@@ -486,14 +509,20 @@
       var keys = Object.keys(value);
       return keys.every(function (key, i) { return filterSelector(value, feature, i); });
     },
-    propertyisequalto: function (value, feature) { return feature.properties[value['0'].propertyname] &&
-      feature.properties[value['0'].propertyname] === value['0'].literal; },
+    propertyisequalto: function (values, feature) { return values.every(
+        function (value) { return feature.properties[value.propertyname] &&
+          feature.properties[value.propertyname] === value.literal; }
+      ); },
     propertyisnotequalto: function (value, feature) { return !Filters.propertyisequalto(value, feature); },
-    propertyislessthan: function (value, feature) { return feature.properties[value['0'].propertyname] &&
-      Number(feature.properties[value['0'].propertyname]) < Number(value['0'].literal); },
+    propertyislessthan: function (values, feature) { return values.every(
+        function (value) { return feature.properties[value.propertyname] &&
+          Number(feature.properties[value.propertyname]) < Number(value.literal); }
+      ); },
     propertyislessthanorequalto: function (value, feature) { return Filters.propertyisequalto(value, feature) || Filters.propertyislessthan(value, feature); },
-    propertyisgreaterthan: function (value, feature) { return feature.properties[value['0'].propertyname] &&
-      Number(feature.properties[value['0'].propertyname]) > Number(value['0'].literal); },
+    propertyisgreaterthan: function (values, feature) { return values.every(
+        function (value) { return feature.properties[value.propertyname] &&
+          Number(feature.properties[value.propertyname]) > Number(value.literal); }
+      ); },
     propertyisgreaterthanorequalto: function (value, feature) { return Filters.propertyisequalto(value, feature) || Filters.propertyisgreaterthan(value, feature); },
   };
 
@@ -503,13 +532,13 @@
    * @private
    * @param  {Filter} filter
    * @param  {object} feature feature
-   * @param {number} key index of property to use
+   * @param {number} keyindex index of filter object keys to use
    * @return {boolean}
    */
-  function filterSelector(filter, feature, key) {
-    if ( key === void 0 ) key = 0;
+  function filterSelector(filter, feature, keyindex) {
+    if ( keyindex === void 0 ) keyindex = 0;
 
-    var type = Object.keys(filter)[key];
+    var type = Object.keys(filter)[keyindex];
     if (Filters[type]) {
       if (Filters[type](filter[type], feature)) {
         return true;
