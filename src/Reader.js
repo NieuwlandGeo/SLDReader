@@ -56,6 +56,24 @@ function getBool(element, tagName) {
 }
 
 /**
+ * css and svg params
+ * @private
+ * @param  {[type]} element          [description]
+ * @param  {[type]} obj              [description]
+ * @param  {String} [propname='css'] [description]
+ * @return {[type]}                  [description]
+ */
+function parameters(element, obj, prop) {
+  const propname = prop === 'SvgParameter' ? 'svg' : 'css';
+  obj[propname] = obj[propname] || {};
+  const name = element
+    .getAttribute('name')
+    .toLowerCase()
+    .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
+  obj[propname][name] = element.textContent.trim();
+}
+
+/**
  * Each propname is a tag in the sld that should be converted to plain object
  * @private
  * @type {Object}
@@ -130,14 +148,8 @@ const parsers = {
   OnlineResource: (element, obj) => {
     obj.onlineresource = element.getAttribute('xlink:href');
   },
-  CssParameter: (element, obj) => {
-    obj.css = obj.css || {};
-    const name = element
-      .getAttribute('name')
-      .toLowerCase()
-      .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
-    obj.css[name] = element.textContent.trim();
-  },
+  CssParameter: parameters,
+  SvgParameter: parameters,
 };
 
 /**
