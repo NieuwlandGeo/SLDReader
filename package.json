@@ -14,8 +14,9 @@
     "serve": "browser-sync start --config bs-config.js",
     "start": "npm-run-all -p serve watch",
     "docs": "npm run build && cp dist/sldreader.js docs/assets/sldreader.js && documentation build src/index.js -c docs/documentation.yml -f md --output docs/api.md",
+    "preversion": "git checkout -b build && npm test",
     "version": "npm run build && git add -Af dist",
-    "postversion": "git push --tags && git rm -r dist && git commit -m 'remove dist' && git push"
+    "postversion": "git push --tags -f && git checkout master && git branch -D build"
   },
   "bugs": {
     "url": "https://github.com/NieuwlandGeo/SLDReader/issues"
