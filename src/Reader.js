@@ -27,6 +27,17 @@ function addProp(node, obj, prop) {
   obj[property] = {};
   readNode(node, obj[property]);
 }
+/**
+ * generic parser for filter operators
+ * @private
+ * @param {Element} node the xml element to parse
+ * @param {object} obj  the object to modify
+ * @param {string} prop key on obj to hold empty object
+ */
+function addOperator(node, obj, prop) {
+  const operator = prop.toLowerCase();
+  console.log(obj);
+}
 
 /**
  * Assigns textcontnet to obj.prop
@@ -103,10 +114,7 @@ const parsers = {
     readNode(element, rule);
     obj.rules.push(rule);
   },
-  Filter: (element, obj) => {
-    obj.filter = {};
-    readNode(element, obj.filter);
-  },
+  Filter: addPropArray,
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
   },
@@ -129,10 +137,7 @@ const parsers = {
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
-  FeatureId: (element, obj) => {
-    obj.featureid = obj.featureid || [];
-    obj.featureid.push(element.getAttribute('fid'));
-  },
+  FeatureId: addOperator,
   Name: addPropWithTextContent,
   MaxScaleDenominator: addPropWithTextContent,
   PolygonSymbolizer: addProp,
@@ -216,7 +221,7 @@ export default function Reader(sld) {
  * @name Rule
  * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
  * @property {string} name rule name
- * @property {Filter} [filter]
+ * @property {Filter[]} [filter]
  * @property {boolean} [elsefilter]
  * @property {integer} [minscaledenominator]
  * @property {integer} [maxscaledenominator]
@@ -228,19 +233,12 @@ export default function Reader(sld) {
 /**
  * @typedef Filter
  * @name Filter
- * @description [ogc filters]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) should have only one prop
- * @property {string[]} [featureid]
- * @property {object} [or]  filter
- * @property {object} [and]  filter
- * @property {object} [not]  filter
- * @property {object[]} [propertyisequalto]  propertyname & literal
- * @property {object[]} [propertyisnotequalto]  propertyname & literal
- * @property {object[]} [propertyislessthan]  propertyname & literal
- * @property {object[]} [propertyislessthanorequalto]  propertyname & literal
- * @property {object[]} [propertyisgreaterthan]  propertyname & literal
- * @property {object[]} [propertyisgreaterthanorequalto]  propertyname & literal
- * @property {object[]} [propertyislike]
- * */
+ * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+ * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+ * @property {string} operator
+ * @property {string} propertyname
+ * @property {string} literal
+ */
 
 /**
  * @typedef PolygonSymbolizer

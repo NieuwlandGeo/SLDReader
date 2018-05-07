@@ -241,19 +241,13 @@
   /**
    * @typedef Filter
    * @name Filter
-   * @description [ogc filters]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) should have only one prop
-   * @property {string[]} [featureid]
-   * @property {object} [or]  filter
-   * @property {object} [and]  filter
-   * @property {object} [not]  filter
-   * @property {object[]} [propertyisequalto]  propertyname & literal
-   * @property {object[]} [propertyisnotequalto]  propertyname & literal
-   * @property {object[]} [propertyislessthan]  propertyname & literal
-   * @property {object[]} [propertyislessthanorequalto]  propertyname & literal
-   * @property {object[]} [propertyisgreaterthan]  propertyname & literal
-   * @property {object[]} [propertyisgreaterthanorequalto]  propertyname & literal
-   * @property {object[]} [propertyislike]
-   * */
+   * @description [ogc filters](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+   * @property {object[]} operators
+   * @property {string} operators.operator
+   * @property {string} operators.propertyname
+   * @property {string} operators.literal
+   */
 
   /**
    * @typedef PolygonSymbolizer

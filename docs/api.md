@@ -179,26 +179,20 @@ a typedef for Rule to match a feature: [xsd][33]
 
 ### Filter
 
-[ogc filters][38] should have only one prop
+[ogc filters][38], see also
+[geoserver][39]
 
 **Properties**
 
--   `featureid` **[Array][22]&lt;[string][20]>?** 
--   `or` **[object][24]?** filter
--   `and` **[object][24]?** filter
--   `not` **[object][24]?** filter
--   `propertyisequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
--   `propertyisnotequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
--   `propertyislessthan` **[Array][22]&lt;[object][24]>?** propertyname & literal
--   `propertyislessthanorequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
--   `propertyisgreaterthan` **[Array][22]&lt;[object][24]>?** propertyname & literal
--   `propertyisgreaterthanorequalto` **[Array][22]&lt;[object][24]>?** propertyname & literal
--   `propertyislike` **[Array][22]&lt;[object][24]>?** 
+-   `operators` **[Array][22]&lt;[object][24]>** 
+    -   `operators.operator` **[string][20]** 
+    -   `operators.propertyname` **[string][20]** 
+    -   `operators.literal` **[string][20]** 
 
 ### LineSymbolizer
 
-a typedef for [LineSymbolizer][39], see also
-[geoserver docs][40]
+a typedef for [LineSymbolizer][40], see also
+[geoserver docs][41]
 
 **Properties**
 
@@ -207,8 +201,8 @@ a typedef for [LineSymbolizer][39], see also
 
 ### PolygonSymbolizer
 
-a typedef for [PolygonSymbolizer][39], see also
-[geoserver docs][41]
+a typedef for [PolygonSymbolizer][40], see also
+[geoserver docs][42]
 
 **Properties**
 
@@ -219,8 +213,8 @@ a typedef for [PolygonSymbolizer][39], see also
 
 ### PointSymbolizer
 
-a typedef for PointSymbolizer [xsd][39]
-& [geoserver docs][42]
+a typedef for PointSymbolizer [xsd][40]
+& [geoserver docs][43]
 
 **Properties**
 
@@ -321,10 +315,12 @@ contains for each geometry type the symbolizer from an array of rules
 
 [38]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
 
-[39]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
+[39]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html
 
-[40]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer
+[40]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
 
-[41]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html
+[41]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer
 
-[42]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html
+[42]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html
+
+[43]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html
