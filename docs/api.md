@@ -17,11 +17,11 @@
     -   [FeatureTypeStyle][13]
     -   [Rule][14]
     -   [Filter][15]
-    -   [LineSymbolizer][16]
-    -   [PolygonSymbolizer][17]
-    -   [PointSymbolizer][18]
-    -   [GeometryStyles][19]
--   [Comparison][20]
+    -   [Comparison][16]
+    -   [LineSymbolizer][17]
+    -   [PolygonSymbolizer][18]
+    -   [PointSymbolizer][19]
+    -   [GeometryStyles][20]
 
 ## Methods
 
@@ -190,6 +190,17 @@ a typedef for Rule to match a feature: [xsd][34]
 -   `or` **[Filter][35]?** 
 -   `and` **[Filter][35]?** 
 
+### Comparison
+
+[filter operators][39], see also
+[geoserver][40]
+
+**Properties**
+
+-   `operator` **[string][21]** 
+-   `propertyname` **[string][21]** 
+-   `literal` **[string][21]** 
+
 ### LineSymbolizer
 
 a typedef for [LineSymbolizer][42], see also
@@ -240,17 +251,6 @@ contains for each geometry type the symbolizer from an array of rules
 -   `line` **[Array][23]&lt;[LineSymbolizer][37]>** linesymbolizers
 -   `point` **[Array][23]&lt;[PointSymbolizer][38]>** pointsymbolizers, same as graphic prop from PointSymbolizer
 
-## Comparison
-
-[filter operators][39], see also
-[geoserver][40]
-
-**Properties**
-
--   `operator` **[string][21]** 
--   `propertyname` **[string][21]** 
--   `literal` **[string][21]** 
-
 [1]: #methods
 
 [2]: #reader
@@ -281,15 +281,15 @@ contains for each geometry type the symbolizer from an array of rules
 
 [15]: #filter
 
-[16]: #linesymbolizer
+[16]: #comparison
 
-[17]: #polygonsymbolizer
+[17]: #linesymbolizer
 
-[18]: #pointsymbolizer
+[18]: #polygonsymbolizer
 
-[19]: #geometrystyles
+[19]: #pointsymbolizer
 
-[20]: #comparison
+[20]: #geometrystyles
 
 [21]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
