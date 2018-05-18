@@ -14,6 +14,7 @@ function propertyIsEqualTo(comparison, feature) {
 
 /**
  * [doComparison description]
+ * @private
  * @param  {Comparison} comparison [description]
  * @param  {object} feature    geojson
  * @return {bool}  does feature fullfill comparison

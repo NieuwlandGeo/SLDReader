@@ -519,6 +519,46 @@
    * @property {PointSymbolizer[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
    */
 
+  function propertyIsLessThen(comparison, feature) {
+    return (
+      feature.properties[comparison.propertyname] &&
+      Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
+    );
+  }
+
+  function propertyIsEqualTo(comparison, feature) {
+    return (
+      feature.properties[comparison.propertyname] &&
+      feature.properties[comparison.propertyname] === comparison.literal
+    );
+  }
+
+  /**
+   * [doComparison description]
+   * @private
+   * @param  {Comparison} comparison [description]
+   * @param  {object} feature    geojson
+   * @return {bool}  does feature fullfill comparison
+   */
+  function doComparison(comparison, feature) {
+    switch (comparison.operator) {
+      case 'propertyislessthan':
+        return propertyIsLessThen(comparison, feature);
+      case 'propertyisequalto':
+        return propertyIsEqualTo(comparison, feature);
+      case 'propertyislessthanorequalto':
+        return propertyIsEqualTo(comparison, feature) || propertyIsLessThen(comparison, feature);
+      case 'propertyisnotequalto':
+        return !propertyIsEqualTo(comparison, feature);
+      case 'propertyisgreaterthan':
+        return !propertyIsLessThen(comparison, feature) && !propertyIsEqualTo(comparison, feature);
+      case 'propertyisgreaterthanorequalto':
+        return !propertyIsLessThen(comparison, feature) || propertyIsEqualTo(comparison, feature);
+      default:
+        throw new Error(("Unkown comparison operator " + (comparison.operator)));
+    }
+  }
+
   var Filters = {
     featureid: function (value, feature) {
       for (var i = 0; i < value.length; i += 1) {
@@ -542,15 +582,18 @@
       var keys = Object.keys(value);
       return keys.every(function (key, i) { return filterSelector(value, feature, i); });
     },
+    /**
+     * @private
+     * @param  {Comparison[]} value   [description]
+     * @param  {object} feature geojson
+     * @return {bool}         [description]
+     */
+    comparison: function (value, feature) { return value.every(function (comparison) { return doComparison(comparison, feature); }); },
     propertyisequalto: function (values, feature) { return values.every(
         function (value) { return feature.properties[value.propertyname] &&
           feature.properties[value.propertyname] === value.literal; }
       ); },
     propertyisnotequalto: function (value, feature) { return !Filters.propertyisequalto(value, feature); },
-    propertyislessthan: function (values, feature) { return values.every(
-        function (value) { return feature.properties[value.propertyname] &&
-          Number(feature.properties[value.propertyname]) < Number(value.literal); }
-      ); },
     propertyislessthanorequalto: function (value, feature) { return Filters.propertyisequalto(value, feature) || Filters.propertyislessthan(value, feature); },
     propertyisgreaterthan: function (values, feature) { return values.every(
         function (value) { return feature.properties[value.propertyname] &&
