@@ -35,11 +35,21 @@ describe('Reads xml', () => {
     const featuretypestyle = result.layers['0'].styles['0'].featuretypestyles['0'];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
-  it.only('rules have filter for featureid', () => {
+  it('rules have filter for featureid', () => {
     const filter = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].filter;
     expect(filter).to.be.an.instanceof(Array);
+    expect(filter).to.have.length(2);
     expect(filter['0'].operator).to.equal('featureid');
-    // expect(filter.featureid).to.include('tasmania_water_bodies.2');
+    expect(filter['0'].propertyname).to.equal('fid');
+    expect(filter['0'].literal).to.equal('tasmania_water_bodies.2');
+  });
+  it('rules have filter for Attribute Filter Styler PropertyIsEqualTo', () => {
+    const filter = result.layers['0'].styles['2'].featuretypestyles['0'].rules['0'].filter;
+    expect(filter).to.be.an.instanceof(Array);
+    expect(filter).to.have.length(1);
+    expect(filter['0'].operator).to.equal('propertyisequalto');
+    expect(filter['0'].propertyname).to.equal('name');
+    expect(filter['0'].literal).to.equal('My simple Polygon');
   });
   it('rules have props', () => {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];

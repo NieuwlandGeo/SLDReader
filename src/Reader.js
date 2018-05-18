@@ -15,7 +15,7 @@ function addPropArray(node, obj, prop) {
 }
 
 /**
- * Generic parser for maxOccurs = 1
+ * Generic parser for maxOccurs = 1 (the xsd default)
  * it sets result of readNode(node) to array on obj[prop]
  * @private
  * @param {Element} node the xml element to parse
@@ -27,16 +27,18 @@ function addProp(node, obj, prop) {
   obj[property] = {};
   readNode(node, obj[property]);
 }
+
 /**
- * generic parser for filter operators
+ * Parser for filter comparison operators
  * @private
- * @param {Element} node the xml element to parse
- * @param {object} obj  the object to modify
- * @param {string} prop key on obj to hold empty object
+ * @type {[type]}
  */
-function addOperator(node, obj, prop) {
-  const operator = prop.toLowerCase();
-  console.log(obj);
+function addFilterComparison(node, obj, prop) {
+  const item = {
+    operator: prop.toLowerCase(),
+  };
+  readNode(node, item);
+  obj.push(item);
 }
 
 /**
@@ -114,20 +116,24 @@ const parsers = {
     readNode(element, rule);
     obj.rules.push(rule);
   },
-  Filter: addPropArray,
+  Filter: (element, obj, prop) => {
+    const property = prop.toLowerCase();
+    obj[property] = [];
+    readNode(element, obj[property]);
+  },
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
   },
-  Or: addProp,
-  And: addProp,
-  Not: addProp,
-  PropertyIsEqualTo: addPropArray,
-  PropertyIsNotEqualTo: addPropArray,
-  PropertyIsLessThan: addPropArray,
-  PropertyIsLessThanOrEqualTo: addPropArray,
-  PropertyIsGreaterThan: addPropArray,
-  PropertyIsGreaterThanOrEqualTo: addPropArray,
-  PropertyIsBetween: addPropArray,
+  // Or: addProp,
+  // And: addProp,
+  // Not: addProp,
+  PropertyIsEqualTo: addFilterComparison,
+  PropertyIsNotEqualTo: addFilterComparison,
+  PropertyIsLessThan: addFilterComparison,
+  PropertyIsLessThanOrEqualTo: addFilterComparison,
+  PropertyIsGreaterThan: addFilterComparison,
+  PropertyIsGreaterThanOrEqualTo: addFilterComparison,
+  PropertyIsBetween: addFilterComparison,
   PropertyIsLike: (element, obj) => {
     addPropArray(element, obj, 'propertyislike');
     const current = obj.propertyislike[obj.propertyislike.length - 1];
@@ -137,7 +143,13 @@ const parsers = {
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
-  FeatureId: addOperator,
+  FeatureId: (element, obj, prop) => {
+    obj.push({
+      operator: prop.toLowerCase(),
+      propertyname: 'fid',
+      literal: element.getAttribute('fid'),
+    });
+  },
   Name: addPropWithTextContent,
   MaxScaleDenominator: addPropWithTextContent,
   PolygonSymbolizer: addProp,
