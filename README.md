@@ -5,7 +5,7 @@
 [![Build Status](https://travis-ci.org/NieuwlandGeo/SLDReader.svg?branch=master)](https://travis-ci.org/NieuwlandGeo/SLDReader)
 
 A javascript package that aims to bring styling from a [sld document](http://www.opengeospatial.org/standards/sld) to popular mapping
-tools.
+tools. It is **not ready for production**
 
 **CONTRIBUTIONS WELCOME!**
 
