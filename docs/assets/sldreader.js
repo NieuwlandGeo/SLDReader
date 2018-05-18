@@ -28,7 +28,7 @@
   }
 
   /**
-   * Generic parser for maxOccurs = 1
+   * Generic parser for maxOccurs = 1 (the xsd default)
    * it sets result of readNode(node) to array on obj[prop]
    * @private
    * @param {Element} node the xml element to parse
@@ -39,6 +39,20 @@
     var property = prop.toLowerCase();
     obj[property] = {};
     readNode(node, obj[property]);
+  }
+
+  /**
+   * Parser for filter comparison operators
+   * @private
+   * @type {[type]}
+   */
+  function addFilterComparison(node, obj, prop) {
+    var item = {
+      operator: prop.toLowerCase(),
+    };
+    readNode(node, item);
+    obj.comparison = obj.comparison || [];
+    obj.comparison.push(item);
   }
 
   /**
@@ -116,23 +130,20 @@
       readNode(element, rule);
       obj.rules.push(rule);
     },
-    Filter: function (element, obj) {
-      obj.filter = {};
-      readNode(element, obj.filter);
-    },
+    Filter: addProp,
     ElseFilter: function (element, obj) {
       obj.elsefilter = true;
     },
     Or: addProp,
     And: addProp,
     Not: addProp,
-    PropertyIsEqualTo: addPropArray,
-    PropertyIsNotEqualTo: addPropArray,
-    PropertyIsLessThan: addPropArray,
-    PropertyIsLessThanOrEqualTo: addPropArray,
-    PropertyIsGreaterThan: addPropArray,
-    PropertyIsGreaterThanOrEqualTo: addPropArray,
-    PropertyIsBetween: addPropArray,
+    PropertyIsEqualTo: addFilterComparison,
+    PropertyIsNotEqualTo: addFilterComparison,
+    PropertyIsLessThan: addFilterComparison,
+    PropertyIsLessThanOrEqualTo: addFilterComparison,
+    PropertyIsGreaterThan: addFilterComparison,
+    PropertyIsGreaterThanOrEqualTo: addFilterComparison,
+    PropertyIsBetween: addFilterComparison,
     PropertyIsLike: function (element, obj) {
       addPropArray(element, obj, 'propertyislike');
       var current = obj.propertyislike[obj.propertyislike.length - 1];
@@ -229,7 +240,7 @@
    * @name Rule
    * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
    * @property {string} name rule name
-   * @property {Filter} [filter]
+   * @property {Filter[]} [filter]
    * @property {boolean} [elsefilter]
    * @property {integer} [minscaledenominator]
    * @property {integer} [maxscaledenominator]
@@ -241,12 +252,22 @@
   /**
    * @typedef Filter
    * @name Filter
-   * @description [ogc filters](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
    * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
-   * @property {object[]} operators
-   * @property {string} operators.operator
-   * @property {string} operators.propertyname
-   * @property {string} operators.literal
+   * @property {Comparison[]} [comparison]
+   * @property {Filter} [not]
+   * @property {Filter} [or]
+   * @property {Filter} [and]
+   */
+
+  /**
+   * @typedef Comparison
+   * @name Comparison
+   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+   * @property {string} operator
+   * @property {string} propertyname
+   * @property {string} literal
    */
 
   /**

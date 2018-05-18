@@ -21,6 +21,7 @@
     -   [PolygonSymbolizer][17]
     -   [PointSymbolizer][18]
     -   [GeometryStyles][19]
+-   [Comparison][20]
 
 ## Methods
 
@@ -34,9 +35,9 @@ Creates a object from an sld xml string,
 
 **Parameters**
 
--   `sld` **[string][20]** xml string
+-   `sld` **[string][21]** xml string
 
-Returns **[StyledLayerDescriptor][21]** object representing sld style
+Returns **[StyledLayerDescriptor][22]** object representing sld style
 
 ### getLayerNames
 
@@ -44,9 +45,9 @@ get all layer names in sld
 
 **Parameters**
 
--   `sld` **[StyledLayerDescriptor][21]** 
+-   `sld` **[StyledLayerDescriptor][22]** 
 
-Returns **[Array][22]&lt;[string][20]>** registered layernames
+Returns **[Array][23]&lt;[string][21]>** registered layernames
 
 ### getLayer
 
@@ -54,10 +55,10 @@ getlayer with name
 
 **Parameters**
 
--   `sld` **[StyledLayerDescriptor][21]** [description]
--   `layername` **[string][20]** [description]
+-   `sld` **[StyledLayerDescriptor][22]** [description]
+-   `layername` **[string][21]** [description]
 
-Returns **[Layer][23]** [description]
+Returns **[Layer][24]** [description]
 
 ### getStyleNames
 
@@ -65,9 +66,9 @@ getStyleNames, notice name is not required for userstyle, you might get undefine
 
 **Parameters**
 
--   `layer` **[Layer][23]** [description]
+-   `layer` **[Layer][24]** [description]
 
-Returns **[Array][22]&lt;[string][20]>** [description]
+Returns **[Array][23]&lt;[string][21]>** [description]
 
 ### getStyle
 
@@ -76,10 +77,10 @@ null is no style found
 
 **Parameters**
 
--   `layer` **[Layer][23]** [description]
--   `name` **[string][20]** of style
+-   `layer` **[Layer][24]** [description]
+-   `name` **[string][21]** of style
 
-Returns **[object][24]** the style from layer.styles matching the name
+Returns **[object][25]** the style from layer.styles matching the name
 
 ### getRules
 
@@ -87,9 +88,9 @@ get rules for specific feature after applying filters
 
 **Parameters**
 
--   `featureTypeStyle` **[FeatureTypeStyle][25]** 
--   `feature` **[object][24]** geojson
--   `resolution` **[number][26]** m/px
+-   `featureTypeStyle` **[FeatureTypeStyle][26]** 
+-   `feature` **[object][25]** geojson
+-   `resolution` **[number][27]** m/px
 
 **Examples**
 
@@ -98,7 +99,7 @@ const style = getStyle(sldLayer, stylename);
 getRules(style.featuretypestyles['0'], geojson,resolution);
 ```
 
-Returns **[Array][22]&lt;[Rule][27]>** 
+Returns **[Array][23]&lt;[Rule][28]>** 
 
 ### getGeometryStyles
 
@@ -106,9 +107,9 @@ Get styling from rules per geometry type
 
 **Parameters**
 
--   `rules` **[Array][22]&lt;[Rule][27]>** [description]
+-   `rules` **[Array][23]&lt;[Rule][28]>** [description]
 
-Returns **[GeometryStyles][28]** 
+Returns **[GeometryStyles][29]** 
 
 ### OlStyler
 
@@ -116,8 +117,8 @@ Create openlayers style
 
 **Parameters**
 
--   `GeometryStyles` **[GeometryStyles][28]** rulesconverter
--   `type` **[string][20]** geometry type, @see [geojson][29] (optional, default `'Polygon'`)
+-   `GeometryStyles` **[GeometryStyles][29]** rulesconverter
+-   `type` **[string][21]** geometry type, @see [geojson][30] (optional, default `'Polygon'`)
 
 **Examples**
 
@@ -134,12 +135,12 @@ Types are the javascript representation of the ogc sld structure
 
 ### StyledLayerDescriptor
 
-a typedef for StyledLayerDescriptor [xsd][30]
+a typedef for StyledLayerDescriptor [xsd][31]
 
 **Properties**
 
--   `version` **[string][20]** sld version
--   `layers` **[Array][22]&lt;[Layer][23]>** info extracted from NamedLayer element
+-   `version` **[string][21]** sld version
+-   `layers` **[Array][23]&lt;[Layer][24]>** info extracted from NamedLayer element
 
 ### Layer
 
@@ -147,87 +148,87 @@ a typedef for Layer, the actual style object for a single layer
 
 **Properties**
 
--   `name` **[string][20]** layer name
--   `styles` **[Array][22]&lt;[Object][24]>** See explanation at [Geoserver docs][31]
-    -   `styles[].default` **[Boolean][32]** 
-    -   `styles[].name` **[String][20]?** 
-    -   `styles[].featuretypestyles` **[Array][22]&lt;[FeatureTypeStyle][25]>** Geoserver will draw multiple,
+-   `name` **[string][21]** layer name
+-   `styles` **[Array][23]&lt;[Object][25]>** See explanation at [Geoserver docs][32]
+    -   `styles[].default` **[Boolean][33]** 
+    -   `styles[].name` **[String][21]?** 
+    -   `styles[].featuretypestyles` **[Array][23]&lt;[FeatureTypeStyle][26]>** Geoserver will draw multiple,
         libraries as openlayers can only use one definition!
 
 ### FeatureTypeStyle
 
-a typedef for FeatureTypeStyle: [xsd][33]
+a typedef for FeatureTypeStyle: [xsd][34]
 
 **Properties**
 
--   `rules` **[Array][22]&lt;[Rule][27]>** 
+-   `rules` **[Array][23]&lt;[Rule][28]>** 
 
 ### Rule
 
-a typedef for Rule to match a feature: [xsd][33]
+a typedef for Rule to match a feature: [xsd][34]
 
 **Properties**
 
--   `name` **[string][20]** rule name
--   `filter` **[Filter][34]?** 
--   `elsefilter` **[boolean][32]?** 
+-   `name` **[string][21]** rule name
+-   `filter` **[Array][23]&lt;[Filter][35]>?** 
+-   `elsefilter` **[boolean][33]?** 
 -   `minscaledenominator` **integer?** 
 -   `maxscaledenominator` **integer?** 
--   `polygonsymbolizer` **[PolygonSymbolizer][35]?** 
--   `linesymbolizer` **[LineSymbolizer][36]?** 
--   `pointsymbolizer` **[PointSymbolizer][37]?** 
+-   `polygonsymbolizer` **[PolygonSymbolizer][36]?** 
+-   `linesymbolizer` **[LineSymbolizer][37]?** 
+-   `pointsymbolizer` **[PointSymbolizer][38]?** 
 
 ### Filter
 
-[ogc filters][38], see also
-[geoserver][39]
+[filter operators][39], see also
+[geoserver][40]
 
 **Properties**
 
--   `operators` **[Array][22]&lt;[object][24]>** 
-    -   `operators.operator` **[string][20]** 
-    -   `operators.propertyname` **[string][20]** 
-    -   `operators.literal` **[string][20]** 
+-   `comparison` **[Array][23]&lt;[Comparison][41]>?** 
+-   `not` **[Filter][35]?** 
+-   `or` **[Filter][35]?** 
+-   `and` **[Filter][35]?** 
 
 ### LineSymbolizer
 
-a typedef for [LineSymbolizer][40], see also
-[geoserver docs][41]
+a typedef for [LineSymbolizer][42], see also
+[geoserver docs][43]
 
 **Properties**
 
--   `stroke` **[Object][24]** 
-    -   `stroke.css` **[Array][22]&lt;[Object][24]>** one object per CssParameter with props name (camelcased) & value
+-   `stroke` **[Object][25]** 
+    -   `stroke.css` **[Array][23]&lt;[Object][25]>** one object per CssParameter with props name (camelcased) & value
 
 ### PolygonSymbolizer
 
-a typedef for [PolygonSymbolizer][40], see also
-[geoserver docs][42]
+a typedef for [PolygonSymbolizer][42], see also
+[geoserver docs][44]
 
 **Properties**
 
--   `fill` **[Object][24]** 
-    -   `fill.css` **[array][22]** one object per CssParameter with props name (camelcased) & value
--   `stroke` **[Object][24]** 
-    -   `stroke.css` **[Array][22]&lt;[Object][24]>** with camelcased name & value
+-   `fill` **[Object][25]** 
+    -   `fill.css` **[array][23]** one object per CssParameter with props name (camelcased) & value
+-   `stroke` **[Object][25]** 
+    -   `stroke.css` **[Array][23]&lt;[Object][25]>** with camelcased name & value
 
 ### PointSymbolizer
 
-a typedef for PointSymbolizer [xsd][40]
-& [geoserver docs][43]
+a typedef for PointSymbolizer [xsd][42]
+& [geoserver docs][45]
 
 **Properties**
 
--   `graphic` **[Object][24]** 
-    -   `graphic.externalgraphic` **[Object][24]** 
-        -   `graphic.externalgraphic.onlineresource` **[string][20]** 
-    -   `graphic.mark` **[Object][24]** 
-        -   `graphic.mark.wellknownname` **[string][20]** 
-        -   `graphic.mark.fill` **[Object][24]** 
-        -   `graphic.mark.stroke` **[Object][24]** 
-    -   `graphic.opacity` **[Number][26]** 
-    -   `graphic.size` **[Number][26]** 
-    -   `graphic.rotation` **[Number][26]** 
+-   `graphic` **[Object][25]** 
+    -   `graphic.externalgraphic` **[Object][25]** 
+        -   `graphic.externalgraphic.onlineresource` **[string][21]** 
+    -   `graphic.mark` **[Object][25]** 
+        -   `graphic.mark.wellknownname` **[string][21]** 
+        -   `graphic.mark.fill` **[Object][25]** 
+        -   `graphic.mark.stroke` **[Object][25]** 
+    -   `graphic.opacity` **[Number][27]** 
+    -   `graphic.size` **[Number][27]** 
+    -   `graphic.rotation` **[Number][27]** 
 
 ### GeometryStyles
 
@@ -235,9 +236,20 @@ contains for each geometry type the symbolizer from an array of rules
 
 **Properties**
 
--   `polygon` **[Array][22]&lt;[PolygonSymbolizer][35]>** polygonsymbolizers
--   `line` **[Array][22]&lt;[LineSymbolizer][36]>** linesymbolizers
--   `point` **[Array][22]&lt;[PointSymbolizer][37]>** pointsymbolizers, same as graphic prop from PointSymbolizer
+-   `polygon` **[Array][23]&lt;[PolygonSymbolizer][36]>** polygonsymbolizers
+-   `line` **[Array][23]&lt;[LineSymbolizer][37]>** linesymbolizers
+-   `point` **[Array][23]&lt;[PointSymbolizer][38]>** pointsymbolizers, same as graphic prop from PointSymbolizer
+
+## Comparison
+
+[filter operators][39], see also
+[geoserver][40]
+
+**Properties**
+
+-   `operator` **[string][21]** 
+-   `propertyname` **[string][21]** 
+-   `literal` **[string][21]** 
 
 [1]: #methods
 
@@ -277,50 +289,54 @@ contains for each geometry type the symbolizer from an array of rules
 
 [19]: #geometrystyles
 
-[20]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[20]: #comparison
 
-[21]: #styledlayerdescriptor
+[21]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[22]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[22]: #styledlayerdescriptor
 
-[23]: #layer
+[23]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
-[24]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[24]: #layer
 
-[25]: #featuretypestyle
+[25]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-[26]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[26]: #featuretypestyle
 
-[27]: #rule
+[27]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
 
-[28]: #geometrystyles
+[28]: #rule
 
-[29]: http://geojson.org
+[29]: #geometrystyles
 
-[30]: http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd
+[30]: http://geojson.org
 
-[31]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html
+[31]: http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd
 
-[32]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[32]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html
 
-[33]: http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd
+[33]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
 
-[34]: #filter
+[34]: http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd
 
-[35]: #polygonsymbolizer
+[35]: #filter
 
-[36]: #linesymbolizer
+[36]: #polygonsymbolizer
 
-[37]: #pointsymbolizer
+[37]: #linesymbolizer
 
-[38]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
+[38]: #pointsymbolizer
 
-[39]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html
+[39]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
 
-[40]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
+[40]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html
 
-[41]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer
+[41]: #comparison
 
-[42]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html
+[42]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
 
-[43]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html
+[43]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer
+
+[44]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html
+
+[45]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html

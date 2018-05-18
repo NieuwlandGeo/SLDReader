@@ -36,20 +36,25 @@ describe('Reads xml', () => {
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
   it('rules have filter for featureid', () => {
-    const filter = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].filter;
-    expect(filter).to.be.an.instanceof(Array);
-    expect(filter).to.have.length(2);
-    expect(filter['0'].operator).to.equal('featureid');
-    expect(filter['0'].propertyname).to.equal('fid');
-    expect(filter['0'].literal).to.equal('tasmania_water_bodies.2');
+    const { featureid } = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].filter;
+    expect(featureid).to.be.an.instanceof(Array);
+    expect(featureid).to.have.length(2);
+    expect(featureid['0']).to.equal('tasmania_water_bodies.2');
   });
   it('rules have filter for Attribute Filter Styler PropertyIsEqualTo', () => {
-    const filter = result.layers['0'].styles['2'].featuretypestyles['0'].rules['0'].filter;
-    expect(filter).to.be.an.instanceof(Array);
-    expect(filter).to.have.length(1);
-    expect(filter['0'].operator).to.equal('propertyisequalto');
-    expect(filter['0'].propertyname).to.equal('name');
-    expect(filter['0'].literal).to.equal('My simple Polygon');
+    const { comparison } = result.layers['0'].styles['2'].featuretypestyles['0'].rules['0'].filter;
+    expect(comparison).to.be.an.instanceof(Array);
+    expect(comparison).to.have.length(1);
+    expect(comparison['0'].operator).to.equal('propertyisequalto');
+    expect(comparison['0'].propertyname).to.equal('name');
+    expect(comparison['0'].literal).to.equal('My simple Polygon');
+  });
+  it('rules have filter for Hover Styler not_or', () => {
+    const filter = result.layers['0'].styles['1'].featuretypestyles['0'].rules['0'].filter;
+    expect(filter.not).to.be.an.instanceof(Object);
+    expect(filter.not.or).to.be.an.instanceof(Object);
+    expect(filter.not.or.comparison).to.be.an.instanceof(Array);
+    expect(filter.not.or.comparison['0'].operator).to.equal('propertyisequalto');
   });
   it('rules have props', () => {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];

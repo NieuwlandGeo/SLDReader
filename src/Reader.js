@@ -38,7 +38,8 @@ function addFilterComparison(node, obj, prop) {
     operator: prop.toLowerCase(),
   };
   readNode(node, item);
-  obj.push(item);
+  obj.comparison = obj.comparison || [];
+  obj.comparison.push(item);
 }
 
 /**
@@ -116,17 +117,13 @@ const parsers = {
     readNode(element, rule);
     obj.rules.push(rule);
   },
-  Filter: (element, obj, prop) => {
-    const property = prop.toLowerCase();
-    obj[property] = [];
-    readNode(element, obj[property]);
-  },
+  Filter: addProp,
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
   },
-  // Or: addProp,
-  // And: addProp,
-  // Not: addProp,
+  Or: addProp,
+  And: addProp,
+  Not: addProp,
   PropertyIsEqualTo: addFilterComparison,
   PropertyIsNotEqualTo: addFilterComparison,
   PropertyIsLessThan: addFilterComparison,
@@ -143,12 +140,9 @@ const parsers = {
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
-  FeatureId: (element, obj, prop) => {
-    obj.push({
-      operator: prop.toLowerCase(),
-      propertyname: 'fid',
-      literal: element.getAttribute('fid'),
-    });
+  FeatureId: (element, obj) => {
+    obj.featureid = obj.featureid || [];
+    obj.featureid.push(element.getAttribute('fid'));
   },
   Name: addPropWithTextContent,
   MaxScaleDenominator: addPropWithTextContent,
@@ -245,6 +239,17 @@ export default function Reader(sld) {
 /**
  * @typedef Filter
  * @name Filter
+ * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+ * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+ * @property {Comparison[]} [comparison]
+ * @property {Filter} [not]
+ * @property {Filter} [or]
+ * @property {Filter} [and]
+ */
+
+/**
+ * @typedef Comparison
+ * @name Comparison
  * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
  * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
  * @property {string} operator
