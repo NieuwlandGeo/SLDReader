@@ -21,6 +21,7 @@ toc:
       - FeatureTypeStyle
       - Rule
       - Filter
+      - Comparison
       - LineSymbolizer
       - PolygonSymbolizer
       - PointSymbolizer

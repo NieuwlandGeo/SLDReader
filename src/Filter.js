@@ -1,3 +1,43 @@
+function propertyIsLessThan(comparison, feature) {
+  return (
+    feature.properties[comparison.propertyname] &&
+    Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
+  );
+}
+
+function propertyIsEqualTo(comparison, feature) {
+  return (
+    feature.properties[comparison.propertyname] &&
+    feature.properties[comparison.propertyname] === comparison.literal
+  );
+}
+
+/**
+ * [doComparison description]
+ * @private
+ * @param  {Comparison} comparison [description]
+ * @param  {object} feature    geojson
+ * @return {bool}  does feature fullfill comparison
+ */
+function doComparison(comparison, feature) {
+  switch (comparison.operator) {
+    case 'propertyislessthan':
+      return propertyIsLessThan(comparison, feature);
+    case 'propertyisequalto':
+      return propertyIsEqualTo(comparison, feature);
+    case 'propertyislessthanorequalto':
+      return propertyIsEqualTo(comparison, feature) || propertyIsLessThan(comparison, feature);
+    case 'propertyisnotequalto':
+      return !propertyIsEqualTo(comparison, feature);
+    case 'propertyisgreaterthan':
+      return !propertyIsLessThan(comparison, feature) && !propertyIsEqualTo(comparison, feature);
+    case 'propertyisgreaterthanorequalto':
+      return !propertyIsLessThan(comparison, feature) || propertyIsEqualTo(comparison, feature);
+    default:
+      throw new Error(`Unkown comparison operator ${comparison.operator}`);
+  }
+}
+
 const Filters = {
   featureid: (value, feature) => {
     for (let i = 0; i < value.length; i += 1) {
@@ -21,6 +61,13 @@ const Filters = {
     const keys = Object.keys(value);
     return keys.every((key, i) => filterSelector(value, feature, i));
   },
+  /**
+   * @private
+   * @param  {Comparison[]} value   [description]
+   * @param  {object} feature geojson
+   * @return {bool}         [description]
+   */
+  comparison: (value, feature) => value.every(comparison => doComparison(comparison, feature)),
   propertyisequalto: (values, feature) =>
     values.every(
       value =>
@@ -28,12 +75,6 @@ const Filters = {
         feature.properties[value.propertyname] === value.literal
     ),
   propertyisnotequalto: (value, feature) => !Filters.propertyisequalto(value, feature),
-  propertyislessthan: (values, feature) =>
-    values.every(
-      value =>
-        feature.properties[value.propertyname] &&
-        Number(feature.properties[value.propertyname]) < Number(value.literal)
-    ),
   propertyislessthanorequalto: (value, feature) =>
     Filters.propertyisequalto(value, feature) || Filters.propertyislessthan(value, feature),
   propertyisgreaterthan: (values, feature) =>

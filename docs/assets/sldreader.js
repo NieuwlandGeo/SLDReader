@@ -28,7 +28,7 @@
   }
 
   /**
-   * Generic parser for maxOccurs = 1
+   * Generic parser for maxOccurs = 1 (the xsd default)
    * it sets result of readNode(node) to array on obj[prop]
    * @private
    * @param {Element} node the xml element to parse
@@ -39,6 +39,20 @@
     var property = prop.toLowerCase();
     obj[property] = {};
     readNode(node, obj[property]);
+  }
+
+  /**
+   * Parser for filter comparison operators
+   * @private
+   * @type {[type]}
+   */
+  function addFilterComparison(node, obj, prop) {
+    var item = {
+      operator: prop.toLowerCase(),
+    };
+    readNode(node, item);
+    obj.comparison = obj.comparison || [];
+    obj.comparison.push(item);
   }
 
   /**
@@ -116,23 +130,20 @@
       readNode(element, rule);
       obj.rules.push(rule);
     },
-    Filter: function (element, obj) {
-      obj.filter = {};
-      readNode(element, obj.filter);
-    },
+    Filter: addProp,
     ElseFilter: function (element, obj) {
       obj.elsefilter = true;
     },
     Or: addProp,
     And: addProp,
     Not: addProp,
-    PropertyIsEqualTo: addPropArray,
-    PropertyIsNotEqualTo: addPropArray,
-    PropertyIsLessThan: addPropArray,
-    PropertyIsLessThanOrEqualTo: addPropArray,
-    PropertyIsGreaterThan: addPropArray,
-    PropertyIsGreaterThanOrEqualTo: addPropArray,
-    PropertyIsBetween: addPropArray,
+    PropertyIsEqualTo: addFilterComparison,
+    PropertyIsNotEqualTo: addFilterComparison,
+    PropertyIsLessThan: addFilterComparison,
+    PropertyIsLessThanOrEqualTo: addFilterComparison,
+    PropertyIsGreaterThan: addFilterComparison,
+    PropertyIsGreaterThanOrEqualTo: addFilterComparison,
+    PropertyIsBetween: addFilterComparison,
     PropertyIsLike: function (element, obj) {
       addPropArray(element, obj, 'propertyislike');
       var current = obj.propertyislike[obj.propertyislike.length - 1];
@@ -229,7 +240,7 @@
    * @name Rule
    * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
    * @property {string} name rule name
-   * @property {Filter} [filter]
+   * @property {Filter[]} [filter]
    * @property {boolean} [elsefilter]
    * @property {integer} [minscaledenominator]
    * @property {integer} [maxscaledenominator]
@@ -241,19 +252,23 @@
   /**
    * @typedef Filter
    * @name Filter
-   * @description [ogc filters]( http://schemas.opengis.net/filter/1.1.0/filter.xsd) should have only one prop
-   * @property {string[]} [featureid]
-   * @property {object} [or]  filter
-   * @property {object} [and]  filter
-   * @property {object} [not]  filter
-   * @property {object[]} [propertyisequalto]  propertyname & literal
-   * @property {object[]} [propertyisnotequalto]  propertyname & literal
-   * @property {object[]} [propertyislessthan]  propertyname & literal
-   * @property {object[]} [propertyislessthanorequalto]  propertyname & literal
-   * @property {object[]} [propertyisgreaterthan]  propertyname & literal
-   * @property {object[]} [propertyisgreaterthanorequalto]  propertyname & literal
-   * @property {object[]} [propertyislike]
-   * */
+   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+   * @property {Comparison[]} [comparison]
+   * @property {Filter} [not]
+   * @property {Filter} [or]
+   * @property {Filter} [and]
+   */
+
+  /**
+   * @typedef Comparison
+   * @name Comparison
+   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+   * @property {string} operator
+   * @property {string} propertyname
+   * @property {string} literal
+   */
 
   /**
    * @typedef PolygonSymbolizer
@@ -504,6 +519,46 @@
    * @property {PointSymbolizer[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
    */
 
+  function propertyIsLessThen(comparison, feature) {
+    return (
+      feature.properties[comparison.propertyname] &&
+      Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
+    );
+  }
+
+  function propertyIsEqualTo(comparison, feature) {
+    return (
+      feature.properties[comparison.propertyname] &&
+      feature.properties[comparison.propertyname] === comparison.literal
+    );
+  }
+
+  /**
+   * [doComparison description]
+   * @private
+   * @param  {Comparison} comparison [description]
+   * @param  {object} feature    geojson
+   * @return {bool}  does feature fullfill comparison
+   */
+  function doComparison(comparison, feature) {
+    switch (comparison.operator) {
+      case 'propertyislessthan':
+        return propertyIsLessThen(comparison, feature);
+      case 'propertyisequalto':
+        return propertyIsEqualTo(comparison, feature);
+      case 'propertyislessthanorequalto':
+        return propertyIsEqualTo(comparison, feature) || propertyIsLessThen(comparison, feature);
+      case 'propertyisnotequalto':
+        return !propertyIsEqualTo(comparison, feature);
+      case 'propertyisgreaterthan':
+        return !propertyIsLessThen(comparison, feature) && !propertyIsEqualTo(comparison, feature);
+      case 'propertyisgreaterthanorequalto':
+        return !propertyIsLessThen(comparison, feature) || propertyIsEqualTo(comparison, feature);
+      default:
+        throw new Error(("Unkown comparison operator " + (comparison.operator)));
+    }
+  }
+
   var Filters = {
     featureid: function (value, feature) {
       for (var i = 0; i < value.length; i += 1) {
@@ -527,15 +582,18 @@
       var keys = Object.keys(value);
       return keys.every(function (key, i) { return filterSelector(value, feature, i); });
     },
+    /**
+     * @private
+     * @param  {Comparison[]} value   [description]
+     * @param  {object} feature geojson
+     * @return {bool}         [description]
+     */
+    comparison: function (value, feature) { return value.every(function (comparison) { return doComparison(comparison, feature); }); },
     propertyisequalto: function (values, feature) { return values.every(
         function (value) { return feature.properties[value.propertyname] &&
           feature.properties[value.propertyname] === value.literal; }
       ); },
     propertyisnotequalto: function (value, feature) { return !Filters.propertyisequalto(value, feature); },
-    propertyislessthan: function (values, feature) { return values.every(
-        function (value) { return feature.properties[value.propertyname] &&
-          Number(feature.properties[value.propertyname]) < Number(value.literal); }
-      ); },
     propertyislessthanorequalto: function (value, feature) { return Filters.propertyisequalto(value, feature) || Filters.propertyislessthan(value, feature); },
     propertyisgreaterthan: function (values, feature) { return values.every(
         function (value) { return feature.properties[value.propertyname] &&
