@@ -1,4 +1,4 @@
-function propertyIsLessThen(comparison, feature) {
+function propertyIsLessThan(comparison, feature) {
   return (
     feature.properties[comparison.propertyname] &&
     Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
@@ -22,17 +22,17 @@ function propertyIsEqualTo(comparison, feature) {
 function doComparison(comparison, feature) {
   switch (comparison.operator) {
     case 'propertyislessthan':
-      return propertyIsLessThen(comparison, feature);
+      return propertyIsLessThan(comparison, feature);
     case 'propertyisequalto':
       return propertyIsEqualTo(comparison, feature);
     case 'propertyislessthanorequalto':
-      return propertyIsEqualTo(comparison, feature) || propertyIsLessThen(comparison, feature);
+      return propertyIsEqualTo(comparison, feature) || propertyIsLessThan(comparison, feature);
     case 'propertyisnotequalto':
       return !propertyIsEqualTo(comparison, feature);
     case 'propertyisgreaterthan':
-      return !propertyIsLessThen(comparison, feature) && !propertyIsEqualTo(comparison, feature);
+      return !propertyIsLessThan(comparison, feature) && !propertyIsEqualTo(comparison, feature);
     case 'propertyisgreaterthanorequalto':
-      return !propertyIsLessThen(comparison, feature) || propertyIsEqualTo(comparison, feature);
+      return !propertyIsLessThan(comparison, feature) || propertyIsEqualTo(comparison, feature);
     default:
       throw new Error(`Unkown comparison operator ${comparison.operator}`);
   }
