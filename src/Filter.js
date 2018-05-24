@@ -54,9 +54,9 @@ function doFIDFilter(fids, feature) {
     if (fids[i] === feature.id) {
       return true;
     }
-
-    return false;
   }
+
+  return false;
 }
 
 // const Filters = {
@@ -118,10 +118,9 @@ function doFIDFilter(fids, feature) {
  * @private
  * @param  {Filter} filter
  * @param  {object} feature feature
- * @param {number} keyindex index of filter object keys to use
  * @return {boolean}
  */
-export function filterSelector(filter, feature, keyindex = 0) {
+export function filterSelector(filter, feature) {
   const type = filter.type;
   switch (type) {
     case 'featureid':
@@ -129,6 +128,39 @@ export function filterSelector(filter, feature, keyindex = 0) {
 
     case 'comparison':
       return doComparison(filter, feature);
+
+    case 'and': {
+      if (!filter.predicates) {
+        throw new Error('And filter must have predicates array.');
+      }
+
+      // And without predicates should return false.
+      if (filter.predicates.length === 0) {
+        return false;
+      }
+
+      return filter.predicates.every(predicate =>
+        filterSelector(predicate, feature)
+      );
+    }
+
+    case 'or': {
+      if (!filter.predicates) {
+        throw new Error('And filter must have predicates array.');
+      }
+
+      return filter.predicates.some(predicate =>
+        filterSelector(predicate, feature)
+      );
+    }
+
+    case 'not': {
+      if (!filter.predicate) {
+        throw new Error('Not filter must have predicate.');
+      }
+
+      return !filterSelector(filter.predicate, feature);
+    }
 
     default:
       throw new Error(`Unknown filter type: ${type}`);

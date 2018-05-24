@@ -1,7 +1,7 @@
 /* global describe it expect */
 import { filterSelector, scaleSelector } from '../src/Filter';
 
-describe.only('filter rules', () => {
+describe('filter rules', () => {
   describe('FID filter', () => {
     const filter = {
       type: 'featureid',
@@ -116,44 +116,152 @@ describe.only('filter rules', () => {
   });
 
   describe('Logical filters', () => {
-    it('and filter', () => {
-      const filter = {
-        and: {
-          propertyisequalto: [
-            {
-              propertyname: 'WATER_TYPE',
-              literal: 'Lake',
-            },
-          ],
-          propertyisgreaterthanorequalto: [
-            {
-              propertyname: 'area',
-              literal: 1067509088,
-            },
-          ],
-        },
-      };
-      const feature = { properties: { WATER_TYPE: 'Lake', area: 1067509088 } };
-      expect(filterSelector(filter, feature)).to.be.true;
+    const lakeFilter = {
+      type: 'comparison',
+      operator: 'propertyisequalto',
+      propertyname: 'WATER_TYPE',
+      literal: 'Lake',
+    };
+
+    const areaFilter = {
+      type: 'comparison',
+      operator: 'propertyisequalto',
+      propertyname: 'area',
+      literal: 1067509088,
+    };
+
+    const areaFilter2 = {
+      type: 'comparison',
+      operator: 'propertyisgreaterthanorequalto',
+      propertyname: 'area',
+      literal: 1067509088,
+    };
+
+    const feature = {
+      properties: { WATER_TYPE: 'Lake', area: 1067509088 },
+    };
+
+    describe('AND', () => {
+      it('and filter', () => {
+        const filter = {
+          type: 'and',
+          predicates: [lakeFilter, areaFilter2],
+        };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('and filter with 2 child filters of same type', () => {
+        const filter = {
+          type: 'and',
+          predicates: [areaFilter],
+        };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('and filter with no predicates returns false', () => {
+        const filter = {
+          type: 'and',
+          predicates: [],
+        };
+        expect(filterSelector(filter, feature)).to.be.false;
+      });
     });
 
-    it('and filter with 2 child filters of same type', () => {
-      const filter = {
-        and: {
-          propertyisequalto: [
-            {
-              propertyname: 'WATER_TYPE',
-              literal: 'Lake',
-            },
-            {
-              propertyname: 'area',
-              literal: 1067509088,
-            },
-          ],
-        },
+    describe('OR', () => {
+      const kwikFilter = {
+        type: 'comparison',
+        operator: 'propertyisequalto',
+        propertyname: 'name',
+        literal: 'Kwik',
       };
-      const feature = { properties: { WATER_TYPE: 'Lake', area: 1067509088 } };
-      expect(filterSelector(filter, feature)).to.be.true;
+
+      const kwekFilter = Object.assign({}, kwikFilter, { literal: 'Kwek' });
+
+      const kwakFilter = Object.assign({}, kwikFilter, { literal: 'Kwak' });
+
+      const duckling = { properties: { name: 'Kwak' } };
+
+      it('or filter without predicates should return false', () => {
+        const filter = { type: 'or', predicates: [] };
+        expect(filterSelector(filter, duckling)).to.be.false;
+      });
+
+      it('or filter with one match returns true', () => {
+        const filter = {
+          type: 'or',
+          predicates: [kwikFilter, kwekFilter, kwakFilter],
+        };
+        expect(filterSelector(filter, duckling)).to.be.true;
+      });
+
+      it('or filter with no matches returns false', () => {
+        const filter = {
+          type: 'or',
+          predicates: [kwikFilter, kwekFilter],
+        };
+        expect(filterSelector(filter, duckling)).to.be.false;
+      });
+    });
+
+    describe('NOT', () => {
+      it('not filter', () => {
+        const filter = {
+          type: 'not',
+          predicate: {
+            type: 'comparison',
+            operator: 'propertyisequalto',
+            propertyname: 'WATER_TYPE',
+            literal: 'Acid',
+          },
+        };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+    });
+
+    describe('Nested logical filter', () => {
+      const harry = { properties: { name: 'Harry', age: 64 } };
+      const sjenkie = { properties: { name: 'Sjenkie', age: 8 } };
+
+      function getEqualsFilter(propertyname, literal) {
+        return {
+          type: 'comparison',
+          operator: 'propertyisequalto',
+          propertyname,
+          literal,
+        };
+      }
+
+      function negate(predicate) {
+        return {
+          type: 'not',
+          predicate,
+        };
+      }
+
+      const nameIsPietOrHarry = {
+        type: 'or',
+        predicates: [
+          getEqualsFilter('name', 'Piet'),
+          getEqualsFilter('name', 'Harry'),
+        ],
+      };
+
+      const isAKid = {
+        type: 'comparison',
+        operator: 'propertyislessthan',
+        propertyname: 'age',
+        literal: 18,
+      };
+
+      // Sanity check for each subfilter.
+      expect(filterSelector(nameIsPietOrHarry, harry)).to.be.true;
+      expect(filterSelector(isAKid, sjenkie)).to.be.true;
+
+      const combinedFilter = {
+        type: 'and',
+        predicates: [negate(nameIsPietOrHarry), isAKid],
+      };
+      expect(filterSelector(combinedFilter, sjenkie)).to.be.true;
     });
   });
 });
