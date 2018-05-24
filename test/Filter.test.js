@@ -1,21 +1,20 @@
 /* global describe it expect */
 import { filterSelector, scaleSelector } from '../src/Filter';
 
-describe('filter rules', () => {
+describe.only('filter rules', () => {
   describe('FID filter', () => {
+    const filter = {
+      type: 'featureid',
+      fids: ['tasmania_water_bodies.2', 'tasmania_water_bodies.3'],
+    };
+
     it('filter fid', () => {
       const feature = { id: 'tasmania_water_bodies.2' };
-      const filter = {
-        featureid: ['tasmania_water_bodies.2', 'tasmania_water_bodies.3'],
-      };
       expect(filterSelector(filter, feature)).to.be.true;
     });
 
     it('filter fid false', () => {
       const feature = { id: 'tasmania_water_bodies.0' };
-      const filter = {
-        featureid: ['tasmania_water_bodies.2', 'tasmania_water_bodies.3'],
-      };
       expect(filterSelector(filter, feature)).to.be.false;
     });
   });
@@ -24,13 +23,10 @@ describe('filter rules', () => {
     it('propertyislessthan when true', () => {
       const feature = { properties: { AREA: 1065512598 } };
       const filter = {
-        comparison: [
-          {
-            operator: 'propertyislessthan',
-            propertyname: 'AREA',
-            literal: 1065512599,
-          },
-        ],
+        type: 'comparison',
+        operator: 'propertyislessthan',
+        propertyname: 'AREA',
+        literal: 1065512599,
       };
       expect(filterSelector(filter, feature)).to.be.true;
     });
@@ -38,13 +34,10 @@ describe('filter rules', () => {
     it('propertyislessthan when false', () => {
       const feature = { properties: { AREA: 1065512599 } };
       const filter = {
-        comparison: [
-          {
-            operator: 'propertyislessthan',
-            propertyname: 'AREA',
-            literal: 1065512599,
-          },
-        ],
+        type: 'comparison',
+        operator: 'propertyislessthan',
+        propertyname: 'AREA',
+        literal: 1065512599,
       };
       expect(filterSelector(filter, feature)).to.be.false;
     });
@@ -52,13 +45,10 @@ describe('filter rules', () => {
     it('propertyisequalto', () => {
       const feature = { properties: { PERIMETER: 1071304933 } };
       const filter = {
-        comparison: [
-          {
-            operator: 'propertyisequalto',
-            propertyname: 'PERIMETER',
-            literal: 1071304933,
-          },
-        ],
+        type: 'comparison',
+        operator: 'propertyisequalto',
+        propertyname: 'PERIMETER',
+        literal: 1071304933,
       };
       expect(filterSelector(filter, feature)).to.be.true;
     });
@@ -66,13 +56,10 @@ describe('filter rules', () => {
     it('propertyisequalto for non existent prop', () => {
       const feature = { properties: { PERIMETEEER: 1071304933 } };
       const filter = {
-        comparison: [
-          {
-            operator: 'propertyisequalto',
-            propertyname: 'PERIMETER',
-            literal: 1071304933,
-          },
-        ],
+        type: 'comparison',
+        operator: 'propertyisequalto',
+        propertyname: 'PERIMETER',
+        literal: 1071304933,
       };
       expect(filterSelector(filter, feature)).to.be.false;
     });
@@ -80,13 +67,10 @@ describe('filter rules', () => {
     it('propertyisnotequalto', () => {
       const featureeq = { properties: { PERIMETER: 1071304933 } };
       const filter = {
-        comparison: [
-          {
-            operator: 'propertyisnotequalto',
-            propertyname: 'PERIMETER',
-            literal: 1071304933,
-          },
-        ],
+        type: 'comparison',
+        operator: 'propertyisnotequalto',
+        propertyname: 'PERIMETER',
+        literal: 1071304933,
       };
       expect(filterSelector(filter, featureeq)).to.be.false;
       const featureuneq = { properties: { PERIMETER: 1071304900 } };
@@ -96,13 +80,10 @@ describe('filter rules', () => {
     it('propertyislessthanorequalto', () => {
       const feature = { properties: { PERIMETER: 1071304933 } };
       const filter = {
-        comparison: [
-          {
-            operator: 'propertyislessthanorequalto',
-            propertyname: 'PERIMETER',
-            literal: 1071304933,
-          },
-        ],
+        type: 'comparison',
+        operator: 'propertyislessthanorequalto',
+        propertyname: 'PERIMETER',
+        literal: 1071304933,
       };
       expect(filterSelector(filter, feature)).to.be.true;
       const featurels = { properties: { PERIMETER: 1071304932 } };
@@ -114,13 +95,10 @@ describe('filter rules', () => {
     it('propertyisgreaterthan', () => {
       const feature = { properties: { PERIMETER: 1071304933 } };
       const filter = {
-        comparison: [
-          {
-            operator: 'propertyisgreaterthan',
-            propertyname: 'PERIMETER',
-            literal: 1071304933,
-          },
-        ],
+        type: 'comparison',
+        operator: 'propertyisgreaterthan',
+        propertyname: 'PERIMETER',
+        literal: 1071304933,
       };
       expect(filterSelector(filter, feature)).to.be.false;
     });
@@ -128,13 +106,10 @@ describe('filter rules', () => {
     it('propertyisgreaterthanorequalto', () => {
       const feature = { properties: { PERIMETER: 1071304933 } };
       const filter = {
-        comparison: [
-          {
-            operator: 'propertyisgreaterthanorequalto',
-            propertyname: 'PERIMETER',
-            literal: 1071304933,
-          },
-        ],
+        type: 'comparison',
+        operator: 'propertyisgreaterthanorequalto',
+        propertyname: 'PERIMETER',
+        literal: 1071304933,
       };
       expect(filterSelector(filter, feature)).to.be.true;
     });
