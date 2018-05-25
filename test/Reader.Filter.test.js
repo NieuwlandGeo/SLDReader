@@ -25,8 +25,26 @@ describe('Filter tests', () => {
     expect(filter.upperboundary).to.equal('1000');
   });
 
+  it('PropertyIsLike', () => {
+    const filterXml = `<Filter>
+      <PropertyIsLike wildCard="%" singleChar="?" escapeChar="\\">
+        <PropertyName>name</PropertyName>
+        <Literal>j?ns%</Literal>
+      </PropertyIsLike>
+    </Filter>`;
+
+    const filter = Reader(filterXml);
+    expect(filter.type).to.equal('comparison');
+    expect(filter.operator).to.equal('propertyislike');
+    expect(filter.wildcard).to.equal('%');
+    expect(filter.singlechar).to.equal('?');
+    expect(filter.escapechar).to.equal('\\');
+    expect(filter.propertyname).to.equal('name');
+    expect(filter.literal).to.equal('j?ns%');
+  });
+
   it('NOT filter', () => {
-    const notFilter = `<Filter>
+    const filterXml = `<Filter>
       <Not>
         <PropertyIsEqualTo>
           <PropertyName>PERIMETER</PropertyName>
@@ -35,13 +53,13 @@ describe('Filter tests', () => {
       </Not>
     </Filter>`;
 
-    const parsed = Reader(notFilter);
-    expect(parsed.type).to.equal('not');
-    expect(parsed.predicate).to.be.ok;
-    expect(parsed.predicate.type).to.equal('comparison');
-    expect(parsed.predicate.operator).to.equal('propertyisequalto');
-    expect(parsed.predicate.propertyname).to.equal('PERIMETER');
-    expect(parsed.predicate.literal).to.equal('1071304933');
+    const filter = Reader(filterXml);
+    expect(filter.type).to.equal('not');
+    expect(filter.predicate).to.be.ok;
+    expect(filter.predicate.type).to.equal('comparison');
+    expect(filter.predicate.operator).to.equal('propertyisequalto');
+    expect(filter.predicate.propertyname).to.equal('PERIMETER');
+    expect(filter.predicate.literal).to.equal('1071304933');
   });
 
   describe('From SLD', () => {

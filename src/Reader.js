@@ -140,12 +140,11 @@ const parsers = {
   PropertyIsGreaterThan: addFilterComparison,
   PropertyIsGreaterThanOrEqualTo: addFilterComparison,
   PropertyIsBetween: addFilterComparison,
-  PropertyIsLike: (element, obj) => {
-    addPropArray(element, obj, 'propertyislike');
-    const current = obj.propertyislike[obj.propertyislike.length - 1];
-    current.wildcard = element.getAttribute('wildCard');
-    current.singlechar = element.getAttribute('singleChar');
-    current.escape = element.getAttribute('escape');
+  PropertyIsLike: (element, obj, prop) => {
+    addFilterComparison(element, obj, prop);
+    obj.wildcard = element.getAttribute('wildCard');
+    obj.singlechar = element.getAttribute('singleChar');
+    obj.escapechar = element.getAttribute('escapeChar');
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
