@@ -23,6 +23,47 @@ function propertyIsEqualTo(comparison, feature) {
 }
 
 /**
+ * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
+ * @param {object} comparison filter object for operator 'propertyislike'
+ * @param {object} feature the feature to test
+ */
+function propertyIsLike(comparison, feature) {
+  const pattern = comparison.literal;
+  const value =
+    feature.properties && feature.properties[comparison.propertyname];
+
+  if (!value) {
+    return false;
+  }
+
+  // Create regex string from match pattern.
+  const { wildcard, singlechar, escapechar } = comparison;
+
+  // Replace wildcard by '.*'
+  let patternAsRegex = pattern.replace(new RegExp(`[${wildcard}]`, 'g'), '.*');
+
+  // Replace single char match by '.'
+  patternAsRegex = patternAsRegex.replace(
+    new RegExp(`[${singlechar}]`, 'g'),
+    '.'
+  );
+
+  // Replace escape char by '\' if escape char is not already '\'.
+  if (escapechar !== '\\') {
+    patternAsRegex = patternAsRegex.replace(
+      new RegExp(`[${escapechar}]`, 'g'),
+      '\\'
+    );
+  }
+
+  // Bookend the regular expression.
+  patternAsRegex = `^${patternAsRegex}$`;
+
+  const rex = new RegExp(patternAsRegex);
+  return rex.test(value);
+}
+
+/**
  * [doComparison description]
  * @private
  * @param  {Comparison} comparison [description]
@@ -54,6 +95,8 @@ function doComparison(comparison, feature) {
       );
     case 'propertyisbetween':
       return propertyIsBetween(comparison, feature);
+    case 'propertyislike':
+      return propertyIsLike(comparison, feature);
     default:
       throw new Error(`Unkown comparison operator ${comparison.operator}`);
   }

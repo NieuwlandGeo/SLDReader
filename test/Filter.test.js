@@ -148,6 +148,52 @@ describe('filter rules', () => {
         expect(filterSelector(filter, feature)).to.be.false;
       });
     });
+
+    describe('propertyislike', () => {
+      const filterBase = {
+        type: 'comparison',
+        operator: 'propertyislike',
+        propertyname: 'value',
+        literal: '', // overridden in testLike function below
+        wildcard: '%',
+        singlechar: '?',
+        escapechar: '\\',
+      };
+
+      function testLike(pattern, value) {
+        const filter = Object.assign(filterBase, { literal: pattern });
+        const feature = { properties: { value } };
+        return filterSelector(filter, feature);
+      }
+
+      it('exact match true', () => {
+        expect(testLike('exact', 'exact')).to.be.true;
+      });
+
+      it('exact match false', () => {
+        expect(testLike('exact', 'exacT')).to.be.false;
+      });
+
+      it('wildcard match true', () => {
+        expect(testLike('ab%ra', 'abracadabra')).to.be.true;
+      });
+
+      it('wildcard match false', () => {
+        expect(testLike('ab%ra', 'abracadabrabla')).to.be.false;
+      });
+
+      it('singlechar match true', () => {
+        expect(testLike('jans?en', 'janssen')).to.be.true;
+      });
+
+      it('singlechar match false', () => {
+        expect(testLike('jans?en', 'jansen')).to.be.false;
+      });
+
+      it('wildcard match without content true', () => {
+        expect(testLike('%hoi%', 'hoi')).to.be.true;
+      });
+    });
   });
 
   describe('Logical filters', () => {
