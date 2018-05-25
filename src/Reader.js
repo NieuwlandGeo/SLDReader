@@ -34,12 +34,9 @@ function addProp(node, obj, prop) {
  * @type {[type]}
  */
 function addFilterComparison(node, obj, prop) {
-  const item = {
-    operator: prop.toLowerCase(),
-  };
-  readNode(node, item);
-  obj.comparison = obj.comparison || [];
-  obj.comparison.push(item);
+  obj.type = 'comparison';
+  obj.operator = prop.toLowerCase();
+  readNode(node, obj);
 }
 
 /**
@@ -121,9 +118,21 @@ const parsers = {
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
   },
-  Or: addProp,
-  And: addProp,
-  Not: addProp,
+  Or: (element, obj) => {
+    obj.type = 'or';
+    obj.predicates = [];
+    readNodeArray(element, obj, 'predicates');
+  },
+  And: (element, obj) => {
+    obj.type = 'and';
+    obj.predicates = [];
+    readNodeArray(element, obj, 'predicates');
+  },
+  Not: (element, obj) => {
+    obj.type = 'not';
+    obj.predicate = {};
+    readNode(element, obj.predicate);
+  },
   PropertyIsEqualTo: addFilterComparison,
   PropertyIsNotEqualTo: addFilterComparison,
   PropertyIsLessThan: addFilterComparison,
@@ -141,8 +150,9 @@ const parsers = {
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
   FeatureId: (element, obj) => {
-    obj.featureid = obj.featureid || [];
-    obj.featureid.push(element.getAttribute('fid'));
+    obj.type = 'featureid';
+    obj.fids = obj.fids || [];
+    obj.fids.push(element.getAttribute('fid'));
   },
   Name: addPropWithTextContent,
   MaxScaleDenominator: addPropWithTextContent,
@@ -174,6 +184,25 @@ function readNode(node, obj) {
   for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
     if (parsers[n.localName]) {
       parsers[n.localName](n, obj, n.localName);
+    }
+  }
+}
+
+/**
+ * Parse all children of an element as an array in obj[prop]
+ * @param {Element} node parent xml element
+ * @param {object} obj the object to modify
+ * @param {string} prop the name of the array prop to fill with parsed child nodes
+ * @return {void}
+ */
+function readNodeArray(node, obj, prop) {
+  const property = prop.toLowerCase();
+  obj[property] = [];
+  for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
+    if (parsers[n.localName]) {
+      const childObj = {};
+      parsers[n.localName](n, childObj, n.localName);
+      obj[property].push(childObj);
     }
   }
 }
