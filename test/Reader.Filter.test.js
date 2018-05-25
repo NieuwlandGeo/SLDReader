@@ -12,17 +12,21 @@ describe('Filter tests', () => {
   it('PropertyIsEqualTo', () => {
     const filterXml = `<Filter>
       <PropertyIsBetween>
-        <PropertyName>PERIMETER</PropertyName>
-        <LowerBoundary>0.001</LowerBoundary>
-        <UpperBoundary>1000</UpperBoundary>
+        <PropertyName>AREA</PropertyName>
+        <LowerBoundary>
+          <Literal>1064866676</Literal>
+        </LowerBoundary>
+        <UpperBoundary>
+          <Literal>1065512599</Literal>
+        </UpperBoundary>
       </PropertyIsBetween>
     </Filter>`;
 
     const filter = Reader(filterXml);
     expect(filter.type).to.equal('comparison');
-    expect(filter.propertyname).to.equal('PERIMETER');
-    expect(filter.lowerboundary).to.equal('0.001');
-    expect(filter.upperboundary).to.equal('1000');
+    expect(filter.propertyname).to.equal('AREA');
+    expect(filter.lowerboundary).to.equal('1064866676');
+    expect(filter.upperboundary).to.equal('1065512599');
   });
 
   it('PropertyIsLike', () => {

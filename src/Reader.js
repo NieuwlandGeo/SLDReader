@@ -45,10 +45,15 @@ function addFilterComparison(node, obj, prop) {
  * @param {Element} node [description]
  * @param {object} obj  [description]
  * @param {string} prop [description]
+ * @param {bool} [trimText] Trim whitespace from text content (default false).
  */
-function addPropWithTextContent(node, obj, prop) {
+function addPropWithTextContent(node, obj, prop, trimText = false) {
   const property = prop.toLowerCase();
-  obj[property] = node.textContent;
+  if (trimText) {
+    obj[property] = node.textContent.trim();
+  } else {
+    obj[property] = node.textContent;
+  }
 }
 
 /**
@@ -59,7 +64,10 @@ function addPropWithTextContent(node, obj, prop) {
  * @return {boolean}
  */
 function getBool(element, tagName) {
-  const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
+  const collection = element.getElementsByTagNameNS(
+    'http://www.opengis.net/sld',
+    tagName
+  );
   if (collection.length) {
     return Boolean(collection.item(0).textContent);
   }
@@ -148,8 +156,10 @@ const parsers = {
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
-  LowerBoundary: addPropWithTextContent,
-  UpperBoundary: addPropWithTextContent,
+  LowerBoundary: (element, obj, prop) =>
+    addPropWithTextContent(element, obj, prop, true),
+  UpperBoundary: (element, obj, prop) =>
+    addPropWithTextContent(element, obj, prop, true),
   FeatureId: (element, obj) => {
     obj.type = 'featureid';
     obj.fids = obj.fids || [];
