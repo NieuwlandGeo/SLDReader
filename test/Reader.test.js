@@ -1,4 +1,4 @@
-/* global describe it expect beforeEach */
+/* global describe it expect before */
 import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
@@ -6,7 +6,7 @@ import { sld11 } from './data/test11.sld';
 let result;
 
 describe('Reads xml', () => {
-  beforeEach(() => {
+  before(() => {
     result = Reader(sld);
   });
   it('returns object', () => {
@@ -139,7 +139,7 @@ describe('Reads xml', () => {
 });
 
 describe('Reads xml sld 11', () => {
-  beforeEach(() => {
+  before(() => {
     result = Reader(sld11);
   });
   it('returns object', () => {
