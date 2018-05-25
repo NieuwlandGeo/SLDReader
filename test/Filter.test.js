@@ -113,6 +113,41 @@ describe('filter rules', () => {
       };
       expect(filterSelector(filter, feature)).to.be.true;
     });
+
+    describe('propertyisbetween', () => {
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisbetween',
+        propertyname: 'age',
+        lowerBoundary: '30',
+        upperBoundary: '100',
+      };
+
+      it('inside', () => {
+        const feature = { properties: { age: 42 } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('at lower bound', () => {
+        const feature = { properties: { age: 30 } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('below lower bound', () => {
+        const feature = { properties: { age: 10 } };
+        expect(filterSelector(filter, feature)).to.be.false;
+      });
+
+      it('at upper bound', () => {
+        const feature = { properties: { age: 100 } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('above upper bound', () => {
+        const feature = { properties: { age: 100.001 } };
+        expect(filterSelector(filter, feature)).to.be.false;
+      });
+    });
   });
 
   describe('Logical filters', () => {

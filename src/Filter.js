@@ -6,6 +6,14 @@ function propertyIsLessThan(comparison, feature) {
   );
 }
 
+function propertyIsBetween(comparison, feature) {
+  // Todo: support string comparison as well
+  const lowerBoundary = Number(comparison.lowerBoundary);
+  const upperBoundary = Number(comparison.upperBoundary);
+  const value = Number(feature.properties[comparison.propertyname]);
+  return value >= lowerBoundary && value <= upperBoundary;
+}
+
 function propertyIsEqualTo(comparison, feature) {
   if (!(comparison.propertyname in feature.properties)) {
     return false;
@@ -44,6 +52,8 @@ function doComparison(comparison, feature) {
         !propertyIsLessThan(comparison, feature) ||
         propertyIsEqualTo(comparison, feature)
       );
+    case 'propertyisbetween':
+      return propertyIsBetween(comparison, feature);
     default:
       throw new Error(`Unkown comparison operator ${comparison.operator}`);
   }
