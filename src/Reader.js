@@ -277,24 +277,35 @@ export default function Reader(sld) {
  * */
 
 /**
+ * A filter predicate.
  * @typedef Filter
  * @name Filter
  * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
  * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
- * @property {Comparison[]} [comparison]
- * @property {Filter} [not]
- * @property {Filter} [or]
- * @property {Filter} [and]
- */
-
-/**
- * @typedef Comparison
- * @name Comparison
- * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
- * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
- * @property {string} operator
- * @property {string} propertyname
- * @property {string} literal
+ * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
+ * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
+ * @property {string} [operator] Required for type='comparison'. Can be one of
+ * 'propertyisequalto',
+ * 'propertyisnotequalto',
+ * 'propertyislessthan',
+ * 'propertyislessthanorequalto',
+ * 'propertyisgreaterthan',
+ * 'propertyisgreaterthanorequalto',
+ * 'propertyislike',
+ * 'propertyisbetween'
+ * @property {Filter[]} [predicates] Required for type='and' or type='or'.
+ * An array of filter predicates that must all evaluate to true for 'and', or
+ * for which at least one must evaluate to true for 'or'.
+ * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
+ * @property {string} [propertyname] Required for type='comparison'.
+ * @property {string} [literal] A literal value to use in a comparison,
+ * required for type='comparison'.
+ * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
+ * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
+ * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
+ * @property {string} [singlechar] Required single char match character,
+ * required for operator='propertyislike'.
+ * @property {string} [escapechar] Required escape character for operator='propertyislike'.
  */
 
 /**
