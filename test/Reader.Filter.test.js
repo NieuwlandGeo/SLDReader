@@ -9,6 +9,22 @@ describe('Filter tests', () => {
     result = Reader(sld);
   });
 
+  it('PropertyIsEqualTo', () => {
+    const filterXml = `<Filter>
+      <PropertyIsBetween>
+        <PropertyName>PERIMETER</PropertyName>
+        <LowerBoundary>0.001</LowerBoundary>
+        <UpperBoundary>1000</UpperBoundary>
+      </PropertyIsBetween>
+    </Filter>`;
+
+    const filter = Reader(filterXml);
+    expect(filter.type).to.equal('comparison');
+    expect(filter.propertyname).to.equal('PERIMETER');
+    expect(filter.lowerboundary).to.equal('0.001');
+    expect(filter.upperboundary).to.equal('1000');
+  });
+
   it('NOT filter', () => {
     const notFilter = `<Filter>
       <Not>

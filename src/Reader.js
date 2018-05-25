@@ -149,6 +149,8 @@ const parsers = {
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
+  LowerBoundary: addPropWithTextContent,
+  UpperBoundary: addPropWithTextContent,
   FeatureId: (element, obj) => {
     obj.type = 'featureid';
     obj.fids = obj.fids || [];
