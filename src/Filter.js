@@ -11,7 +11,6 @@ function propertyIsBetween(comparison, feature) {
   const lowerBoundary = Number(comparison.lowerboundary);
   const upperBoundary = Number(comparison.upperboundary);
   const value = Number(feature.properties[comparison.propertyname]);
-  console.log(comparison, lowerBoundary, ' | ', value, ' | ', upperBoundary, ' --> ', value >= lowerBoundary && value <= upperBoundary);
   return value >= lowerBoundary && value <= upperBoundary;
 }
 
