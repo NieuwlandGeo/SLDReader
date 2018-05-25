@@ -146,7 +146,7 @@ export function filterSelector(filter, feature) {
 
     case 'or': {
       if (!filter.predicates) {
-        throw new Error('And filter must have predicates array.');
+        throw new Error('Or filter must have predicates array.');
       }
 
       return filter.predicates.some(predicate =>
