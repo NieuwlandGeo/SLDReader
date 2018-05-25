@@ -8,9 +8,10 @@ function propertyIsLessThan(comparison, feature) {
 
 function propertyIsBetween(comparison, feature) {
   // Todo: support string comparison as well
-  const lowerBoundary = Number(comparison.lowerBoundary);
-  const upperBoundary = Number(comparison.upperBoundary);
+  const lowerBoundary = Number(comparison.lowerboundary);
+  const upperBoundary = Number(comparison.upperboundary);
   const value = Number(feature.properties[comparison.propertyname]);
+  console.log(comparison, lowerBoundary, ' | ', value, ' | ', upperBoundary, ' --> ', value >= lowerBoundary && value <= upperBoundary);
   return value >= lowerBoundary && value <= upperBoundary;
 }
 

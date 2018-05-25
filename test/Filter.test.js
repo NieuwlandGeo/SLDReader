@@ -119,8 +119,8 @@ describe('filter rules', () => {
         type: 'comparison',
         operator: 'propertyisbetween',
         propertyname: 'age',
-        lowerBoundary: '30',
-        upperBoundary: '100',
+        lowerboundary: '30',
+        upperboundary: '100',
       };
 
       it('inside', () => {
