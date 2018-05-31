@@ -201,6 +201,7 @@ function readNode(node, obj) {
 
 /**
  * Parse all children of an element as an array in obj[prop]
+ * @private
  * @param {Element} node parent xml element
  * @param {object} obj the object to modify
  * @param {string} prop the name of the array prop to fill with parsed child nodes

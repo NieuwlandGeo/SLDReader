@@ -24,6 +24,7 @@ function propertyIsEqualTo(comparison, feature) {
 
 /**
  * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
+ * @private
  * @param {object} comparison filter object for operator 'propertyislike'
  * @param {object} feature the feature to test
  */
