@@ -34,12 +34,9 @@ function addProp(node, obj, prop) {
  * @type {[type]}
  */
 function addFilterComparison(node, obj, prop) {
-  const item = {
-    operator: prop.toLowerCase(),
-  };
-  readNode(node, item);
-  obj.comparison = obj.comparison || [];
-  obj.comparison.push(item);
+  obj.type = 'comparison';
+  obj.operator = prop.toLowerCase();
+  readNode(node, obj);
 }
 
 /**
@@ -48,10 +45,15 @@ function addFilterComparison(node, obj, prop) {
  * @param {Element} node [description]
  * @param {object} obj  [description]
  * @param {string} prop [description]
+ * @param {bool} [trimText] Trim whitespace from text content (default false).
  */
-function addPropWithTextContent(node, obj, prop) {
+function addPropWithTextContent(node, obj, prop, trimText = false) {
   const property = prop.toLowerCase();
-  obj[property] = node.textContent;
+  if (trimText) {
+    obj[property] = node.textContent.trim();
+  } else {
+    obj[property] = node.textContent;
+  }
 }
 
 /**
@@ -62,7 +64,10 @@ function addPropWithTextContent(node, obj, prop) {
  * @return {boolean}
  */
 function getBool(element, tagName) {
-  const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
+  const collection = element.getElementsByTagNameNS(
+    'http://www.opengis.net/sld',
+    tagName
+  );
   if (collection.length) {
     return Boolean(collection.item(0).textContent);
   }
@@ -121,9 +126,21 @@ const parsers = {
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
   },
-  Or: addProp,
-  And: addProp,
-  Not: addProp,
+  Or: (element, obj) => {
+    obj.type = 'or';
+    obj.predicates = [];
+    readNodeArray(element, obj, 'predicates');
+  },
+  And: (element, obj) => {
+    obj.type = 'and';
+    obj.predicates = [];
+    readNodeArray(element, obj, 'predicates');
+  },
+  Not: (element, obj) => {
+    obj.type = 'not';
+    obj.predicate = {};
+    readNode(element, obj.predicate);
+  },
   PropertyIsEqualTo: addFilterComparison,
   PropertyIsNotEqualTo: addFilterComparison,
   PropertyIsLessThan: addFilterComparison,
@@ -131,18 +148,22 @@ const parsers = {
   PropertyIsGreaterThan: addFilterComparison,
   PropertyIsGreaterThanOrEqualTo: addFilterComparison,
   PropertyIsBetween: addFilterComparison,
-  PropertyIsLike: (element, obj) => {
-    addPropArray(element, obj, 'propertyislike');
-    const current = obj.propertyislike[obj.propertyislike.length - 1];
-    current.wildcard = element.getAttribute('wildCard');
-    current.singlechar = element.getAttribute('singleChar');
-    current.escape = element.getAttribute('escape');
+  PropertyIsLike: (element, obj, prop) => {
+    addFilterComparison(element, obj, prop);
+    obj.wildcard = element.getAttribute('wildCard');
+    obj.singlechar = element.getAttribute('singleChar');
+    obj.escapechar = element.getAttribute('escapeChar');
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
+  LowerBoundary: (element, obj, prop) =>
+    addPropWithTextContent(element, obj, prop, true),
+  UpperBoundary: (element, obj, prop) =>
+    addPropWithTextContent(element, obj, prop, true),
   FeatureId: (element, obj) => {
-    obj.featureid = obj.featureid || [];
-    obj.featureid.push(element.getAttribute('fid'));
+    obj.type = 'featureid';
+    obj.fids = obj.fids || [];
+    obj.fids.push(element.getAttribute('fid'));
   },
   Name: addPropWithTextContent,
   MaxScaleDenominator: addPropWithTextContent,
@@ -174,6 +195,26 @@ function readNode(node, obj) {
   for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
     if (parsers[n.localName]) {
       parsers[n.localName](n, obj, n.localName);
+    }
+  }
+}
+
+/**
+ * Parse all children of an element as an array in obj[prop]
+ * @private
+ * @param {Element} node parent xml element
+ * @param {object} obj the object to modify
+ * @param {string} prop the name of the array prop to fill with parsed child nodes
+ * @return {void}
+ */
+function readNodeArray(node, obj, prop) {
+  const property = prop.toLowerCase();
+  obj[property] = [];
+  for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
+    if (parsers[n.localName]) {
+      const childObj = {};
+      parsers[n.localName](n, childObj, n.localName);
+      obj[property].push(childObj);
     }
   }
 }
@@ -237,24 +278,35 @@ export default function Reader(sld) {
  * */
 
 /**
+ * A filter predicate.
  * @typedef Filter
  * @name Filter
  * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
  * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
- * @property {Comparison[]} [comparison]
- * @property {Filter} [not]
- * @property {Filter} [or]
- * @property {Filter} [and]
- */
-
-/**
- * @typedef Comparison
- * @name Comparison
- * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
- * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
- * @property {string} operator
- * @property {string} propertyname
- * @property {string} literal
+ * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
+ * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
+ * @property {string} [operator] Required for type='comparison'. Can be one of
+ * 'propertyisequalto',
+ * 'propertyisnotequalto',
+ * 'propertyislessthan',
+ * 'propertyislessthanorequalto',
+ * 'propertyisgreaterthan',
+ * 'propertyisgreaterthanorequalto',
+ * 'propertyislike',
+ * 'propertyisbetween'
+ * @property {Filter[]} [predicates] Required for type='and' or type='or'.
+ * An array of filter predicates that must all evaluate to true for 'and', or
+ * for which at least one must evaluate to true for 'or'.
+ * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
+ * @property {string} [propertyname] Required for type='comparison'.
+ * @property {string} [literal] A literal value to use in a comparison,
+ * required for type='comparison'.
+ * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
+ * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
+ * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
+ * @property {string} [singlechar] Required single char match character,
+ * required for operator='propertyislike'.
+ * @property {string} [escapechar] Required escape character for operator='propertyislike'.
  */
 
 /**

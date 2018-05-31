@@ -1,4 +1,4 @@
-/* global describe it expect beforeEach */
+/* global describe it expect before */
 import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
@@ -6,7 +6,7 @@ import { sld11 } from './data/test11.sld';
 let result;
 
 describe('Reads xml', () => {
-  beforeEach(() => {
+  before(() => {
     result = Reader(sld);
   });
   it('returns object', () => {
@@ -32,32 +32,13 @@ describe('Reads xml', () => {
     expect(style.default).to.be.true;
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle = result.layers['0'].styles['0'].featuretypestyles['0'];
+    const featuretypestyle =
+      result.layers['0'].styles['0'].featuretypestyles['0'];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
-  it('rules have filter for featureid', () => {
-    const { featureid } = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].filter;
-    expect(featureid).to.be.an.instanceof(Array);
-    expect(featureid).to.have.length(2);
-    expect(featureid['0']).to.equal('tasmania_water_bodies.2');
-  });
-  it('rules have filter for Attribute Filter Styler PropertyIsEqualTo', () => {
-    const { comparison } = result.layers['0'].styles['2'].featuretypestyles['0'].rules['0'].filter;
-    expect(comparison).to.be.an.instanceof(Array);
-    expect(comparison).to.have.length(1);
-    expect(comparison['0'].operator).to.equal('propertyisequalto');
-    expect(comparison['0'].propertyname).to.equal('name');
-    expect(comparison['0'].literal).to.equal('My simple Polygon');
-  });
-  it('rules have filter for Hover Styler not_or', () => {
-    const filter = result.layers['0'].styles['1'].featuretypestyles['0'].rules['0'].filter;
-    expect(filter.not).to.be.an.instanceof(Object);
-    expect(filter.not.or).to.be.an.instanceof(Object);
-    expect(filter.not.or.comparison).to.be.an.instanceof(Array);
-    expect(filter.not.or.comparison['0'].operator).to.equal('propertyisequalto');
-  });
   it('rules have props', () => {
-    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule.maxscaledenominator).to.equal('3000000');
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
@@ -67,17 +48,21 @@ describe('Reads xml', () => {
     expect(rule.polygonsymbolizer.stroke.css.stroke).to.equal('#C0C0C0');
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
-    const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule =
+      result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule).to.have.property('pointsymbolizer');
     expect(rule.pointsymbolizer).to.have.property('graphic');
     expect(rule.pointsymbolizer.graphic).to.have.property('externalgraphic');
-    expect(rule.pointsymbolizer.graphic.externalgraphic).to.have.property('onlineresource');
-    expect(rule.pointsymbolizer.graphic.externalgraphic.onlineresource).to.equal(
-      '../img/marker.png'
+    expect(rule.pointsymbolizer.graphic.externalgraphic).to.have.property(
+      'onlineresource'
     );
+    expect(
+      rule.pointsymbolizer.graphic.externalgraphic.onlineresource
+    ).to.equal('../img/marker.png');
   });
   it('cities layer has pointsymbolizer with graphic mark', () => {
-    const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
+    const rule =
+      result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
     expect(rule).to.have.property('pointsymbolizer');
     expect(rule.pointsymbolizer).to.have.property('graphic');
     expect(rule.pointsymbolizer.graphic).to.have.property('mark');
@@ -88,7 +73,7 @@ describe('Reads xml', () => {
 });
 
 describe('Reads xml sld 11', () => {
-  beforeEach(() => {
+  before(() => {
     result = Reader(sld11);
   });
   it('returns object', () => {
@@ -110,12 +95,14 @@ describe('Reads xml sld 11', () => {
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle = result.layers['0'].styles['0'].featuretypestyles['0'];
+    const featuretypestyle =
+      result.layers['0'].styles['0'].featuretypestyles['0'];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
     expect(featuretypestyle.rules).to.have.length(13);
   });
   it('rules have svg props', () => {
-    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill.svg).to.be.an.instanceof(Object);
