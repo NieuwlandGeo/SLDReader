@@ -54,13 +54,15 @@ export function getRules(featureTypeStyle, feature, resolution) {
   const result = [];
   for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
     const rule = featureTypeStyle.rules[j];
-    if (rule.filter && scaleSelector(rule, resolution) && filterSelector(rule.filter, feature)) {
-      result.push(rule);
-    } else if (rule.elsefilter && result.length === 0) {
-      result.push(rule);
-    } else if (!rule.elsefilter && !rule.filter) {
-      result.push(rule);
-    }
+	if(scaleSelector(rule, resolution)) {
+		if (rule.filter && filterSelector(rule.filter, feature)) {
+		  result.push(rule);
+		} else if (rule.elsefilter && result.length === 0) {
+		  result.push(rule);
+		} else if (!rule.elsefilter && !rule.filter) {
+		  result.push(rule);
+		}
+	}
   }
   return result;
 }
