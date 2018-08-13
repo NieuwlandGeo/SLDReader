@@ -30,17 +30,28 @@ function polygonStyle(style) {
   if (style.fill) {
     fill = style.fill.css || style.fill.svg;
   }
+  
+  var f;
+  var s;
+  
+  if(fill.fill) {
+	if(fill.fillOpacity) {
+		f = new Fill({
+			color: hexToRGB(fill.fill, fill.fillOpacity)
+		});
+	} else {
+		f = new Fill({
+			color: hexToRGB(fill.fill, "0.5")
+		});
+	}
+  } else {
+	f = new Fill({
+		color: hexToRGB("#000000", "0")
+	});
+  }
+  
   return new Style({
-    fill:
-      style.fill &&
-      new Fill({
-        color:
-          fill.fill && fill.fill.slice(0, 1) === '#'
-            ? fill.fillOpacity 
-            		? hexToRGB(fill.fill, fill.fillOpacity)
-            		: hexToRGB(fill.fill, "0.5")
-            : hexToRGB("#000000", "0"),
-      }),
+    fill: f,
     stroke:
       style.stroke &&
       new Stroke({
