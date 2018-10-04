@@ -19,7 +19,7 @@ function propertyIsEqualTo(comparison, feature) {
     return false;
   }
 
-  return feature.properties[comparison.propertyname] === comparison.literal;
+  return feature.properties[comparison.propertyname] == comparison.literal;
 }
 
 /**
