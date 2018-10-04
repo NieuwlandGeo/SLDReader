@@ -30,20 +30,33 @@ function polygonStyle(style) {
   if (style.fill) {
     fill = style.fill.css || style.fill.svg;
   }
+  
+  var f;
+  var s;
+  
+  if(fill.fill) {
+	if(fill.fillOpacity) {
+		f = new Fill({
+			color: hexToRGB(fill.fill, fill.fillOpacity)
+		});
+	} else {
+		f = new Fill({
+			color: hexToRGB(fill.fill, "0.5")
+		});
+	}
+  } else {
+	f = new Fill({
+		color: hexToRGB("#000000", "0")
+	});
+  }
+  
   return new Style({
-    fill:
-      fill &&
-      new Fill({
-        color:
-          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-            ? hexToRGB(fill.fill, fill.fillOpacity)
-            : fill.fill,
-      }),
+    fill: f,
     stroke:
-      stroke &&
+      style.stroke &&
       new Stroke({
-        color: stroke.stroke || '#3399CC',
-        width: stroke.strokeWidth || 1.25,
+        color: stroke.stroke,
+        width: stroke.strokeWidth || 0,
         lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
         lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
         lineDashOffset: stroke.strokeDashoffset && stroke.strokeDashoffset,
@@ -64,8 +77,8 @@ function lineStyle(linesymbolizer) {
   }
   return new Style({
     stroke: new Stroke({
-      color: style.stroke || '#3399CC',
-      width: style.strokeWidth || 1.25,
+      color: stroke.stroke,
+      width: stroke.strokeWidth || 0,
       lineCap: style.strokeLinecap && style.strokeLinecap,
       lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
       lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
