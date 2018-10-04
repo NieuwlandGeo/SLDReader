@@ -9,6 +9,7 @@
   "scripts": {
     "test": "karma  start karma.conf.js",
     "test:watch": "karma start --no-single-run karma.conf.js",
+    "lint": "eslint src/ test/",
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "serve": "browser-sync start --config bs-config.js",
@@ -38,7 +39,6 @@
     "documentation": "^6.1.0",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^11.3.1",
-    "eslint-config-openlayers": "^7.0.0",
     "eslint-plugin-import": "^2.7.0",
     "karma": "^1.7.1",
     "karma-chai": "^0.1.0",
