@@ -1,17 +1,22 @@
 {
-  "extends": ["openlayers", "eslint-config-airbnb-base"],
+  "extends": ["eslint-config-airbnb-base"],
   "parserOptions": {
     "ecmaVersion": 6,
     "sourceType": "module"
   },
   "env": {
-    "es6": true
+    "es6": true,
+    "browser": true
   },
   "rules": {
     "no-param-reassign": [2, { "props": false }],
     "import/no-extraneous-dependencies": [
       "error",
-      { "devDependencies": true, "optionalDependencies": false, "peerDependencies": false }
+      {
+        "devDependencies": true,
+        "optionalDependencies": false,
+        "peerDependencies": false
+      }
     ],
     "arrow-parens": ["error", "as-needed", { "requireForBlockBody": false }],
     "no-use-before-define": ["error", "nofunc"],
