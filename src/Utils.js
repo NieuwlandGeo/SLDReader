@@ -54,7 +54,7 @@ export function getRules(featureTypeStyle, feature, resolution) {
   const result = [];
   for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
     const rule = featureTypeStyle.rules[j];
-    if(scaleSelector(rule, resolution)) {
+    if (scaleSelector(rule, resolution)) {
       if (rule.filter && filterSelector(rule.filter, feature)) {
         result.push(rule);
       } else if (rule.elsefilter && result.length === 0) {
