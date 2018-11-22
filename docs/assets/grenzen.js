@@ -43,9 +43,14 @@ fetch('assets/sld-provincies.xml')
     const sldLayer = SLDReader.getLayer(sldObject, 'bestuurlijkegrenzen:provincies');
     const style = SLDReader.getStyle(sldLayer, 'bestuurlijkegrenzen:provincies');
     const format = new ol.format.GeoJSON();
-    vector.setStyle((feature, resolution) => {
+    const pointresolution = ol.proj.getPointResolution(
+      map.getView().getProjection(),
+      map.getView().getResolution(),
+      map.getView().getCenter()
+    );
+    vector.setStyle(feature => {
       const geojson = JSON.parse(format.writeFeature(feature));
-      const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, resolution * 111034);
+      const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, pointresolution);
       return SLDReader.OlStyler(SLDReader.getGeometryStyles(rules), geojson.geometry.type);
     });
   });
