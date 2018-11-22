@@ -47,12 +47,9 @@
    * @type {[type]}
    */
   function addFilterComparison(node, obj, prop) {
-    var item = {
-      operator: prop.toLowerCase(),
-    };
-    readNode(node, item);
-    obj.comparison = obj.comparison || [];
-    obj.comparison.push(item);
+    obj.type = 'comparison';
+    obj.operator = prop.toLowerCase();
+    readNode(node, obj);
   }
 
   /**
@@ -61,10 +58,17 @@
    * @param {Element} node [description]
    * @param {object} obj  [description]
    * @param {string} prop [description]
+   * @param {bool} [trimText] Trim whitespace from text content (default false).
    */
-  function addPropWithTextContent(node, obj, prop) {
+  function addPropWithTextContent(node, obj, prop, trimText) {
+    if ( trimText === void 0 ) trimText = false;
+
     var property = prop.toLowerCase();
-    obj[property] = node.textContent;
+    if (trimText) {
+      obj[property] = node.textContent.trim();
+    } else {
+      obj[property] = node.textContent;
+    }
   }
 
   /**
@@ -75,7 +79,10 @@
    * @return {boolean}
    */
   function getBool(element, tagName) {
-    var collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
+    var collection = element.getElementsByTagNameNS(
+      'http://www.opengis.net/sld',
+      tagName
+    );
     if (collection.length) {
       return Boolean(collection.item(0).textContent);
     }
@@ -134,9 +141,21 @@
     ElseFilter: function (element, obj) {
       obj.elsefilter = true;
     },
-    Or: addProp,
-    And: addProp,
-    Not: addProp,
+    Or: function (element, obj) {
+      obj.type = 'or';
+      obj.predicates = [];
+      readNodeArray(element, obj, 'predicates');
+    },
+    And: function (element, obj) {
+      obj.type = 'and';
+      obj.predicates = [];
+      readNodeArray(element, obj, 'predicates');
+    },
+    Not: function (element, obj) {
+      obj.type = 'not';
+      obj.predicate = {};
+      readNode(element, obj.predicate);
+    },
     PropertyIsEqualTo: addFilterComparison,
     PropertyIsNotEqualTo: addFilterComparison,
     PropertyIsLessThan: addFilterComparison,
@@ -144,24 +163,28 @@
     PropertyIsGreaterThan: addFilterComparison,
     PropertyIsGreaterThanOrEqualTo: addFilterComparison,
     PropertyIsBetween: addFilterComparison,
-    PropertyIsLike: function (element, obj) {
-      addPropArray(element, obj, 'propertyislike');
-      var current = obj.propertyislike[obj.propertyislike.length - 1];
-      current.wildcard = element.getAttribute('wildCard');
-      current.singlechar = element.getAttribute('singleChar');
-      current.escape = element.getAttribute('escape');
+    PropertyIsLike: function (element, obj, prop) {
+      addFilterComparison(element, obj, prop);
+      obj.wildcard = element.getAttribute('wildCard');
+      obj.singlechar = element.getAttribute('singleChar');
+      obj.escapechar = element.getAttribute('escapeChar');
     },
     PropertyName: addPropWithTextContent,
     Literal: addPropWithTextContent,
+    LowerBoundary: function (element, obj, prop) { return addPropWithTextContent(element, obj, prop, true); },
+    UpperBoundary: function (element, obj, prop) { return addPropWithTextContent(element, obj, prop, true); },
     FeatureId: function (element, obj) {
-      obj.featureid = obj.featureid || [];
-      obj.featureid.push(element.getAttribute('fid'));
+      obj.type = 'featureid';
+      obj.fids = obj.fids || [];
+      obj.fids.push(element.getAttribute('fid'));
     },
     Name: addPropWithTextContent,
     MaxScaleDenominator: addPropWithTextContent,
+    MinScaleDenominator: addPropWithTextContent,
     PolygonSymbolizer: addProp,
     LineSymbolizer: addProp,
     PointSymbolizer: addProp,
+    TextSymbolizer: addProp,
     Fill: addProp,
     Stroke: addProp,
     Graphic: addProp,
@@ -187,6 +210,26 @@
     for (var n = node.firstElementChild; n; n = n.nextElementSibling) {
       if (parsers[n.localName]) {
         parsers[n.localName](n, obj, n.localName);
+      }
+    }
+  }
+
+  /**
+   * Parse all children of an element as an array in obj[prop]
+   * @private
+   * @param {Element} node parent xml element
+   * @param {object} obj the object to modify
+   * @param {string} prop the name of the array prop to fill with parsed child nodes
+   * @return {void}
+   */
+  function readNodeArray(node, obj, prop) {
+    var property = prop.toLowerCase();
+    obj[property] = [];
+    for (var n = node.firstElementChild; n; n = n.nextElementSibling) {
+      if (parsers[n.localName]) {
+        var childObj = {};
+        parsers[n.localName](n, childObj, n.localName);
+        obj[property].push(childObj);
       }
     }
   }
@@ -250,24 +293,35 @@
    * */
 
   /**
+   * A filter predicate.
    * @typedef Filter
    * @name Filter
    * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
    * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
-   * @property {Comparison[]} [comparison]
-   * @property {Filter} [not]
-   * @property {Filter} [or]
-   * @property {Filter} [and]
-   */
-
-  /**
-   * @typedef Comparison
-   * @name Comparison
-   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
-   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
-   * @property {string} operator
-   * @property {string} propertyname
-   * @property {string} literal
+   * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
+   * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
+   * @property {string} [operator] Required for type='comparison'. Can be one of
+   * 'propertyisequalto',
+   * 'propertyisnotequalto',
+   * 'propertyislessthan',
+   * 'propertyislessthanorequalto',
+   * 'propertyisgreaterthan',
+   * 'propertyisgreaterthanorequalto',
+   * 'propertyislike',
+   * 'propertyisbetween'
+   * @property {Filter[]} [predicates] Required for type='and' or type='or'.
+   * An array of filter predicates that must all evaluate to true for 'and', or
+   * for which at least one must evaluate to true for 'or'.
+   * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
+   * @property {string} [propertyname] Required for type='comparison'.
+   * @property {string} [literal] A literal value to use in a comparison,
+   * required for type='comparison'.
+   * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
+   * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
+   * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
+   * @property {string} [singlechar] Required single char match character,
+   * required for operator='propertyislike'.
+   * @property {string} [escapechar] Required escape character for operator='propertyislike'.
    */
 
   /**
@@ -519,18 +573,64 @@
    * @property {PointSymbolizer[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
    */
 
-  function propertyIsLessThen(comparison, feature) {
+  function propertyIsLessThan(comparison, feature) {
     return (
       feature.properties[comparison.propertyname] &&
       Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
     );
   }
 
+  function propertyIsBetween(comparison, feature) {
+    // Todo: support string comparison as well
+    var lowerBoundary = Number(comparison.lowerboundary);
+    var upperBoundary = Number(comparison.upperboundary);
+    var value = Number(feature.properties[comparison.propertyname]);
+    return value >= lowerBoundary && value <= upperBoundary;
+  }
+
   function propertyIsEqualTo(comparison, feature) {
-    return (
-      feature.properties[comparison.propertyname] &&
-      feature.properties[comparison.propertyname] === comparison.literal
-    );
+    if (!(comparison.propertyname in feature.properties)) {
+      return false;
+    }
+    /* eslint-disable-next-line eqeqeq */
+    return feature.properties[comparison.propertyname] == comparison.literal;
+  }
+
+  /**
+   * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
+   * @private
+   * @param {object} comparison filter object for operator 'propertyislike'
+   * @param {object} feature the feature to test
+   */
+  function propertyIsLike(comparison, feature) {
+    var pattern = comparison.literal;
+    var value = feature.properties && feature.properties[comparison.propertyname];
+
+    if (!value) {
+      return false;
+    }
+
+    // Create regex string from match pattern.
+    var wildcard = comparison.wildcard;
+    var singlechar = comparison.singlechar;
+    var escapechar = comparison.escapechar;
+
+    // Replace wildcard by '.*'
+    var patternAsRegex = pattern.replace(new RegExp(("[" + wildcard + "]"), 'g'), '.*');
+
+    // Replace single char match by '.'
+    patternAsRegex = patternAsRegex.replace(new RegExp(("[" + singlechar + "]"), 'g'), '.');
+
+    // Replace escape char by '\' if escape char is not already '\'.
+    if (escapechar !== '\\') {
+      patternAsRegex = patternAsRegex.replace(new RegExp(("[" + escapechar + "]"), 'g'), '\\');
+    }
+
+    // Bookend the regular expression.
+    patternAsRegex = "^" + patternAsRegex + "$";
+
+    var rex = new RegExp(patternAsRegex);
+    return rex.test(value);
   }
 
   /**
@@ -543,64 +643,35 @@
   function doComparison(comparison, feature) {
     switch (comparison.operator) {
       case 'propertyislessthan':
-        return propertyIsLessThen(comparison, feature);
+        return propertyIsLessThan(comparison, feature);
       case 'propertyisequalto':
         return propertyIsEqualTo(comparison, feature);
       case 'propertyislessthanorequalto':
-        return propertyIsEqualTo(comparison, feature) || propertyIsLessThen(comparison, feature);
+        return propertyIsEqualTo(comparison, feature) || propertyIsLessThan(comparison, feature);
       case 'propertyisnotequalto':
         return !propertyIsEqualTo(comparison, feature);
       case 'propertyisgreaterthan':
-        return !propertyIsLessThen(comparison, feature) && !propertyIsEqualTo(comparison, feature);
+        return !propertyIsLessThan(comparison, feature) && !propertyIsEqualTo(comparison, feature);
       case 'propertyisgreaterthanorequalto':
-        return !propertyIsLessThen(comparison, feature) || propertyIsEqualTo(comparison, feature);
+        return !propertyIsLessThan(comparison, feature) || propertyIsEqualTo(comparison, feature);
+      case 'propertyisbetween':
+        return propertyIsBetween(comparison, feature);
+      case 'propertyislike':
+        return propertyIsLike(comparison, feature);
       default:
         throw new Error(("Unkown comparison operator " + (comparison.operator)));
     }
   }
 
-  var Filters = {
-    featureid: function (value, feature) {
-      for (var i = 0; i < value.length; i += 1) {
-        if (value[i] === feature.id) {
-          return true;
-        }
+  function doFIDFilter(fids, feature) {
+    for (var i = 0; i < fids.length; i += 1) {
+      if (fids[i] === feature.id) {
+        return true;
       }
-      return false;
-    },
-    not: function (value, feature) { return !filterSelector(value, feature); },
-    or: function (value, feature) {
-      var keys = Object.keys(value);
-      for (var i = 0; i < keys.length; i += 1) {
-        if (value[keys[i]].length === 1 && filterSelector(value, feature, i)) {
-          return true;
-        }
-      }
-      return false;
-    },
-    and: function (value, feature) {
-      var keys = Object.keys(value);
-      return keys.every(function (key, i) { return filterSelector(value, feature, i); });
-    },
-    /**
-     * @private
-     * @param  {Comparison[]} value   [description]
-     * @param  {object} feature geojson
-     * @return {bool}         [description]
-     */
-    comparison: function (value, feature) { return value.every(function (comparison) { return doComparison(comparison, feature); }); },
-    propertyisequalto: function (values, feature) { return values.every(
-        function (value) { return feature.properties[value.propertyname] &&
-          feature.properties[value.propertyname] === value.literal; }
-      ); },
-    propertyisnotequalto: function (value, feature) { return !Filters.propertyisequalto(value, feature); },
-    propertyislessthanorequalto: function (value, feature) { return Filters.propertyisequalto(value, feature) || Filters.propertyislessthan(value, feature); },
-    propertyisgreaterthan: function (values, feature) { return values.every(
-        function (value) { return feature.properties[value.propertyname] &&
-          Number(feature.properties[value.propertyname]) > Number(value.literal); }
-      ); },
-    propertyisgreaterthanorequalto: function (value, feature) { return Filters.propertyisequalto(value, feature) || Filters.propertyisgreaterthan(value, feature); },
-  };
+    }
+
+    return false;
+  }
 
   /**
    * Calls functions from Filter object to test if feature passes filter.
@@ -608,21 +679,49 @@
    * @private
    * @param  {Filter} filter
    * @param  {object} feature feature
-   * @param {number} keyindex index of filter object keys to use
    * @return {boolean}
    */
-  function filterSelector(filter, feature, keyindex) {
-    if ( keyindex === void 0 ) keyindex = 0;
+  function filterSelector(filter, feature) {
+    var type = filter.type;
+    switch (type) {
+      case 'featureid':
+        return doFIDFilter(filter.fids, feature);
 
-    var type = Object.keys(filter)[keyindex];
-    if (Filters[type]) {
-      if (Filters[type](filter[type], feature)) {
-        return true;
+      case 'comparison':
+        return doComparison(filter, feature);
+
+      case 'and': {
+        if (!filter.predicates) {
+          throw new Error('And filter must have predicates array.');
+        }
+
+        // And without predicates should return false.
+        if (filter.predicates.length === 0) {
+          return false;
+        }
+
+        return filter.predicates.every(function (predicate) { return filterSelector(predicate, feature); });
       }
-    } else {
-      throw new Error(("Unkown filter " + type));
+
+      case 'or': {
+        if (!filter.predicates) {
+          throw new Error('Or filter must have predicates array.');
+        }
+
+        return filter.predicates.some(function (predicate) { return filterSelector(predicate, feature); });
+      }
+
+      case 'not': {
+        if (!filter.predicate) {
+          throw new Error('Not filter must have predicate.');
+        }
+
+        return !filterSelector(filter.predicate, feature);
+      }
+
+      default:
+        throw new Error(("Unknown filter type: " + type));
     }
-    return false;
   }
 
   /**
@@ -707,12 +806,14 @@
     var result = [];
     for (var j = 0; j < featureTypeStyle.rules.length; j += 1) {
       var rule = featureTypeStyle.rules[j];
-      if (rule.filter && scaleSelector(rule, resolution) && filterSelector(rule.filter, feature)) {
-        result.push(rule);
-      } else if (rule.elsefilter && result.length === 0) {
-        result.push(rule);
-      } else if (!rule.elsefilter && !rule.filter) {
-        result.push(rule);
+      if (scaleSelector(rule, resolution)) {
+        if (rule.filter && filterSelector(rule.filter, feature)) {
+          result.push(rule);
+        } else if (rule.elsefilter && result.length === 0) {
+          result.push(rule);
+        } else if (!rule.elsefilter && !rule.filter) {
+          result.push(rule);
+        }
       }
     }
     return result;
