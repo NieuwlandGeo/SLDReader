@@ -26,12 +26,7 @@ function applySLD(vector, text, pointresolution) {
 
 const vectorSource = new ol.source.Vector({
   format: new ol.format.GeoJSON(),
-  url(extent) {
-    return `${'https://geodata.nationaalgeoregister.nl/bestuurlijkegrenzen/wfs?service=WFS&' +
-      'version=1.1.0&request=GetFeature&typename=bestuurlijkegrenzen:provincies&' +
-      'outputFormat=application/json&srsname=EPSG:3857&' +
-      'bbox='}${extent.join(',')},EPSG:3857`;
-  },
+  url: 'assets/provincies.json',
   strategy: ol.loadingstrategy.bbox,
 });
 
