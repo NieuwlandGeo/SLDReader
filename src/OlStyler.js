@@ -36,7 +36,9 @@ function polygonStyle(style) {
     stroke:
       stroke &&
       new Stroke({
-        color: stroke.stroke || '#3399CC',
+        color: stroke.strokeOpacity && stroke.stroke && stroke.stroke.slice(0, 1) === '#'
+          ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
+          : stroke.stroke || '#3399CC',
         width: stroke.strokeWidth || 1.25,
         lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
         lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
@@ -58,7 +60,9 @@ function lineStyle(linesymbolizer) {
   }
   return new Style({
     stroke: new Stroke({
-      color: style.stroke || '#3399CC',
+      color: style.strokeOpacity && style.stroke && style.stroke.slice(0, 1) === '#'
+        ? hexToRGB(style.stroke, style.strokeOpacity)
+        : style.stroke || '#3399CC',
       width: style.strokeWidth || 1.25,
       lineCap: style.strokeLinecap && style.strokeLinecap,
       lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
