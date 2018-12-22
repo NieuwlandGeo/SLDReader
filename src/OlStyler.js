@@ -81,48 +81,87 @@ function pointStyle(pointsymbolizer) {
       image: new Icon({ src: style.externalgraphic.onlineresource }),
     });
   }
-  const fill = new Fill({
-    color: 'black',
-  });
-  const stroke = new Stroke({
-    color: 'black',
-    width: 2,
-  });
-  if (style.mark && style.mark.wellknownname === 'cross') {
-    return new Style({
-      image: new RegularShape({
-        fill,
-        stroke,
-        points: 4,
-        radius: style.size || 10,
-        radius2: 0,
-        angle: 0,
-      }),
+  if (style.mark) {
+    let { fill, stroke } = style.mark;
+    const fillColor = (fill && fill.css && fill.css.fill) || 'blue';
+    fill = new Fill({
+      color: fillColor,
     });
-  }
-  if (style.mark && style.mark.wellknownname === 'x') {
-    return new Style({
-      image: new RegularShape({
-        fill,
-        stroke,
-        points: 4,
-        radius: style.size || 10,
-        radius2: 0,
-        angle: 45,
-      }),
-    });
-  }
-  if (style.mark && style.mark.wellknownname === 'star') {
-    return new Style({
-      image: new RegularShape({
-        fill,
-        stroke,
-        points: 5,
-        radius: style.size || 10,
-        radius2: 4,
-        angle: 45,
-      }),
-    });
+    if (stroke) {
+      const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.css;
+      stroke = new Stroke({
+        color: cssStroke || 'black',
+        width: cssStrokeWidth || 2,
+      });
+    }
+    const radius = style.size || 10;
+    switch (style.mark.wellknownname) {
+      case 'circle':
+        return new Style({
+          image: new Circle({
+            fill,
+            radius,
+            stroke,
+          }),
+        });
+      case 'triangle':
+        return new Style({
+          image: new RegularShape({
+            fill,
+            points: 3,
+            radius,
+            stroke,
+          }),
+        });
+      case 'star':
+        return new Style({
+          image: new RegularShape({
+            fill,
+            points: 5,
+            radius1: radius,
+            radius2: radius / 2.5,
+            stroke,
+          }),
+        });
+      case 'cross':
+        return new Style({
+          image: new RegularShape({
+            fill,
+            points: 4,
+            radius1: radius,
+            radius2: 0,
+            stroke: stroke || new Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          }),
+        });
+      case 'x':
+        return new Style({
+          image: new RegularShape({
+            angle: Math.PI / 4,
+            fill,
+            points: 4,
+            radius1: radius,
+            radius2: 0,
+            stroke: stroke || new Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          }),
+        });
+      default:
+        // Default is `square`
+        return new Style({
+          image: new RegularShape({
+            angle: Math.PI / 4,
+            fill,
+            points: 4,
+            radius,
+            stroke,
+          }),
+        });
+    }
   }
   return new Style({
     image: new Circle({
