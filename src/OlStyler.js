@@ -22,14 +22,8 @@ function hexToRGB(hex, alpha) {
 }
 
 function polygonStyle(style) {
-  let stroke = {};
-  if (style.stroke) {
-    stroke = style.stroke.css || style.stroke.svg;
-  }
-  let fill = {};
-  if (style.fill) {
-    fill = style.fill.css || style.fill.svg;
-  }
+  const stroke = style.stroke && (style.stroke.css || style.stroke.svg);
+  const fill = style.fill && (style.fill.css || style.fill.svg);
   return new Style({
     fill:
       fill &&
