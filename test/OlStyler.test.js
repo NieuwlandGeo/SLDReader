@@ -24,7 +24,7 @@ describe('create ol style object from styledescription', () => {
     ],
     point: [],
   };
-  it('returns object', () => {
+  it('returns array', () => {
     const style = OlStyler(styleDescription);
     expect(style).to.be.an.array;
   });
@@ -43,5 +43,34 @@ describe('create ol style object from styledescription', () => {
   it('returns object with polygon fill', () => {
     const style = OlStyler(styleDescription, 'LineString');
     expect(style['0'].getStroke().getColor()).to.equal('red');
+  });
+});
+
+describe('creates point style', () => {
+  const styleDescription = {
+    polygon: [],
+    line: [],
+    point: [
+      {
+        graphic: {
+          mark: {
+            wellknownname: 'circle',
+            fill: {},
+            strok: {},
+          },
+          opactity: 20,
+          size: 10,
+          rotation: 0,
+        },
+      },
+    ],
+  };
+  it('returns array', () => {
+    const style = OlStyler(styleDescription);
+    expect(style).to.be.an.array;
+  });
+  it('returns style', () => {
+    const style = OlStyler(styleDescription, 'Point');
+    expect(style['0']).to.be.an.instanceOf(Style);
   });
 });
