@@ -64,10 +64,7 @@ function addPropWithTextContent(node, obj, prop, trimText = false) {
  * @return {boolean}
  */
 function getBool(element, tagName) {
-  const collection = element.getElementsByTagNameNS(
-    'http://www.opengis.net/sld',
-    tagName
-  );
+  const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
   if (collection.length) {
     return Boolean(collection.item(0).textContent);
   }
@@ -92,36 +89,7 @@ function parameters(element, obj, prop) {
   obj[propname][name] = element.textContent.trim();
 }
 
-/**
- * Each propname is a tag in the sld that should be converted to plain object
- * @private
- * @type {Object}
- */
-const parsers = {
-  NamedLayer: (element, obj) => {
-    addPropArray(element, obj, 'layers');
-  },
-  UserStyle: (element, obj) => {
-    obj.styles = obj.styles || [];
-    const style = {
-      default: getBool(element, 'IsDefault'),
-      featuretypestyles: [],
-    };
-    readNode(element, style);
-    obj.styles.push(style);
-  },
-  FeatureTypeStyle: (element, obj) => {
-    const featuretypestyle = {
-      rules: [],
-    };
-    readNode(element, featuretypestyle);
-    obj.featuretypestyles.push(featuretypestyle);
-  },
-  Rule: (element, obj) => {
-    const rule = {};
-    readNode(element, rule);
-    obj.rules.push(rule);
-  },
+const FilterParsers = {
   Filter: addProp,
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
@@ -156,18 +124,16 @@ const parsers = {
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
-  LowerBoundary: (element, obj, prop) =>
-    addPropWithTextContent(element, obj, prop, true),
-  UpperBoundary: (element, obj, prop) =>
-    addPropWithTextContent(element, obj, prop, true),
+  LowerBoundary: (element, obj, prop) => addPropWithTextContent(element, obj, prop, true),
+  UpperBoundary: (element, obj, prop) => addPropWithTextContent(element, obj, prop, true),
   FeatureId: (element, obj) => {
     obj.type = 'featureid';
     obj.fids = obj.fids || [];
     obj.fids.push(element.getAttribute('fid'));
   },
-  Name: addPropWithTextContent,
-  MaxScaleDenominator: addPropWithTextContent,
-  MinScaleDenominator: addPropWithTextContent,
+};
+
+const SymbParsers = {
   PolygonSymbolizer: addProp,
   LineSymbolizer: addProp,
   PointSymbolizer: addProp,
@@ -185,6 +151,46 @@ const parsers = {
   CssParameter: parameters,
   SvgParameter: parameters,
 };
+
+/**
+ * Each propname is a tag in the sld that should be converted to plain object
+ * @private
+ * @type {Object}
+ */
+const parsers = Object.assign(
+  {
+    NamedLayer: (element, obj) => {
+      addPropArray(element, obj, 'layers');
+    },
+    UserStyle: (element, obj) => {
+      obj.styles = obj.styles || [];
+      const style = {
+        default: getBool(element, 'IsDefault'),
+        featuretypestyles: [],
+      };
+      readNode(element, style);
+      obj.styles.push(style);
+    },
+    FeatureTypeStyle: (element, obj) => {
+      const featuretypestyle = {
+        rules: [],
+      };
+      readNode(element, featuretypestyle);
+      obj.featuretypestyles.push(featuretypestyle);
+    },
+    Rule: (element, obj) => {
+      const rule = {};
+      readNode(element, rule);
+      obj.rules.push(rule);
+    },
+
+    Name: addPropWithTextContent,
+    MaxScaleDenominator: addPropWithTextContent,
+    MinScaleDenominator: addPropWithTextContent,
+  },
+  FilterParsers,
+  SymbParsers
+);
 
 /**
  * walks over xml nodes

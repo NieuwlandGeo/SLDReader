@@ -9,12 +9,15 @@ export function getLayerNames(sld) {
 }
 
 /**
- * getlayer with name
+ * Get layer definition from sld
  * @param  {StyledLayerDescriptor} sld       [description]
- * @param  {string} layername [description]
+ * @param  {string} [layername] optional layername
  * @return {Layer}           [description]
  */
 export function getLayer(sld, layername) {
+  if (!layername) {
+    return sld.layers['0'];
+  }
   return sld.layers.find(l => l.name === layername);
 }
 
@@ -30,7 +33,7 @@ export function getStyleNames(layer) {
  * get style from array layer.styles, if name is undefined it returns default style.
  * null is no style found
  * @param  {Layer} layer [description]
- * @param {string} name of style
+ * @param {string} [name] of style
  * @return {object} the style from layer.styles matching the name
  */
 export function getStyle(layer, name) {
