@@ -59,7 +59,7 @@ function propertyIsLike(comparison, feature) {
 /**
  * [doComparison description]
  * @private
- * @param  {Comparison} comparison [description]
+ * @param  {Filter} comparison [description]
  * @param  {object} feature    geojson
  * @return {bool}  does feature fullfill comparison
  */
