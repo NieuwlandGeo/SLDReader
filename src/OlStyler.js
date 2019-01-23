@@ -1,9 +1,9 @@
-import Style from 'ol/style/style';
-import Fill from 'ol/style/fill';
-import Stroke from 'ol/style/stroke';
-import Circle from 'ol/style/circle';
-import Icon from 'ol/style/icon';
-import RegularShape from 'ol/style/regularshape';
+import Style from 'ol/style/Style';
+import Fill from 'ol/style/Fill';
+import Stroke from 'ol/style/Stroke';
+import Circle from 'ol/style/Circle';
+import Icon from 'ol/style/Icon';
+import RegularShape from 'ol/style/RegularShape';
 
 /**
  * @private
@@ -88,17 +88,25 @@ function pointStyle(pointsymbolizer) {
   }
   if (style.mark) {
     let { fill, stroke } = style.mark;
-    const fillColor = (fill && fill.css && fill.css.fill) || 'blue';
+    const fillColor = (fill && fill.css && fill.css.fill) || (fill && fill.svg && fill.svg.fill) || 'blue';
     fill = new Fill({
       color: fillColor,
     });
-    if (stroke) {
+    if (stroke && stroke.css) {
       const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.css;
       stroke = new Stroke({
         color: cssStroke || 'black',
         width: cssStrokeWidth || 2,
       });
     }
+    if (stroke && stroke.svg) {
+      const { stroke: svgStroke, strokeWidth: svgStrokeWidth } = stroke.svg;
+      stroke = new Stroke({
+        color: svgStroke || 'black',
+        width: svgStrokeWidth || 2,
+      });
+    }
+
     const radius = style.size || 10;
     switch (style.mark.wellknownname) {
       case 'circle':
