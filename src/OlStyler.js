@@ -99,7 +99,7 @@ function pointStyle(pointsymbolizer) {
         width: cssStrokeWidth || 2,
       });
     }
-    if (stroke && stroke.svg) {
+    else if (stroke && stroke.svg) {
       const { stroke: svgStroke, strokeWidth: svgStrokeWidth } = stroke.svg;
       stroke = new Stroke({
         color: svgStroke || 'black',
