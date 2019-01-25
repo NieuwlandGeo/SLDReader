@@ -69,12 +69,12 @@ Returns **[Array][41]&lt;[string][39]>** registered layernames
 
 ### getLayer
 
-getlayer with name
+Get layer definition from sld
 
 #### Parameters
 
 -   `sld` **[StyledLayerDescriptor][40]** [description]
--   `layername` **[string][39]** [description]
+-   `layername` **[string][39]?** optional layername
 
 Returns **[Layer][42]** [description]
 
@@ -96,7 +96,7 @@ null is no style found
 #### Parameters
 
 -   `layer` **[Layer][42]** [description]
--   `name` **[string][39]** of style
+-   `name` **[string][39]?** of style
 
 Returns **[object][43]** the style from layer.styles matching the name
 

@@ -1,8 +1,8 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle'), require('ol/style/icon'), require('ol/style/regularshape')) :
   typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle', 'ol/style/icon', 'ol/style/regularshape'], factory) :
-  (factory((global.SLDReader = {}),global.ol.style.Style,global.ol.style.Fill,global.ol.style.Stroke,global.ol.style.Circle,global.ol.style.Icon,global.ol.style.RegularShape));
-}(this, (function (exports,Style,Fill,Stroke,Circle,Icon,RegularShape) { 'use strict';
+  (global = global || self, factory(global.SLDReader = {}, global.ol.style.Style, global.ol.style.Fill, global.ol.style.Stroke, global.ol.style.Circle, global.ol.style.Icon, global.ol.style.RegularShape));
+}(this, function (exports, Style, Fill, Stroke, Circle, Icon, RegularShape) { 'use strict';
 
   Style = Style && Style.hasOwnProperty('default') ? Style['default'] : Style;
   Fill = Fill && Fill.hasOwnProperty('default') ? Fill['default'] : Fill;
@@ -79,10 +79,7 @@
    * @return {boolean}
    */
   function getBool(element, tagName) {
-    var collection = element.getElementsByTagNameNS(
-      'http://www.opengis.net/sld',
-      tagName
-    );
+    var collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
     if (collection.length) {
       return Boolean(collection.item(0).textContent);
     }
@@ -107,36 +104,7 @@
     obj[propname][name] = element.textContent.trim();
   }
 
-  /**
-   * Each propname is a tag in the sld that should be converted to plain object
-   * @private
-   * @type {Object}
-   */
-  var parsers = {
-    NamedLayer: function (element, obj) {
-      addPropArray(element, obj, 'layers');
-    },
-    UserStyle: function (element, obj) {
-      obj.styles = obj.styles || [];
-      var style = {
-        default: getBool(element, 'IsDefault'),
-        featuretypestyles: [],
-      };
-      readNode(element, style);
-      obj.styles.push(style);
-    },
-    FeatureTypeStyle: function (element, obj) {
-      var featuretypestyle = {
-        rules: [],
-      };
-      readNode(element, featuretypestyle);
-      obj.featuretypestyles.push(featuretypestyle);
-    },
-    Rule: function (element, obj) {
-      var rule = {};
-      readNode(element, rule);
-      obj.rules.push(rule);
-    },
+  var FilterParsers = {
     Filter: addProp,
     ElseFilter: function (element, obj) {
       obj.elsefilter = true;
@@ -178,9 +146,9 @@
       obj.fids = obj.fids || [];
       obj.fids.push(element.getAttribute('fid'));
     },
-    Name: addPropWithTextContent,
-    MaxScaleDenominator: addPropWithTextContent,
-    MinScaleDenominator: addPropWithTextContent,
+  };
+
+  var SymbParsers = {
     PolygonSymbolizer: addProp,
     LineSymbolizer: addProp,
     PointSymbolizer: addProp,
@@ -198,6 +166,46 @@
     CssParameter: parameters,
     SvgParameter: parameters,
   };
+
+  /**
+   * Each propname is a tag in the sld that should be converted to plain object
+   * @private
+   * @type {Object}
+   */
+  var parsers = Object.assign(
+    {
+      NamedLayer: function (element, obj) {
+        addPropArray(element, obj, 'layers');
+      },
+      UserStyle: function (element, obj) {
+        obj.styles = obj.styles || [];
+        var style = {
+          default: getBool(element, 'IsDefault'),
+          featuretypestyles: [],
+        };
+        readNode(element, style);
+        obj.styles.push(style);
+      },
+      FeatureTypeStyle: function (element, obj) {
+        var featuretypestyle = {
+          rules: [],
+        };
+        readNode(element, featuretypestyle);
+        obj.featuretypestyles.push(featuretypestyle);
+      },
+      Rule: function (element, obj) {
+        var rule = {};
+        readNode(element, rule);
+        obj.rules.push(rule);
+      },
+
+      Name: addPropWithTextContent,
+      MaxScaleDenominator: addPropWithTextContent,
+      MinScaleDenominator: addPropWithTextContent,
+    },
+    FilterParsers,
+    SymbParsers
+  );
 
   /**
    * walks over xml nodes
@@ -392,9 +400,10 @@
       stroke:
         stroke &&
         new Stroke({
-          color: stroke.strokeOpacity && stroke.stroke && stroke.stroke.slice(0, 1) === '#'
-            ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
-            : stroke.stroke || '#3399CC',
+          color:
+            stroke.strokeOpacity && stroke.stroke && stroke.stroke.slice(0, 1) === '#'
+              ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
+              : stroke.stroke || '#3399CC',
           width: stroke.strokeWidth || 1.25,
           lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
           lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
@@ -416,9 +425,10 @@
     }
     return new Style({
       stroke: new Stroke({
-        color: style.strokeOpacity && style.stroke && style.stroke.slice(0, 1) === '#'
-          ? hexToRGB(style.stroke, style.strokeOpacity)
-          : style.stroke || '#3399CC',
+        color:
+          style.strokeOpacity && style.stroke && style.stroke.slice(0, 1) === '#'
+            ? hexToRGB(style.stroke, style.strokeOpacity)
+            : style.stroke || '#3399CC',
         width: style.strokeWidth || 1.25,
         lineCap: style.strokeLinecap && style.strokeLinecap,
         lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
@@ -428,6 +438,11 @@
     });
   }
 
+  /**
+   * @private
+   * @param  {PointSymbolizer} pointsymbolizer [description]
+   * @return {object} openlayers style
+   */
   function pointStyle(pointsymbolizer) {
     var style = pointsymbolizer.graphic;
     if (style.externalgraphic && style.externalgraphic.onlineresource) {
@@ -488,10 +503,12 @@
               points: 4,
               radius1: radius,
               radius2: 0,
-              stroke: stroke || new Stroke({
-                color: fillColor,
-                width: radius / 2,
-              }),
+              stroke:
+                stroke ||
+                new Stroke({
+                  color: fillColor,
+                  width: radius / 2,
+                }),
             }),
           });
         case 'x':
@@ -502,10 +519,12 @@
               points: 4,
               radius1: radius,
               radius2: 0,
-              stroke: stroke || new Stroke({
-                color: fillColor,
-                width: radius / 2,
-              }),
+              stroke:
+                stroke ||
+                new Stroke({
+                  color: fillColor,
+                  width: radius / 2,
+                }),
             }),
           });
         default:
@@ -677,7 +696,7 @@
   /**
    * [doComparison description]
    * @private
-   * @param  {Comparison} comparison [description]
+   * @param  {Filter} comparison [description]
    * @param  {object} feature    geojson
    * @return {bool}  does feature fullfill comparison
    */
@@ -802,12 +821,15 @@
   }
 
   /**
-   * getlayer with name
+   * Get layer definition from sld
    * @param  {StyledLayerDescriptor} sld       [description]
-   * @param  {string} layername [description]
+   * @param  {string} [layername] optional layername
    * @return {Layer}           [description]
    */
   function getLayer(sld, layername) {
+    if (!layername) {
+      return sld.layers['0'];
+    }
     return sld.layers.find(function (l) { return l.name === layername; });
   }
 
@@ -823,7 +845,7 @@
    * get style from array layer.styles, if name is undefined it returns default style.
    * null is no style found
    * @param  {Layer} layer [description]
-   * @param {string} name of style
+   * @param {string} [name] of style
    * @return {object} the style from layer.styles matching the name
    */
   function getStyle(layer, name) {
@@ -871,4 +893,4 @@
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));
