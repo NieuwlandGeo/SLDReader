@@ -51,7 +51,7 @@ const map = new ol.Map({
   view: new ol.View({
     center: [626172, 6845800],
     maxZoom: 19,
-    zoom: 7,
+    zoom: 8,
   }),
 });
 map.addControl(new ol.control.MousePosition());
