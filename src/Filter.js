@@ -1,7 +1,7 @@
 function propertyIsLessThan(comparison, feature) {
   return (
-    feature.properties[comparison.propertyname] &&
-    Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
+    feature.properties[comparison.propertyname]
+    && Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
   );
 }
 
@@ -105,7 +105,7 @@ function doFIDFilter(fids, feature) {
  * @return {boolean}
  */
 export function filterSelector(filter, feature) {
-  const type = filter.type;
+  const { type } = filter;
   switch (type) {
     case 'featureid':
       return doFIDFilter(filter.fids, feature);
@@ -158,8 +158,8 @@ export function filterSelector(filter, feature) {
 export function scaleSelector(rule, resolution) {
   if (rule.maxscaledenominator !== undefined && rule.minscaledenominator !== undefined) {
     if (
-      resolution / 0.00028 < rule.maxscaledenominator &&
-      resolution / 0.00028 > rule.minscaledenominator
+      resolution / 0.00028 < rule.maxscaledenominator
+      && resolution / 0.00028 > rule.minscaledenominator
     ) {
       return true;
     }

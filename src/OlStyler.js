@@ -26,16 +26,16 @@ function polygonStyle(style) {
   const fill = style.fill && (style.fill.css || style.fill.svg);
   return new Style({
     fill:
-      fill &&
-      new Fill({
+      fill
+      && new Fill({
         color:
           fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
             ? hexToRGB(fill.fill, fill.fillOpacity)
             : fill.fill,
       }),
     stroke:
-      stroke &&
-      new Stroke({
+      stroke
+      && new Stroke({
         color:
           stroke.strokeOpacity && stroke.stroke && stroke.stroke.slice(0, 1) === '#'
             ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
@@ -136,8 +136,8 @@ function pointStyle(pointsymbolizer) {
             radius1: radius,
             radius2: 0,
             stroke:
-              stroke ||
-              new Stroke({
+              stroke
+              || new Stroke({
                 color: fillColor,
                 width: radius / 2,
               }),
@@ -152,8 +152,8 @@ function pointStyle(pointsymbolizer) {
             radius1: radius,
             radius2: 0,
             stroke:
-              stroke ||
-              new Stroke({
+              stroke
+              || new Stroke({
                 color: fillColor,
                 width: radius / 2,
               }),

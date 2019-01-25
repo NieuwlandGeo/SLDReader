@@ -68,9 +68,7 @@ describe('Filter tests', () => {
 
   describe('From SLD', () => {
     it('rules have filter for featureid', () => {
-      const { filter } = result.layers['0'].styles['0'].featuretypestyles[
-        '0'
-      ].rules['0'];
+      const { filter } = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
       expect(filter.type).to.equal('featureid');
       expect(filter.fids).to.be.an.instanceof(Array);
       expect(filter.fids).to.have.length(2);
@@ -78,9 +76,7 @@ describe('Filter tests', () => {
     });
 
     it('rules have filter for Attribute Filter Styler PropertyIsEqualTo', () => {
-      const { filter } = result.layers['0'].styles['2'].featuretypestyles[
-        '0'
-      ].rules['0'];
+      const { filter } = result.layers['0'].styles['2'].featuretypestyles['0'].rules['0'];
       expect(filter.type).to.equal('comparison');
       expect(filter.operator).to.equal('propertyisequalto');
       expect(filter.propertyname).to.equal('name');
@@ -89,9 +85,7 @@ describe('Filter tests', () => {
   });
 
   it('rules have filter for Hover Styler not_or', () => {
-    const { filter } = result.layers['0'].styles['1'].featuretypestyles[
-      '0'
-    ].rules['0'];
+    const { filter } = result.layers['0'].styles['1'].featuretypestyles['0'].rules['0'];
 
     /*
     <ogc:Not>
@@ -110,7 +104,7 @@ describe('Filter tests', () => {
 
     expect(filter.type).to.equal('not');
 
-    const predicate = filter.predicate;
+    const { predicate } = filter;
     expect(predicate.type).to.equal('or');
 
     const orPredicate1 = predicate.predicates[0];

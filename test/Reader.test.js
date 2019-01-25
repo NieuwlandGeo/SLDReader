@@ -32,13 +32,11 @@ describe('Reads xml', () => {
     expect(style.default).to.be.true;
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle =
-      result.layers['0'].styles['0'].featuretypestyles['0'];
+    const featuretypestyle = result.layers['0'].styles['0'].featuretypestyles['0'];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
   it('rules have props', () => {
-    const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule.maxscaledenominator).to.equal('3000000');
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
@@ -48,21 +46,17 @@ describe('Reads xml', () => {
     expect(rule.polygonsymbolizer.stroke.css.stroke).to.equal('#C0C0C0');
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
-    const rule =
-      result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule).to.have.property('pointsymbolizer');
     expect(rule.pointsymbolizer).to.have.property('graphic');
     expect(rule.pointsymbolizer.graphic).to.have.property('externalgraphic');
-    expect(rule.pointsymbolizer.graphic.externalgraphic).to.have.property(
-      'onlineresource'
+    expect(rule.pointsymbolizer.graphic.externalgraphic).to.have.property('onlineresource');
+    expect(rule.pointsymbolizer.graphic.externalgraphic.onlineresource).to.equal(
+      '../img/marker.png'
     );
-    expect(
-      rule.pointsymbolizer.graphic.externalgraphic.onlineresource
-    ).to.equal('../img/marker.png');
   });
   it('cities layer has pointsymbolizer with graphic mark', () => {
-    const rule =
-      result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
+    const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
     expect(rule).to.have.property('pointsymbolizer');
     expect(rule.pointsymbolizer).to.have.property('graphic');
     expect(rule.pointsymbolizer.graphic).to.have.property('mark');
@@ -86,7 +80,7 @@ describe('Reads xml sld 11', () => {
     expect(result.layers['0'].name).to.equal('bestuurlijkegrenzen:provincies');
   });
   it('has styles', () => {
-    const styles = result.layers['0'].styles;
+    const { styles } = result.layers['0'];
     expect(styles).to.be.an.instanceof(Array);
     expect(styles).to.have.length(1);
   });
@@ -95,14 +89,12 @@ describe('Reads xml sld 11', () => {
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle =
-      result.layers['0'].styles['0'].featuretypestyles['0'];
+    const featuretypestyle = result.layers['0'].styles['0'].featuretypestyles['0'];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
     expect(featuretypestyle.rules).to.have.length(13);
   });
   it('rules have svg props', () => {
-    const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill.svg).to.be.an.instanceof(Object);
