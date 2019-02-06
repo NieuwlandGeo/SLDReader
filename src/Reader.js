@@ -40,6 +40,17 @@ function addFilterComparison(node, obj, prop) {
 }
 
 /**
+ * Parser for filter literal operators
+ * @private
+ * @type {[type]}
+ */
+function addLiteral(node, obj, prop, trimText) {
+    obj.type = 'literal';
+    obj.operator = prop.toLowerCase();
+    addPropWithTextContent(node, obj, prop, trimText);
+}
+
+/**
  * Assigns textcontnet to obj.prop
  * @private
  * @param {Element} node [description]
@@ -123,7 +134,7 @@ const FilterParsers = {
     obj.escapechar = element.getAttribute('escapeChar');
   },
   PropertyName: addPropWithTextContent,
-  Literal: addPropWithTextContent,
+  Literal: addLiteral,
   LowerBoundary: (element, obj, prop) => addPropWithTextContent(element, obj, prop, true),
   UpperBoundary: (element, obj, prop) => addPropWithTextContent(element, obj, prop, true),
   FeatureId: (element, obj) => {

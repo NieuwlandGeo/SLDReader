@@ -96,6 +96,20 @@ function doFIDFilter(fids, feature) {
   return false;
 }
 
+function doLiteralFilter(filter, feature) {
+    if (filter.literal && feature) {
+        const featureProperties = feature.getProperties();
+
+        for (let property in featureProperties) {
+            if (featureProperties[property] == filter.literal) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 /**
  * Calls functions from Filter object to test if feature passes filter.
  * Functions are called with filter part they match and feature.
@@ -140,6 +154,10 @@ export function filterSelector(filter, feature) {
       }
 
       return !filterSelector(filter.predicate, feature);
+    }
+
+    case 'literal': {
+        return doLiteralFilter(filter, feature);
     }
 
     default:
