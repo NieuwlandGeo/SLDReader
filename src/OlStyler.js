@@ -283,7 +283,12 @@ function textStyle(textsymbolizer, fature, type) {
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(GeometryStyles, type = 'Polygon', properties) {
-  const { polygon, line, point, text } = GeometryStyles;
+  const {
+    polygon,
+    line,
+    point,
+    text,
+  } = GeometryStyles;
   let styles = [];
   switch (type) {
     case 'Polygon':
