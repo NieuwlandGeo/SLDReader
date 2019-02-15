@@ -279,7 +279,7 @@ function textStyle(textsymbolizer, fature, type) {
  * Create openlayers style
  * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
  * @param {GeometryStyles} GeometryStyles rulesconverter
- * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
+ * @param {object} feature geojson feature, @see {@link http://geojson.org|geojson}
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(GeometryStyles, feature) {
