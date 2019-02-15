@@ -23,6 +23,7 @@ describe('create ol style object from styledescription', () => {
       },
     ],
     point: [],
+    text: [],
   };
   it('returns array', () => {
     const style = OlStyler(styleDescription);
@@ -50,6 +51,7 @@ describe('creates point style', () => {
   const styleDescription = {
     polygon: [],
     line: [],
+    text: [],
     point: [
       {
         graphic: {

@@ -8,6 +8,7 @@ function getGeometryStyles(rules) {
     polygon: [],
     line: [],
     point: [],
+    text: [],
   };
   for (let i = 0; i < rules.length; i += 1) {
     if (rules[i].polygonsymbolizer) {
@@ -19,6 +20,10 @@ function getGeometryStyles(rules) {
     if (rules[i].pointsymbolizer) {
       const { pointsymbolizer } = rules[i];
       result.point.push(pointsymbolizer);
+    }
+    if (rules[i].textsymbolizer) {
+      const { textsymbolizer } = rules[i];
+      result.text.push(textsymbolizer);
     }
   }
   return result;
