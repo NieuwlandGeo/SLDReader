@@ -29,10 +29,7 @@ function polygonStyle(style) {
     fill:
       fill
       && new Fill({
-        color:
-          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-            ? hexToRGB(fill.fill, fill.fillOpacity)
-            : fill.fill,
+        color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
       }),
     stroke:
       stroke
@@ -197,51 +194,30 @@ function textStyle(textsymbolizer, fature, type) {
       text: part => part,
       propertyname: (part, { properties } = {}) => properties[part] || '',
     };
-    const label = textsymbolizer.label.length
-      ? textsymbolizer.label
-      : [textsymbolizer.label];
+    const label = textsymbolizer.label.length ? textsymbolizer.label : [textsymbolizer.label];
 
     const text = label.reduce((string, part) => {
       const keys = Object.keys(part);
-      return string + (keys && parseText[keys[0]]
-        ? parseText[keys[0]](part[keys[0]], fature)
-        : '');
+      return string + (keys && parseText[keys[0]] ? parseText[keys[0]](part[keys[0]], fature) : '');
     }, '');
 
-    const fill = textsymbolizer.fill ? (textsymbolizer.fill.css || textsymbolizer.fill.svg) : {};
-    const halo = textsymbolizer.halo && textsymbolizer.halo.fill
-      ? (textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg)
-      : {};
-    const haloRadius = textsymbolizer.halo && textsymbolizer.halo.radius
-      ? parseFloat(textsymbolizer.halo.radius)
-      : 1;
+    const fill = textsymbolizer.fill ? textsymbolizer.fill.css || textsymbolizer.fill.svg : {};
+    const halo = textsymbolizer.halo && textsymbolizer.halo.fill ? textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg : {};
+    const haloRadius = textsymbolizer.halo && textsymbolizer.halo.radius ? parseFloat(textsymbolizer.halo.radius) : 1;
     const {
-      fontFamily = 'sans-serif',
-      fontSize = 10,
-      fontStyle = '',
-      fontWeight = '',
+      fontFamily = 'sans-serif', fontSize = 10, fontStyle = '', fontWeight = '',
     } = textsymbolizer.font && textsymbolizer.font.css ? textsymbolizer.font.css : {};
 
-    const pointplacement = textsymbolizer && textsymbolizer.labelplacement
-      && textsymbolizer.labelplacement.pointplacement
+    const pointplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.pointplacement
       ? textsymbolizer.labelplacement.pointplacement
       : {};
-    const displacement = pointplacement && pointplacement.displacement
-      ? pointplacement.displacement
-      : {};
-    const offsetX = displacement.displacementx
-      ? displacement.displacementx
-      : 0;
-    const offsetY = displacement.displacementy
-      ? displacement.displacementy
-      : 0;
-    const lineplacement = textsymbolizer && textsymbolizer.labelplacement
-      && textsymbolizer.labelplacement.lineplacement
+    const displacement = pointplacement && pointplacement.displacement ? pointplacement.displacement : {};
+    const offsetX = displacement.displacementx ? displacement.displacementx : 0;
+    const offsetY = displacement.displacementy ? displacement.displacementy : 0;
+    const lineplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.lineplacement
       ? textsymbolizer.labelplacement.lineplacement
       : null;
-    const rotation = pointplacement.rotation
-      ? pointplacement.rotation
-      : 0;
+    const rotation = pointplacement.rotation ? pointplacement.rotation : 0;
 
     const placement = type !== 'point' && lineplacement ? 'line' : 'point';
 
@@ -256,18 +232,12 @@ function textStyle(textsymbolizer, fature, type) {
         textAlign: 'center',
         textBaseline: 'middle',
         stroke: new Stroke({
-          color: halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-            ? hexToRGB(halo.fill, halo.fillOpacity)
-            : halo.fill,
+          color: halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#' ? hexToRGB(halo.fill, halo.fillOpacity) : halo.fill,
           // wrong position width radius equal to 2 or 4
-          width: (haloRadius === 2 || haloRadius === 4)
-            ? haloRadius - 0.00001
-            : haloRadius,
+          width: haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius,
         }),
         fill: new Fill({
-          color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-            ? hexToRGB(fill.fill, fill.fillOpacity)
-            : fill.fill,
+          color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
         }),
       }),
     });
@@ -283,13 +253,10 @@ function textStyle(textsymbolizer, fature, type) {
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(GeometryStyles, feature) {
-const { properties, geometry } = feature;
-const { type } = geometry;
+  const { properties, geometry } = feature;
+  const { type } = geometry;
   const {
-    polygon,
-    line,
-    point,
-    text,
+    polygon, line, point, text,
   } = GeometryStyles;
   let styles = [];
   switch (type) {
