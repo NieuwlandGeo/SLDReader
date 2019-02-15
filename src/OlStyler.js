@@ -282,7 +282,9 @@ function textStyle(textsymbolizer, fature, type) {
  * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
  * @return ol.style.Style or array of it
  */
-export default function OlStyler(GeometryStyles, type = 'Polygon', properties) {
+export default function OlStyler(GeometryStyles, feature) {
+const { properties, geometry } = feature;
+const { type } = geometry;
   const {
     polygon,
     line,
