@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle'), require('ol/style/icon'), require('ol/style/regularshape')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle', 'ol/style/icon', 'ol/style/regularshape'], factory) :
-  (global = global || self, factory(global.SLDReader = {}, global.ol.style.Style, global.ol.style.Fill, global.ol.style.Stroke, global.ol.style.Circle, global.ol.style.Icon, global.ol.style.RegularShape));
-}(this, function (exports, Style, Fill, Stroke, Circle, Icon, RegularShape) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle'), require('ol/style/icon'), require('ol/style/regularshape'), require('ol/style/text')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle', 'ol/style/icon', 'ol/style/regularshape', 'ol/style/text'], factory) :
+  (global = global || self, factory(global.SLDReader = {}, global.ol.style.Style, global.ol.style.Fill, global.ol.style.Stroke, global.ol.style.Circle, global.ol.style.Icon, global.ol.style.RegularShape, global.Text));
+}(this, function (exports, Style, Fill, Stroke, Circle, Icon, RegularShape, Text) { 'use strict';
 
   Style = Style && Style.hasOwnProperty('default') ? Style['default'] : Style;
   Fill = Fill && Fill.hasOwnProperty('default') ? Fill['default'] : Fill;
@@ -10,6 +10,7 @@
   Circle = Circle && Circle.hasOwnProperty('default') ? Circle['default'] : Circle;
   Icon = Icon && Icon.hasOwnProperty('default') ? Icon['default'] : Icon;
   RegularShape = RegularShape && RegularShape.hasOwnProperty('default') ? RegularShape['default'] : RegularShape;
+  Text = Text && Text.hasOwnProperty('default') ? Text['default'] : Text;
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -95,7 +96,12 @@
    * @return {[type]}                  [description]
    */
   function parameters(element, obj, prop) {
-    var propname = prop === 'SvgParameter' ? 'svg' : 'css';
+    var propnames = {
+      CssParameter: 'css',
+      SvgParameter: 'svg',
+      VendorOption: 'vendoroption',
+    };
+    var propname = propnames[prop] || 'css';
     obj[propname] = obj[propname] || {};
     var name = element
       .getAttribute('name')
@@ -158,8 +164,24 @@
     Graphic: addProp,
     ExternalGraphic: addProp,
     Mark: addProp,
+    Label: addTextProp,
+    Halo: addProp,
+    Font: addProp,
+    Radius: addPropWithTextContent,
+    LabelPlacement: addProp,
+    PointPlacement: addProp,
+    LinePlacement: addProp,
+    PerpendicularOffset: addPropWithTextContent,
+    AnchorPoint: addProp,
+    AnchorPointX: addPropWithTextContent,
+    AnchorPointY: addPropWithTextContent,
+    Rotation: addPropWithTextContent,
+    Displacement: addProp,
+    DisplacementX: addPropWithTextContent,
+    DisplacementY: addPropWithTextContent,
     Size: addPropWithTextContent,
     WellKnownName: addPropWithTextContent,
+    VendorOption: parameters,
     OnlineResource: function (element, obj) {
       obj.onlineresource = element.getAttribute('xlink:href');
     },
@@ -240,6 +262,36 @@
         obj[property].push(childObj);
       }
     }
+  }
+
+  /**
+   * Generic parser for text props
+   * It looks for nodeName #text and #cdata-section to get all text in labels
+   * it sets result of readNode(node) to array on obj[prop]
+   * @private
+   * @param {Element} node the xml element to parse
+   * @param {object} obj  the object to modify
+   * @param {string} prop key on obj to hold empty object
+   */
+  function addTextProp(node, obj, prop) {
+    var property = prop.toLowerCase();
+    var children = [].concat( (node.childNodes || []) );
+    obj[property] = [];
+    children.forEach(function (child) {
+      if (child && child.nodeName === '#text') {
+        obj[property].push({
+          text: child.textContent.trim(),
+        });
+      } else if (child && child.nodeName === '#cdata-section') {
+        obj[property].push({
+          text: child.textContent,
+        });
+      } else if (child && parsers[child.localName]) {
+        var childObj = {};
+        parsers[child.localName](child, childObj, child.localName);
+        obj[property].push(childObj);
+      }
+    });
   }
 
   /**
@@ -390,16 +442,13 @@
     var fill = style.fill && (style.fill.css || style.fill.svg);
     return new Style({
       fill:
-        fill &&
-        new Fill({
-          color:
-            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-              ? hexToRGB(fill.fill, fill.fillOpacity)
-              : fill.fill,
+        fill
+        && new Fill({
+          color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
         }),
       stroke:
-        stroke &&
-        new Stroke({
+        stroke
+        && new Stroke({
           color:
             stroke.strokeOpacity && stroke.stroke && stroke.stroke.slice(0, 1) === '#'
               ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
@@ -504,8 +553,8 @@
               radius1: radius,
               radius2: 0,
               stroke:
-                stroke ||
-                new Stroke({
+                stroke
+                || new Stroke({
                   color: fillColor,
                   width: radius / 2,
                 }),
@@ -520,8 +569,8 @@
               radius1: radius,
               radius2: 0,
               stroke:
-                stroke ||
-                new Stroke({
+                stroke
+                || new Stroke({
                   color: fillColor,
                   width: radius / 2,
                 }),
@@ -551,18 +600,92 @@
   }
 
   /**
+   * @private
+   * @param  {TextSymbolizer} textsymbolizer [description]
+   * @param {object} fature feature object
+   * @param {object} fature.properties properties of feature
+   * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
+   * @return {object} openlayers style
+   */
+  function textStyle(textsymbolizer, fature, type) {
+    if (textsymbolizer && textsymbolizer.label) {
+      var parseText = {
+        text: function (part) { return part; },
+        propertyname: function (part, ref) {
+          if ( ref === void 0 ) ref = {};
+          var properties = ref.properties;
+
+          return properties[part] || '';
+      },
+      };
+      var label = textsymbolizer.label.length ? textsymbolizer.label : [textsymbolizer.label];
+
+      var text = label.reduce(function (string, part) {
+        var keys = Object.keys(part);
+        return string + (keys && parseText[keys[0]] ? parseText[keys[0]](part[keys[0]], fature) : '');
+      }, '');
+
+      var fill = textsymbolizer.fill ? textsymbolizer.fill.css || textsymbolizer.fill.svg : {};
+      var halo = textsymbolizer.halo && textsymbolizer.halo.fill ? textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg : {};
+      var haloRadius = textsymbolizer.halo && textsymbolizer.halo.radius ? parseFloat(textsymbolizer.halo.radius) : 1;
+      var ref = textsymbolizer.font && textsymbolizer.font.css ? textsymbolizer.font.css : {};
+      var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
+      var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
+      var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
+      var fontWeight = ref.fontWeight; if ( fontWeight === void 0 ) fontWeight = '';
+
+      var pointplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.pointplacement
+        ? textsymbolizer.labelplacement.pointplacement
+        : {};
+      var displacement = pointplacement && pointplacement.displacement ? pointplacement.displacement : {};
+      var offsetX = displacement.displacementx ? displacement.displacementx : 0;
+      var offsetY = displacement.displacementy ? displacement.displacementy : 0;
+      var lineplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.lineplacement
+        ? textsymbolizer.labelplacement.lineplacement
+        : null;
+      var rotation = pointplacement.rotation ? pointplacement.rotation : 0;
+
+      var placement = type !== 'point' && lineplacement ? 'line' : 'point';
+
+      return new Style({
+        text: new Text({
+          text: text,
+          font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
+          offsetX: offsetX,
+          offsetY: offsetY,
+          rotation: rotation,
+          placement: placement,
+          textAlign: 'center',
+          textBaseline: 'middle',
+          stroke: new Stroke({
+            color: halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#' ? hexToRGB(halo.fill, halo.fillOpacity) : halo.fill,
+            // wrong position width radius equal to 2 or 4
+            width: haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius,
+          }),
+          fill: new Fill({
+            color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
+          }),
+        }),
+      });
+    }
+    return new Style({});
+  }
+
+  /**
    * Create openlayers style
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
    * @param {GeometryStyles} GeometryStyles rulesconverter
-   * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
+   * @param {object} feature geojson feature, @see {@link http://geojson.org|geojson}
    * @return ol.style.Style or array of it
    */
-  function OlStyler(GeometryStyles, type) {
-    if ( type === void 0 ) type = 'Polygon';
-
+  function OlStyler(GeometryStyles, feature) {
+    var properties = feature.properties;
+    var geometry = feature.geometry;
+    var type = geometry.type;
     var polygon = GeometryStyles.polygon;
     var line = GeometryStyles.line;
     var point = GeometryStyles.point;
+    var text = GeometryStyles.text;
     var styles = [];
     switch (type) {
       case 'Polygon':
@@ -570,17 +693,26 @@
         for (var i = 0; i < polygon.length; i += 1) {
           styles.push(polygonStyle(polygon[i]));
         }
+        for (var j = 0; j < text.length; j += 1) {
+          styles.push(textStyle(text[j], { properties: properties }, 'polygon'));
+        }
         break;
       case 'LineString':
       case 'MultiLineString':
-        for (var j = 0; j < line.length; j += 1) {
-          styles.push(lineStyle(line[j]));
+        for (var j$1 = 0; j$1 < line.length; j$1 += 1) {
+          styles.push(lineStyle(line[j$1]));
+        }
+        for (var j$2 = 0; j$2 < text.length; j$2 += 1) {
+          styles.push(textStyle(text[j$2], { properties: properties }, 'line'));
         }
         break;
       case 'Point':
       case 'MultiPoint':
-        for (var j$1 = 0; j$1 < point.length; j$1 += 1) {
-          styles.push(pointStyle(point[j$1]));
+        for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
+          styles.push(pointStyle(point[j$3]));
+        }
+        for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
+          styles.push(textStyle(text[j$4], { properties: properties }, 'point'));
         }
         break;
       default:
@@ -607,6 +739,7 @@
       polygon: [],
       line: [],
       point: [],
+      text: [],
     };
     for (var i = 0; i < rules.length; i += 1) {
       if (rules[i].polygonsymbolizer) {
@@ -619,6 +752,11 @@
         var ref = rules[i];
         var pointsymbolizer = ref.pointsymbolizer;
         result.point.push(pointsymbolizer);
+      }
+      if (rules[i].textsymbolizer) {
+        var ref$1 = rules[i];
+        var textsymbolizer = ref$1.textsymbolizer;
+        result.text.push(textsymbolizer);
       }
     }
     return result;
@@ -635,8 +773,8 @@
 
   function propertyIsLessThan(comparison, feature) {
     return (
-      feature.properties[comparison.propertyname] &&
-      Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
+      feature.properties[comparison.propertyname]
+      && Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
     );
   }
 
@@ -795,8 +933,8 @@
   function scaleSelector(rule, resolution) {
     if (rule.maxscaledenominator !== undefined && rule.minscaledenominator !== undefined) {
       if (
-        resolution / 0.00028 < rule.maxscaledenominator &&
-        resolution / 0.00028 > rule.minscaledenominator
+        resolution / 0.00028 < rule.maxscaledenominator
+        && resolution / 0.00028 > rule.minscaledenominator
       ) {
         return true;
       }

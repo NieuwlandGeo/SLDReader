@@ -20,7 +20,7 @@ function applySLD(vector, text, pointresolution) {
   vector.setStyle(feature => {
     const geojson = JSON.parse(format.writeFeature(feature));
     const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, pointresolution);
-    return SLDReader.OlStyler(SLDReader.getGeometryStyles(rules), geojson.geometry.type);
+    return SLDReader.OlStyler(SLDReader.getGeometryStyles(rules), geojson);
   });
 }
 
@@ -56,11 +56,7 @@ const map = new ol.Map({
 });
 map.addControl(new ol.control.MousePosition());
 
-const pointresolution = ol.proj.getPointResolution(
-  map.getView().getProjection(),
-  map.getView().getResolution(),
-  map.getView().getCenter()
-);
+const pointresolution = ol.proj.getPointResolution(map.getView().getProjection(), map.getView().getResolution(), map.getView().getCenter());
 
 fetch('assets/sld-provincies.xml')
   .then(response => response.text())
