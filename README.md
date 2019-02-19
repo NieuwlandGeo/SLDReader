@@ -35,6 +35,7 @@ npm start
 - Line
 - Polygon
 - Point
+- Text (since version 0.0.4)
 
 ### Filter comparisons
 
