@@ -37,10 +37,11 @@
             <a class="navbar-brand" href="#">SLDReader</a>
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="index.html">Tasmania</a>
+                    <a class="nav-link {% if page.title == " Tasmania" %}active{% endif %}" href="index.html">Tasmania</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="grenzen.html">nl districts</a>
+                    <a class="nav-link {% if page.title == " Gelderland" %}active{% endif %}" href="grenzen.html">nl
+                        districts</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="https://github.com/NieuwlandGeo/SLDReader/blob/master/docs/api.md">api
