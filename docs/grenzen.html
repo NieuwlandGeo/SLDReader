@@ -1,82 +1,25 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-  <title>Openlayers simpel SLD</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.css" type="text/css">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
-    crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/codemirror.min.css" />
-  <style>
-    html,
-    body {
-      min-height: 100%;
-    }
-
-    #olmap {
-      border: 1px solid;
-      height: calc(80vh - 220px);
-    }
-
-    .CodeMirror {
-      height: calc(80vh - 220px);
-      min-height: 300px;
-    }
-  </style>
-
-</head>
-
-<body>
-  <div class="container-fluid">
-    <nav class="navbar navbar-dark bg-success navbar-expand-md">
-      <a class="navbar-brand" href="#">SLDReader</a>
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="index.html">Tasmania</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active" href="grenzen.html">nl districts</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="https://github.com/NieuwlandGeo/SLDReader/blob/master/docs/api.md">api docs</a>
-        </li>
-      </ul>
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" href="https://github.com/NieuwlandGeo/SLDReader">github</a>
-        </li>
-      </ul>
-    </nav>
-    <div class="row">
-      <div class="col-md-12">
-        <h2 class="pt-3">Openlayers nl districts</h2>
-        <p>This example requires an up to date browser!</p>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-6">
-        <div id="olmap"></div>
-      </div>
-      <div class="col-md-6">
-        <textarea id="sld"></textarea>
-      </div>
-    </div>
+---
+layout: default
+title: Gelderland
+---
+<div class="row">
+  <div class="col-md-12">
+    <h2 class="pt-3">Openlayers nl districts</h2>
+    <p>This example requires an up to date browser!</p>
   </div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.5.3/core.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol-debug.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/mode/xml/xml.min.js"></script>
-  <script>
-    if (window.location.hostname === 'localhost') {
-      document.write('<scr' + 'ipt src="sldreader.js"></scr' + 'ipt>');
-    } else {
-      document.write('<scr' + 'ipt src="assets/sldreader.js"></scr' + 'ipt>');
-    }
-  </script>
-  <script src="assets/grenzen.js"></script>
+</div>
+<div class="row">
+  <div class="col-md-6">
+    <div id="olmap"></div>
+  </div>
+  <div class="col-md-6">
+    <textarea id="sld"></textarea>
+  </div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/mode/xml/xml.min.js"></script>
+<script src="assets/grenzen.js"></script>
 </body>
 
 </html>

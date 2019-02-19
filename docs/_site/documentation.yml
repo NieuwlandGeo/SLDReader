@@ -1,0 +1,27 @@
+toc:
+  - name: Methods
+    description: |
+      All methods of this package. If you include the build directly they are props
+      of the global var SLDReader.
+    children:
+      - Reader
+      - getLayerNames
+      - getLayer
+      - getStyleNames
+      - getStyle
+      - getRules
+      - getGeometryStyles
+      - OlStyler
+  - name: Types
+    description: |
+      Types are the javascript representation of the ogc sld structure
+    children:
+      - StyledLayerDescriptor
+      - Layer
+      - FeatureTypeStyle
+      - Rule
+      - Filter
+      - LineSymbolizer
+      - PolygonSymbolizer
+      - PointSymbolizer
+      - GeometryStyles

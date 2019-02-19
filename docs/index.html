@@ -1,78 +1,26 @@
-<!DOCTYPE html>
-<html>
+---
+layout: default
+title: Tasmania
+---
 
-<head>
-  <title>Openlayers SLD Example</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.3.1/ol.css" type="text/css">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" type="text/css">
-  <style>
-    html,
-    body {
-      min-height: 100%;
-    }
-
-    #olmap {
-      border: 1px solid;
-      height: calc(100vh - 220px);
-    }
-  </style>
-
-</head>
-
-<body>
-  <div class="container-fluid">
-    <nav class="navbar navbar-dark bg-success navbar-expand-md">
-      <a class="navbar-brand" href="#">SLDReader</a>
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item">
-          <a class="nav-link active" href="index.html">Tasmania</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="grenzen.html">nl districts</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="https://github.com/NieuwlandGeo/SLDReader/blob/master/docs/api.md">api docs</a>
-        </li>
-      </ul>
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" href="https://github.com/NieuwlandGeo/SLDReader">github</a>
-        </li>
-      </ul>
-    </nav>
-    <div class="row">
-      <div class="col-md-12">
-        <h2 class="pt-3">Openlayers SLD example</h2>
-        <div class="form-group">
-          <label for="style_chooser">Choose a style for the waterbodies</label>
-          <select id="style_chooser" class="form-control">
-          </select>
-        </div>
-      </div>
+<div class="row">
+  <div class="col-md-12">
+    <h2 class="pt-3">Openlayers SLD example</h2>
+    <div class="form-group">
+      <label for="style_chooser">Choose a style for the waterbodies</label>
+      <select id="style_chooser" class="form-control">
+      </select>
     </div>
-    <div class="row">
-      <div class="col-md-12">
-        <div id="olmap"></div>
-      </div>
-    </div>
-    <p>
-      Example tries to replicate <a href="http://dev.openlayers.org/releases/OpenLayers-2.13.1/examples/sld.html">openlayer
-        2.13 example</a> Road style uses two overlaying lines.
-    </p>
   </div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.5.3/core.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol-debug.js"></script>
-  <script>
-    if (window.location.hostname === 'localhost') {
-      document.write('<scr' + 'ipt src="sldreader.js"></scr' + 'ipt>');
-    } else {
-      document.write('<scr' + 'ipt src="assets/sldreader.js"></scr' + 'ipt>');
-    }
-  </script>
-  <script src="assets/ol.js"></script>
-</body>
-
-</html>
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <div id="olmap"></div>
+  </div>
+</div>
+<p>
+  Example tries to replicate <a href="http://dev.openlayers.org/releases/OpenLayers-2.13.1/examples/sld.html">openlayer
+    2.13 example</a> Road style uses two overlaying lines.
+</p>
+</div>
+<script src="assets/ol.js"></script>
