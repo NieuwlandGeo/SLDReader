@@ -675,7 +675,7 @@
    * Create openlayers style
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
    * @param {GeometryStyles} GeometryStyles rulesconverter
-   * @param {object} feature geojson feature, @see {@link http://geojson.org|geojson}
+   * @param {object} feature geojson feature, @see {@link http://geojson.org|geojson} Changed in version 0.0.4
    * @return ol.style.Style or array of it
    */
   function OlStyler(GeometryStyles, feature) {

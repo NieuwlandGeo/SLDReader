@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>API</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="assets/rougify.css" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.css" type="text/css">
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+        crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/codemirror.min.css" />
+    <style>
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        #olmap {
+            border: 1px solid;
+            height: calc(80vh - 220px);
+        }
+
+        .CodeMirror {
+            height: calc(80vh - 220px);
+            min-height: 300px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.5.3/core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol-debug.js"></script>
+    <script src="assets/sldreader.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+            <a class="navbar-brand" href="#">SLDReader</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link " href="index.html">Tasmania</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href="grenzen.html">nl
+                            districts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="api.html">api
+                            docs</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://github.com/NieuwlandGeo/SLDReader">github</a>
+                    </li>
+                </ul>
+        </nav>
+
+        <div class="row mx-auto" style="margin-top: 60px; max-width: 1200px">
+            <div class="col-md-12">
+                <h1 id="basic-usage">Basic usage</h1>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/**
+ * @param {object} vector layer
+ * @param {string} text the xml text
+ * @param {number} pointresolution the projected resolution
+ * apply sld
+ */</span>
+<span class="kd">function</span> <span class="nx">applySLD</span><span class="p">(</span><span class="nx">vector</span><span class="p">,</span> <span class="nx">text</span><span class="p">,</span> <span class="nx">pointresolution</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">sldObject</span> <span class="o">=</span> <span class="nx">SLDReader</span><span class="p">.</span><span class="nx">Reader</span><span class="p">(</span><span class="nx">text</span><span class="p">);</span>
+  <span class="kd">const</span> <span class="nx">sldLayer</span> <span class="o">=</span> <span class="nx">SLDReader</span><span class="p">.</span><span class="nx">getLayer</span><span class="p">(</span><span class="nx">sldObject</span><span class="p">);</span>
+  <span class="kd">const</span> <span class="nx">style</span> <span class="o">=</span> <span class="nx">SLDReader</span><span class="p">.</span><span class="nx">getStyle</span><span class="p">(</span><span class="nx">sldLayer</span><span class="p">,</span> <span class="s1">'bestuurlijkegrenzen:provincies'</span><span class="p">);</span>
+  <span class="kd">const</span> <span class="nx">format</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ol</span><span class="p">.</span><span class="nx">format</span><span class="p">.</span><span class="nx">GeoJSON</span><span class="p">();</span>
+  <span class="nx">vector</span><span class="p">.</span><span class="nx">setStyle</span><span class="p">(</span><span class="nx">feature</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">geojson</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">format</span><span class="p">.</span><span class="nx">writeFeature</span><span class="p">(</span><span class="nx">feature</span><span class="p">));</span>
+    <span class="kd">const</span> <span class="nx">rules</span> <span class="o">=</span> <span class="nx">SLDReader</span><span class="p">.</span><span class="nx">getRules</span><span class="p">(</span>
+      <span class="nx">style</span><span class="p">.</span><span class="nx">featuretypestyles</span><span class="p">[</span><span class="s1">'0'</span><span class="p">],</span>
+      <span class="nx">geojson</span><span class="p">,</span>
+      <span class="nx">pointresolution</span>
+    <span class="p">);</span>
+    <span class="k">return</span> <span class="nx">SLDReader</span><span class="p">.</span><span class="nx">OlStyler</span><span class="p">(</span><span class="nx">SLDReader</span><span class="p">.</span><span class="nx">getGeometryStyles</span><span class="p">(</span><span class="nx">rules</span><span class="p">),</span> <span class="nx">geojson</span><span class="p">);</span>
+  <span class="p">});</span>
+<span class="p">}</span>
+
+<span class="kd">const</span> <span class="nx">vectorSource</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ol</span><span class="p">.</span><span class="nx">source</span><span class="p">.</span><span class="nx">Vector</span><span class="p">({</span>
+  <span class="na">format</span><span class="p">:</span> <span class="k">new</span> <span class="nx">ol</span><span class="p">.</span><span class="nx">format</span><span class="p">.</span><span class="nx">GeoJSON</span><span class="p">(),</span>
+  <span class="na">url</span><span class="p">:</span> <span class="s1">'assets/provincies.json'</span><span class="p">,</span>
+  <span class="na">strategy</span><span class="p">:</span> <span class="nx">ol</span><span class="p">.</span><span class="nx">loadingstrategy</span><span class="p">.</span><span class="nx">bbox</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="kd">const</span> <span class="nx">vectorLayer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ol</span><span class="p">.</span><span class="nx">layer</span><span class="p">.</span><span class="nx">Vector</span><span class="p">({</span>
+  <span class="na">source</span><span class="p">:</span> <span class="nx">vectorSource</span><span class="p">,</span>
+  <span class="na">style</span><span class="p">:</span> <span class="k">new</span> <span class="nx">ol</span><span class="p">.</span><span class="nx">style</span><span class="p">.</span><span class="nx">Style</span><span class="p">({</span>
+    <span class="na">stroke</span><span class="p">:</span> <span class="k">new</span> <span class="nx">ol</span><span class="p">.</span><span class="nx">style</span><span class="p">.</span><span class="nx">Stroke</span><span class="p">({</span>
+      <span class="na">color</span><span class="p">:</span> <span class="s1">'rgba(0, 0, 255, 1.0)'</span><span class="p">,</span>
+      <span class="na">width</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="p">}),</span>
+  <span class="p">}),</span>
+<span class="p">});</span>
+
+<span class="kd">const</span> <span class="nx">pointresolution</span> <span class="o">=</span> <span class="nx">ol</span><span class="p">.</span><span class="nx">proj</span><span class="p">.</span><span class="nx">getPointResolution</span><span class="p">(</span><span class="nx">map</span><span class="p">.</span><span class="nx">getView</span><span class="p">().</span><span class="nx">getProjection</span><span class="p">(),</span> <span class="nx">map</span><span class="p">.</span><span class="nx">getView</span><span class="p">().</span><span class="nx">getResolution</span><span class="p">(),</span> <span class="nx">map</span><span class="p">.</span><span class="nx">getView</span><span class="p">().</span><span class="nx">getCenter</span><span class="p">());</span>
+
+<span class="nx">applySLD</span><span class="p">(</span><span class="nx">vectorLayer</span><span class="p">,</span> <span class="nx">mySLDString</span><span class="p">,</span> <span class="nx">pointresolution</span><span class="p">);</span>
+
+</code></pre></div></div>
+
+<!-- Generated by documentation.js. Update this documentation by updating the source code. -->
+
+<h3 id="table-of-contents">Table of Contents</h3>
+
+<ul>
+  <li><a href="#methods">Methods</a>
+    <ul>
+      <li><a href="#reader">Reader</a>
+        <ul>
+          <li><a href="#parameters">Parameters</a></li>
+        </ul>
+      </li>
+      <li><a href="#getlayernames">getLayerNames</a>
+        <ul>
+          <li><a href="#parameters-1">Parameters</a></li>
+        </ul>
+      </li>
+      <li><a href="#getlayer">getLayer</a>
+        <ul>
+          <li><a href="#parameters-2">Parameters</a></li>
+        </ul>
+      </li>
+      <li><a href="#getstylenames">getStyleNames</a>
+        <ul>
+          <li><a href="#parameters-3">Parameters</a></li>
+        </ul>
+      </li>
+      <li><a href="#getstyle">getStyle</a>
+        <ul>
+          <li><a href="#parameters-4">Parameters</a></li>
+        </ul>
+      </li>
+      <li><a href="#getrules">getRules</a>
+        <ul>
+          <li><a href="#parameters-5">Parameters</a></li>
+          <li><a href="#examples">Examples</a></li>
+        </ul>
+      </li>
+      <li><a href="#getgeometrystyles">getGeometryStyles</a>
+        <ul>
+          <li><a href="#parameters-6">Parameters</a></li>
+        </ul>
+      </li>
+      <li><a href="#olstyler">OlStyler</a>
+        <ul>
+          <li><a href="#parameters-7">Parameters</a></li>
+          <li><a href="#examples-1">Examples</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#types">Types</a>
+    <ul>
+      <li><a href="#styledlayerdescriptor">StyledLayerDescriptor</a>
+        <ul>
+          <li><a href="#properties">Properties</a></li>
+        </ul>
+      </li>
+      <li><a href="#layer">Layer</a>
+        <ul>
+          <li><a href="#properties-1">Properties</a></li>
+        </ul>
+      </li>
+      <li><a href="#featuretypestyle">FeatureTypeStyle</a>
+        <ul>
+          <li><a href="#properties-2">Properties</a></li>
+        </ul>
+      </li>
+      <li><a href="#rule">Rule</a>
+        <ul>
+          <li><a href="#properties-3">Properties</a></li>
+        </ul>
+      </li>
+      <li><a href="#filter">Filter</a>
+        <ul>
+          <li><a href="#properties-4">Properties</a></li>
+        </ul>
+      </li>
+      <li><a href="#linesymbolizer">LineSymbolizer</a>
+        <ul>
+          <li><a href="#properties-5">Properties</a></li>
+        </ul>
+      </li>
+      <li><a href="#polygonsymbolizer">PolygonSymbolizer</a>
+        <ul>
+          <li><a href="#properties-6">Properties</a></li>
+        </ul>
+      </li>
+      <li><a href="#pointsymbolizer">PointSymbolizer</a>
+        <ul>
+          <li><a href="#properties-7">Properties</a></li>
+        </ul>
+      </li>
+      <li><a href="#geometrystyles">GeometryStyles</a>
+        <ul>
+          <li><a href="#properties-8">Properties</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="methods">Methods</h2>
+
+<p>All methods of this package. If you include the build directly they are props
+of the global var SLDReader.</p>
+
+<h3 id="reader">Reader</h3>
+
+<p>Creates a object from an sld xml string,</p>
+
+<h4 id="parameters">Parameters</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">sld</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></strong> xml string</li>
+</ul>
+
+<p>Returns <strong><a href="#styledlayerdescriptor">StyledLayerDescriptor</a></strong> object representing sld style</p>
+
+<h3 id="getlayernames">getLayerNames</h3>
+
+<p>get all layer names in sld</p>
+
+<h4 id="parameters-1">Parameters</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">sld</code> <strong><a href="#styledlayerdescriptor">StyledLayerDescriptor</a></strong></li>
+</ul>
+
+<p>Returns <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>&gt;</strong> registered layernames</p>
+
+<h3 id="getlayer">getLayer</h3>
+
+<p>Get layer definition from sld</p>
+
+<h4 id="parameters-2">Parameters</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">sld</code> <strong><a href="#styledlayerdescriptor">StyledLayerDescriptor</a></strong> [description]</li>
+  <li><code class="highlighter-rouge">layername</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> optional layername</li>
+</ul>
+
+<p>Returns <strong><a href="#layer">Layer</a></strong> [description]</p>
+
+<h3 id="getstylenames">getStyleNames</h3>
+
+<p>getStyleNames, notice name is not required for userstyle, you might get undefined</p>
+
+<h4 id="parameters-3">Parameters</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">layer</code> <strong><a href="#layer">Layer</a></strong> [description]</li>
+</ul>
+
+<p>Returns <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>&gt;</strong> [description]</p>
+
+<h3 id="getstyle">getStyle</h3>
+
+<p>get style from array layer.styles, if name is undefined it returns default style.
+null is no style found</p>
+
+<h4 id="parameters-4">Parameters</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">layer</code> <strong><a href="#layer">Layer</a></strong> [description]</li>
+  <li><code class="highlighter-rouge">name</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> of style</li>
+</ul>
+
+<p>Returns <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></strong> the style from layer.styles matching the name</p>
+
+<h3 id="getrules">getRules</h3>
+
+<p>get rules for specific feature after applying filters</p>
+
+<h4 id="parameters-5">Parameters</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">featureTypeStyle</code> <strong><a href="#featuretypestyle">FeatureTypeStyle</a></strong></li>
+  <li><code class="highlighter-rouge">feature</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></strong> geojson</li>
+  <li><code class="highlighter-rouge">resolution</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></strong> m/px</li>
+</ul>
+
+<h4 id="examples">Examples</h4>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">style</span> <span class="o">=</span> <span class="nx">getStyle</span><span class="p">(</span><span class="nx">sldLayer</span><span class="p">,</span> <span class="nx">stylename</span><span class="p">);</span>
+<span class="nx">getRules</span><span class="p">(</span><span class="nx">style</span><span class="p">.</span><span class="nx">featuretypestyles</span><span class="p">[</span><span class="s1">'0'</span><span class="p">],</span> <span class="nx">geojson</span><span class="p">,</span><span class="nx">resolution</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Returns <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#rule">Rule</a>&gt;</strong></p>
+
+<h3 id="getgeometrystyles">getGeometryStyles</h3>
+
+<p>Get styling from rules per geometry type</p>
+
+<h4 id="parameters-6">Parameters</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">rules</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#rule">Rule</a>&gt;</strong> [description]</li>
+</ul>
+
+<p>Returns <strong><a href="#geometrystyles">GeometryStyles</a></strong></p>
+
+<h3 id="olstyler">OlStyler</h3>
+
+<p>Create openlayers style</p>
+
+<h4 id="parameters-7">Parameters</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">GeometryStyles</code> <strong><a href="#geometrystyles">GeometryStyles</a></strong> rulesconverter</li>
+  <li><code class="highlighter-rouge">feature</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></strong> geojson feature, @see <a href="http://geojson.org">geojson</a> Changed in version 0.0.4</li>
+</ul>
+
+<h4 id="examples-1">Examples</h4>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">OlStyler</span><span class="p">(</span><span class="nx">getGeometryStyles</span><span class="p">(</span><span class="nx">rules</span><span class="p">),</span> <span class="nx">geojson</span><span class="p">.</span><span class="nx">geometry</span><span class="p">.</span><span class="nx">type</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Returns <strong>any</strong> ol.style.Style or array of it</p>
+
+<h2 id="types">Types</h2>
+
+<p>Types are the javascript representation of the ogc sld structure</p>
+
+<h3 id="styledlayerdescriptor">StyledLayerDescriptor</h3>
+
+<p>a typedef for StyledLayerDescriptor <a href="http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd">xsd</a></p>
+
+<h4 id="properties">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">version</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></strong> sld version</li>
+  <li><code class="highlighter-rouge">layers</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#layer">Layer</a>&gt;</strong> info extracted from NamedLayer element</li>
+</ul>
+
+<h3 id="layer">Layer</h3>
+
+<p>a typedef for Layer, the actual style object for a single layer</p>
+
+<h4 id="properties-1">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">name</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></strong> layer name</li>
+  <li><code class="highlighter-rouge">styles</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>&gt;</strong> See explanation at <a href="http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html">Geoserver docs</a>
+    <ul>
+      <li><code class="highlighter-rouge">styles[].default</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">Boolean</a></strong></li>
+      <li><code class="highlighter-rouge">styles[].name</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">String</a>?</strong></li>
+      <li><code class="highlighter-rouge">styles[].featuretypestyles</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#featuretypestyle">FeatureTypeStyle</a>&gt;</strong> Geoserver will draw multiple,
+libraries as openlayers can only use one definition!</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="featuretypestyle">FeatureTypeStyle</h3>
+
+<p>a typedef for FeatureTypeStyle: <a href="http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd">xsd</a></p>
+
+<h4 id="properties-2">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">rules</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#rule">Rule</a>&gt;</strong></li>
+</ul>
+
+<h3 id="rule">Rule</h3>
+
+<p>a typedef for Rule to match a feature: <a href="http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd">xsd</a></p>
+
+<h4 id="properties-3">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">name</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></strong> rule name</li>
+  <li><code class="highlighter-rouge">filter</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#filter">Filter</a>&gt;?</strong></li>
+  <li><code class="highlighter-rouge">elsefilter</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?</strong></li>
+  <li><code class="highlighter-rouge">minscaledenominator</code> <strong>integer?</strong></li>
+  <li><code class="highlighter-rouge">maxscaledenominator</code> <strong>integer?</strong></li>
+  <li><code class="highlighter-rouge">polygonsymbolizer</code> <strong><a href="#polygonsymbolizer">PolygonSymbolizer</a>?</strong></li>
+  <li><code class="highlighter-rouge">linesymbolizer</code> <strong><a href="#linesymbolizer">LineSymbolizer</a>?</strong></li>
+  <li><code class="highlighter-rouge">pointsymbolizer</code> <strong><a href="#pointsymbolizer">PointSymbolizer</a>?</strong></li>
+</ul>
+
+<h3 id="filter">Filter</h3>
+
+<p><a href="http://schemas.opengis.net/filter/1.1.0/filter.xsd">filter operators</a>, see also
+<a href="http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html">geoserver</a></p>
+
+<h4 id="properties-4">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">type</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></strong> Can be ‘comparison’, ‘and’, ‘or’, ‘not’, or ‘featureid’.</li>
+  <li><code class="highlighter-rouge">fids</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>&gt;?</strong> An array of feature id’s. Required for type=’featureid’.</li>
+  <li><code class="highlighter-rouge">operator</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> Required for type=’comparison’. Can be one of
+‘propertyisequalto’,
+‘propertyisnotequalto’,
+‘propertyislessthan’,
+‘propertyislessthanorequalto’,
+‘propertyisgreaterthan’,
+‘propertyisgreaterthanorequalto’,
+‘propertyislike’,
+‘propertyisbetween’</li>
+  <li><code class="highlighter-rouge">predicates</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#filter">Filter</a>&gt;?</strong> Required for type=’and’ or type=’or’.
+An array of filter predicates that must all evaluate to true for ‘and’, or
+for which at least one must evaluate to true for ‘or’.</li>
+  <li><code class="highlighter-rouge">predicate</code> <strong><a href="#filter">Filter</a>?</strong> Required for type=’not’. A single predicate to negate.</li>
+  <li><code class="highlighter-rouge">propertyname</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> Required for type=’comparison’.</li>
+  <li><code class="highlighter-rouge">literal</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> A literal value to use in a comparison,
+required for type=’comparison’.</li>
+  <li><code class="highlighter-rouge">lowerboundary</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> Lower boundary, required for operator=’propertyisbetween’.</li>
+  <li><code class="highlighter-rouge">upperboundary</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> Upper boundary, required for operator=’propertyisbetween’.</li>
+  <li><code class="highlighter-rouge">wildcard</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> Required wildcard character for operator=’propertyislike’.</li>
+  <li><code class="highlighter-rouge">singlechar</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> Required single char match character,
+required for operator=’propertyislike’.</li>
+  <li><code class="highlighter-rouge">escapechar</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?</strong> Required escape character for operator=’propertyislike’.</li>
+</ul>
+
+<h3 id="linesymbolizer">LineSymbolizer</h3>
+
+<p>a typedef for <a href="http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">LineSymbolizer</a>, see also
+<a href="http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer">geoserver docs</a></p>
+
+<h4 id="properties-5">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">stroke</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></strong>
+    <ul>
+      <li><code class="highlighter-rouge">stroke.css</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>&gt;</strong> one object per CssParameter with props name (camelcased) &amp; value</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="polygonsymbolizer">PolygonSymbolizer</h3>
+
+<p>a typedef for <a href="http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">PolygonSymbolizer</a>, see also
+<a href="http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html">geoserver docs</a></p>
+
+<h4 id="properties-6">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">fill</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></strong>
+    <ul>
+      <li><code class="highlighter-rouge">fill.css</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">array</a></strong> one object per CssParameter with props name (camelcased) &amp; value</li>
+    </ul>
+  </li>
+  <li><code class="highlighter-rouge">stroke</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></strong>
+    <ul>
+      <li><code class="highlighter-rouge">stroke.css</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>&gt;</strong> with camelcased name &amp; value</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="pointsymbolizer">PointSymbolizer</h3>
+
+<p>a typedef for PointSymbolizer <a href="http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">xsd</a>
+&amp; <a href="http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html">geoserver docs</a></p>
+
+<h4 id="properties-7">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">graphic</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></strong>
+    <ul>
+      <li><code class="highlighter-rouge">graphic.externalgraphic</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></strong>
+        <ul>
+          <li><code class="highlighter-rouge">graphic.externalgraphic.onlineresource</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></strong></li>
+        </ul>
+      </li>
+      <li><code class="highlighter-rouge">graphic.mark</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></strong>
+        <ul>
+          <li><code class="highlighter-rouge">graphic.mark.wellknownname</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></strong></li>
+          <li><code class="highlighter-rouge">graphic.mark.fill</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></strong></li>
+          <li><code class="highlighter-rouge">graphic.mark.stroke</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a></strong></li>
+        </ul>
+      </li>
+      <li><code class="highlighter-rouge">graphic.opacity</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">Number</a></strong></li>
+      <li><code class="highlighter-rouge">graphic.size</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">Number</a></strong></li>
+      <li><code class="highlighter-rouge">graphic.rotation</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">Number</a></strong></li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="geometrystyles">GeometryStyles</h3>
+
+<p>contains for each geometry type the symbolizer from an array of rules</p>
+
+<h4 id="properties-8">Properties</h4>
+
+<ul>
+  <li><code class="highlighter-rouge">polygon</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#polygonsymbolizer">PolygonSymbolizer</a>&gt;</strong> polygonsymbolizers</li>
+  <li><code class="highlighter-rouge">line</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#linesymbolizer">LineSymbolizer</a>&gt;</strong> linesymbolizers</li>
+  <li><code class="highlighter-rouge">point</code> <strong><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&lt;<a href="#pointsymbolizer">PointSymbolizer</a>&gt;</strong> pointsymbolizers, same as graphic prop from PointSymbolizer</li>
+</ul>
+
+
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

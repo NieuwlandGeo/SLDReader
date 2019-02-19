@@ -65,4 +65,5 @@ npm install
 npm test
 npm build
 npm run docs
+docker-compose up (runs doc website on :4000)
 ```

@@ -136,7 +136,7 @@ Create openlayers style
 #### Parameters
 
 -   `GeometryStyles` **[GeometryStyles][47]** rulesconverter
--   `feature` **[object][43]** geojson feature, @see [geojson][48]
+-   `feature` **[object][43]** geojson feature, @see [geojson][48] Changed in version 0.0.4
 
 #### Examples
 
