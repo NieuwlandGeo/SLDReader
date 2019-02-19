@@ -21,24 +21,17 @@ const proj = new ol.proj.Projection({
 });
 ol.proj.addEquivalentProjections([ol.proj.get('EPSG:4326'), proj]);
 
-const sourceurls = [
-  'assets/TasmaniaLand.xml',
-  'assets/TasmaniaRoads.xml',
-  'assets/TasmaniaCities.xml',
-  'assets/TasmaniaWaterBodies.xml',
-];
+const sourceurls = ['assets/TasmaniaLand.xml', 'assets/TasmaniaRoads.xml', 'assets/TasmaniaCities.xml', 'assets/TasmaniaWaterBodies.xml'];
 const vectorsources = sourceurls.map(
-  s =>
-    new ol.source.Vector({
-      format: new ol.format.GML2(),
-      url: s,
-    })
+  s => new ol.source.Vector({
+    format: new ol.format.GML2(),
+    url: s,
+  })
 );
 const layers = vectorsources.map(
-  s =>
-    new ol.layer.Vector({
-      source: s,
-    })
+  s => new ol.layer.Vector({
+    source: s,
+  })
 );
 
 const map = new ol.Map({
@@ -71,12 +64,8 @@ fetch('assets/sld-tasmania.xml')
         // 111034 = from EPSG:4326 to meters for the location of tasmania
         layer.setStyle((feature, resolution) => {
           const geojson = JSON.parse(format.writeFeature(feature));
-          const rules = SLDReader.getRules(
-            style.featuretypestyles['0'],
-            geojson,
-            resolution * 111034
-          );
-          return SLDReader.OlStyler(SLDReader.getGeometryStyles(rules), geojson.geometry.type);
+          const rules = SLDReader.getRules(style.featuretypestyles['0'], geojson, resolution * 111034);
+          return SLDReader.OlStyler(SLDReader.getGeometryStyles(rules), geojson);
         });
       }
     };

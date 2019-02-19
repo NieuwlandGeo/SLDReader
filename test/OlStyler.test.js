@@ -2,6 +2,13 @@
 import Style from 'ol/style/style';
 import OlStyler from '../src/OlStyler';
 
+const getFeature = type => ({
+  properties: {},
+  geometry: {
+    type,
+  },
+});
+
 describe('create ol style object from styledescription', () => {
   const styleDescription = {
     polygon: [
@@ -23,25 +30,27 @@ describe('create ol style object from styledescription', () => {
       },
     ],
     point: [],
+    text: [],
   };
+
   it('returns array', () => {
-    const style = OlStyler(styleDescription);
+    const style = OlStyler(styleDescription, getFeature('Polygon'));
     expect(style).to.be.an.array;
   });
   it('returns object with polygon style', () => {
-    const style = OlStyler(styleDescription, 'Polygon');
+    const style = OlStyler(styleDescription, getFeature('Polygon'));
     expect(style['0']).to.be.an.instanceof(Style);
   });
   it('returns object with polygon fill', () => {
-    const style = OlStyler(styleDescription, 'Polygon');
+    const style = OlStyler(styleDescription, getFeature('Polygon'));
     expect(style['0'].getFill().getColor()).to.equal('blue');
   });
   it('returns object linestring style', () => {
-    const style = OlStyler(styleDescription, 'LineString');
+    const style = OlStyler(styleDescription, getFeature('LineString'));
     expect(style['0']).to.be.an.instanceof(Style);
   });
   it('returns object with polygon fill', () => {
-    const style = OlStyler(styleDescription, 'LineString');
+    const style = OlStyler(styleDescription, getFeature('LineString'));
     expect(style['0'].getStroke().getColor()).to.equal('red');
   });
 });
@@ -50,6 +59,7 @@ describe('creates point style', () => {
   const styleDescription = {
     polygon: [],
     line: [],
+    text: [],
     point: [
       {
         graphic: {
@@ -66,11 +76,11 @@ describe('creates point style', () => {
     ],
   };
   it('returns array', () => {
-    const style = OlStyler(styleDescription);
+    const style = OlStyler(styleDescription, getFeature('Point'));
     expect(style).to.be.an.array;
   });
   it('returns style', () => {
-    const style = OlStyler(styleDescription, 'Point');
+    const style = OlStyler(styleDescription, getFeature('Point'));
     expect(style['0']).to.be.an.instanceOf(Style);
   });
 });

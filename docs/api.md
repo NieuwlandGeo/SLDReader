@@ -136,7 +136,7 @@ Create openlayers style
 #### Parameters
 
 -   `GeometryStyles` **[GeometryStyles][47]** rulesconverter
--   `type` **[string][39]** geometry type, @see [geojson][48] (optional, default `'Polygon'`)
+-   `feature` **[object][43]** geojson feature, @see [geojson][48]
 
 #### Examples
 

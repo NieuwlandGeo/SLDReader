@@ -18,6 +18,13 @@
         "peerDependencies": false
       }
     ],
+    "max-len": [
+      "error",
+      {
+        "code": 150,
+        "ignoreTemplateLiterals": true
+      }
+    ],
     "arrow-parens": ["error", "as-needed", { "requireForBlockBody": false }],
     "no-use-before-define": ["error", "nofunc"],
     "function-paren-newline": "off",
