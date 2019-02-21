@@ -90,12 +90,14 @@ function pointStyle(pointsymbolizer) {
     fill = new Fill({
       color: fillColor,
     });
-    if (stroke) {
+    if (stroke && !(stroke.css.strokeWidth == 0)) {
       const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.css;
       stroke = new Stroke({
         color: cssStroke || 'black',
         width: cssStrokeWidth || 2,
       });
+    } else {
+      stroke = undefined;
     }
     const radius = style.size || 10;
     switch (style.mark.wellknownname) {
@@ -183,22 +185,22 @@ function pointStyle(pointsymbolizer) {
 /**
  * @private
  * @param  {TextSymbolizer} textsymbolizer [description]
- * @param {object} fature feature object
- * @param {object} fature.properties properties of feature
+ * @param {object} feature feature object
+ * @param {object} feature.properties properties of feature
  * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
  * @return {object} openlayers style
  */
-function textStyle(textsymbolizer, fature, type) {
+function textStyle(textsymbolizer, properties, feature, type) {
   if (textsymbolizer && textsymbolizer.label) {
     const parseText = {
       text: part => part,
-      propertyname: (part, { properties } = {}) => properties[part] || '',
+      propertyname: (part, properties = {}) => properties[part] || '',
     };
     const label = textsymbolizer.label.length ? textsymbolizer.label : [textsymbolizer.label];
 
     const text = label.reduce((string, part) => {
       const keys = Object.keys(part);
-      return string + (keys && parseText[keys[0]] ? parseText[keys[0]](part[keys[0]], fature) : '');
+      return string + (keys && parseText[keys[0]] ? parseText[keys[0]](part[keys[0]], properties) : '');
     }, '');
 
     const fill = textsymbolizer.fill ? textsymbolizer.fill.css || textsymbolizer.fill.svg : {};
@@ -223,19 +225,20 @@ function textStyle(textsymbolizer, fature, type) {
 
     return new Style({
       text: new Text({
-        text,
+        text: text,
         font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
-        offsetX,
-        offsetY,
-        rotation,
-        placement,
+        offsetX: Number(offsetX),
+        offsetY: Number(offsetY),
+        rotation: rotation,
+        placement: placement,
         textAlign: 'center',
         textBaseline: 'middle',
-        stroke: new Stroke({
+        stroke: textsymbolizer.halo ? new Stroke({
           color: halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#' ? hexToRGB(halo.fill, halo.fillOpacity) : halo.fill,
           // wrong position width radius equal to 2 or 4
-          width: haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius,
-        }),
+          width: (haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius) * 2,
+
+        }) : undefined,
         fill: new Fill({
           color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
         }),
@@ -252,9 +255,8 @@ function textStyle(textsymbolizer, fature, type) {
  * @param {object} feature geojson feature, @see {@link http://geojson.org|geojson} Changed in version 0.0.4
  * @return ol.style.Style or array of it
  */
-export default function OlStyler(GeometryStyles, feature) {
-  const { properties, geometry } = feature;
-  const { type } = geometry;
+export default function OlStyler(GeometryStyles, type, feature) {
+  const properties = feature.getProperties();
   const {
     polygon, line, point, text,
   } = GeometryStyles;
@@ -266,7 +268,7 @@ export default function OlStyler(GeometryStyles, feature) {
         styles.push(polygonStyle(polygon[i]));
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], { properties }, 'polygon'));
+        styles.push(textStyle(text[j], properties, feature, 'polygon'));
       }
       break;
     case 'LineString':
@@ -275,7 +277,7 @@ export default function OlStyler(GeometryStyles, feature) {
         styles.push(lineStyle(line[j]));
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], { properties }, 'line'));
+        styles.push(textStyle(text[j], properties, feature, 'line'));
       }
       break;
     case 'Point':
@@ -284,7 +286,7 @@ export default function OlStyler(GeometryStyles, feature) {
         styles.push(pointStyle(point[j]));
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], { properties }, 'point'));
+        styles.push(textStyle(text[j], properties, feature, 'point'));
       }
       break;
     default:
