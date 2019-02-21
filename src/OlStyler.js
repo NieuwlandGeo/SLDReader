@@ -255,7 +255,12 @@ function textStyle(textsymbolizer, properties, feature, type) {
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(GeometryStyles, type, feature) {
-  const properties = feature.getProperties();
+  let properties;
+  if(feature.getProperties) {
+    properties = feature.getProperties();
+  } else {
+    properties = feature.properties;
+  }
   const {
     polygon, line, point, text,
   } = GeometryStyles;
