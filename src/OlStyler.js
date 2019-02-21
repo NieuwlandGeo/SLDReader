@@ -90,7 +90,7 @@ function pointStyle(pointsymbolizer) {
     fill = new Fill({
       color: fillColor,
     });
-    if (stroke && !(stroke.css.strokeWidth == 0)) {
+    if (stroke && !(Number(stroke.css.strokeWidth) === 0)) {
       const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.css;
       stroke = new Stroke({
         color: cssStroke || 'black',
@@ -194,7 +194,7 @@ function textStyle(textsymbolizer, properties, feature, type) {
   if (textsymbolizer && textsymbolizer.label) {
     const parseText = {
       text: part => part,
-      propertyname: (part, properties = {}) => properties[part] || '',
+      propertyname: (part, props = {}) => props[part] || '',
     };
     const label = textsymbolizer.label.length ? textsymbolizer.label : [textsymbolizer.label];
 
@@ -225,12 +225,12 @@ function textStyle(textsymbolizer, properties, feature, type) {
 
     return new Style({
       text: new Text({
-        text: text,
+        text,
         font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
         offsetX: Number(offsetX),
         offsetY: Number(offsetY),
-        rotation: rotation,
-        placement: placement,
+        rotation,
+        placement,
         textAlign: 'center',
         textBaseline: 'middle',
         stroke: textsymbolizer.halo ? new Stroke({
