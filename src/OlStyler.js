@@ -237,7 +237,6 @@ function textStyle(textsymbolizer, properties, feature, type) {
           color: halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#' ? hexToRGB(halo.fill, halo.fillOpacity) : halo.fill,
           // wrong position width radius equal to 2 or 4
           width: (haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius) * 2,
-
         }) : undefined,
         fill: new Fill({
           color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
