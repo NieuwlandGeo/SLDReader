@@ -183,6 +183,9 @@ const parsers = Object.assign(
     NamedLayer: (element, obj) => {
       addPropArray(element, obj, 'layers');
     },
+    UserLayer: (element, obj) => {
+      addPropArray(element, obj, 'layers');
+    },
     UserStyle: (element, obj) => {
       obj.styles = obj.styles || [];
       const style = {
