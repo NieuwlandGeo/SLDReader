@@ -98,11 +98,22 @@ describe('Reads xml sld 11', () => {
     expect(rule.polygonsymbolizer.fill.svg).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill.svg.fill).to.equal('#CCCCCC');
   });
-  it('rule textsymbolizer has props from svg', () => {
+  it('rule textsymbolizer label', () => {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
     expect(rule.textsymbolizer).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.label).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.label.propertyname).to.equal('provincienaam');
+  });
+  it('rule textsymbolizer has font', () => {
+    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
+    expect(rule.textsymbolizer).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.font).to.be.an.instanceof(Object);
+    expect(rule.textsymbolizer.font.svg).to.be.an.instanceof(Object);
+    expect(rule.textsymbolizer.font.svg.fontFamily).to.equal('Noto Sans');
+  });
+  it('rule textsymbolizer has fill', () => {
+    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
+    expect(rule.textsymbolizer).to.be.an.instanceof(Object);
+    expect(rule.textsymbolizer.fill).to.be.an.instanceof(Object);
   });
 });
