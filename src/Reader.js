@@ -148,7 +148,7 @@ const SymbParsers = {
   Graphic: addProp,
   ExternalGraphic: addProp,
   Mark: addProp,
-  Label: addTextProp,
+  Label: addProp,
   Halo: addProp,
   Font: addProp,
   Radius: addPropWithTextContent,
