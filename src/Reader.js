@@ -148,7 +148,7 @@ const SymbParsers = {
   Graphic: addProp,
   ExternalGraphic: addProp,
   Mark: addProp,
-  Label: addProp,
+  Label: addTextProp,
   Halo: addProp,
   Font: addProp,
   Radius: addPropWithTextContent,
@@ -259,9 +259,8 @@ function readNodeArray(node, obj, prop) {
  */
 function addTextProp(node, obj, prop) {
   const property = prop.toLowerCase();
-  const children = [...(node.childNodes || [])];
   obj[property] = [];
-  children.forEach(child => {
+  Array.prototype.forEach.call(node.childNodes, child => {
     if (child && child.nodeName === '#text') {
       obj[property].push({
         text: child.textContent.trim(),

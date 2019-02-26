@@ -164,7 +164,7 @@
     Graphic: addProp,
     ExternalGraphic: addProp,
     Mark: addProp,
-    Label: addProp,
+    Label: addTextProp,
     Halo: addProp,
     Font: addProp,
     Radius: addPropWithTextContent,
@@ -262,6 +262,35 @@
         obj[property].push(childObj);
       }
     }
+  }
+
+  /**
+   * Generic parser for text props
+   * It looks for nodeName #text and #cdata-section to get all text in labels
+   * it sets result of readNode(node) to array on obj[prop]
+   * @private
+   * @param {Element} node the xml element to parse
+   * @param {object} obj  the object to modify
+   * @param {string} prop key on obj to hold empty object
+   */
+  function addTextProp(node, obj, prop) {
+    var property = prop.toLowerCase();
+    obj[property] = [];
+    Array.prototype.forEach.call(node.childNodes, function (child) {
+      if (child && child.nodeName === '#text') {
+        obj[property].push({
+          text: child.textContent.trim(),
+        });
+      } else if (child && child.nodeName === '#cdata-section') {
+        obj[property].push({
+          text: child.textContent,
+        });
+      } else if (child && parsers[child.localName]) {
+        var childObj = {};
+        parsers[child.localName](child, childObj, child.localName);
+        obj[property].push(childObj);
+      }
+    });
   }
 
   /**
