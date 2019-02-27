@@ -14,11 +14,10 @@
  */
 module.exports = {
   ui: false,
-  files: ['dist', 'docs'],
+  files: ['docs'],
   watchEvents: [
     'change',
     'add',
   ],
-  server: ['dist', 'docs'],
-  proxy: false,
+  proxy: 'http://localhost:4000',
 };

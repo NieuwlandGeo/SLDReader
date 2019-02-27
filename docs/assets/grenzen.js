@@ -14,6 +14,7 @@ const editor = CodeMirror.fromTextArea(document.getElementById('sld'), {
  */
 function applySLD(vector, text, pointresolution) {
   const sldObject = SLDReader.Reader(text);
+  window.sldObject = sldObject;
   const sldLayer = SLDReader.getLayer(sldObject);
   const style = SLDReader.getStyle(sldLayer, 'bestuurlijkegrenzen:provincies');
   const format = new ol.format.GeoJSON();

@@ -275,9 +275,8 @@
    */
   function addTextProp(node, obj, prop) {
     var property = prop.toLowerCase();
-    var children = [].concat( (node.childNodes || []) );
     obj[property] = [];
-    children.forEach(function (child) {
+    Array.prototype.forEach.call(node.childNodes, function (child) {
       if (child && child.nodeName === '#text') {
         obj[property].push({
           text: child.textContent.trim(),
