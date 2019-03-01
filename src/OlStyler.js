@@ -257,7 +257,7 @@ function textStyle(textsymbolizer, feature, type) {
  */
 export default function OlStyler(GeometryStyles, feature) {
   const geometry = feature.getGeometry ? feature.getGeometry() : feature.geometry;
-  const type = geometry.getType ? feature.getType() : feature.geometry.type;
+  const type = geometry.getType ? geometry.getType() : geometry.type;
   const {
     polygon, line, point, text,
   } = GeometryStyles;
