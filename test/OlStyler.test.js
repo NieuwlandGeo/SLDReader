@@ -34,23 +34,23 @@ describe('create ol style object from styledescription', () => {
   };
 
   it('returns array', () => {
-    const style = OlStyler(styleDescription, 'Polygon', getFeature('Polygon'));
+    const style = OlStyler(styleDescription, getFeature('Polygon'));
     expect(style).to.be.an.array;
   });
   it('returns object with polygon style', () => {
-    const style = OlStyler(styleDescription, 'Polygon', getFeature('Polygon'));
+    const style = OlStyler(styleDescription, getFeature('Polygon'));
     expect(style['0']).to.be.an.instanceof(Style);
   });
   it('returns object with polygon fill', () => {
-    const style = OlStyler(styleDescription, 'Polygon', getFeature('Polygon'));
+    const style = OlStyler(styleDescription, getFeature('Polygon'));
     expect(style['0'].getFill().getColor()).to.equal('blue');
   });
   it('returns object linestring style', () => {
-    const style = OlStyler(styleDescription, 'LineString', getFeature('LineString'));
+    const style = OlStyler(styleDescription, getFeature('LineString'));
     expect(style['0']).to.be.an.instanceof(Style);
   });
   it('returns object with polygon fill', () => {
-    const style = OlStyler(styleDescription, 'LineString', getFeature('LineString'));
+    const style = OlStyler(styleDescription, getFeature('LineString'));
     expect(style['0'].getStroke().getColor()).to.equal('red');
   });
 });
@@ -76,11 +76,11 @@ describe('creates point style', () => {
     ],
   };
   it('returns array', () => {
-    const style = OlStyler(styleDescription, 'Point', getFeature('Point'));
+    const style = OlStyler(styleDescription, getFeature('Point'));
     expect(style).to.be.an.array;
   });
   it('returns style', () => {
-    const style = OlStyler(styleDescription, 'Point', getFeature('Point'));
+    const style = OlStyler(styleDescription, getFeature('Point'));
     expect(style['0']).to.be.an.instanceOf(Style);
   });
 });

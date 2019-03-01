@@ -99,7 +99,7 @@ function pointStyle(pointsymbolizer) {
     } else {
       stroke = undefined;
     }
-    const radius = style.size || 10;
+    const radius = Number(style.size) || 10;
     switch (style.mark.wellknownname) {
       case 'circle':
         return new Style({
@@ -190,7 +190,8 @@ function pointStyle(pointsymbolizer) {
  * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
  * @return {object} openlayers style
  */
-function textStyle(textsymbolizer, properties, feature, type) {
+function textStyle(textsymbolizer, feature, type) {
+  const properties = feature.getProperties ? feature.getProperties() : feature.properties;
   if (textsymbolizer && textsymbolizer.label) {
     const parseText = {
       text: part => part,
@@ -254,8 +255,8 @@ function textStyle(textsymbolizer, properties, feature, type) {
  * @param {object} feature geojson feature, @see {@link http://geojson.org|geojson} Changed in version 0.0.4
  * @return ol.style.Style or array of it
  */
-export default function OlStyler(GeometryStyles, type, feature) {
-  const properties = feature.getProperties ? feature.getProperties() : feature.properties;
+export default function OlStyler(GeometryStyles, feature) {
+  const type = feature.getGeometry().getType ? feature.getGeometry().getType() : feature.geometry.type;
   const {
     polygon, line, point, text,
   } = GeometryStyles;
@@ -267,7 +268,7 @@ export default function OlStyler(GeometryStyles, type, feature) {
         styles.push(polygonStyle(polygon[i]));
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], properties, feature, 'polygon'));
+        styles.push(textStyle(text[j], feature, 'polygon'));
       }
       break;
     case 'LineString':
@@ -276,7 +277,7 @@ export default function OlStyler(GeometryStyles, type, feature) {
         styles.push(lineStyle(line[j]));
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], properties, feature, 'line'));
+        styles.push(textStyle(text[j], feature, 'line'));
       }
       break;
     case 'Point':
@@ -285,7 +286,7 @@ export default function OlStyler(GeometryStyles, type, feature) {
         styles.push(pointStyle(point[j]));
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], properties, feature, 'point'));
+        styles.push(textStyle(text[j], feature, 'point'));
       }
       break;
     default:
