@@ -199,6 +199,9 @@
       NamedLayer: function (element, obj) {
         addPropArray(element, obj, 'layers');
       },
+      UserLayer: function (element, obj) {
+        addPropArray(element, obj, 'layers');
+      },
       UserStyle: function (element, obj) {
         obj.styles = obj.styles || [];
         var style = {
@@ -506,7 +509,7 @@
       fill = new Fill({
         color: fillColor,
       });
-      if (stroke) {
+      if (stroke && !(Number(stroke.css.strokeWidth) === 0)) {
         var ref$1 = stroke.css;
         var cssStroke = ref$1.stroke;
         var cssStrokeWidth = ref$1.strokeWidth;
@@ -514,8 +517,10 @@
           color: cssStroke || 'black',
           width: cssStrokeWidth || 2,
         });
+      } else {
+        stroke = undefined;
       }
-      var radius = style.size || 10;
+      var radius = Number(style.size) || 10;
       switch (style.mark.wellknownname) {
         case 'circle':
           return new Style({
@@ -601,27 +606,27 @@
   /**
    * @private
    * @param  {TextSymbolizer} textsymbolizer [description]
-   * @param {object} fature feature object
-   * @param {object} fature.properties properties of feature
-   * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
+   * @param {object|Feature} feature {@link http://geojson.org|geojson}
+   *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
+   * @param {string} type geometry type, @see {@link http://geojson.org|geojson} for possible types
    * @return {object} openlayers style
    */
-  function textStyle(textsymbolizer, fature, type) {
+  function textStyle(textsymbolizer, feature, type) {
+    var properties = feature.getProperties ? feature.getProperties() : feature.properties;
     if (textsymbolizer && textsymbolizer.label) {
       var parseText = {
         text: function (part) { return part; },
-        propertyname: function (part, ref) {
-          if ( ref === void 0 ) ref = {};
-          var properties = ref.properties;
+        propertyname: function (part, props) {
+          if ( props === void 0 ) props = {};
 
-          return properties[part] || '';
+          return props[part] || '';
       },
       };
       var label = textsymbolizer.label.length ? textsymbolizer.label : [textsymbolizer.label];
 
       var text = label.reduce(function (string, part) {
         var keys = Object.keys(part);
-        return string + (keys && parseText[keys[0]] ? parseText[keys[0]](part[keys[0]], fature) : '');
+        return string + (keys && parseText[keys[0]] ? parseText[keys[0]](part[keys[0]], properties) : '');
       }, '');
 
       var fill = textsymbolizer.fill ? textsymbolizer.fill.css || textsymbolizer.fill.svg : {};
@@ -650,17 +655,17 @@
         text: new Text({
           text: text,
           font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
-          offsetX: offsetX,
-          offsetY: offsetY,
+          offsetX: Number(offsetX),
+          offsetY: Number(offsetY),
           rotation: rotation,
           placement: placement,
           textAlign: 'center',
           textBaseline: 'middle',
-          stroke: new Stroke({
+          stroke: textsymbolizer.halo ? new Stroke({
             color: halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#' ? hexToRGB(halo.fill, halo.fillOpacity) : halo.fill,
             // wrong position width radius equal to 2 or 4
-            width: haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius,
-          }),
+            width: (haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius) * 2,
+          }) : undefined,
           fill: new Fill({
             color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
           }),
@@ -674,13 +679,13 @@
    * Create openlayers style
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
    * @param {GeometryStyles} GeometryStyles rulesconverter
-   * @param {object} feature geojson feature, @see {@link http://geojson.org|geojson} Changed in version 0.0.4
+   * @param {object|Feature} feature {@link http://geojson.org|geojson}
+   *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
    * @return ol.style.Style or array of it
    */
   function OlStyler(GeometryStyles, feature) {
-    var properties = feature.properties;
-    var geometry = feature.geometry;
-    var type = geometry.type;
+    var geometry = feature.getGeometry ? feature.getGeometry() : feature.geometry;
+    var type = geometry.getType ? geometry.getType() : geometry.type;
     var polygon = GeometryStyles.polygon;
     var line = GeometryStyles.line;
     var point = GeometryStyles.point;
@@ -693,7 +698,7 @@
           styles.push(polygonStyle(polygon[i]));
         }
         for (var j = 0; j < text.length; j += 1) {
-          styles.push(textStyle(text[j], { properties: properties }, 'polygon'));
+          styles.push(textStyle(text[j], feature, 'polygon'));
         }
         break;
       case 'LineString':
@@ -702,7 +707,7 @@
           styles.push(lineStyle(line[j$1]));
         }
         for (var j$2 = 0; j$2 < text.length; j$2 += 1) {
-          styles.push(textStyle(text[j$2], { properties: properties }, 'line'));
+          styles.push(textStyle(text[j$2], feature, 'line'));
         }
         break;
       case 'Point':
@@ -711,7 +716,7 @@
           styles.push(pointStyle(point[j$3]));
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          styles.push(textStyle(text[j$4], { properties: properties }, 'point'));
+          styles.push(textStyle(text[j$4], feature, 'point'));
         }
         break;
       default:
