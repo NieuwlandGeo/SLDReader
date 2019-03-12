@@ -185,9 +185,9 @@ function pointStyle(pointsymbolizer) {
 /**
  * @private
  * @param  {TextSymbolizer} textsymbolizer [description]
- * @param {object} feature feature object
- * @param {object} feature.properties properties of feature
- * @param {string} type geometry type, @see {@link http://geojson.org|geojson}
+ * @param {object|Feature} feature {@link http://geojson.org|geojson}
+ *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
+ * @param {string} type geometry type, @see {@link http://geojson.org|geojson} for possible types
  * @return {object} openlayers style
  */
 function textStyle(textsymbolizer, feature, type) {
@@ -252,7 +252,8 @@ function textStyle(textsymbolizer, feature, type) {
  * Create openlayers style
  * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
  * @param {GeometryStyles} GeometryStyles rulesconverter
- * @param {object} feature geojson feature, @see {@link http://geojson.org|geojson} Changed in version 0.0.4
+ * @param {object|Feature} feature {@link http://geojson.org|geojson}
+ *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(GeometryStyles, feature) {
