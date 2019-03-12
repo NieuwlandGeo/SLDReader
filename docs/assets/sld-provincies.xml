@@ -74,6 +74,12 @@
               <se:SvgParameter name="font-family">Noto Sans</se:SvgParameter>
               <se:SvgParameter name="font-size">13</se:SvgParameter>
             </se:Font>
+            <se:Halo>
+              <se:Radius>2</se:Radius>
+              <se:Fill>                
+                <se:SvgParameter name="fill">#FFFFFF</se:SvgParameter>
+              </se:Fill>
+            </se:Halo>
             <se:LabelPlacement>
               <se:PointPlacement>
                 <se:AnchorPoint>
