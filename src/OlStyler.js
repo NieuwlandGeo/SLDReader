@@ -6,6 +6,9 @@ import Icon from 'ol/style/icon';
 import RegularShape from 'ol/style/regularshape';
 import Text from 'ol/style/text';
 
+import { getRules } from './Utils';
+import getGeometryStyles from './GeometryStyles';
+
 /**
  * @private
  * @param  {string} hex   eg #AA00FF
@@ -304,4 +307,47 @@ export default function OlStyler(GeometryStyles, feature) {
       ];
   }
   return styles;
+}
+
+/**
+ * Extract feature id from an OpenLayers Feature.
+ * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
+ * @returns {string} Feature id.
+ */
+function getOlFeatureId(feature) {
+  return feature.getId();
+}
+
+/**
+ * Extract properties object from an OpenLayers Feature.
+ * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
+ * @returns {object} Feature properties object.
+ */
+function getOlFeatureProperties(feature) {
+  return feature.getProperties();
+}
+
+/**
+ * Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
+ * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
+ * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
+ * @example
+ * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle));
+ */
+export function createOlStyleFunction(featureTypeStyle) {
+  return (feature, resolution) => {
+    // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
+    const rules = getRules(featureTypeStyle, feature, resolution, {
+      getProperties: getOlFeatureProperties,
+      getFeatureId: getOlFeatureId,
+    });
+
+    // Convert style rules to style rule lookup categorized by geometry type.
+    const geometryStyles = getGeometryStyles(rules);
+
+    // Determine style rule array.
+    const olStyles = OlStyler(geometryStyles, feature);
+
+    return olStyles;
+  };
 }
