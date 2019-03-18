@@ -1,7 +1,8 @@
 function propertyIsLessThan(comparison, feature) {
   return (
-    feature.properties[comparison.propertyname]
-    && Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
+    feature.properties[comparison.propertyname] &&
+    Number(feature.properties[comparison.propertyname]) <
+      Number(comparison.literal)
   );
 }
 
@@ -29,7 +30,8 @@ function propertyIsEqualTo(comparison, feature) {
  */
 function propertyIsLike(comparison, feature) {
   const pattern = comparison.literal;
-  const value = feature.properties && feature.properties[comparison.propertyname];
+  const value =
+    feature.properties && feature.properties[comparison.propertyname];
 
   if (!value) {
     return false;
@@ -42,11 +44,17 @@ function propertyIsLike(comparison, feature) {
   let patternAsRegex = pattern.replace(new RegExp(`[${wildcard}]`, 'g'), '.*');
 
   // Replace single char match by '.'
-  patternAsRegex = patternAsRegex.replace(new RegExp(`[${singlechar}]`, 'g'), '.');
+  patternAsRegex = patternAsRegex.replace(
+    new RegExp(`[${singlechar}]`, 'g'),
+    '.'
+  );
 
   // Replace escape char by '\' if escape char is not already '\'.
   if (escapechar !== '\\') {
-    patternAsRegex = patternAsRegex.replace(new RegExp(`[${escapechar}]`, 'g'), '\\');
+    patternAsRegex = patternAsRegex.replace(
+      new RegExp(`[${escapechar}]`, 'g'),
+      '\\'
+    );
   }
 
   // Bookend the regular expression.
@@ -70,13 +78,22 @@ function doComparison(comparison, feature) {
     case 'propertyisequalto':
       return propertyIsEqualTo(comparison, feature);
     case 'propertyislessthanorequalto':
-      return propertyIsEqualTo(comparison, feature) || propertyIsLessThan(comparison, feature);
+      return (
+        propertyIsEqualTo(comparison, feature) ||
+        propertyIsLessThan(comparison, feature)
+      );
     case 'propertyisnotequalto':
       return !propertyIsEqualTo(comparison, feature);
     case 'propertyisgreaterthan':
-      return !propertyIsLessThan(comparison, feature) && !propertyIsEqualTo(comparison, feature);
+      return (
+        !propertyIsLessThan(comparison, feature) &&
+        !propertyIsEqualTo(comparison, feature)
+      );
     case 'propertyisgreaterthanorequalto':
-      return !propertyIsLessThan(comparison, feature) || propertyIsEqualTo(comparison, feature);
+      return (
+        !propertyIsLessThan(comparison, feature) ||
+        propertyIsEqualTo(comparison, feature)
+      );
     case 'propertyisbetween':
       return propertyIsBetween(comparison, feature);
     case 'propertyislike':
@@ -123,7 +140,9 @@ export function filterSelector(filter, feature) {
         return false;
       }
 
-      return filter.predicates.every(predicate => filterSelector(predicate, feature));
+      return filter.predicates.every(predicate =>
+        filterSelector(predicate, feature)
+      );
     }
 
     case 'or': {
@@ -131,7 +150,9 @@ export function filterSelector(filter, feature) {
         throw new Error('Or filter must have predicates array.');
       }
 
-      return filter.predicates.some(predicate => filterSelector(predicate, feature));
+      return filter.predicates.some(predicate =>
+        filterSelector(predicate, feature)
+      );
     }
 
     case 'not': {
@@ -156,10 +177,13 @@ export function filterSelector(filter, feature) {
  * @return {boolean}
  */
 export function scaleSelector(rule, resolution) {
-  if (rule.maxscaledenominator !== undefined && rule.minscaledenominator !== undefined) {
+  if (
+    rule.maxscaledenominator !== undefined &&
+    rule.minscaledenominator !== undefined
+  ) {
     if (
-      resolution / 0.00028 < rule.maxscaledenominator
-      && resolution / 0.00028 > rule.minscaledenominator
+      resolution / 0.00028 < rule.maxscaledenominator &&
+      resolution / 0.00028 > rule.minscaledenominator
     ) {
       return true;
     }
