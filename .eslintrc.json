@@ -37,6 +37,9 @@
         "exports": "always-multiline",
         "functions": "ignore"
       }
-    ]
+    ],
+    "operator-linebreak": "off",
+    "implicit-arrow-linebreak": "off",
+    "object-curly-newline": "off"
   }
 }
