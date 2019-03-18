@@ -1,8 +1,7 @@
 function propertyIsLessThan(comparison, properties) {
   return (
     properties[comparison.propertyname] &&
-    Number(properties[comparison.propertyname]) <
-      Number(comparison.literal)
+    Number(properties[comparison.propertyname]) < Number(comparison.literal)
   );
 }
 
@@ -30,8 +29,7 @@ function propertyIsEqualTo(comparison, properties) {
  */
 function propertyIsLike(comparison, properties) {
   const pattern = comparison.literal;
-  const value =
-    properties && properties[comparison.propertyname];
+  const value = properties && properties[comparison.propertyname];
 
   if (!value) {
     return false;

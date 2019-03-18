@@ -95,7 +95,7 @@ describe('Create OL Style function from SLD feature type style', () => {
   let featureTypeStyle;
   before(() => {
     sldObject = Reader(sld11);
-    featureTypeStyle = sldObject.layers[0].styles[0].featuretypestyles[0];
+    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
   });
 
   const geojson = {
