@@ -423,6 +423,358 @@
    * @property {Number} graphic.rotation
    * */
 
+  function propertyIsLessThan(comparison, properties) {
+    return (
+      properties[comparison.propertyname] &&
+      Number(properties[comparison.propertyname]) < Number(comparison.literal)
+    );
+  }
+
+  function propertyIsBetween(comparison, properties) {
+    // Todo: support string comparison as well
+    var lowerBoundary = Number(comparison.lowerboundary);
+    var upperBoundary = Number(comparison.upperboundary);
+    var value = Number(properties[comparison.propertyname]);
+    return value >= lowerBoundary && value <= upperBoundary;
+  }
+
+  function propertyIsEqualTo(comparison, properties) {
+    if (!(comparison.propertyname in properties)) {
+      return false;
+    }
+    /* eslint-disable-next-line eqeqeq */
+    return properties[comparison.propertyname] == comparison.literal;
+  }
+
+  /**
+   * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
+   * @private
+   * @param {object} comparison filter object for operator 'propertyislike'
+   * @param {object} properties Feature properties object.
+   */
+  function propertyIsLike(comparison, properties) {
+    var pattern = comparison.literal;
+    var value = properties && properties[comparison.propertyname];
+
+    if (!value) {
+      return false;
+    }
+
+    // Create regex string from match pattern.
+    var wildcard = comparison.wildcard;
+    var singlechar = comparison.singlechar;
+    var escapechar = comparison.escapechar;
+
+    // Replace wildcard by '.*'
+    var patternAsRegex = pattern.replace(new RegExp(("[" + wildcard + "]"), 'g'), '.*');
+
+    // Replace single char match by '.'
+    patternAsRegex = patternAsRegex.replace(
+      new RegExp(("[" + singlechar + "]"), 'g'),
+      '.'
+    );
+
+    // Replace escape char by '\' if escape char is not already '\'.
+    if (escapechar !== '\\') {
+      patternAsRegex = patternAsRegex.replace(
+        new RegExp(("[" + escapechar + "]"), 'g'),
+        '\\'
+      );
+    }
+
+    // Bookend the regular expression.
+    patternAsRegex = "^" + patternAsRegex + "$";
+
+    var rex = new RegExp(patternAsRegex);
+    return rex.test(value);
+  }
+
+  /**
+   * Test feature properties against a comparison filter.
+   * @private
+   * @param  {Filter} comparison A comparison filter object.
+   * @param  {object} properties Feature properties object.
+   * @return {bool}  does feature fullfill comparison
+   */
+  function doComparison(comparison, properties) {
+    switch (comparison.operator) {
+      case 'propertyislessthan':
+        return propertyIsLessThan(comparison, properties);
+      case 'propertyisequalto':
+        return propertyIsEqualTo(comparison, properties);
+      case 'propertyislessthanorequalto':
+        return (
+          propertyIsEqualTo(comparison, properties) ||
+          propertyIsLessThan(comparison, properties)
+        );
+      case 'propertyisnotequalto':
+        return !propertyIsEqualTo(comparison, properties);
+      case 'propertyisgreaterthan':
+        return (
+          !propertyIsLessThan(comparison, properties) &&
+          !propertyIsEqualTo(comparison, properties)
+        );
+      case 'propertyisgreaterthanorequalto':
+        return (
+          !propertyIsLessThan(comparison, properties) ||
+          propertyIsEqualTo(comparison, properties)
+        );
+      case 'propertyisbetween':
+        return propertyIsBetween(comparison, properties);
+      case 'propertyislike':
+        return propertyIsLike(comparison, properties);
+      default:
+        throw new Error(("Unkown comparison operator " + (comparison.operator)));
+    }
+  }
+
+  function doFIDFilter(fids, featureId) {
+    for (var i = 0; i < fids.length; i += 1) {
+      if (fids[i] === featureId) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Get feature properties from a GeoJSON feature.
+   * @param {object} feature GeoJSON feature.
+   * @returns {object} Feature properties.
+   */
+  function getGeoJSONProperties(feature) {
+    return feature.properties;
+  }
+
+  /**
+   * Gets feature id from a GeoJSON feature.
+   * @param {object} feature GeoJSON feature.
+   * @returns {number|string} Feature ID.
+   */
+  function getGeoJSONFeatureId(feature) {
+    return feature.id;
+  }
+
+  /**
+   * Calls functions from Filter object to test if feature passes filter.
+   * Functions are called with filter part they match and feature.
+   * @private
+   * @param  {Filter} filter
+   * @param  {object} feature feature
+   * @param  {object} options Custom filter options.
+   * @param  {Function} options.getProperties An optional function that can be used to extract properties from a feature.
+   * When not given, properties are read from feature.properties directly.
+   * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.
+   * When not given, feature id is read from feature.id.
+   * @return {boolean} True if the feature passes the conditions described by the filter object.
+   */
+  function filterSelector(filter, feature, options) {
+    if ( options === void 0 ) options = {};
+
+    var getProperties =
+      typeof options.getProperties === 'function'
+        ? options.getProperties
+        : getGeoJSONProperties;
+
+    var getFeatureId =
+      typeof options.getFeatureId === 'function'
+        ? options.getFeatureId
+        : getGeoJSONFeatureId;
+
+    var type = filter.type;
+    switch (type) {
+      case 'featureid':
+        return doFIDFilter(filter.fids, getFeatureId(feature));
+
+      case 'comparison':
+        return doComparison(filter, getProperties(feature));
+
+      case 'and': {
+        if (!filter.predicates) {
+          throw new Error('And filter must have predicates array.');
+        }
+
+        // And without predicates should return false.
+        if (filter.predicates.length === 0) {
+          return false;
+        }
+
+        return filter.predicates.every(function (predicate) { return filterSelector(predicate, feature, options); }
+        );
+      }
+
+      case 'or': {
+        if (!filter.predicates) {
+          throw new Error('Or filter must have predicates array.');
+        }
+
+        return filter.predicates.some(function (predicate) { return filterSelector(predicate, feature, options); }
+        );
+      }
+
+      case 'not': {
+        if (!filter.predicate) {
+          throw new Error('Not filter must have predicate.');
+        }
+
+        return !filterSelector(filter.predicate, feature, options);
+      }
+
+      default:
+        throw new Error(("Unknown filter type: " + type));
+    }
+  }
+
+  /**
+   * [scaleSelector description]
+   * The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
+   * @private
+   * @param  {Rule} rule
+   * @param  {number} resolution  m/px
+   * @return {boolean}
+   */
+  function scaleSelector(rule, resolution) {
+    if (
+      rule.maxscaledenominator !== undefined &&
+      rule.minscaledenominator !== undefined
+    ) {
+      if (
+        resolution / 0.00028 < rule.maxscaledenominator &&
+        resolution / 0.00028 > rule.minscaledenominator
+      ) {
+        return true;
+      }
+      return false;
+    }
+    if (rule.maxscaledenominator !== undefined) {
+      return resolution / 0.00028 < rule.maxscaledenominator;
+    }
+    if (rule.minscaledenominator !== undefined) {
+      return resolution / 0.00028 > rule.minscaledenominator;
+    }
+    return true;
+  }
+
+  /**
+   * get all layer names in sld
+   * @param {StyledLayerDescriptor} sld
+   * @return {string[]} registered layernames
+   */
+  function getLayerNames(sld) {
+    return sld.layers.map(function (l) { return l.name; });
+  }
+
+  /**
+   * Get layer definition from sld
+   * @param  {StyledLayerDescriptor} sld       [description]
+   * @param  {string} [layername] optional layername
+   * @return {Layer}           [description]
+   */
+  function getLayer(sld, layername) {
+    if (!layername) {
+      return sld.layers['0'];
+    }
+    return sld.layers.find(function (l) { return l.name === layername; });
+  }
+
+  /**
+   * getStyleNames, notice name is not required for userstyle, you might get undefined
+   * @param  {Layer} layer [description]
+   * @return {string[]}       [description]
+   */
+  function getStyleNames(layer) {
+    return layer.styles.map(function (s) { return s.name; });
+  }
+  /**
+   * get style from array layer.styles, if name is undefined it returns default style.
+   * null is no style found
+   * @param  {Layer} layer [description]
+   * @param {string} [name] of style
+   * @return {object} the style from layer.styles matching the name
+   */
+  function getStyle(layer, name) {
+    if (name) {
+      return layer.styles.find(function (s) { return s.name === name; });
+    }
+    return layer.styles.find(function (s) { return s.default; });
+  }
+
+  /**
+   * get rules for specific feature after applying filters
+   * @example
+   * const style = getStyle(sldLayer, stylename);
+   * getRules(style.featuretypestyles['0'], geojson, resolution);
+   * @param  {FeatureTypeStyle} featureTypeStyle
+   * @param  {object} feature geojson
+   * @param  {number} resolution m/px
+   * @param  {Function} options.getProperties An optional function that can be used to extract properties from a feature.
+   * When not given, properties are read from feature.properties directly.Error
+   * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.Error
+   * When not given, feature id is read from feature.id.
+   * @return {Rule[]}
+   */
+  function getRules(featureTypeStyle, feature, resolution, options) {
+    if ( options === void 0 ) options = {};
+
+    var result = [];
+    for (var j = 0; j < featureTypeStyle.rules.length; j += 1) {
+      var rule = featureTypeStyle.rules[j];
+      if (scaleSelector(rule, resolution)) {
+        if (rule.filter && filterSelector(rule.filter, feature, options)) {
+          result.push(rule);
+        } else if (rule.elsefilter && result.length === 0) {
+          result.push(rule);
+        } else if (!rule.elsefilter && !rule.filter) {
+          result.push(rule);
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Get styling from rules per geometry type
+   * @param  {Rule[]} rules [description]
+   * @return {GeometryStyles}
+   */
+  function getGeometryStyles(rules) {
+    var result = {
+      polygon: [],
+      line: [],
+      point: [],
+      text: [],
+    };
+    for (var i = 0; i < rules.length; i += 1) {
+      if (rules[i].polygonsymbolizer) {
+        result.polygon.push(rules[i].polygonsymbolizer);
+      }
+      if (rules[i].linesymbolizer && rules[i].linesymbolizer) {
+        result.line.push(rules[i].linesymbolizer);
+      }
+      if (rules[i].pointsymbolizer) {
+        var ref = rules[i];
+        var pointsymbolizer = ref.pointsymbolizer;
+        result.point.push(pointsymbolizer);
+      }
+      if (rules[i].textsymbolizer) {
+        var ref$1 = rules[i];
+        var textsymbolizer = ref$1.textsymbolizer;
+        result.text.push(textsymbolizer);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * @typedef GeometryStyles
+   * @name GeometryStyles
+   * @description contains for each geometry type the symbolizer from an array of rules
+   * @property {PolygonSymbolizer[]} polygon polygonsymbolizers
+   * @property {LineSymbolizer[]} line linesymbolizers
+   * @property {PointSymbolizer[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
+   */
+
   /**
    * @private
    * @param  {string} hex   eg #AA00FF
@@ -444,15 +796,20 @@
     var fill = style.fill && (style.fill.css || style.fill.svg);
     return new Style({
       fill:
-        fill
-        && new Fill({
-          color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
+        fill &&
+        new Fill({
+          color:
+            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+              ? hexToRGB(fill.fill, fill.fillOpacity)
+              : fill.fill,
         }),
       stroke:
-        stroke
-        && new Stroke({
+        stroke &&
+        new Stroke({
           color:
-            stroke.strokeOpacity && stroke.stroke && stroke.stroke.slice(0, 1) === '#'
+            stroke.strokeOpacity &&
+            stroke.stroke &&
+            stroke.stroke.slice(0, 1) === '#'
               ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
               : stroke.stroke || '#3399CC',
           width: stroke.strokeWidth || 1.25,
@@ -557,8 +914,8 @@
               radius1: radius,
               radius2: 0,
               stroke:
-                stroke
-                || new Stroke({
+                stroke ||
+                new Stroke({
                   color: fillColor,
                   width: radius / 2,
                 }),
@@ -573,8 +930,8 @@
               radius1: radius,
               radius2: 0,
               stroke:
-                stroke
-                || new Stroke({
+                stroke ||
+                new Stroke({
                   color: fillColor,
                   width: radius / 2,
                 }),
@@ -612,7 +969,9 @@
    * @return {object} openlayers style
    */
   function textStyle(textsymbolizer, feature, type) {
-    var properties = feature.getProperties ? feature.getProperties() : feature.properties;
+    var properties = feature.getProperties
+      ? feature.getProperties()
+      : feature.properties;
     if (textsymbolizer && textsymbolizer.label) {
       var parseText = {
         text: function (part) { return part; },
@@ -622,34 +981,63 @@
           return props[part] || '';
       },
       };
-      var label = textsymbolizer.label.length ? textsymbolizer.label : [textsymbolizer.label];
+      var label = textsymbolizer.label.length
+        ? textsymbolizer.label
+        : [textsymbolizer.label];
 
       var text = label.reduce(function (string, part) {
         var keys = Object.keys(part);
-        return string + (keys && parseText[keys[0]] ? parseText[keys[0]](part[keys[0]], properties) : '');
+        return (
+          string +
+          (keys && parseText[keys[0]]
+            ? parseText[keys[0]](part[keys[0]], properties)
+            : '')
+        );
       }, '');
 
-      var fill = textsymbolizer.fill ? textsymbolizer.fill.css || textsymbolizer.fill.svg : {};
-      var halo = textsymbolizer.halo && textsymbolizer.halo.fill ? textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg : {};
-      var haloRadius = textsymbolizer.halo && textsymbolizer.halo.radius ? parseFloat(textsymbolizer.halo.radius) : 1;
-      var ref = textsymbolizer.font && textsymbolizer.font.css ? textsymbolizer.font.css : {};
+      var fill = textsymbolizer.fill
+        ? textsymbolizer.fill.css || textsymbolizer.fill.svg
+        : {};
+      var halo =
+        textsymbolizer.halo && textsymbolizer.halo.fill
+          ? textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg
+          : {};
+      var haloRadius =
+        textsymbolizer.halo && textsymbolizer.halo.radius
+          ? parseFloat(textsymbolizer.halo.radius)
+          : 1;
+      var ref =
+        textsymbolizer.font && textsymbolizer.font.css
+          ? textsymbolizer.font.css
+          : {};
       var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
       var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
       var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
       var fontWeight = ref.fontWeight; if ( fontWeight === void 0 ) fontWeight = '';
 
-      var pointplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.pointplacement
-        ? textsymbolizer.labelplacement.pointplacement
-        : {};
-      var displacement = pointplacement && pointplacement.displacement ? pointplacement.displacement : {};
+      var pointplacement =
+        textsymbolizer &&
+        textsymbolizer.labelplacement &&
+        textsymbolizer.labelplacement.pointplacement
+          ? textsymbolizer.labelplacement.pointplacement
+          : {};
+      var displacement =
+        pointplacement && pointplacement.displacement
+          ? pointplacement.displacement
+          : {};
       var offsetX = displacement.displacementx ? displacement.displacementx : 0;
       var offsetY = displacement.displacementy ? displacement.displacementy : 0;
-      var lineplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.lineplacement
-        ? textsymbolizer.labelplacement.lineplacement
-        : null;
+      var lineplacement =
+        textsymbolizer &&
+        textsymbolizer.labelplacement &&
+        textsymbolizer.labelplacement.lineplacement
+          ? textsymbolizer.labelplacement.lineplacement
+          : null;
       var rotation = pointplacement.rotation ? pointplacement.rotation : 0;
 
       var placement = type !== 'point' && lineplacement ? 'line' : 'point';
+
+      // Halo styling
 
       return new Style({
         text: new Text({
@@ -661,13 +1049,24 @@
           placement: placement,
           textAlign: 'center',
           textBaseline: 'middle',
-          stroke: textsymbolizer.halo ? new Stroke({
-            color: halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#' ? hexToRGB(halo.fill, halo.fillOpacity) : halo.fill,
-            // wrong position width radius equal to 2 or 4
-            width: (haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius) * 2,
-          }) : undefined,
+          stroke: textsymbolizer.halo
+            ? new Stroke({
+              color:
+                halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
+                  ? hexToRGB(halo.fill, halo.fillOpacity)
+                  : halo.fill,
+              // wrong position width radius equal to 2 or 4
+              width:
+                (haloRadius === 2 || haloRadius === 4
+                  ? haloRadius - 0.00001
+                  : haloRadius) * 2,
+            })
+            : undefined,
           fill: new Fill({
-            color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
+            color:
+              fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+                ? hexToRGB(fill.fill, fill.fillOpacity)
+                : fill.fill,
           }),
         }),
       });
@@ -684,7 +1083,9 @@
    * @return ol.style.Style or array of it
    */
   function OlStyler(GeometryStyles, feature) {
-    var geometry = feature.getGeometry ? feature.getGeometry() : feature.geometry;
+    var geometry = feature.getGeometry
+      ? feature.getGeometry()
+      : feature.geometry;
     var type = geometry.getType ? geometry.getType() : geometry.type;
     var polygon = GeometryStyles.polygon;
     var line = GeometryStyles.line;
@@ -734,299 +1135,63 @@
   }
 
   /**
-   * Get styling from rules per geometry type
-   * @param  {Rule[]} rules [description]
-   * @return {GeometryStyles}
+   * Extract feature id from an OpenLayers Feature.
+   * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
+   * @returns {string} Feature id.
    */
-  function getGeometryStyles(rules) {
-    var result = {
-      polygon: [],
-      line: [],
-      point: [],
-      text: [],
-    };
-    for (var i = 0; i < rules.length; i += 1) {
-      if (rules[i].polygonsymbolizer) {
-        result.polygon.push(rules[i].polygonsymbolizer);
-      }
-      if (rules[i].linesymbolizer && rules[i].linesymbolizer) {
-        result.line.push(rules[i].linesymbolizer);
-      }
-      if (rules[i].pointsymbolizer) {
-        var ref = rules[i];
-        var pointsymbolizer = ref.pointsymbolizer;
-        result.point.push(pointsymbolizer);
-      }
-      if (rules[i].textsymbolizer) {
-        var ref$1 = rules[i];
-        var textsymbolizer = ref$1.textsymbolizer;
-        result.text.push(textsymbolizer);
-      }
-    }
-    return result;
+  function getOlFeatureId(feature) {
+    return feature.getId();
   }
 
   /**
-   * @typedef GeometryStyles
-   * @name GeometryStyles
-   * @description contains for each geometry type the symbolizer from an array of rules
-   * @property {PolygonSymbolizer[]} polygon polygonsymbolizers
-   * @property {LineSymbolizer[]} line linesymbolizers
-   * @property {PointSymbolizer[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
+   * Extract properties object from an OpenLayers Feature.
+   * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
+   * @returns {object} Feature properties object.
    */
-
-  function propertyIsLessThan(comparison, feature) {
-    return (
-      feature.properties[comparison.propertyname]
-      && Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
-    );
-  }
-
-  function propertyIsBetween(comparison, feature) {
-    // Todo: support string comparison as well
-    var lowerBoundary = Number(comparison.lowerboundary);
-    var upperBoundary = Number(comparison.upperboundary);
-    var value = Number(feature.properties[comparison.propertyname]);
-    return value >= lowerBoundary && value <= upperBoundary;
-  }
-
-  function propertyIsEqualTo(comparison, feature) {
-    if (!(comparison.propertyname in feature.properties)) {
-      return false;
-    }
-    /* eslint-disable-next-line eqeqeq */
-    return feature.properties[comparison.propertyname] == comparison.literal;
+  function getOlFeatureProperties(feature) {
+    return feature.getProperties();
   }
 
   /**
-   * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
-   * @private
-   * @param {object} comparison filter object for operator 'propertyislike'
-   * @param {object} feature the feature to test
-   */
-  function propertyIsLike(comparison, feature) {
-    var pattern = comparison.literal;
-    var value = feature.properties && feature.properties[comparison.propertyname];
-
-    if (!value) {
-      return false;
-    }
-
-    // Create regex string from match pattern.
-    var wildcard = comparison.wildcard;
-    var singlechar = comparison.singlechar;
-    var escapechar = comparison.escapechar;
-
-    // Replace wildcard by '.*'
-    var patternAsRegex = pattern.replace(new RegExp(("[" + wildcard + "]"), 'g'), '.*');
-
-    // Replace single char match by '.'
-    patternAsRegex = patternAsRegex.replace(new RegExp(("[" + singlechar + "]"), 'g'), '.');
-
-    // Replace escape char by '\' if escape char is not already '\'.
-    if (escapechar !== '\\') {
-      patternAsRegex = patternAsRegex.replace(new RegExp(("[" + escapechar + "]"), 'g'), '\\');
-    }
-
-    // Bookend the regular expression.
-    patternAsRegex = "^" + patternAsRegex + "$";
-
-    var rex = new RegExp(patternAsRegex);
-    return rex.test(value);
-  }
-
-  /**
-   * [doComparison description]
-   * @private
-   * @param  {Filter} comparison [description]
-   * @param  {object} feature    geojson
-   * @return {bool}  does feature fullfill comparison
-   */
-  function doComparison(comparison, feature) {
-    switch (comparison.operator) {
-      case 'propertyislessthan':
-        return propertyIsLessThan(comparison, feature);
-      case 'propertyisequalto':
-        return propertyIsEqualTo(comparison, feature);
-      case 'propertyislessthanorequalto':
-        return propertyIsEqualTo(comparison, feature) || propertyIsLessThan(comparison, feature);
-      case 'propertyisnotequalto':
-        return !propertyIsEqualTo(comparison, feature);
-      case 'propertyisgreaterthan':
-        return !propertyIsLessThan(comparison, feature) && !propertyIsEqualTo(comparison, feature);
-      case 'propertyisgreaterthanorequalto':
-        return !propertyIsLessThan(comparison, feature) || propertyIsEqualTo(comparison, feature);
-      case 'propertyisbetween':
-        return propertyIsBetween(comparison, feature);
-      case 'propertyislike':
-        return propertyIsLike(comparison, feature);
-      default:
-        throw new Error(("Unkown comparison operator " + (comparison.operator)));
-    }
-  }
-
-  function doFIDFilter(fids, feature) {
-    for (var i = 0; i < fids.length; i += 1) {
-      if (fids[i] === feature.id) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Calls functions from Filter object to test if feature passes filter.
-   * Functions are called with filter part they match and feature.
-   * @private
-   * @param  {Filter} filter
-   * @param  {object} feature feature
-   * @return {boolean}
-   */
-  function filterSelector(filter, feature) {
-    var type = filter.type;
-    switch (type) {
-      case 'featureid':
-        return doFIDFilter(filter.fids, feature);
-
-      case 'comparison':
-        return doComparison(filter, feature);
-
-      case 'and': {
-        if (!filter.predicates) {
-          throw new Error('And filter must have predicates array.');
-        }
-
-        // And without predicates should return false.
-        if (filter.predicates.length === 0) {
-          return false;
-        }
-
-        return filter.predicates.every(function (predicate) { return filterSelector(predicate, feature); });
-      }
-
-      case 'or': {
-        if (!filter.predicates) {
-          throw new Error('Or filter must have predicates array.');
-        }
-
-        return filter.predicates.some(function (predicate) { return filterSelector(predicate, feature); });
-      }
-
-      case 'not': {
-        if (!filter.predicate) {
-          throw new Error('Not filter must have predicate.');
-        }
-
-        return !filterSelector(filter.predicate, feature);
-      }
-
-      default:
-        throw new Error(("Unknown filter type: " + type));
-    }
-  }
-
-  /**
-   * [scaleSelector description]
-   * The "standardized rendering pixel size" is defined to be 0.28mm × 0.28mm
-   * @private
-   * @param  {Rule} rule
-   * @param  {number} resolution  m/px
-   * @return {boolean}
-   */
-  function scaleSelector(rule, resolution) {
-    if (rule.maxscaledenominator !== undefined && rule.minscaledenominator !== undefined) {
-      if (
-        resolution / 0.00028 < rule.maxscaledenominator
-        && resolution / 0.00028 > rule.minscaledenominator
-      ) {
-        return true;
-      }
-      return false;
-    }
-    if (rule.maxscaledenominator !== undefined) {
-      return resolution / 0.00028 < rule.maxscaledenominator;
-    }
-    if (rule.minscaledenominator !== undefined) {
-      return resolution / 0.00028 > rule.minscaledenominator;
-    }
-    return true;
-  }
-
-  /**
-   * get all layer names in sld
-   * @param {StyledLayerDescriptor} sld
-   * @return {string[]} registered layernames
-   */
-  function getLayerNames(sld) {
-    return sld.layers.map(function (l) { return l.name; });
-  }
-
-  /**
-   * Get layer definition from sld
-   * @param  {StyledLayerDescriptor} sld       [description]
-   * @param  {string} [layername] optional layername
-   * @return {Layer}           [description]
-   */
-  function getLayer(sld, layername) {
-    if (!layername) {
-      return sld.layers['0'];
-    }
-    return sld.layers.find(function (l) { return l.name === layername; });
-  }
-
-  /**
-   * getStyleNames, notice name is not required for userstyle, you might get undefined
-   * @param  {Layer} layer [description]
-   * @return {string[]}       [description]
-   */
-  function getStyleNames(layer) {
-    return layer.styles.map(function (s) { return s.name; });
-  }
-  /**
-   * get style from array layer.styles, if name is undefined it returns default style.
-   * null is no style found
-   * @param  {Layer} layer [description]
-   * @param {string} [name] of style
-   * @return {object} the style from layer.styles matching the name
-   */
-  function getStyle(layer, name) {
-    if (name) {
-      return layer.styles.find(function (s) { return s.name === name; });
-    }
-    return layer.styles.find(function (s) { return s.default; });
-  }
-
-  /**
-   * get rules for specific feature after applying filters
+   * Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
+   * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
+   * @param {object} options Options
+   * @param {function} convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
+   * When not given, the map resolution is used as-is.
+   * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
    * @example
-   * const style = getStyle(sldLayer, stylename);
-   * getRules(style.featuretypestyles['0'], geojson,resolution);
-   * @param  {FeatureTypeStyle} featureTypeStyle
-   * @param  {object} feature geojson
-   * @param  {number} resolution m/px
-   * @return {Rule[]}
+   * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle));
    */
-  function getRules(featureTypeStyle, feature, resolution) {
-    var result = [];
-    for (var j = 0; j < featureTypeStyle.rules.length; j += 1) {
-      var rule = featureTypeStyle.rules[j];
-      if (scaleSelector(rule, resolution)) {
-        if (rule.filter && filterSelector(rule.filter, feature)) {
-          result.push(rule);
-        } else if (rule.elsefilter && result.length === 0) {
-          result.push(rule);
-        } else if (!rule.elsefilter && !rule.filter) {
-          result.push(rule);
-        }
-      }
-    }
-    return result;
+  function createOlStyleFunction(featureTypeStyle, options) {
+    if ( options === void 0 ) options = {};
+
+    return function (feature, mapResolution) {
+      // Determine resolution in meters/pixel.
+      var resolution =
+        typeof options.convertResolution === 'function'
+          ? options.convertResolution(mapResolution)
+          : mapResolution;
+
+      // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
+      var rules = getRules(featureTypeStyle, feature, resolution, {
+        getProperties: getOlFeatureProperties,
+        getFeatureId: getOlFeatureId,
+      });
+
+      // Convert style rules to style rule lookup categorized by geometry type.
+      var geometryStyles = getGeometryStyles(rules);
+
+      // Determine style rule array.
+      var olStyles = OlStyler(geometryStyles, feature);
+
+      return olStyles;
+    };
   }
 
   exports.Reader = Reader;
   exports.getGeometryStyles = getGeometryStyles;
   exports.OlStyler = OlStyler;
+  exports.createOlStyleFunction = createOlStyleFunction;
   exports.getLayerNames = getLayerNames;
   exports.getLayer = getLayer;
   exports.getStyleNames = getStyleNames;
