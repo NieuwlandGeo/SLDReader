@@ -6,6 +6,9 @@ import Icon from 'ol/style/icon';
 import RegularShape from 'ol/style/regularshape';
 import Text from 'ol/style/text';
 
+import { getRules } from './Utils';
+import getGeometryStyles from './GeometryStyles';
+
 /**
  * @private
  * @param  {string} hex   eg #AA00FF
@@ -27,15 +30,20 @@ function polygonStyle(style) {
   const fill = style.fill && (style.fill.css || style.fill.svg);
   return new Style({
     fill:
-      fill
-      && new Fill({
-        color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
+      fill &&
+      new Fill({
+        color:
+          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+            ? hexToRGB(fill.fill, fill.fillOpacity)
+            : fill.fill,
       }),
     stroke:
-      stroke
-      && new Stroke({
+      stroke &&
+      new Stroke({
         color:
-          stroke.strokeOpacity && stroke.stroke && stroke.stroke.slice(0, 1) === '#'
+          stroke.strokeOpacity &&
+          stroke.stroke &&
+          stroke.stroke.slice(0, 1) === '#'
             ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
             : stroke.stroke || '#3399CC',
         width: stroke.strokeWidth || 1.25,
@@ -136,8 +144,8 @@ function pointStyle(pointsymbolizer) {
             radius1: radius,
             radius2: 0,
             stroke:
-              stroke
-              || new Stroke({
+              stroke ||
+              new Stroke({
                 color: fillColor,
                 width: radius / 2,
               }),
@@ -152,8 +160,8 @@ function pointStyle(pointsymbolizer) {
             radius1: radius,
             radius2: 0,
             stroke:
-              stroke
-              || new Stroke({
+              stroke ||
+              new Stroke({
                 color: fillColor,
                 width: radius / 2,
               }),
@@ -191,38 +199,72 @@ function pointStyle(pointsymbolizer) {
  * @return {object} openlayers style
  */
 function textStyle(textsymbolizer, feature, type) {
-  const properties = feature.getProperties ? feature.getProperties() : feature.properties;
+  const properties = feature.getProperties
+    ? feature.getProperties()
+    : feature.properties;
   if (textsymbolizer && textsymbolizer.label) {
     const parseText = {
       text: part => part,
       propertyname: (part, props = {}) => props[part] || '',
     };
-    const label = textsymbolizer.label.length ? textsymbolizer.label : [textsymbolizer.label];
+    const label = textsymbolizer.label.length
+      ? textsymbolizer.label
+      : [textsymbolizer.label];
 
     const text = label.reduce((string, part) => {
       const keys = Object.keys(part);
-      return string + (keys && parseText[keys[0]] ? parseText[keys[0]](part[keys[0]], properties) : '');
+      return (
+        string +
+        (keys && parseText[keys[0]]
+          ? parseText[keys[0]](part[keys[0]], properties)
+          : '')
+      );
     }, '');
 
-    const fill = textsymbolizer.fill ? textsymbolizer.fill.css || textsymbolizer.fill.svg : {};
-    const halo = textsymbolizer.halo && textsymbolizer.halo.fill ? textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg : {};
-    const haloRadius = textsymbolizer.halo && textsymbolizer.halo.radius ? parseFloat(textsymbolizer.halo.radius) : 1;
-    const {
-      fontFamily = 'sans-serif', fontSize = 10, fontStyle = '', fontWeight = '',
-    } = textsymbolizer.font && textsymbolizer.font.css ? textsymbolizer.font.css : {};
-
-    const pointplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.pointplacement
-      ? textsymbolizer.labelplacement.pointplacement
+    const fill = textsymbolizer.fill
+      ? textsymbolizer.fill.css || textsymbolizer.fill.svg
       : {};
-    const displacement = pointplacement && pointplacement.displacement ? pointplacement.displacement : {};
+    const halo =
+      textsymbolizer.halo && textsymbolizer.halo.fill
+        ? textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg
+        : {};
+    const haloRadius =
+      textsymbolizer.halo && textsymbolizer.halo.radius
+        ? parseFloat(textsymbolizer.halo.radius)
+        : 1;
+    const {
+      fontFamily = 'sans-serif',
+      fontSize = 10,
+      fontStyle = '',
+      fontWeight = '',
+    } =
+      textsymbolizer.font && textsymbolizer.font.css
+        ? textsymbolizer.font.css
+        : {};
+
+    const pointplacement =
+      textsymbolizer &&
+      textsymbolizer.labelplacement &&
+      textsymbolizer.labelplacement.pointplacement
+        ? textsymbolizer.labelplacement.pointplacement
+        : {};
+    const displacement =
+      pointplacement && pointplacement.displacement
+        ? pointplacement.displacement
+        : {};
     const offsetX = displacement.displacementx ? displacement.displacementx : 0;
     const offsetY = displacement.displacementy ? displacement.displacementy : 0;
-    const lineplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.lineplacement
-      ? textsymbolizer.labelplacement.lineplacement
-      : null;
+    const lineplacement =
+      textsymbolizer &&
+      textsymbolizer.labelplacement &&
+      textsymbolizer.labelplacement.lineplacement
+        ? textsymbolizer.labelplacement.lineplacement
+        : null;
     const rotation = pointplacement.rotation ? pointplacement.rotation : 0;
 
     const placement = type !== 'point' && lineplacement ? 'line' : 'point';
+
+    // Halo styling
 
     return new Style({
       text: new Text({
@@ -234,13 +276,24 @@ function textStyle(textsymbolizer, feature, type) {
         placement,
         textAlign: 'center',
         textBaseline: 'middle',
-        stroke: textsymbolizer.halo ? new Stroke({
-          color: halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#' ? hexToRGB(halo.fill, halo.fillOpacity) : halo.fill,
-          // wrong position width radius equal to 2 or 4
-          width: (haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius) * 2,
-        }) : undefined,
+        stroke: textsymbolizer.halo
+          ? new Stroke({
+            color:
+              halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
+                ? hexToRGB(halo.fill, halo.fillOpacity)
+                : halo.fill,
+            // wrong position width radius equal to 2 or 4
+            width:
+              (haloRadius === 2 || haloRadius === 4
+                ? haloRadius - 0.00001
+                : haloRadius) * 2,
+          })
+          : undefined,
         fill: new Fill({
-          color: fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#' ? hexToRGB(fill.fill, fill.fillOpacity) : fill.fill,
+          color:
+            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+              ? hexToRGB(fill.fill, fill.fillOpacity)
+              : fill.fill,
         }),
       }),
     });
@@ -257,11 +310,11 @@ function textStyle(textsymbolizer, feature, type) {
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(GeometryStyles, feature) {
-  const geometry = feature.getGeometry ? feature.getGeometry() : feature.geometry;
+  const geometry = feature.getGeometry
+    ? feature.getGeometry()
+    : feature.geometry;
   const type = geometry.getType ? geometry.getType() : geometry.type;
-  const {
-    polygon, line, point, text,
-  } = GeometryStyles;
+  const { polygon, line, point, text } = GeometryStyles;
   let styles = [];
   switch (type) {
     case 'Polygon':
@@ -304,4 +357,56 @@ export default function OlStyler(GeometryStyles, feature) {
       ];
   }
   return styles;
+}
+
+/**
+ * Extract feature id from an OpenLayers Feature.
+ * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
+ * @returns {string} Feature id.
+ */
+function getOlFeatureId(feature) {
+  return feature.getId();
+}
+
+/**
+ * Extract properties object from an OpenLayers Feature.
+ * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
+ * @returns {object} Feature properties object.
+ */
+function getOlFeatureProperties(feature) {
+  return feature.getProperties();
+}
+
+/**
+ * Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
+ * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
+ * @param {object} options Options
+ * @param {function} convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
+ * When not given, the map resolution is used as-is.
+ * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
+ * @example
+ * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle));
+ */
+export function createOlStyleFunction(featureTypeStyle, options = {}) {
+  return (feature, mapResolution) => {
+    // Determine resolution in meters/pixel.
+    const resolution =
+      typeof options.convertResolution === 'function'
+        ? options.convertResolution(mapResolution)
+        : mapResolution;
+
+    // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
+    const rules = getRules(featureTypeStyle, feature, resolution, {
+      getProperties: getOlFeatureProperties,
+      getFeatureId: getOlFeatureId,
+    });
+
+    // Convert style rules to style rule lookup categorized by geometry type.
+    const geometryStyles = getGeometryStyles(rules);
+
+    // Determine style rule array.
+    const olStyles = OlStyler(geometryStyles, feature);
+
+    return olStyles;
+  };
 }

@@ -355,3 +355,72 @@ describe('scale selector', () => {
     expect(scaleSelector(rule, 1000 * 0.00028)).to.be.false;
   });
 });
+
+describe('Custom Feature Id extraction', () => {
+  it('Tests against FID for a custom feature', () => {
+    const fidFilter = {
+      type: 'featureid',
+      fids: ['tasmania_water_bodies.2', 'tasmania_water_bodies.3'],
+    };
+
+    const myFeature = {
+      ogc_fid: 'tasmania_water_bodies.2',
+    };
+
+    const result = filterSelector(fidFilter, myFeature, {
+      getFeatureId: feature => feature.ogc_fid,
+    });
+
+    expect(result).to.be.true;
+  });
+});
+
+describe('Custom property extraction', () => {
+  const myFeature = {
+    getAttributes: () => ({
+      name: 'Test',
+      age: 42,
+    }),
+  };
+
+  it('Simple filter', () => {
+    const filter = {
+      type: 'comparison',
+      operator: 'propertyisequalto',
+      propertyname: 'name',
+      literal: 'Test1234',
+    };
+
+    const result = filterSelector(filter, myFeature, {
+      getProperties: feature => feature.getAttributes(),
+    });
+
+    expect(result).to.be.false;
+  });
+
+  it('Logical filter', () => {
+    const filter = {
+      type: 'and',
+      predicates: [
+        {
+          type: 'comparison',
+          operator: 'propertyisequalto',
+          propertyname: 'name',
+          literal: 'Test',
+        },
+        {
+          type: 'comparison',
+          operator: 'propertyisgreaterthan',
+          propertyname: 'Age',
+          literal: '40',
+        },
+      ],
+    };
+
+    const result = filterSelector(filter, myFeature, {
+      getProperties: feature => feature.getAttributes(),
+    });
+
+    expect(result).to.be.true;
+  });
+});

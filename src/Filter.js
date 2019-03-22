@@ -1,35 +1,35 @@
-function propertyIsLessThan(comparison, feature) {
+function propertyIsLessThan(comparison, properties) {
   return (
-    feature.properties[comparison.propertyname]
-    && Number(feature.properties[comparison.propertyname]) < Number(comparison.literal)
+    properties[comparison.propertyname] &&
+    Number(properties[comparison.propertyname]) < Number(comparison.literal)
   );
 }
 
-function propertyIsBetween(comparison, feature) {
+function propertyIsBetween(comparison, properties) {
   // Todo: support string comparison as well
   const lowerBoundary = Number(comparison.lowerboundary);
   const upperBoundary = Number(comparison.upperboundary);
-  const value = Number(feature.properties[comparison.propertyname]);
+  const value = Number(properties[comparison.propertyname]);
   return value >= lowerBoundary && value <= upperBoundary;
 }
 
-function propertyIsEqualTo(comparison, feature) {
-  if (!(comparison.propertyname in feature.properties)) {
+function propertyIsEqualTo(comparison, properties) {
+  if (!(comparison.propertyname in properties)) {
     return false;
   }
   /* eslint-disable-next-line eqeqeq */
-  return feature.properties[comparison.propertyname] == comparison.literal;
+  return properties[comparison.propertyname] == comparison.literal;
 }
 
 /**
  * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
  * @private
  * @param {object} comparison filter object for operator 'propertyislike'
- * @param {object} feature the feature to test
+ * @param {object} properties Feature properties object.
  */
-function propertyIsLike(comparison, feature) {
+function propertyIsLike(comparison, properties) {
   const pattern = comparison.literal;
-  const value = feature.properties && feature.properties[comparison.propertyname];
+  const value = properties && properties[comparison.propertyname];
 
   if (!value) {
     return false;
@@ -42,11 +42,17 @@ function propertyIsLike(comparison, feature) {
   let patternAsRegex = pattern.replace(new RegExp(`[${wildcard}]`, 'g'), '.*');
 
   // Replace single char match by '.'
-  patternAsRegex = patternAsRegex.replace(new RegExp(`[${singlechar}]`, 'g'), '.');
+  patternAsRegex = patternAsRegex.replace(
+    new RegExp(`[${singlechar}]`, 'g'),
+    '.'
+  );
 
   // Replace escape char by '\' if escape char is not already '\'.
   if (escapechar !== '\\') {
-    patternAsRegex = patternAsRegex.replace(new RegExp(`[${escapechar}]`, 'g'), '\\');
+    patternAsRegex = patternAsRegex.replace(
+      new RegExp(`[${escapechar}]`, 'g'),
+      '\\'
+    );
   }
 
   // Bookend the regular expression.
@@ -57,38 +63,47 @@ function propertyIsLike(comparison, feature) {
 }
 
 /**
- * [doComparison description]
+ * Test feature properties against a comparison filter.
  * @private
- * @param  {Filter} comparison [description]
- * @param  {object} feature    geojson
+ * @param  {Filter} comparison A comparison filter object.
+ * @param  {object} properties Feature properties object.
  * @return {bool}  does feature fullfill comparison
  */
-function doComparison(comparison, feature) {
+function doComparison(comparison, properties) {
   switch (comparison.operator) {
     case 'propertyislessthan':
-      return propertyIsLessThan(comparison, feature);
+      return propertyIsLessThan(comparison, properties);
     case 'propertyisequalto':
-      return propertyIsEqualTo(comparison, feature);
+      return propertyIsEqualTo(comparison, properties);
     case 'propertyislessthanorequalto':
-      return propertyIsEqualTo(comparison, feature) || propertyIsLessThan(comparison, feature);
+      return (
+        propertyIsEqualTo(comparison, properties) ||
+        propertyIsLessThan(comparison, properties)
+      );
     case 'propertyisnotequalto':
-      return !propertyIsEqualTo(comparison, feature);
+      return !propertyIsEqualTo(comparison, properties);
     case 'propertyisgreaterthan':
-      return !propertyIsLessThan(comparison, feature) && !propertyIsEqualTo(comparison, feature);
+      return (
+        !propertyIsLessThan(comparison, properties) &&
+        !propertyIsEqualTo(comparison, properties)
+      );
     case 'propertyisgreaterthanorequalto':
-      return !propertyIsLessThan(comparison, feature) || propertyIsEqualTo(comparison, feature);
+      return (
+        !propertyIsLessThan(comparison, properties) ||
+        propertyIsEqualTo(comparison, properties)
+      );
     case 'propertyisbetween':
-      return propertyIsBetween(comparison, feature);
+      return propertyIsBetween(comparison, properties);
     case 'propertyislike':
-      return propertyIsLike(comparison, feature);
+      return propertyIsLike(comparison, properties);
     default:
       throw new Error(`Unkown comparison operator ${comparison.operator}`);
   }
 }
 
-function doFIDFilter(fids, feature) {
+function doFIDFilter(fids, featureId) {
   for (let i = 0; i < fids.length; i += 1) {
-    if (fids[i] === feature.id) {
+    if (fids[i] === featureId) {
       return true;
     }
   }
@@ -97,21 +112,54 @@ function doFIDFilter(fids, feature) {
 }
 
 /**
+ * Get feature properties from a GeoJSON feature.
+ * @param {object} feature GeoJSON feature.
+ * @returns {object} Feature properties.
+ */
+function getGeoJSONProperties(feature) {
+  return feature.properties;
+}
+
+/**
+ * Gets feature id from a GeoJSON feature.
+ * @param {object} feature GeoJSON feature.
+ * @returns {number|string} Feature ID.
+ */
+function getGeoJSONFeatureId(feature) {
+  return feature.id;
+}
+
+/**
  * Calls functions from Filter object to test if feature passes filter.
  * Functions are called with filter part they match and feature.
  * @private
  * @param  {Filter} filter
  * @param  {object} feature feature
- * @return {boolean}
+ * @param  {object} options Custom filter options.
+ * @param  {Function} options.getProperties An optional function that can be used to extract properties from a feature.
+ * When not given, properties are read from feature.properties directly.
+ * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.
+ * When not given, feature id is read from feature.id.
+ * @return {boolean} True if the feature passes the conditions described by the filter object.
  */
-export function filterSelector(filter, feature) {
+export function filterSelector(filter, feature, options = {}) {
+  const getProperties =
+    typeof options.getProperties === 'function'
+      ? options.getProperties
+      : getGeoJSONProperties;
+
+  const getFeatureId =
+    typeof options.getFeatureId === 'function'
+      ? options.getFeatureId
+      : getGeoJSONFeatureId;
+
   const { type } = filter;
   switch (type) {
     case 'featureid':
-      return doFIDFilter(filter.fids, feature);
+      return doFIDFilter(filter.fids, getFeatureId(feature));
 
     case 'comparison':
-      return doComparison(filter, feature);
+      return doComparison(filter, getProperties(feature));
 
     case 'and': {
       if (!filter.predicates) {
@@ -123,7 +171,9 @@ export function filterSelector(filter, feature) {
         return false;
       }
 
-      return filter.predicates.every(predicate => filterSelector(predicate, feature));
+      return filter.predicates.every(predicate =>
+        filterSelector(predicate, feature, options)
+      );
     }
 
     case 'or': {
@@ -131,7 +181,9 @@ export function filterSelector(filter, feature) {
         throw new Error('Or filter must have predicates array.');
       }
 
-      return filter.predicates.some(predicate => filterSelector(predicate, feature));
+      return filter.predicates.some(predicate =>
+        filterSelector(predicate, feature, options)
+      );
     }
 
     case 'not': {
@@ -139,7 +191,7 @@ export function filterSelector(filter, feature) {
         throw new Error('Not filter must have predicate.');
       }
 
-      return !filterSelector(filter.predicate, feature);
+      return !filterSelector(filter.predicate, feature, options);
     }
 
     default:
@@ -156,10 +208,13 @@ export function filterSelector(filter, feature) {
  * @return {boolean}
  */
 export function scaleSelector(rule, resolution) {
-  if (rule.maxscaledenominator !== undefined && rule.minscaledenominator !== undefined) {
+  if (
+    rule.maxscaledenominator !== undefined &&
+    rule.minscaledenominator !== undefined
+  ) {
     if (
-      resolution / 0.00028 < rule.maxscaledenominator
-      && resolution / 0.00028 > rule.minscaledenominator
+      resolution / 0.00028 < rule.maxscaledenominator &&
+      resolution / 0.00028 > rule.minscaledenominator
     ) {
       return true;
     }

@@ -47,18 +47,22 @@ export function getStyle(layer, name) {
  * get rules for specific feature after applying filters
  * @example
  * const style = getStyle(sldLayer, stylename);
- * getRules(style.featuretypestyles['0'], geojson,resolution);
+ * getRules(style.featuretypestyles['0'], geojson, resolution);
  * @param  {FeatureTypeStyle} featureTypeStyle
  * @param  {object} feature geojson
  * @param  {number} resolution m/px
+ * @param  {Function} options.getProperties An optional function that can be used to extract properties from a feature.
+ * When not given, properties are read from feature.properties directly.Error
+ * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.Error
+ * When not given, feature id is read from feature.id.
  * @return {Rule[]}
  */
-export function getRules(featureTypeStyle, feature, resolution) {
+export function getRules(featureTypeStyle, feature, resolution, options = {}) {
   const result = [];
   for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
     const rule = featureTypeStyle.rules[j];
     if (scaleSelector(rule, resolution)) {
-      if (rule.filter && filterSelector(rule.filter, feature)) {
+      if (rule.filter && filterSelector(rule.filter, feature, options)) {
         result.push(rule);
       } else if (rule.elsefilter && result.length === 0) {
         result.push(rule);
