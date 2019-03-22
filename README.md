@@ -63,7 +63,7 @@ To, install dependencies, test, build and document
 ```
 npm install
 npm test
-npm build
+npm run build
 npm run docs
 docker-compose up (runs doc website on :4000)
 ```
