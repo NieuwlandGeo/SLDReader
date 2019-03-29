@@ -381,7 +381,7 @@ function getOlFeatureProperties(feature) {
  * Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
  * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
  * @param {object} options Options
- * @param {function} convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
+ * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
  * When not given, the map resolution is used as-is.
  * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
  * @example
