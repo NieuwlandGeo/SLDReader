@@ -60,7 +60,7 @@ Some older browsers need polyfills to use this library. E.g. [es6.array.find](ht
 
 ### Creating an issue
 
-Please include a example sld
+Please include an example sld
 
 ### Development dependencies
 
