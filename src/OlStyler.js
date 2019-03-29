@@ -335,6 +335,17 @@ const cachedPointStyle = memoize(pointStyle);
 const cachedLineStyle = memoize(lineStyle);
 const cachedPolygonStyle = memoize(polygonStyle);
 
+const defaultStyles = [
+  new Style({
+    image: new Circle({
+      radius: 2,
+      fill: new Fill({
+        color: 'blue',
+      }),
+    }),
+  }),
+];
+
 /**
  * Create openlayers style
  * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
@@ -379,16 +390,7 @@ export default function OlStyler(GeometryStyles, feature) {
       }
       break;
     default:
-      styles = [
-        new Style({
-          image: new Circle({
-            radius: 2,
-            fill: new Fill({
-              color: 'blue',
-            }),
-          }),
-        }),
-      ];
+      styles = defaultStyles;
   }
   return styles;
 }
