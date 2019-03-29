@@ -26,7 +26,7 @@ npm start
 
 ## Api docs
 
-[Api docs](docs/api.md)
+[Api docs](https://nieuwlandgeo.github.io/SLDReader/api.html)
 
 ## Supported SLD Features
 
@@ -56,7 +56,26 @@ npm start
 
 Some older browsers need polyfills to use this library. E.g. [es6.array.find](https://www.npmjs.com/package/core-js#ecmascript-6-array)
 
-## Commands
+## Contributing
+
+### Creating an issue
+
+Please include an example sld
+
+### Development dependencies
+
+* node & npm 
+* git
+* docker (optional)
+
+### Pull requests
+
+* Address a single issue or add a single item of functionality.
+* Create a test for your functionality
+* Follow eslint rules and apply prettier
+* Update or add an example
+
+### Commands
 
 To, install dependencies, test, build and document
 
@@ -67,3 +86,5 @@ npm run build
 npm run docs
 docker-compose up (runs doc website on :4000)
 ```
+
+
