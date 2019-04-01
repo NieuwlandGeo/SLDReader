@@ -1,7 +1,10 @@
 sudo: false
 language: node_js
 node_js:
-  - '8'
+  - '10'
+env:
+  - MOZ_HEADLESS=1  
 script:
   - npm run lint
   - npm test
+
