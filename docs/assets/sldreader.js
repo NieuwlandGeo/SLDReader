@@ -1074,6 +1074,50 @@
     return new Style({});
   }
 
+  // Create memoized versions of the style converters.
+  // They use a WeakMap to return the same OL style object if the symbolizer is the same.
+  // Note: this only works for constant symbolizers!
+  // Todo: find a smart way to optimize text symbolizers.
+
+  /**
+   * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
+   * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
+   * Uses a WeakMap internally.
+   * Note: This only works for constant symbolizers.
+   * Note: Text symbolizers depend on the feature property and the geometry type, these cannot be cached in this way.
+   * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
+   * @returns {Function} The memoized function of the style conversion function.
+   */
+  function memoize(styleFunction) {
+    var styleCache = new WeakMap();
+
+    return function (symbolizer) {
+      var olStyle = styleCache.get(symbolizer);
+
+      if (!olStyle) {
+        olStyle = styleFunction(symbolizer);
+        styleCache.set(symbolizer, olStyle);
+      }
+
+      return olStyle;
+    };
+  }
+
+  // Memoized versions of point, line and polygon style converters.
+  var cachedPointStyle = memoize(pointStyle);
+  var cachedLineStyle = memoize(lineStyle);
+  var cachedPolygonStyle = memoize(polygonStyle);
+
+  var defaultStyles = [
+    new Style({
+      image: new Circle({
+        radius: 2,
+        fill: new Fill({
+          color: 'blue',
+        }),
+      }),
+    }) ];
+
   /**
    * Create openlayers style
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
@@ -1096,7 +1140,7 @@
       case 'Polygon':
       case 'MultiPolygon':
         for (var i = 0; i < polygon.length; i += 1) {
-          styles.push(polygonStyle(polygon[i]));
+          styles.push(cachedPolygonStyle(polygon[i]));
         }
         for (var j = 0; j < text.length; j += 1) {
           styles.push(textStyle(text[j], feature, 'polygon'));
@@ -1105,7 +1149,7 @@
       case 'LineString':
       case 'MultiLineString':
         for (var j$1 = 0; j$1 < line.length; j$1 += 1) {
-          styles.push(lineStyle(line[j$1]));
+          styles.push(cachedLineStyle(line[j$1]));
         }
         for (var j$2 = 0; j$2 < text.length; j$2 += 1) {
           styles.push(textStyle(text[j$2], feature, 'line'));
@@ -1114,22 +1158,14 @@
       case 'Point':
       case 'MultiPoint':
         for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
-          styles.push(pointStyle(point[j$3]));
+          styles.push(cachedPointStyle(point[j$3]));
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
           styles.push(textStyle(text[j$4], feature, 'point'));
         }
         break;
       default:
-        styles = [
-          new Style({
-            image: new Circle({
-              radius: 2,
-              fill: new Fill({
-                color: 'blue',
-              }),
-            }),
-          }) ];
+        styles = defaultStyles;
     }
     return styles;
   }
@@ -1188,15 +1224,15 @@
     };
   }
 
-  exports.Reader = Reader;
-  exports.getGeometryStyles = getGeometryStyles;
   exports.OlStyler = OlStyler;
+  exports.Reader = Reader;
   exports.createOlStyleFunction = createOlStyleFunction;
-  exports.getLayerNames = getLayerNames;
+  exports.getGeometryStyles = getGeometryStyles;
   exports.getLayer = getLayer;
-  exports.getStyleNames = getStyleNames;
-  exports.getStyle = getStyle;
+  exports.getLayerNames = getLayerNames;
   exports.getRules = getRules;
+  exports.getStyle = getStyle;
+  exports.getStyleNames = getStyleNames;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
