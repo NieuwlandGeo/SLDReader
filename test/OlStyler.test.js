@@ -40,7 +40,7 @@ describe('create ol style object from styledescription', () => {
 
   it('returns array', () => {
     const style = OlStyler(styleDescription, getFeature('Polygon'));
-    expect(style).to.be.an.array;
+    expect(style).to.be.an('array');
   });
   it('returns object with polygon style', () => {
     const style = OlStyler(styleDescription, getFeature('Polygon'));
@@ -82,7 +82,7 @@ describe('creates point style', () => {
   };
   it('returns array', () => {
     const style = OlStyler(styleDescription, getFeature('Point'));
-    expect(style).to.be.an.array;
+    expect(style).to.be.an('array');
   });
   it('returns style', () => {
     const style = OlStyler(styleDescription, getFeature('Point'));
