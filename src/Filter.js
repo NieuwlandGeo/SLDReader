@@ -1,21 +1,19 @@
-function propertyIsLessThan(comparison, feature, getProperty) {
-  const value = getProperty(feature, comparison.propertyname);
+function propertyIsLessThan(comparison, value) {
   return (
     // Todo: support string comparison as well
     typeof value !== 'undefined' && Number(value) < Number(comparison.literal)
   );
 }
 
-function propertyIsBetween(comparison, feature, getProperty) {
+function propertyIsBetween(comparison, value) {
   // Todo: support string comparison as well
   const lowerBoundary = Number(comparison.lowerboundary);
   const upperBoundary = Number(comparison.upperboundary);
-  const value = Number(getProperty(feature, comparison.propertyname));
-  return value >= lowerBoundary && value <= upperBoundary;
+  const numericValue = Number(value);
+  return numericValue >= lowerBoundary && numericValue <= upperBoundary;
 }
 
-function propertyIsEqualTo(comparison, feature, getProperty) {
-  const value = getProperty(feature, comparison.propertyname);
+function propertyIsEqualTo(comparison, value) {
   if (typeof value === 'undefined') {
     return false;
   }
@@ -27,13 +25,12 @@ function propertyIsEqualTo(comparison, feature, getProperty) {
  * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
  * @private
  * @param {object} comparison filter object for operator 'propertyislike'
- * @param {object} feature Feature object.
+ * @param {string|number} value Feature property value.
  * @param {object} getProperty A function with parameters (feature, propertyName) to extract
  * the value of a property from a feature.
  */
-function propertyIsLike(comparison, feature, getProperty) {
+function propertyIsLike(comparison, value) {
   const pattern = comparison.literal;
-  const value = getProperty(feature, comparison.propertyname);
 
   if (typeof value === 'undefined') {
     return false;
@@ -76,32 +73,34 @@ function propertyIsLike(comparison, feature, getProperty) {
  * @return {bool}  does feature fullfill comparison
  */
 function doComparison(comparison, feature, getProperty) {
+  const value = getProperty(feature, comparison.propertyname);
+
   switch (comparison.operator) {
     case 'propertyislessthan':
-      return propertyIsLessThan(comparison, feature, getProperty);
+      return propertyIsLessThan(comparison, value);
     case 'propertyisequalto':
-      return propertyIsEqualTo(comparison, feature, getProperty);
+      return propertyIsEqualTo(comparison, value);
     case 'propertyislessthanorequalto':
       return (
-        propertyIsEqualTo(comparison, feature, getProperty) ||
-        propertyIsLessThan(comparison, feature, getProperty)
+        propertyIsEqualTo(comparison, value) ||
+        propertyIsLessThan(comparison, value)
       );
     case 'propertyisnotequalto':
-      return !propertyIsEqualTo(comparison, feature, getProperty);
+      return !propertyIsEqualTo(comparison, value);
     case 'propertyisgreaterthan':
       return (
-        !propertyIsLessThan(comparison, feature, getProperty) &&
-        !propertyIsEqualTo(comparison, feature, getProperty)
+        !propertyIsLessThan(comparison, value) &&
+        !propertyIsEqualTo(comparison, value)
       );
     case 'propertyisgreaterthanorequalto':
       return (
-        !propertyIsLessThan(comparison, feature, getProperty) ||
-        propertyIsEqualTo(comparison, feature, getProperty)
+        !propertyIsLessThan(comparison, value) ||
+        propertyIsEqualTo(comparison, value)
       );
     case 'propertyisbetween':
-      return propertyIsBetween(comparison, feature, getProperty);
+      return propertyIsBetween(comparison, value);
     case 'propertyislike':
-      return propertyIsLike(comparison, feature, getProperty);
+      return propertyIsLike(comparison, value);
     default:
       throw new Error(`Unkown comparison operator ${comparison.operator}`);
   }
