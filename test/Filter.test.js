@@ -392,7 +392,7 @@ describe('Custom property extraction', () => {
     };
 
     const result = filterSelector(filter, myFeature, {
-      getProperties: feature => feature.getAttributes(),
+      getProperty: (feature, propertyName) => feature.getAttributes()[propertyName],
     });
 
     expect(result).to.be.false;
@@ -418,7 +418,7 @@ describe('Custom property extraction', () => {
     };
 
     const result = filterSelector(filter, myFeature, {
-      getProperties: feature => feature.getAttributes(),
+      getProperty: (feature, propertyName) => feature.getAttributes()[propertyName],
     });
 
     expect(result).to.be.true;
