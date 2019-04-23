@@ -1,37 +1,38 @@
-function propertyIsLessThan(comparison, properties) {
+function propertyIsLessThan(comparison, value) {
   return (
-    properties[comparison.propertyname] &&
-    Number(properties[comparison.propertyname]) < Number(comparison.literal)
+    // Todo: support string comparison as well
+    typeof value !== 'undefined' && Number(value) < Number(comparison.literal)
   );
 }
 
-function propertyIsBetween(comparison, properties) {
+function propertyIsBetween(comparison, value) {
   // Todo: support string comparison as well
   const lowerBoundary = Number(comparison.lowerboundary);
   const upperBoundary = Number(comparison.upperboundary);
-  const value = Number(properties[comparison.propertyname]);
-  return value >= lowerBoundary && value <= upperBoundary;
+  const numericValue = Number(value);
+  return numericValue >= lowerBoundary && numericValue <= upperBoundary;
 }
 
-function propertyIsEqualTo(comparison, properties) {
-  if (!(comparison.propertyname in properties)) {
+function propertyIsEqualTo(comparison, value) {
+  if (typeof value === 'undefined') {
     return false;
   }
   /* eslint-disable-next-line eqeqeq */
-  return properties[comparison.propertyname] == comparison.literal;
+  return value == comparison.literal;
 }
 
 /**
  * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
  * @private
  * @param {object} comparison filter object for operator 'propertyislike'
- * @param {object} properties Feature properties object.
+ * @param {string|number} value Feature property value.
+ * @param {object} getProperty A function with parameters (feature, propertyName) to extract
+ * the value of a property from a feature.
  */
-function propertyIsLike(comparison, properties) {
+function propertyIsLike(comparison, value) {
   const pattern = comparison.literal;
-  const value = properties && properties[comparison.propertyname];
 
-  if (!value) {
+  if (typeof value === 'undefined') {
     return false;
   }
 
@@ -66,36 +67,40 @@ function propertyIsLike(comparison, properties) {
  * Test feature properties against a comparison filter.
  * @private
  * @param  {Filter} comparison A comparison filter object.
- * @param  {object} properties Feature properties object.
+ * @param  {object} feature A feature object.
+ * @param  {Function} getProperty A function with parameters (feature, propertyName)
+ * to extract a single property value from a feature.
  * @return {bool}  does feature fullfill comparison
  */
-function doComparison(comparison, properties) {
+function doComparison(comparison, feature, getProperty) {
+  const value = getProperty(feature, comparison.propertyname);
+
   switch (comparison.operator) {
     case 'propertyislessthan':
-      return propertyIsLessThan(comparison, properties);
+      return propertyIsLessThan(comparison, value);
     case 'propertyisequalto':
-      return propertyIsEqualTo(comparison, properties);
+      return propertyIsEqualTo(comparison, value);
     case 'propertyislessthanorequalto':
       return (
-        propertyIsEqualTo(comparison, properties) ||
-        propertyIsLessThan(comparison, properties)
+        propertyIsEqualTo(comparison, value) ||
+        propertyIsLessThan(comparison, value)
       );
     case 'propertyisnotequalto':
-      return !propertyIsEqualTo(comparison, properties);
+      return !propertyIsEqualTo(comparison, value);
     case 'propertyisgreaterthan':
       return (
-        !propertyIsLessThan(comparison, properties) &&
-        !propertyIsEqualTo(comparison, properties)
+        !propertyIsLessThan(comparison, value) &&
+        !propertyIsEqualTo(comparison, value)
       );
     case 'propertyisgreaterthanorequalto':
       return (
-        !propertyIsLessThan(comparison, properties) ||
-        propertyIsEqualTo(comparison, properties)
+        !propertyIsLessThan(comparison, value) ||
+        propertyIsEqualTo(comparison, value)
       );
     case 'propertyisbetween':
-      return propertyIsBetween(comparison, properties);
+      return propertyIsBetween(comparison, value);
     case 'propertyislike':
-      return propertyIsLike(comparison, properties);
+      return propertyIsLike(comparison, value);
     default:
       throw new Error(`Unkown comparison operator ${comparison.operator}`);
   }
@@ -116,8 +121,8 @@ function doFIDFilter(fids, featureId) {
  * @param {object} feature GeoJSON feature.
  * @returns {object} Feature properties.
  */
-function getGeoJSONProperties(feature) {
-  return feature.properties;
+function getGeoJSONProperty(feature, propertyName) {
+  return feature.properties[propertyName];
 }
 
 /**
@@ -136,17 +141,18 @@ function getGeoJSONFeatureId(feature) {
  * @param  {Filter} filter
  * @param  {object} feature feature
  * @param  {object} options Custom filter options.
- * @param  {Function} options.getProperties An optional function that can be used to extract properties from a feature.
+ * @param  {Function} options.getProperty An optional function with parameters (feature, propertyName)
+ * that can be used to extract properties from a feature.
  * When not given, properties are read from feature.properties directly.
  * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.
  * When not given, feature id is read from feature.id.
  * @return {boolean} True if the feature passes the conditions described by the filter object.
  */
 export function filterSelector(filter, feature, options = {}) {
-  const getProperties =
-    typeof options.getProperties === 'function'
-      ? options.getProperties
-      : getGeoJSONProperties;
+  const getProperty =
+    typeof options.getProperty === 'function'
+      ? options.getProperty
+      : getGeoJSONProperty;
 
   const getFeatureId =
     typeof options.getFeatureId === 'function'
@@ -159,7 +165,7 @@ export function filterSelector(filter, feature, options = {}) {
       return doFIDFilter(filter.fids, getFeatureId(feature));
 
     case 'comparison':
-      return doComparison(filter, getProperties(feature));
+      return doComparison(filter, feature, getProperty);
 
     case 'and': {
       if (!filter.predicates) {

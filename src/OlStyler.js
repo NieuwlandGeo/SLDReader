@@ -405,12 +405,13 @@ function getOlFeatureId(feature) {
 }
 
 /**
- * Extract properties object from an OpenLayers Feature.
+ * Extract a property value from an OpenLayers Feature.
  * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
- * @returns {object} Feature properties object.
+ * @param {string} propertyName The name of the feature property to read.
+ * @returns {object} Property value.
  */
-function getOlFeatureProperties(feature) {
-  return feature.getProperties();
+function getOlFeatureProperty(feature, propertyName) {
+  return feature.get(propertyName);
 }
 
 /**
@@ -433,7 +434,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
 
     // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
     const rules = getRules(featureTypeStyle, feature, resolution, {
-      getProperties: getOlFeatureProperties,
+      getProperty: getOlFeatureProperty,
       getFeatureId: getOlFeatureId,
     });
 

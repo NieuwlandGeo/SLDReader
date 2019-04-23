@@ -51,7 +51,8 @@ export function getStyle(layer, name) {
  * @param  {FeatureTypeStyle} featureTypeStyle
  * @param  {object} feature geojson
  * @param  {number} resolution m/px
- * @param  {Function} options.getProperties An optional function that can be used to extract properties from a feature.
+ * @param  {Function} options.getProperty An optional function with parameters (feature, propertyName)
+ * that can be used to extract a property value from a feature.
  * When not given, properties are read from feature.properties directly.Error
  * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.Error
  * When not given, feature id is read from feature.id.
