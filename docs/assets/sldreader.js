@@ -423,40 +423,41 @@
    * @property {Number} graphic.rotation
    * */
 
-  function propertyIsLessThan(comparison, properties) {
+  function propertyIsLessThan(comparison, value) {
     return (
-      properties[comparison.propertyname] &&
-      Number(properties[comparison.propertyname]) < Number(comparison.literal)
+      // Todo: support string comparison as well
+      typeof value !== 'undefined' && Number(value) < Number(comparison.literal)
     );
   }
 
-  function propertyIsBetween(comparison, properties) {
+  function propertyIsBetween(comparison, value) {
     // Todo: support string comparison as well
     var lowerBoundary = Number(comparison.lowerboundary);
     var upperBoundary = Number(comparison.upperboundary);
-    var value = Number(properties[comparison.propertyname]);
-    return value >= lowerBoundary && value <= upperBoundary;
+    var numericValue = Number(value);
+    return numericValue >= lowerBoundary && numericValue <= upperBoundary;
   }
 
-  function propertyIsEqualTo(comparison, properties) {
-    if (!(comparison.propertyname in properties)) {
+  function propertyIsEqualTo(comparison, value) {
+    if (typeof value === 'undefined') {
       return false;
     }
     /* eslint-disable-next-line eqeqeq */
-    return properties[comparison.propertyname] == comparison.literal;
+    return value == comparison.literal;
   }
 
   /**
    * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
    * @private
    * @param {object} comparison filter object for operator 'propertyislike'
-   * @param {object} properties Feature properties object.
+   * @param {string|number} value Feature property value.
+   * @param {object} getProperty A function with parameters (feature, propertyName) to extract
+   * the value of a property from a feature.
    */
-  function propertyIsLike(comparison, properties) {
+  function propertyIsLike(comparison, value) {
     var pattern = comparison.literal;
-    var value = properties && properties[comparison.propertyname];
 
-    if (!value) {
+    if (typeof value === 'undefined') {
       return false;
     }
 
@@ -493,36 +494,40 @@
    * Test feature properties against a comparison filter.
    * @private
    * @param  {Filter} comparison A comparison filter object.
-   * @param  {object} properties Feature properties object.
+   * @param  {object} feature A feature object.
+   * @param  {Function} getProperty A function with parameters (feature, propertyName)
+   * to extract a single property value from a feature.
    * @return {bool}  does feature fullfill comparison
    */
-  function doComparison(comparison, properties) {
+  function doComparison(comparison, feature, getProperty) {
+    var value = getProperty(feature, comparison.propertyname);
+
     switch (comparison.operator) {
       case 'propertyislessthan':
-        return propertyIsLessThan(comparison, properties);
+        return propertyIsLessThan(comparison, value);
       case 'propertyisequalto':
-        return propertyIsEqualTo(comparison, properties);
+        return propertyIsEqualTo(comparison, value);
       case 'propertyislessthanorequalto':
         return (
-          propertyIsEqualTo(comparison, properties) ||
-          propertyIsLessThan(comparison, properties)
+          propertyIsEqualTo(comparison, value) ||
+          propertyIsLessThan(comparison, value)
         );
       case 'propertyisnotequalto':
-        return !propertyIsEqualTo(comparison, properties);
+        return !propertyIsEqualTo(comparison, value);
       case 'propertyisgreaterthan':
         return (
-          !propertyIsLessThan(comparison, properties) &&
-          !propertyIsEqualTo(comparison, properties)
+          !propertyIsLessThan(comparison, value) &&
+          !propertyIsEqualTo(comparison, value)
         );
       case 'propertyisgreaterthanorequalto':
         return (
-          !propertyIsLessThan(comparison, properties) ||
-          propertyIsEqualTo(comparison, properties)
+          !propertyIsLessThan(comparison, value) ||
+          propertyIsEqualTo(comparison, value)
         );
       case 'propertyisbetween':
-        return propertyIsBetween(comparison, properties);
+        return propertyIsBetween(comparison, value);
       case 'propertyislike':
-        return propertyIsLike(comparison, properties);
+        return propertyIsLike(comparison, value);
       default:
         throw new Error(("Unkown comparison operator " + (comparison.operator)));
     }
@@ -539,15 +544,18 @@
   }
 
   /**
+   * @private
    * Get feature properties from a GeoJSON feature.
    * @param {object} feature GeoJSON feature.
    * @returns {object} Feature properties.
+   *
    */
-  function getGeoJSONProperties(feature) {
-    return feature.properties;
+  function getGeoJSONProperty(feature, propertyName) {
+    return feature.properties[propertyName];
   }
 
   /**
+   * @private
    * Gets feature id from a GeoJSON feature.
    * @param {object} feature GeoJSON feature.
    * @returns {number|string} Feature ID.
@@ -563,7 +571,8 @@
    * @param  {Filter} filter
    * @param  {object} feature feature
    * @param  {object} options Custom filter options.
-   * @param  {Function} options.getProperties An optional function that can be used to extract properties from a feature.
+   * @param  {Function} options.getProperty An optional function with parameters (feature, propertyName)
+   * that can be used to extract properties from a feature.
    * When not given, properties are read from feature.properties directly.
    * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.
    * When not given, feature id is read from feature.id.
@@ -572,10 +581,10 @@
   function filterSelector(filter, feature, options) {
     if ( options === void 0 ) options = {};
 
-    var getProperties =
-      typeof options.getProperties === 'function'
-        ? options.getProperties
-        : getGeoJSONProperties;
+    var getProperty =
+      typeof options.getProperty === 'function'
+        ? options.getProperty
+        : getGeoJSONProperty;
 
     var getFeatureId =
       typeof options.getFeatureId === 'function'
@@ -588,7 +597,7 @@
         return doFIDFilter(filter.fids, getFeatureId(feature));
 
       case 'comparison':
-        return doComparison(filter, getProperties(feature));
+        return doComparison(filter, feature, getProperty);
 
       case 'and': {
         if (!filter.predicates) {
@@ -708,7 +717,8 @@
    * @param  {FeatureTypeStyle} featureTypeStyle
    * @param  {object} feature geojson
    * @param  {number} resolution m/px
-   * @param  {Function} options.getProperties An optional function that can be used to extract properties from a feature.
+   * @param  {Function} options.getProperty An optional function with parameters (feature, propertyName)
+   * that can be used to extract a property value from a feature.
    * When not given, properties are read from feature.properties directly.Error
    * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.Error
    * When not given, feature id is read from feature.id.
@@ -1085,6 +1095,7 @@
    * Uses a WeakMap internally.
    * Note: This only works for constant symbolizers.
    * Note: Text symbolizers depend on the feature property and the geometry type, these cannot be cached in this way.
+   * @private
    * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
    * @returns {Function} The memoized function of the style conversion function.
    */
@@ -1171,6 +1182,7 @@
   }
 
   /**
+   * @private
    * Extract feature id from an OpenLayers Feature.
    * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
    * @returns {string} Feature id.
@@ -1180,12 +1192,14 @@
   }
 
   /**
-   * Extract properties object from an OpenLayers Feature.
+   * @private
+   * Extract a property value from an OpenLayers Feature.
    * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
-   * @returns {object} Feature properties object.
+   * @param {string} propertyName The name of the feature property to read.
+   * @returns {object} Property value.
    */
-  function getOlFeatureProperties(feature) {
-    return feature.getProperties();
+  function getOlFeatureProperty(feature, propertyName) {
+    return feature.get(propertyName);
   }
 
   /**
@@ -1210,7 +1224,7 @@
 
       // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
       var rules = getRules(featureTypeStyle, feature, resolution, {
-        getProperties: getOlFeatureProperties,
+        getProperty: getOlFeatureProperty,
         getFeatureId: getOlFeatureId,
       });
 

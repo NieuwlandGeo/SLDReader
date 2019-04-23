@@ -312,6 +312,7 @@ function textStyle(textsymbolizer, feature, type) {
  * Uses a WeakMap internally.
  * Note: This only works for constant symbolizers.
  * Note: Text symbolizers depend on the feature property and the geometry type, these cannot be cached in this way.
+ * @private
  * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
  * @returns {Function} The memoized function of the style conversion function.
  */
@@ -396,6 +397,7 @@ export default function OlStyler(GeometryStyles, feature) {
 }
 
 /**
+ * @private
  * Extract feature id from an OpenLayers Feature.
  * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
  * @returns {string} Feature id.
@@ -405,6 +407,7 @@ function getOlFeatureId(feature) {
 }
 
 /**
+ * @private
  * Extract a property value from an OpenLayers Feature.
  * @param {Feature} feature {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
  * @param {string} propertyName The name of the feature property to read.

@@ -117,15 +117,18 @@ function doFIDFilter(fids, featureId) {
 }
 
 /**
+ * @private
  * Get feature properties from a GeoJSON feature.
  * @param {object} feature GeoJSON feature.
  * @returns {object} Feature properties.
+ *
  */
 function getGeoJSONProperty(feature, propertyName) {
   return feature.properties[propertyName];
 }
 
 /**
+ * @private
  * Gets feature id from a GeoJSON feature.
  * @param {object} feature GeoJSON feature.
  * @returns {number|string} Feature ID.
