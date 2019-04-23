@@ -13,3 +13,7 @@ new createOlStyleFunction: https://github.com/NieuwlandGeo/SLDReader/pull/33
 ## Version 0.0.6
 
 peformance boost, https://github.com/NieuwlandGeo/SLDReader/pull/39
+
+## Version 0.0.7
+
+https://github.com/NieuwlandGeo/SLDReader/pull/42
