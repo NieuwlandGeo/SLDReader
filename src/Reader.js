@@ -94,6 +94,21 @@ function parameters(element, obj, prop) {
   obj[propname][name] = element.textContent.trim();
 }
 
+/**
+ * Parser for function tag
+ * @private
+ * @param {Element} node the xml element to parse
+ * @param {object} obj  the object to modify
+ * @param {string} prop key on obj to hold empty object
+ */
+function addFunction(node, obj, prop) {
+  const property = prop.toLowerCase();
+  obj[property] = {
+    name: node.getAttribute('name'),
+  };
+  readNode(node, obj[property]);
+}
+
 const FilterParsers = {
   Filter: addProp,
   ElseFilter: (element, obj) => {
@@ -171,6 +186,7 @@ const SymbParsers = {
   },
   CssParameter: parameters,
   SvgParameter: parameters,
+  Function: addFunction,
 };
 
 /**

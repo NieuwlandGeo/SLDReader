@@ -1,3 +1,5 @@
+import invokeFunction from './Function';
+
 function propertyIsLessThan(comparison, properties) {
   return (
     properties[comparison.propertyname] &&
@@ -13,7 +15,11 @@ function propertyIsBetween(comparison, properties) {
   return value >= lowerBoundary && value <= upperBoundary;
 }
 
+
 function propertyIsEqualTo(comparison, properties) {
+  if (comparison.function) {
+    return invokeFunction(comparison, properties);
+  }
   if (!(comparison.propertyname in properties)) {
     return false;
   }
