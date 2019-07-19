@@ -8,9 +8,35 @@ import Icon from 'ol/style/icon';
 import RegularShape from 'ol/style/regularshape';
 import Text from 'ol/style/text';
 
-import { IMAGE_LOADING, IMAGE_LOADED } from './constants';
+import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
 import { getRules, loadExternalGraphic } from './Utils';
 import getGeometryStyles from './GeometryStyles';
+
+// Global image cache. A map of image Url -> {
+//   url: image url,
+//   image: an Image instance containing image data,
+//   width: image width in pixels,
+//   height: image height in pixels
+// }
+const imageCache = {};
+
+const defaultPointStyle = new Style({
+  image: new Circle({
+    radius: 2,
+    fill: new Fill({
+      color: 'blue',
+    }),
+  }),
+});
+
+const redPointStyle = new Style({
+  image: new Circle({
+    radius: 2,
+    fill: new Fill({
+      color: 'red',
+    }),
+  }),
+});
 
 /**
  * @private
@@ -84,6 +110,43 @@ function lineStyle(linesymbolizer) {
 }
 
 /**
+ * Create an OL style depicting a point where the externalgraphic is still loading.
+ * @returns {OLStyle} An OL style instance.
+ */
+function createImageLoadingStyle() {
+  // todo: figure out a style to signify a loading image.
+  return defaultPointStyle;
+}
+
+/**
+ * Create an OL style depicting a point where the externalgraphic has failed to load.
+ * @returns {OLStyle} An OL style instance.
+ */
+function createImageErrorStyle() {
+  // todo: figure out a better style to signify a failed load of an external graphic.
+  return redPointStyle;
+}
+
+/**
+ * Create an OL Icon style for an external graphic.
+ * The Graphic must be already loaded and present in the global imageCache.
+ * @param {string} imageUrl Url of the external graphic.
+ * @param {number} size Requested size in pixels.
+ */
+function createCachedImageStyle(imageUrl, size) {
+  const { image, width, height } = imageCache[imageUrl];
+  const maxSide = Math.max(width, height);
+  return new Style({
+    image: new Icon({
+      img: image,
+      imgSize: [width, height],
+      // Calculate scale so the image will be resized to the requested size.
+      scale: size / maxSide || 1,
+    }),
+  });
+}
+
+/**
  * @private
  * @param  {PointSymbolizer} pointsymbolizer [description]
  * @return {object} openlayers style
@@ -91,9 +154,21 @@ function lineStyle(linesymbolizer) {
 function pointStyle(pointsymbolizer) {
   const { graphic: style } = pointsymbolizer;
   if (style.externalgraphic && style.externalgraphic.onlineresource) {
-    return new Style({
-      image: new Icon({ src: style.externalgraphic.onlineresource }),
-    });
+    // Check symbolizer metadata to see if the image has already been loaded.
+    switch (pointsymbolizer.__loadingState) {
+      case IMAGE_LOADED:
+        return createCachedImageStyle(
+          style.externalgraphic.onlineresource,
+          style.size
+        );
+      case IMAGE_LOADING:
+        return createImageLoadingStyle();
+      case IMAGE_ERROR:
+        return createImageErrorStyle();
+      default:
+        // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
+        return createImageLoadingStyle();
+    }
   }
   if (style.mark) {
     let { fill, stroke } = style.mark;
@@ -281,16 +356,16 @@ function textStyle(textsymbolizer, feature, type) {
         textBaseline: 'middle',
         stroke: textsymbolizer.halo
           ? new Stroke({
-              color:
+            color:
                 halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
                   ? hexToRGB(halo.fill, halo.fillOpacity)
                   : halo.fill,
-              // wrong position width radius equal to 2 or 4
-              width:
+            // wrong position width radius equal to 2 or 4
+            width:
                 (haloRadius === 2 || haloRadius === 4
                   ? haloRadius - 0.00001
                   : haloRadius) * 2,
-            })
+          })
           : undefined,
         fill: new Fill({
           color:
@@ -339,16 +414,7 @@ const cachedPointStyle = memoize(pointStyle);
 const cachedLineStyle = memoize(lineStyle);
 const cachedPolygonStyle = memoize(polygonStyle);
 
-const defaultStyles = [
-  new Style({
-    image: new Circle({
-      radius: 2,
-      fill: new Fill({
-        color: 'blue',
-      }),
-    }),
-  }),
-];
+const defaultStyles = [defaultPointStyle];
 
 /**
  * Create openlayers style
@@ -426,15 +492,11 @@ function getOlFeatureProperty(feature, propertyName) {
  * @param {object} options Options
  * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
  * When not given, the map resolution is used as-is.
- * @param {object} options.imageCache Optional image cache with pre-loaded images. Todo: document image cache properties.
  * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
  * @example
  * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle));
  */
 export function createOlStyleFunction(featureTypeStyle, options = {}) {
-  // Todo: make image cache/load state global for SLDReader? Multiple layers may have the same icons?
-  // Todo: in that case, merge any incoming options.imageCache with global cache.
-  const imageCache = options.imageCache || {};
   const imageLoadedCallback = options.imageLoadedCallback || (() => {});
 
   // Keep image loading state separate from image cache.

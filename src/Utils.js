@@ -125,7 +125,7 @@ export function loadExternalGraphic(
 
   image.onload = () => {
     imageCache[imageUrl] = {
-      imageUrl,
+      url: imageUrl,
       image,
       width: image.naturalWidth,
       height: image.naturalHeight,
