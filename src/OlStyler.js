@@ -1,3 +1,5 @@
+/* eslint-disable no-continue */
+/* eslint-disable no-underscore-dangle */
 import Style from 'ol/style/style';
 import Fill from 'ol/style/fill';
 import Stroke from 'ol/style/stroke';
@@ -6,7 +8,8 @@ import Icon from 'ol/style/icon';
 import RegularShape from 'ol/style/regularshape';
 import Text from 'ol/style/text';
 
-import { getRules } from './Utils';
+import { IMAGE_LOADING, IMAGE_LOADED } from './constants';
+import { getRules, loadExternalGraphic } from './Utils';
 import getGeometryStyles from './GeometryStyles';
 
 /**
@@ -278,16 +281,16 @@ function textStyle(textsymbolizer, feature, type) {
         textBaseline: 'middle',
         stroke: textsymbolizer.halo
           ? new Stroke({
-            color:
-              halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-                ? hexToRGB(halo.fill, halo.fillOpacity)
-                : halo.fill,
-            // wrong position width radius equal to 2 or 4
-            width:
-              (haloRadius === 2 || haloRadius === 4
-                ? haloRadius - 0.00001
-                : haloRadius) * 2,
-          })
+              color:
+                halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
+                  ? hexToRGB(halo.fill, halo.fillOpacity)
+                  : halo.fill,
+              // wrong position width radius equal to 2 or 4
+              width:
+                (haloRadius === 2 || haloRadius === 4
+                  ? haloRadius - 0.00001
+                  : haloRadius) * 2,
+            })
           : undefined,
         fill: new Fill({
           color:
@@ -423,11 +426,26 @@ function getOlFeatureProperty(feature, propertyName) {
  * @param {object} options Options
  * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
  * When not given, the map resolution is used as-is.
+ * @param {object} options.imageCache Optional image cache with pre-loaded images. Todo: document image cache properties.
  * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
  * @example
  * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle));
  */
 export function createOlStyleFunction(featureTypeStyle, options = {}) {
+  // Todo: make image cache/load state global for SLDReader? Multiple layers may have the same icons?
+  // Todo: in that case, merge any incoming options.imageCache with global cache.
+  const imageCache = options.imageCache || {};
+  const imageLoadedCallback = options.imageLoadedCallback || (() => {});
+
+  // Keep image loading state separate from image cache.
+  // This makes it easier to detect whether a requested image is already loading.
+  const imageLoadState = {};
+
+  // Important: if image cache already has loaded images, mark these as loaded in imageLoadState!
+  Object.keys(imageCache).forEach(imageUrl => {
+    imageLoadState[imageUrl] = IMAGE_LOADED;
+  });
+
   return (feature, mapResolution) => {
     // Determine resolution in meters/pixel.
     const resolution =
@@ -440,6 +458,53 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
       getProperty: getOlFeatureProperty,
       getFeatureId: getOlFeatureId,
     });
+
+    // If a feature has an external graphic point symbolizer, the external image may
+    // * have never been requested before.
+    //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
+    //       When loading is complete, replace all point symbolizers using that image inside the featureTypeStyle
+    //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
+    // * be loading.
+    //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
+    // * be loaded and therefore present in the image cache.
+    //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
+    // * be in error. Error is a kind of loaded, but with an error icon style.
+    //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
+    for (let k = 0; k < rules.length; k += 1) {
+      const rule = rules[k];
+      if (
+        !(
+          rule.pointsymbolizer &&
+          rule.pointsymbolizer.graphic &&
+          rule.pointsymbolizer.graphic.externalgraphic
+        )
+      ) {
+        continue;
+      }
+
+      const { externalgraphic } = rule.pointsymbolizer.graphic;
+      const imageUrl = externalgraphic.onlineresource;
+      if (!(imageUrl in imageLoadState)) {
+        // Start loading the image and set image load state on the symbolizer.
+        imageLoadState[imageUrl] = IMAGE_LOADING;
+        loadExternalGraphic(
+          imageUrl,
+          imageCache,
+          featureTypeStyle,
+          imageLoadedCallback
+        );
+        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+          __loadingState: IMAGE_LOADING,
+        });
+      } else if (
+        // Change image load state on the symbolizer if it has changed in the meantime.
+        rule.pointsymbolizer.__loadingState !== imageLoadState[imageUrl]
+      ) {
+        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+          __loadingState: imageLoadState[imageUrl],
+        });
+      }
+    }
 
     // Convert style rules to style rule lookup categorized by geometry type.
     const geometryStyles = getGeometryStyles(rules);
