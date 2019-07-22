@@ -132,7 +132,7 @@ export function loadExternalGraphic(
     };
     updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
     if (typeof imageLoadedCallback === 'function') {
-      imageLoadedCallback();
+      imageLoadedCallback(imageUrl);
     }
   };
 

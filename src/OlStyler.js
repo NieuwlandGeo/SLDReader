@@ -492,6 +492,8 @@ function getOlFeatureProperty(feature, propertyName) {
  * @param {object} options Options
  * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
  * When not given, the map resolution is used as-is.
+ * @param {function} options.imageLoadedCallback Optional callback that will be called each time the image from a pointsymbolizer using
+ * an ExernalGraphic has loaded. Refresh the layer by calling .Todo: uitzoeken.Error.Error.
  * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
  * @example
  * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle));
