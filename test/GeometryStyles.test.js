@@ -6,13 +6,13 @@ describe('create geometrystyles from rules array', () => {
     {
       polygonsymbolizer: {
         fill: {
-          css: {
+          styling: {
             fill: 'blue',
             fillOpacity: '1.0',
           },
         },
         stroke: {
-          css: {
+          styling: {
             stroke: '#C0C0C0',
             strokeLinecap: 'butt',
             strokeLinejoin: 'miter',
@@ -44,14 +44,14 @@ describe('create geometrystyles from rules array', () => {
     const polygon = description.polygon['0'];
     expect(polygon).to.have.property('fill');
     expect(polygon).to.have.property('stroke');
-    expect(polygon.fill.css).to.have.property('fill');
-    expect(polygon.fill.css).to.have.property('fillOpacity');
-    expect(polygon.stroke.css).to.have.property('stroke');
-    expect(polygon.stroke.css).to.have.property('strokeLinecap');
-    expect(polygon.stroke.css).to.have.property('strokeLinejoin');
-    expect(polygon.stroke.css).to.have.property('strokeOpacity');
-    expect(polygon.stroke.css).to.have.property('strokeWidth');
-    expect(polygon.stroke.css).to.have.property('strokeDashoffset');
+    expect(polygon.fill.styling).to.have.property('fill');
+    expect(polygon.fill.styling).to.have.property('fillOpacity');
+    expect(polygon.stroke.styling).to.have.property('stroke');
+    expect(polygon.stroke.styling).to.have.property('strokeLinecap');
+    expect(polygon.stroke.styling).to.have.property('strokeLinejoin');
+    expect(polygon.stroke.styling).to.have.property('strokeOpacity');
+    expect(polygon.stroke.styling).to.have.property('strokeWidth');
+    expect(polygon.stroke.styling).to.have.property('strokeDashoffset');
   });
 
   it('point prop receives graphic ', () => {

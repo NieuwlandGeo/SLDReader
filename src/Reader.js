@@ -81,11 +81,11 @@ function getBool(element, tagName) {
  */
 function parameters(element, obj, prop) {
   const propnames = {
-    CssParameter: 'css',
-    SvgParameter: 'svg',
+    CssParameter: 'styling',
+    SvgParameter: 'styling',
     VendorOption: 'vendoroption',
   };
-  const propname = propnames[prop] || 'css';
+  const propname = propnames[prop] || 'styling';
   obj[propname] = obj[propname] || {};
   const name = element
     .getAttribute('name')

@@ -23,7 +23,7 @@ describe('create ol style object from styledescription', () => {
     polygon: [
       {
         fill: {
-          css: {
+          styling: {
             fill: 'blue',
           },
         },
@@ -32,7 +32,7 @@ describe('create ol style object from styledescription', () => {
     line: [
       {
         stroke: {
-          css: {
+          styling: {
             stroke: 'red',
           },
         },

@@ -97,11 +97,11 @@
    */
   function parameters(element, obj, prop) {
     var propnames = {
-      CssParameter: 'css',
-      SvgParameter: 'svg',
+      CssParameter: 'styling',
+      SvgParameter: 'styling',
       VendorOption: 'vendoroption',
     };
-    var propname = propnames[prop] || 'css';
+    var propname = propnames[prop] || 'styling';
     obj[propname] = obj[propname] || {};
     var name = element
       .getAttribute('name')
@@ -929,8 +929,8 @@
   }
 
   function polygonStyle(style) {
-    var stroke = style.stroke && (style.stroke.css || style.stroke.svg);
-    var fill = style.fill && (style.fill.css || style.fill.svg);
+    var stroke = style.stroke && style.stroke.styling;
+    var fill = style.fill && style.fill.styling;
     return new Style({
       fill:
         fill &&
@@ -966,7 +966,7 @@
   function lineStyle(linesymbolizer) {
     var style = {};
     if (linesymbolizer.stroke) {
-      style = linesymbolizer.stroke.css || linesymbolizer.stroke.svg;
+      style = linesymbolizer.stroke.styling;
     }
     return new Style({
       stroke: new Stroke({
@@ -1033,12 +1033,12 @@
       var ref = style.mark;
       var fill = ref.fill;
       var stroke = ref.stroke;
-      var fillColor = (fill && fill.css && fill.css.fill) || 'blue';
+      var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
       fill = new Fill({
         color: fillColor,
       });
-      if (stroke && !(Number(stroke.css.strokeWidth) === 0)) {
-        var ref$1 = stroke.css;
+      if (stroke && !(Number(stroke.styling.strokeWidth) === 0)) {
+        var ref$1 = stroke.styling;
         var cssStroke = ref$1.stroke;
         var cssStrokeWidth = ref$1.strokeWidth;
         stroke = new Stroke({
@@ -1167,19 +1167,19 @@
       }, '');
 
       var fill = textsymbolizer.fill
-        ? textsymbolizer.fill.css || textsymbolizer.fill.svg
+        ? textsymbolizer.fill.styling
         : {};
       var halo =
         textsymbolizer.halo && textsymbolizer.halo.fill
-          ? textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg
+          ? textsymbolizer.halo.fill.styling
           : {};
       var haloRadius =
         textsymbolizer.halo && textsymbolizer.halo.radius
           ? parseFloat(textsymbolizer.halo.radius)
           : 1;
       var ref =
-        textsymbolizer.font && textsymbolizer.font.css
-          ? textsymbolizer.font.css
+        textsymbolizer.font && textsymbolizer.font.styling
+          ? textsymbolizer.font.styling
           : {};
       var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
       var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
