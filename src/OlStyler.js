@@ -22,18 +22,39 @@ const imageCache = {};
 
 const defaultPointStyle = new Style({
   image: new Circle({
-    radius: 2,
+    radius: 8,
     fill: new Fill({
       color: 'blue',
+      fillOpacity: 0.7,
     }),
   }),
 });
 
-const redPointStyle = new Style({
+const imageLoadingStyle = new Style({
   image: new Circle({
-    radius: 2,
+    radius: 5,
+    fill: new Fill({
+      color: '#DDDDDD',
+    }),
+    stroke: new Stroke({
+      width: 1,
+      color: '#888888',
+    }),
+  }),
+});
+
+const imageErrorStyle = new Style({
+  image: new RegularShape({
+    angle: Math.PI / 4,
     fill: new Fill({
       color: 'red',
+    }),
+    points: 4,
+    radius1: 8,
+    radius2: 0,
+    stroke: new Stroke({
+      color: 'red',
+      width: 4,
     }),
   }),
 });
@@ -110,24 +131,6 @@ function lineStyle(linesymbolizer) {
 }
 
 /**
- * Create an OL style depicting a point where the externalgraphic is still loading.
- * @returns {OLStyle} An OL style instance.
- */
-function createImageLoadingStyle() {
-  // todo: figure out a style to signify a loading image.
-  return defaultPointStyle;
-}
-
-/**
- * Create an OL style depicting a point where the externalgraphic has failed to load.
- * @returns {OLStyle} An OL style instance.
- */
-function createImageErrorStyle() {
-  // todo: figure out a better style to signify a failed load of an external graphic.
-  return redPointStyle;
-}
-
-/**
  * Create an OL Icon style for an external graphic.
  * The Graphic must be already loaded and present in the global imageCache.
  * @param {string} imageUrl Url of the external graphic.
@@ -162,12 +165,12 @@ function pointStyle(pointsymbolizer) {
           style.size
         );
       case IMAGE_LOADING:
-        return createImageLoadingStyle();
+        return imageLoadingStyle;
       case IMAGE_ERROR:
-        return createImageErrorStyle();
+        return imageErrorStyle;
       default:
         // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
-        return createImageLoadingStyle();
+        return imageLoadingStyle;
     }
   }
   if (style.mark) {
