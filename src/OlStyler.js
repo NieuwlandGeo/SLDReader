@@ -554,6 +554,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
         loadExternalGraphic(
           imageUrl,
           imageCache,
+          imageLoadState,
           featureTypeStyle,
           imageLoadedCallback
         );

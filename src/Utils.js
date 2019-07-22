@@ -118,6 +118,7 @@ function updateExternalGraphicRules(
 export function loadExternalGraphic(
   imageUrl,
   imageCache,
+  imageLoadState,
   featureTypeStyle,
   imageLoadedCallback
 ) {
@@ -131,6 +132,7 @@ export function loadExternalGraphic(
       height: image.naturalHeight,
     };
     updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
+    imageLoadState[imageUrl] = IMAGE_LOADED;
     if (typeof imageLoadedCallback === 'function') {
       imageLoadedCallback(imageUrl);
     }
@@ -138,6 +140,7 @@ export function loadExternalGraphic(
 
   image.onerror = () => {
     updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
+    imageLoadState[imageUrl] = IMAGE_ERROR;
     if (typeof imageLoadedCallback === 'function') {
       imageLoadedCallback();
     }
