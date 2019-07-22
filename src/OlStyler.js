@@ -488,15 +488,21 @@ function getOlFeatureProperty(feature, propertyName) {
 
 /**
  * Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
+ *
+ * **Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
+ * inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
+ * image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
  * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
  * @param {object} options Options
  * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
  * When not given, the map resolution is used as-is.
- * @param {function} options.imageLoadedCallback Optional callback that will be called each time the image from a pointsymbolizer using
- * an ExernalGraphic has loaded. Refresh the layer by calling .Todo: uitzoeken.Error.Error.
+ * @param {function} options.imageLoadedCallback Optional callback that will be called with the url of an externalGraphic when
+ * an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
  * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
  * @example
- * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle));
+ * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
+ *   imageLoadedCallback: () => { myOlVectorLayer.changed(); }
+ * }));
  */
 export function createOlStyleFunction(featureTypeStyle, options = {}) {
   const imageLoadedCallback = options.imageLoadedCallback || (() => {});
