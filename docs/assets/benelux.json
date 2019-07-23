@@ -1,0 +1,35 @@
+{
+  "type": "FeatureCollection",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::3857" } },
+  "features": [{
+    "type": "Feature",
+    "id": "be",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [509600, 6575000]
+    },
+    "properties": {
+      "countrycode": "be"
+    }
+  },{
+    "type": "Feature",
+    "id": "lu",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [679600, 6400000]
+    },
+    "properties": {
+      "countrycode": "lu"
+    }
+  },{
+    "type": "Feature",
+    "id": "nl",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [616000, 6800000]
+    },
+    "properties": {
+      "countrycode": "nl"
+    }
+  }]
+}
