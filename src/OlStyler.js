@@ -490,6 +490,69 @@ function getOlFeatureProperty(feature, propertyName) {
 }
 
 /**
+ * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
+ * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
+ * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
+ * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
+ * @param {object} imageLoadState Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
+ * @param {Function} imageLoadedCallback Function to call when an image has loaded.
+ */
+function processExternalGraphicSymbolizers(
+  rules,
+  featureTypeStyle,
+  imageLoadState,
+  imageLoadedCallback
+) {
+  // If a feature has an external graphic point symbolizer, the external image may
+  // * have never been requested before.
+  //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
+  //       When loading is complete, replace all point symbolizers using that image inside the featureTypeStyle
+  //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
+  // * be loading.
+  //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
+  // * be loaded and therefore present in the image cache.
+  //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
+  // * be in error. Error is a kind of loaded, but with an error icon style.
+  //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
+  for (let k = 0; k < rules.length; k += 1) {
+    const rule = rules[k];
+    if (
+      !(
+        rule.pointsymbolizer &&
+        rule.pointsymbolizer.graphic &&
+        rule.pointsymbolizer.graphic.externalgraphic
+      )
+    ) {
+      continue;
+    }
+
+    const { externalgraphic } = rule.pointsymbolizer.graphic;
+    const imageUrl = externalgraphic.onlineresource;
+    if (!(imageUrl in imageLoadState)) {
+      // Start loading the image and set image load state on the symbolizer.
+      imageLoadState[imageUrl] = IMAGE_LOADING;
+      loadExternalGraphic(
+        imageUrl,
+        imageCache,
+        imageLoadState,
+        featureTypeStyle,
+        imageLoadedCallback
+      );
+      rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+        __loadingState: IMAGE_LOADING,
+      });
+    } else if (
+      // Change image load state on the symbolizer if it has changed in the meantime.
+      rule.pointsymbolizer.__loadingState !== imageLoadState[imageUrl]
+    ) {
+      rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+        __loadingState: imageLoadState[imageUrl],
+      });
+    }
+  }
+}
+
+/**
  * Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
  *
  * **Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
@@ -532,53 +595,15 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
       getFeatureId: getOlFeatureId,
     });
 
-    // If a feature has an external graphic point symbolizer, the external image may
-    // * have never been requested before.
-    //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
-    //       When loading is complete, replace all point symbolizers using that image inside the featureTypeStyle
-    //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
-    // * be loading.
-    //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
-    // * be loaded and therefore present in the image cache.
-    //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
-    // * be in error. Error is a kind of loaded, but with an error icon style.
-    //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
-    for (let k = 0; k < rules.length; k += 1) {
-      const rule = rules[k];
-      if (
-        !(
-          rule.pointsymbolizer &&
-          rule.pointsymbolizer.graphic &&
-          rule.pointsymbolizer.graphic.externalgraphic
-        )
-      ) {
-        continue;
-      }
-
-      const { externalgraphic } = rule.pointsymbolizer.graphic;
-      const imageUrl = externalgraphic.onlineresource;
-      if (!(imageUrl in imageLoadState)) {
-        // Start loading the image and set image load state on the symbolizer.
-        imageLoadState[imageUrl] = IMAGE_LOADING;
-        loadExternalGraphic(
-          imageUrl,
-          imageCache,
-          imageLoadState,
-          featureTypeStyle,
-          imageLoadedCallback
-        );
-        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
-          __loadingState: IMAGE_LOADING,
-        });
-      } else if (
-        // Change image load state on the symbolizer if it has changed in the meantime.
-        rule.pointsymbolizer.__loadingState !== imageLoadState[imageUrl]
-      ) {
-        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
-          __loadingState: imageLoadState[imageUrl],
-        });
-      }
-    }
+    // Start loading images for external graphic symbolizers and when loaded:
+    // * update symbolizers to use the cached image.
+    // * call imageLoadedCallback with the image url.
+    processExternalGraphicSymbolizers(
+      rules,
+      featureTypeStyle,
+      imageLoadState,
+      imageLoadedCallback
+    );
 
     // Convert style rules to style rule lookup categorized by geometry type.
     const geometryStyles = getGeometryStyles(rules);
