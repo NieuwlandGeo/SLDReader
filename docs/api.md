@@ -19,9 +19,16 @@ title: API
 
     const viewProjection = map.getView().getProjection();
     vectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
+      // Use the convertResolution option to calculate a more accurate resolution.
       convertResolution: viewResolution => {
         const viewCenter = map.getView().getCenter();
         return ol.proj.getPointResolution(viewProjection, viewResolution, viewCenter);
+      },
+      // If you use point icons with an ExternalGraphic, you have to use imageLoadCallback to
+      // to update the vector layer when an image finishes loading.
+      // If you do not do this, the image will only become visible after the next pan/zoom of the layer.
+      imageLoadedCallback: () => {
+        vectorLayer.changed();
       },
     }));
   }
