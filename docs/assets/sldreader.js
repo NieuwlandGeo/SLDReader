@@ -751,7 +751,7 @@
   /**
    * Go through all rules with an external graphic matching the image url
    * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
-   * This action replacec symbolizers with new symbolizers if they get a new __loadingState.
+   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
    * @param {object} featureTypeStyle A feature type style object.
    * @param {string} imageUrl The image url.
    * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.

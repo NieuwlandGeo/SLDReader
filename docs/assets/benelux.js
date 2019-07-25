@@ -48,6 +48,7 @@ map.addControl(new ol.control.MousePosition());
  */
 function applySLD(vectorLayer, text) {
   const sldObject = SLDReader.Reader(text);
+  // for debugging
   window.sldObject = sldObject;
   const sldLayer = SLDReader.getLayer(sldObject);
   const style = SLDReader.getStyle(sldLayer, 'flags_benelux');
