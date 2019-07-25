@@ -1,3 +1,5 @@
+/* eslint-disable no-underscore-dangle */
+import { IMAGE_LOADED, IMAGE_ERROR } from './constants';
 import { scaleSelector, filterSelector } from './Filter';
 /**
  * get all layer names in sld
@@ -73,4 +75,76 @@ export function getRules(featureTypeStyle, feature, resolution, options = {}) {
     }
   }
   return result;
+}
+
+/**
+ * Go through all rules with an external graphic matching the image url
+ * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+ * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
+ * @param {object} featureTypeStyle A feature type style object.
+ * @param {string} imageUrl The image url.
+ * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
+ */
+function updateExternalGraphicRules(
+  featureTypeStyle,
+  imageUrl,
+  imageLoadState
+) {
+  // Go through all rules with an external graphic matching the image url
+  // and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+  if (!featureTypeStyle.rules) {
+    return;
+  }
+
+  featureTypeStyle.rules.forEach(rule => {
+    if (!(rule.pointsymbolizer && rule.pointsymbolizer.graphic)) {
+      return;
+    }
+
+    const { graphic } = rule.pointsymbolizer;
+    const { externalgraphic } = graphic;
+    if (
+      externalgraphic &&
+      externalgraphic.onlineresource === imageUrl &&
+      rule.pointsymbolizer.__loadingState !== imageLoadState
+    ) {
+      rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+        __loadingState: imageLoadState,
+      });
+    }
+  });
+}
+
+export function loadExternalGraphic(
+  imageUrl,
+  imageCache,
+  imageLoadState,
+  featureTypeStyle,
+  imageLoadedCallback
+) {
+  const image = new Image();
+
+  image.onload = () => {
+    imageCache[imageUrl] = {
+      url: imageUrl,
+      image,
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+    };
+    updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
+    imageLoadState[imageUrl] = IMAGE_LOADED;
+    if (typeof imageLoadedCallback === 'function') {
+      imageLoadedCallback(imageUrl);
+    }
+  };
+
+  image.onerror = () => {
+    updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
+    imageLoadState[imageUrl] = IMAGE_ERROR;
+    if (typeof imageLoadedCallback === 'function') {
+      imageLoadedCallback();
+    }
+  };
+
+  image.src = imageUrl;
 }

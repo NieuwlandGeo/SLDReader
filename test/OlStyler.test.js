@@ -1,11 +1,15 @@
+/* eslint-disable no-underscore-dangle */
 /* global describe it expect before */
 import Style from 'ol/style/style';
+import CircleStyle from 'ol/style/circle';
 import OLFormatGeoJSON from 'ol/format/geojson';
 
 import Reader from '../src/Reader';
 import OlStyler, { createOlStyleFunction } from '../src/OlStyler';
 
 import { sld11 } from './data/test11.sld';
+import { externalGraphicSld } from './data/externalgraphic.sld';
+import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 
 const getFeature = type => ({
   properties: {},
@@ -119,5 +123,76 @@ describe('Create OL Style function from SLD feature type style', () => {
 
     expect(featureStyle.getStroke().getColor()).to.equal('#000000');
     expect(featureStyle.getStroke().getWidth()).to.equal('4');
+  });
+});
+
+describe('SLD with external graphics', () => {
+  let featureTypeStyle;
+  before(() => {
+    const sldObject = Reader(externalGraphicSld);
+    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+  });
+
+  it('Only requests images for matching rules', () => {
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        type: '2',
+      },
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+
+    const featureStyle = styleFunction(olFeature, null)[0];
+
+    // Requesting feature style for a feature with type 2 should only update the loading state for that rule;
+    expect(featureTypeStyle.rules[1].pointsymbolizer.__loadingState).to.equal(
+      IMAGE_LOADING
+    );
+
+    // But other symbolizers should be left alone.
+    expect(featureTypeStyle.rules[0].pointsymbolizer.__loadingState).to.be
+      .undefined;
+    expect(featureTypeStyle.rules[2].pointsymbolizer.__loadingState).to.be
+      .undefined;
+    expect(featureTypeStyle.rules[3].pointsymbolizer.__loadingState).to.be
+      .undefined;
+
+    // The feature style should be a loading indicator (simple circle style), since the image hasn't loaded yet.
+    expect(featureStyle.getImage() instanceof CircleStyle).to.be.true;
+  });
+
+  it('Calls imageLoadedCallback when image finishes loading', done => {
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        type: '2',
+      },
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    const styleFunction = createOlStyleFunction(featureTypeStyle, {
+      imageLoadedCallback: () => {
+        // When this function is called, the loading state should be either loaded or error.
+        expect(featureTypeStyle.rules[1].pointsymbolizer.__loadingState).to.equal(IMAGE_LOADED);
+        done();
+      },
+    });
+
+    // Just call the style function to trigger image load.
+    styleFunction(olFeature, null);
   });
 });
