@@ -76,8 +76,8 @@ function hexToRGB(hex, alpha) {
 }
 
 function polygonStyle(style) {
-  const stroke = style.stroke && (style.stroke.css || style.stroke.svg);
-  const fill = style.fill && (style.fill.css || style.fill.svg);
+  const stroke = style.stroke && style.stroke.styling;
+  const fill = style.fill && style.fill.styling;
   return new Style({
     fill:
       fill &&
@@ -113,7 +113,7 @@ function polygonStyle(style) {
 function lineStyle(linesymbolizer) {
   let style = {};
   if (linesymbolizer.stroke) {
-    style = linesymbolizer.stroke.css || linesymbolizer.stroke.svg;
+    style = linesymbolizer.stroke.styling;
   }
   return new Style({
     stroke: new Stroke({
@@ -175,12 +175,12 @@ function pointStyle(pointsymbolizer) {
   }
   if (style.mark) {
     let { fill, stroke } = style.mark;
-    const fillColor = (fill && fill.css && fill.css.fill) || 'blue';
+    const fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
     fill = new Fill({
       color: fillColor,
     });
-    if (stroke && !(Number(stroke.css.strokeWidth) === 0)) {
-      const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.css;
+    if (stroke && !(Number(stroke.styling.strokeWidth) === 0)) {
+      const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.styling;
       stroke = new Stroke({
         color: cssStroke || 'black',
         width: cssStrokeWidth || 2,
@@ -303,11 +303,11 @@ function textStyle(textsymbolizer, feature, type) {
     }, '');
 
     const fill = textsymbolizer.fill
-      ? textsymbolizer.fill.css || textsymbolizer.fill.svg
+      ? textsymbolizer.fill.styling
       : {};
     const halo =
       textsymbolizer.halo && textsymbolizer.halo.fill
-        ? textsymbolizer.halo.fill.css || textsymbolizer.halo.fill.svg
+        ? textsymbolizer.halo.fill.styling
         : {};
     const haloRadius =
       textsymbolizer.halo && textsymbolizer.halo.radius
@@ -319,8 +319,8 @@ function textStyle(textsymbolizer, feature, type) {
       fontStyle = '',
       fontWeight = '',
     } =
-      textsymbolizer.font && textsymbolizer.font.css
-        ? textsymbolizer.font.css
+      textsymbolizer.font && textsymbolizer.font.styling
+        ? textsymbolizer.font.styling
         : {};
 
     const pointplacement =

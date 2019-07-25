@@ -40,10 +40,10 @@ describe('Reads xml', () => {
     expect(rule.maxscaledenominator).to.equal('3000000');
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.css).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.css.fill).to.equal('blue');
-    expect(rule.polygonsymbolizer.fill.css.fillOpacity).to.equal('1.0');
-    expect(rule.polygonsymbolizer.stroke.css.stroke).to.equal('#C0C0C0');
+    expect(rule.polygonsymbolizer.fill.styling).to.be.an.instanceof(Object);
+    expect(rule.polygonsymbolizer.fill.styling.fill).to.equal('blue');
+    expect(rule.polygonsymbolizer.fill.styling.fillOpacity).to.equal('1.0');
+    expect(rule.polygonsymbolizer.stroke.styling.stroke).to.equal('#C0C0C0');
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
     const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
@@ -95,8 +95,8 @@ describe('Reads xml sld 11', () => {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.svg).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.svg.fill).to.equal('#CCCCCC');
+    expect(rule.polygonsymbolizer.fill.styling).to.be.an.instanceof(Object);
+    expect(rule.polygonsymbolizer.fill.styling.fill).to.equal('#CCCCCC');
   });
   it('rule textsymbolizer label', () => {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
@@ -108,8 +108,8 @@ describe('Reads xml sld 11', () => {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
     expect(rule.textsymbolizer).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.font).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.font.svg).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.font.svg.fontFamily).to.equal('Noto Sans');
+    expect(rule.textsymbolizer.font.styling).to.be.an.instanceof(Object);
+    expect(rule.textsymbolizer.font.styling.fontFamily).to.equal('Noto Sans');
   });
   it('rule textsymbolizer has fill', () => {
     const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
