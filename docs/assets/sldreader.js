@@ -1,7 +1,7 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle'), require('ol/style/icon'), require('ol/style/regularshape'), require('ol/style/text')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle', 'ol/style/icon', 'ol/style/regularshape', 'ol/style/text'], factory) :
-  (global = global || self, factory(global.SLDReader = {}, global.ol.style.Style, global.ol.style.Fill, global.ol.style.Stroke, global.ol.style.Circle, global.ol.style.Icon, global.ol.style.RegularShape, global.ol.style.Text));
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/Style'), require('ol/style/Fill'), require('ol/style/Stroke'), require('ol/style/Circle'), require('ol/style/Icon'), require('ol/style/Regularshape'), require('ol/style/Text')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/Style', 'ol/style/Fill', 'ol/style/Stroke', 'ol/style/Circle', 'ol/style/Icon', 'ol/style/Regularshape', 'ol/style/Text'], factory) :
+  (global = global || self, factory(global.SLDReader = {}, global.ol.style.Style, global.ol.style.Fill, global.ol.style.Stroke, global.ol.style.Circle, global.ol.style.Icon, global.RegularShape, global.ol.style.Text));
 }(this, function (exports, Style, Fill, Stroke, Circle, Icon, RegularShape, Text) { 'use strict';
 
   Style = Style && Style.hasOwnProperty('default') ? Style['default'] : Style;
