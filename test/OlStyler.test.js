@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 /* global describe it expect before */
-import {Style, Circle} from 'ol/style';
+import { Style, Circle } from 'ol/style';
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
 import Reader from '../src/Reader';

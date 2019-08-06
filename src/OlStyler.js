@@ -1,6 +1,6 @@
 /* eslint-disable no-continue */
 /* eslint-disable no-underscore-dangle */
-import {Style, Fill, Stroke, Circle, Icon, RegularShape, Text} from 'ol/style';
+import { Style, Fill, Stroke, Circle, Icon, RegularShape, Text } from 'ol/style';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
 import { getRules, loadExternalGraphic } from './Utils';
