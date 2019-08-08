@@ -1,8 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 /* global describe it expect before */
-import Style from 'ol/style/style';
-import CircleStyle from 'ol/style/circle';
-import OLFormatGeoJSON from 'ol/format/geojson';
+import { Style, Circle } from 'ol/style';
+import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
 import Reader from '../src/Reader';
 import OlStyler, { createOlStyleFunction } from '../src/OlStyler';
@@ -166,7 +165,7 @@ describe('SLD with external graphics', () => {
       .undefined;
 
     // The feature style should be a loading indicator (simple circle style), since the image hasn't loaded yet.
-    expect(featureStyle.getImage() instanceof CircleStyle).to.be.true;
+    expect(featureStyle.getImage() instanceof Circle).to.be.true;
   });
 
   it('Calls imageLoadedCallback when image finishes loading', done => {

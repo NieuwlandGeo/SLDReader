@@ -43,6 +43,12 @@
         -   [Properties][39]
     -   [GeometryStyles][40]
         -   [Properties][41]
+-   [createCachedImageStyle][42]
+    -   [Parameters][43]
+-   [processExternalGraphicSymbolizers][44]
+    -   [Parameters][45]
+-   [updateExternalGraphicRules][46]
+    -   [Parameters][47]
 
 ## Methods
 
@@ -54,20 +60,28 @@ of the global var SLDReader.
 
 Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
 
+**Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
+inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
+image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
+
 #### Parameters
 
--   `featureTypeStyle` **[FeatureTypeStyle][42]** Feature Type Style object.
--   `options` **[object][43]** Options (optional, default `{}`)
-    -   `options.convertResolution` **[function][44]** An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
+-   `featureTypeStyle` **[FeatureTypeStyle][48]** Feature Type Style object.
+-   `options` **[object][49]** Options (optional, default `{}`)
+    -   `options.convertResolution` **[function][50]** An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
         When not given, the map resolution is used as-is.
+    -   `options.imageLoadedCallback` **[function][50]** Optional callback that will be called with the url of an externalGraphic when
+        an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
 
 #### Examples
 
 ```javascript
-myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle));
+myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
+  imageLoadedCallback: () => { myOlVectorLayer.changed(); }
+}));
 ```
 
-Returns **[Function][44]** A function that can be set as style function on an OpenLayers vector style layer.
+Returns **[Function][50]** A function that can be set as style function on an OpenLayers vector style layer.
 
 ### Reader
 
@@ -75,9 +89,9 @@ Creates a object from an sld xml string,
 
 #### Parameters
 
--   `sld` **[string][45]** xml string
+-   `sld` **[string][51]** xml string
 
-Returns **[StyledLayerDescriptor][46]** object representing sld style
+Returns **[StyledLayerDescriptor][52]** object representing sld style
 
 ### getLayerNames
 
@@ -85,9 +99,9 @@ get all layer names in sld
 
 #### Parameters
 
--   `sld` **[StyledLayerDescriptor][46]** 
+-   `sld` **[StyledLayerDescriptor][52]** 
 
-Returns **[Array][47]&lt;[string][45]>** registered layernames
+Returns **[Array][53]&lt;[string][51]>** registered layernames
 
 ### getLayer
 
@@ -95,10 +109,10 @@ Get layer definition from sld
 
 #### Parameters
 
--   `sld` **[StyledLayerDescriptor][46]** [description]
--   `layername` **[string][45]?** optional layername
+-   `sld` **[StyledLayerDescriptor][52]** [description]
+-   `layername` **[string][51]?** optional layername
 
-Returns **[Layer][48]** [description]
+Returns **[Layer][54]** [description]
 
 ### getStyleNames
 
@@ -106,9 +120,9 @@ getStyleNames, notice name is not required for userstyle, you might get undefine
 
 #### Parameters
 
--   `layer` **[Layer][48]** [description]
+-   `layer` **[Layer][54]** [description]
 
-Returns **[Array][47]&lt;[string][45]>** [description]
+Returns **[Array][53]&lt;[string][51]>** [description]
 
 ### getStyle
 
@@ -117,10 +131,10 @@ null is no style found
 
 #### Parameters
 
--   `layer` **[Layer][48]** [description]
--   `name` **[string][45]?** of style
+-   `layer` **[Layer][54]** [description]
+-   `name` **[string][51]?** of style
 
-Returns **[object][43]** the style from layer.styles matching the name
+Returns **[object][49]** the style from layer.styles matching the name
 
 ### getRules
 
@@ -128,9 +142,9 @@ get rules for specific feature after applying filters
 
 #### Parameters
 
--   `featureTypeStyle` **[FeatureTypeStyle][42]** 
--   `feature` **[object][43]** geojson
--   `resolution` **[number][49]** m/px
+-   `featureTypeStyle` **[FeatureTypeStyle][48]** 
+-   `feature` **[object][49]** geojson
+-   `resolution` **[number][55]** m/px
 -   `options`   (optional, default `{}`)
 
 #### Examples
@@ -140,7 +154,7 @@ const style = getStyle(sldLayer, stylename);
 getRules(style.featuretypestyles['0'], geojson, resolution);
 ```
 
-Returns **[Array][47]&lt;[Rule][50]>** 
+Returns **[Array][53]&lt;[Rule][56]>** 
 
 ### getGeometryStyles
 
@@ -148,9 +162,9 @@ Get styling from rules per geometry type
 
 #### Parameters
 
--   `rules` **[Array][47]&lt;[Rule][50]>** [description]
+-   `rules` **[Array][53]&lt;[Rule][56]>** [description]
 
-Returns **[GeometryStyles][51]** 
+Returns **[GeometryStyles][57]** 
 
 ### OlStyler
 
@@ -158,9 +172,9 @@ Create openlayers style
 
 #### Parameters
 
--   `GeometryStyles` **[GeometryStyles][51]** rulesconverter
--   `feature` **([object][43] | Feature)** [geojson][52]
-     or [ol/Feature][53] Changed in 0.0.04 & 0.0.5!
+-   `GeometryStyles` **[GeometryStyles][57]** rulesconverter
+-   `feature` **([object][49] | Feature)** [geojson][58]
+     or [ol/Feature][59] Changed in 0.0.04 & 0.0.5!
 
 #### Examples
 
@@ -177,12 +191,12 @@ Types are the javascript representation of the ogc sld structure
 
 ### StyledLayerDescriptor
 
-a typedef for StyledLayerDescriptor [xsd][54]
+a typedef for StyledLayerDescriptor [xsd][60]
 
 #### Properties
 
--   `version` **[string][45]** sld version
--   `layers` **[Array][47]&lt;[Layer][48]>** info extracted from NamedLayer element
+-   `version` **[string][51]** sld version
+-   `layers` **[Array][53]&lt;[Layer][54]>** info extracted from NamedLayer element
 
 ### Layer
 
@@ -190,46 +204,46 @@ a typedef for Layer, the actual style object for a single layer
 
 #### Properties
 
--   `name` **[string][45]** layer name
--   `styles` **[Array][47]&lt;[Object][43]>** See explanation at [Geoserver docs][55]
-    -   `styles[].default` **[Boolean][56]** 
-    -   `styles[].name` **[String][45]?** 
-    -   `styles[].featuretypestyles` **[Array][47]&lt;[FeatureTypeStyle][42]>** Geoserver will draw multiple,
+-   `name` **[string][51]** layer name
+-   `styles` **[Array][53]&lt;[Object][49]>** See explanation at [Geoserver docs][61]
+    -   `styles[].default` **[Boolean][62]** 
+    -   `styles[].name` **[String][51]?** 
+    -   `styles[].featuretypestyles` **[Array][53]&lt;[FeatureTypeStyle][48]>** Geoserver will draw multiple,
         libraries as openlayers can only use one definition!
 
 ### FeatureTypeStyle
 
-a typedef for FeatureTypeStyle: [xsd][57]
+a typedef for FeatureTypeStyle: [xsd][63]
 
 #### Properties
 
--   `rules` **[Array][47]&lt;[Rule][50]>** 
+-   `rules` **[Array][53]&lt;[Rule][56]>** 
 
 ### Rule
 
-a typedef for Rule to match a feature: [xsd][57]
+a typedef for Rule to match a feature: [xsd][63]
 
 #### Properties
 
--   `name` **[string][45]** rule name
--   `filter` **[Array][47]&lt;[Filter][58]>?** 
--   `elsefilter` **[boolean][56]?** 
+-   `name` **[string][51]** rule name
+-   `filter` **[Array][53]&lt;[Filter][64]>?** 
+-   `elsefilter` **[boolean][62]?** 
 -   `minscaledenominator` **integer?** 
 -   `maxscaledenominator` **integer?** 
--   `polygonsymbolizer` **[PolygonSymbolizer][59]?** 
--   `linesymbolizer` **[LineSymbolizer][60]?** 
--   `pointsymbolizer` **[PointSymbolizer][61]?** 
+-   `polygonsymbolizer` **[PolygonSymbolizer][65]?** 
+-   `linesymbolizer` **[LineSymbolizer][66]?** 
+-   `pointsymbolizer` **[PointSymbolizer][67]?** 
 
 ### Filter
 
-[filter operators][62], see also
-[geoserver][63]
+[filter operators][68], see also
+[geoserver][69]
 
 #### Properties
 
--   `type` **[string][45]** Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
--   `fids` **[Array][47]&lt;[string][45]>?** An array of feature id's. Required for type='featureid'.
--   `operator` **[string][45]?** Required for type='comparison'. Can be one of
+-   `type` **[string][51]** Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
+-   `fids` **[Array][53]&lt;[string][51]>?** An array of feature id's. Required for type='featureid'.
+-   `operator` **[string][51]?** Required for type='comparison'. Can be one of
     'propertyisequalto',
     'propertyisnotequalto',
     'propertyislessthan',
@@ -238,59 +252,59 @@ a typedef for Rule to match a feature: [xsd][57]
     'propertyisgreaterthanorequalto',
     'propertyislike',
     'propertyisbetween'
--   `predicates` **[Array][47]&lt;[Filter][58]>?** Required for type='and' or type='or'.
+-   `predicates` **[Array][53]&lt;[Filter][64]>?** Required for type='and' or type='or'.
     An array of filter predicates that must all evaluate to true for 'and', or
     for which at least one must evaluate to true for 'or'.
--   `predicate` **[Filter][58]?** Required for type='not'. A single predicate to negate.
--   `propertyname` **[string][45]?** Required for type='comparison'.
--   `literal` **[string][45]?** A literal value to use in a comparison,
+-   `predicate` **[Filter][64]?** Required for type='not'. A single predicate to negate.
+-   `propertyname` **[string][51]?** Required for type='comparison'.
+-   `literal` **[string][51]?** A literal value to use in a comparison,
     required for type='comparison'.
--   `lowerboundary` **[string][45]?** Lower boundary, required for operator='propertyisbetween'.
--   `upperboundary` **[string][45]?** Upper boundary, required for operator='propertyisbetween'.
--   `wildcard` **[string][45]?** Required wildcard character for operator='propertyislike'.
--   `singlechar` **[string][45]?** Required single char match character,
+-   `lowerboundary` **[string][51]?** Lower boundary, required for operator='propertyisbetween'.
+-   `upperboundary` **[string][51]?** Upper boundary, required for operator='propertyisbetween'.
+-   `wildcard` **[string][51]?** Required wildcard character for operator='propertyislike'.
+-   `singlechar` **[string][51]?** Required single char match character,
     required for operator='propertyislike'.
--   `escapechar` **[string][45]?** Required escape character for operator='propertyislike'.
+-   `escapechar` **[string][51]?** Required escape character for operator='propertyislike'.
 
 ### LineSymbolizer
 
-a typedef for [LineSymbolizer][64], see also
-[geoserver docs][65]
+a typedef for [LineSymbolizer][70], see also
+[geoserver docs][71]
 
 #### Properties
 
--   `stroke` **[Object][43]** 
-    -   `stroke.css` **[Array][47]&lt;[Object][43]>** one object per CssParameter with props name (camelcased) & value
+-   `stroke` **[Object][49]** 
+    -   `stroke.css` **[Array][53]&lt;[Object][49]>** one object per CssParameter with props name (camelcased) & value
 
 ### PolygonSymbolizer
 
-a typedef for [PolygonSymbolizer][64], see also
-[geoserver docs][66]
+a typedef for [PolygonSymbolizer][70], see also
+[geoserver docs][72]
 
 #### Properties
 
--   `fill` **[Object][43]** 
-    -   `fill.css` **[array][47]** one object per CssParameter with props name (camelcased) & value
--   `stroke` **[Object][43]** 
-    -   `stroke.css` **[Array][47]&lt;[Object][43]>** with camelcased name & value
+-   `fill` **[Object][49]** 
+    -   `fill.css` **[array][53]** one object per CssParameter with props name (camelcased) & value
+-   `stroke` **[Object][49]** 
+    -   `stroke.css` **[Array][53]&lt;[Object][49]>** with camelcased name & value
 
 ### PointSymbolizer
 
-a typedef for PointSymbolizer [xsd][64]
-& [geoserver docs][67]
+a typedef for PointSymbolizer [xsd][70]
+& [geoserver docs][73]
 
 #### Properties
 
--   `graphic` **[Object][43]** 
-    -   `graphic.externalgraphic` **[Object][43]** 
-        -   `graphic.externalgraphic.onlineresource` **[string][45]** 
-    -   `graphic.mark` **[Object][43]** 
-        -   `graphic.mark.wellknownname` **[string][45]** 
-        -   `graphic.mark.fill` **[Object][43]** 
-        -   `graphic.mark.stroke` **[Object][43]** 
-    -   `graphic.opacity` **[Number][49]** 
-    -   `graphic.size` **[Number][49]** 
-    -   `graphic.rotation` **[Number][49]** 
+-   `graphic` **[Object][49]** 
+    -   `graphic.externalgraphic` **[Object][49]** 
+        -   `graphic.externalgraphic.onlineresource` **[string][51]** 
+    -   `graphic.mark` **[Object][49]** 
+        -   `graphic.mark.wellknownname` **[string][51]** 
+        -   `graphic.mark.fill` **[Object][49]** 
+        -   `graphic.mark.stroke` **[Object][49]** 
+    -   `graphic.opacity` **[Number][55]** 
+    -   `graphic.size` **[Number][55]** 
+    -   `graphic.rotation` **[Number][55]** 
 
 ### GeometryStyles
 
@@ -298,9 +312,43 @@ contains for each geometry type the symbolizer from an array of rules
 
 #### Properties
 
--   `polygon` **[Array][47]&lt;[PolygonSymbolizer][59]>** polygonsymbolizers
--   `line` **[Array][47]&lt;[LineSymbolizer][60]>** linesymbolizers
--   `point` **[Array][47]&lt;[PointSymbolizer][61]>** pointsymbolizers, same as graphic prop from PointSymbolizer
+-   `polygon` **[Array][53]&lt;[PolygonSymbolizer][65]>** polygonsymbolizers
+-   `line` **[Array][53]&lt;[LineSymbolizer][66]>** linesymbolizers
+-   `point` **[Array][53]&lt;[PointSymbolizer][67]>** pointsymbolizers, same as graphic prop from PointSymbolizer
+
+## createCachedImageStyle
+
+Create an OL Icon style for an external graphic.
+The Graphic must be already loaded and present in the global imageCache.
+
+### Parameters
+
+-   `imageUrl` **[string][51]** Url of the external graphic.
+-   `size` **[number][55]** Requested size in pixels.
+
+## processExternalGraphicSymbolizers
+
+Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
+On image load start or load end, update \_\_loadingState metadata of the symbolizers for that image url.
+
+### Parameters
+
+-   `rules` **[Array][53]&lt;[object][49]>** Array of SLD rule objects that pass the filter for a single feature.
+-   `featureTypeStyle` **[FeatureTypeStyle][48]** The feature type style object for a layer.
+-   `imageLoadState` **[object][49]** Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
+-   `imageLoadedCallback` **[Function][50]** Function to call when an image has loaded.
+
+## updateExternalGraphicRules
+
+Go through all rules with an external graphic matching the image url
+and update the **loadingState metadata for the symbolizers with the new imageLoadState.
+This action replaces symbolizers with new symbolizers if they get a new **loadingState.
+
+### Parameters
+
+-   `featureTypeStyle` **[object][49]** A feature type style object.
+-   `imageUrl` **[string][51]** The image url.
+-   `imageLoadState` **[string][51]** One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
 
 [1]: #methods
 
@@ -384,54 +432,66 @@ contains for each geometry type the symbolizer from an array of rules
 
 [41]: #properties-8
 
-[42]: #featuretypestyle
+[42]: #createcachedimagestyle
 
-[43]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[43]: #parameters-9
 
-[44]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
+[44]: #processexternalgraphicsymbolizers
 
-[45]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[45]: #parameters-10
 
-[46]: #styledlayerdescriptor
+[46]: #updateexternalgraphicrules
 
-[47]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[47]: #parameters-11
 
-[48]: #layer
+[48]: #featuretypestyle
 
-[49]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[49]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-[50]: #rule
+[50]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
 
-[51]: #geometrystyles
+[51]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[52]: http://geojson.org
+[52]: #styledlayerdescriptor
 
-[53]: https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html
+[53]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
-[54]: http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd
+[54]: #layer
 
-[55]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html
+[55]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
 
-[56]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[56]: #rule
 
-[57]: http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd
+[57]: #geometrystyles
 
-[58]: #filter
+[58]: http://geojson.org
 
-[59]: #polygonsymbolizer
+[59]: https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html
 
-[60]: #linesymbolizer
+[60]: http://schemas.opengis.net/sld/1.1/StyledLayerDescriptor.xsd
 
-[61]: #pointsymbolizer
+[61]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/styles.html
 
-[62]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
+[62]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
 
-[63]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html
+[63]: http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd
 
-[64]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
+[64]: #filter
 
-[65]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer
+[65]: #polygonsymbolizer
 
-[66]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html
+[66]: #linesymbolizer
 
-[67]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html
+[67]: #pointsymbolizer
+
+[68]: http://schemas.opengis.net/filter/1.1.0/filter.xsd
+
+[69]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html
+
+[70]: http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd
+
+[71]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer
+
+[72]: http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html
+
+[73]: http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html

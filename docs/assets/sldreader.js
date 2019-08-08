@@ -1,16 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/style'), require('ol/style/fill'), require('ol/style/stroke'), require('ol/style/circle'), require('ol/style/icon'), require('ol/style/regularshape'), require('ol/style/text')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/style', 'ol/style/fill', 'ol/style/stroke', 'ol/style/circle', 'ol/style/icon', 'ol/style/regularshape', 'ol/style/text'], factory) :
-  (global = global || self, factory(global.SLDReader = {}, global.ol.style.Style, global.ol.style.Fill, global.ol.style.Stroke, global.ol.style.Circle, global.ol.style.Icon, global.ol.style.RegularShape, global.ol.style.Text));
-}(this, function (exports, Style, Fill, Stroke, Circle, Icon, RegularShape, Text) { 'use strict';
-
-  Style = Style && Style.hasOwnProperty('default') ? Style['default'] : Style;
-  Fill = Fill && Fill.hasOwnProperty('default') ? Fill['default'] : Fill;
-  Stroke = Stroke && Stroke.hasOwnProperty('default') ? Stroke['default'] : Stroke;
-  Circle = Circle && Circle.hasOwnProperty('default') ? Circle['default'] : Circle;
-  Icon = Icon && Icon.hasOwnProperty('default') ? Icon['default'] : Icon;
-  RegularShape = RegularShape && RegularShape.hasOwnProperty('default') ? RegularShape['default'] : RegularShape;
-  Text = Text && Text.hasOwnProperty('default') ? Text['default'] : Text;
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style'], factory) :
+  (global = global || self, factory(global.SLDReader = {}, global.ol.style));
+}(this, function (exports, style) { 'use strict';
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -873,39 +865,39 @@
   // }
   var imageCache = {};
 
-  var defaultPointStyle = new Style({
-    image: new Circle({
+  var defaultPointStyle = new style.Style({
+    image: new style.Circle({
       radius: 8,
-      fill: new Fill({
+      fill: new style.Fill({
         color: 'blue',
         fillOpacity: 0.7,
       }),
     }),
   });
 
-  var imageLoadingStyle = new Style({
-    image: new Circle({
+  var imageLoadingStyle = new style.Style({
+    image: new style.Circle({
       radius: 5,
-      fill: new Fill({
+      fill: new style.Fill({
         color: '#DDDDDD',
       }),
-      stroke: new Stroke({
+      stroke: new style.Stroke({
         width: 1,
         color: '#888888',
       }),
     }),
   });
 
-  var imageErrorStyle = new Style({
-    image: new RegularShape({
+  var imageErrorStyle = new style.Style({
+    image: new style.RegularShape({
       angle: Math.PI / 4,
-      fill: new Fill({
+      fill: new style.Fill({
         color: 'red',
       }),
       points: 4,
       radius1: 8,
       radius2: 0,
-      stroke: new Stroke({
+      stroke: new style.Stroke({
         color: 'red',
         width: 4,
       }),
@@ -928,13 +920,13 @@
     return ("rgb(" + r + ", " + g + ", " + b + ")");
   }
 
-  function polygonStyle(style) {
-    var stroke = style.stroke && style.stroke.styling;
-    var fill = style.fill && style.fill.styling;
-    return new Style({
+  function polygonStyle(style$1) {
+    var stroke = style$1.stroke && style$1.stroke.styling;
+    var fill = style$1.fill && style$1.fill.styling;
+    return new style.Style({
       fill:
         fill &&
-        new Fill({
+        new style.Fill({
           color:
             fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
               ? hexToRGB(fill.fill, fill.fillOpacity)
@@ -942,7 +934,7 @@
         }),
       stroke:
         stroke &&
-        new Stroke({
+        new style.Stroke({
           color:
             stroke.strokeOpacity &&
             stroke.stroke &&
@@ -964,21 +956,21 @@
    * @return {object} openlayers style
    */
   function lineStyle(linesymbolizer) {
-    var style = {};
+    var style$1 = {};
     if (linesymbolizer.stroke) {
-      style = linesymbolizer.stroke.styling;
+      style$1 = linesymbolizer.stroke.styling;
     }
-    return new Style({
-      stroke: new Stroke({
+    return new style.Style({
+      stroke: new style.Stroke({
         color:
-          style.strokeOpacity && style.stroke && style.stroke.slice(0, 1) === '#'
-            ? hexToRGB(style.stroke, style.strokeOpacity)
-            : style.stroke || '#3399CC',
-        width: style.strokeWidth || 1.25,
-        lineCap: style.strokeLinecap && style.strokeLinecap,
-        lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
-        lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
-        lineJoin: style.strokeLinejoin && style.strokeLinejoin,
+          style$1.strokeOpacity && style$1.stroke && style$1.stroke.slice(0, 1) === '#'
+            ? hexToRGB(style$1.stroke, style$1.strokeOpacity)
+            : style$1.stroke || '#3399CC',
+        width: style$1.strokeWidth || 1.25,
+        lineCap: style$1.strokeLinecap && style$1.strokeLinecap,
+        lineDash: style$1.strokeDasharray && style$1.strokeDasharray.split(' '),
+        lineDashOffset: style$1.strokeDashoffset && style$1.strokeDashoffset,
+        lineJoin: style$1.strokeLinejoin && style$1.strokeLinejoin,
       }),
     });
   }
@@ -995,8 +987,8 @@
     var width = ref.width;
     var height = ref.height;
     var maxSide = Math.max(width, height);
-    return new Style({
-      image: new Icon({
+    return new style.Style({
+      image: new style.Icon({
         img: image,
         imgSize: [width, height],
         // Calculate scale so the image will be resized to the requested size.
@@ -1011,14 +1003,14 @@
    * @return {object} openlayers style
    */
   function pointStyle(pointsymbolizer) {
-    var style = pointsymbolizer.graphic;
-    if (style.externalgraphic && style.externalgraphic.onlineresource) {
+    var style$1 = pointsymbolizer.graphic;
+    if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
       // Check symbolizer metadata to see if the image has already been loaded.
       switch (pointsymbolizer.__loadingState) {
         case IMAGE_LOADED:
           return createCachedImageStyle(
-            style.externalgraphic.onlineresource,
-            style.size
+            style$1.externalgraphic.onlineresource,
+            style$1.size
           );
         case IMAGE_LOADING:
           return imageLoadingStyle;
@@ -1029,38 +1021,38 @@
           return imageLoadingStyle;
       }
     }
-    if (style.mark) {
-      var ref = style.mark;
+    if (style$1.mark) {
+      var ref = style$1.mark;
       var fill = ref.fill;
       var stroke = ref.stroke;
       var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-      fill = new Fill({
+      fill = new style.Fill({
         color: fillColor,
       });
       if (stroke && !(Number(stroke.styling.strokeWidth) === 0)) {
         var ref$1 = stroke.styling;
         var cssStroke = ref$1.stroke;
         var cssStrokeWidth = ref$1.strokeWidth;
-        stroke = new Stroke({
+        stroke = new style.Stroke({
           color: cssStroke || 'black',
           width: cssStrokeWidth || 2,
         });
       } else {
         stroke = undefined;
       }
-      var radius = Number(style.size) || 10;
-      switch (style.mark.wellknownname) {
+      var radius = Number(style$1.size) || 10;
+      switch (style$1.mark.wellknownname) {
         case 'circle':
-          return new Style({
-            image: new Circle({
+          return new style.Style({
+            image: new style.Circle({
               fill: fill,
               radius: radius,
               stroke: stroke,
             }),
           });
         case 'triangle':
-          return new Style({
-            image: new RegularShape({
+          return new style.Style({
+            image: new style.RegularShape({
               fill: fill,
               points: 3,
               radius: radius,
@@ -1068,8 +1060,8 @@
             }),
           });
         case 'star':
-          return new Style({
-            image: new RegularShape({
+          return new style.Style({
+            image: new style.RegularShape({
               fill: fill,
               points: 5,
               radius1: radius,
@@ -1078,23 +1070,23 @@
             }),
           });
         case 'cross':
-          return new Style({
-            image: new RegularShape({
+          return new style.Style({
+            image: new style.RegularShape({
               fill: fill,
               points: 4,
               radius1: radius,
               radius2: 0,
               stroke:
                 stroke ||
-                new Stroke({
+                new style.Stroke({
                   color: fillColor,
                   width: radius / 2,
                 }),
             }),
           });
         case 'x':
-          return new Style({
-            image: new RegularShape({
+          return new style.Style({
+            image: new style.RegularShape({
               angle: Math.PI / 4,
               fill: fill,
               points: 4,
@@ -1102,7 +1094,7 @@
               radius2: 0,
               stroke:
                 stroke ||
-                new Stroke({
+                new style.Stroke({
                   color: fillColor,
                   width: radius / 2,
                 }),
@@ -1110,8 +1102,8 @@
           });
         default:
           // Default is `square`
-          return new Style({
-            image: new RegularShape({
+          return new style.Style({
+            image: new style.RegularShape({
               angle: Math.PI / 4,
               fill: fill,
               points: 4,
@@ -1121,10 +1113,10 @@
           });
       }
     }
-    return new Style({
-      image: new Circle({
+    return new style.Style({
+      image: new style.Circle({
         radius: 4,
-        fill: new Fill({
+        fill: new style.Fill({
           color: 'blue',
         }),
       }),
@@ -1210,8 +1202,8 @@
 
       // Halo styling
 
-      return new Style({
-        text: new Text({
+      return new style.Style({
+        text: new style.Text({
           text: text,
           font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
           offsetX: Number(offsetX),
@@ -1221,7 +1213,7 @@
           textAlign: 'center',
           textBaseline: 'middle',
           stroke: textsymbolizer.halo
-            ? new Stroke({
+            ? new style.Stroke({
               color:
                   halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
                     ? hexToRGB(halo.fill, halo.fillOpacity)
@@ -1233,7 +1225,7 @@
                     : haloRadius) * 2,
             })
             : undefined,
-          fill: new Fill({
+          fill: new style.Fill({
             color:
               fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
                 ? hexToRGB(fill.fill, fill.fillOpacity)
@@ -1242,7 +1234,7 @@
         }),
       });
     }
-    return new Style({});
+    return new style.Style({});
   }
 
   // Create memoized versions of the style converters.
