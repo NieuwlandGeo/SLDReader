@@ -50,15 +50,15 @@
     "karma-rollup-preprocessor": "^7.0.0",
     "mocha": "^5.2.0",
     "npm-run-all": "^4.1.5",
+    "ol": "^5.3.0",
     "prettier": "^1.16.4",
     "rollup": "^1.7.4",
     "rollup-plugin-buble": "^0.19.6",
     "rollup-plugin-node-resolve": "^4.0.1"
   },
-  "dependencies": {
+  "peerDependencies": {
     "ol": "^5.3.0"
   },
-  "peerDependencies": {},
   "homepage": "https://github.com/NieuwlandGeo/SLDReader#readme",
   "directories": {
     "doc": "docs",
