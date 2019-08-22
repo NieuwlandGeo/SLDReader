@@ -1106,7 +1106,8 @@
               angle: Math.PI / 4,
               fill: fill,
               points: 4,
-              radius: radius,
+              // For square, scale radius so the height of the square equals the given size.
+              radius: radius * Math.sqrt(2.0),
               stroke: stroke,
             }),
           });
