@@ -986,13 +986,12 @@
     var image = ref.image;
     var width = ref.width;
     var height = ref.height;
-    var maxSide = Math.max(width, height);
     return new style.Style({
       image: new style.Icon({
         img: image,
         imgSize: [width, height],
-        // Calculate scale so the image will be resized to the requested size.
-        scale: size / maxSide || 1,
+        // According to SLD spec, if size is given, image height should equal the given size.
+        scale: size / height || 1,
       }),
     });
   }
@@ -1040,7 +1039,7 @@
       } else {
         stroke = undefined;
       }
-      var radius = Number(style$1.size) || 10;
+      var radius = (0.5 * Number(style$1.size)) || 10;
       switch (style$1.mark.wellknownname) {
         case 'circle':
           return new style.Style({
@@ -1107,7 +1106,8 @@
               angle: Math.PI / 4,
               fill: fill,
               points: 4,
-              radius: radius,
+              // For square, scale radius so the height of the square equals the given size.
+              radius: radius * Math.sqrt(2.0),
               stroke: stroke,
             }),
           });
