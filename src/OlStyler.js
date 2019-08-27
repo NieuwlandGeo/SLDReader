@@ -132,13 +132,12 @@ function lineStyle(linesymbolizer) {
  */
 function createCachedImageStyle(imageUrl, size) {
   const { image, width, height } = imageCache[imageUrl];
-  const maxSide = Math.max(width, height);
   return new Style({
     image: new Icon({
       img: image,
       imgSize: [width, height],
-      // Calculate scale so the image will be resized to the requested size.
-      scale: size / maxSide || 1,
+      // According to SLD spec, if size is given, image height should equal the given size.
+      scale: size / height || 1,
     }),
   });
 }
@@ -182,7 +181,7 @@ function pointStyle(pointsymbolizer) {
     } else {
       stroke = undefined;
     }
-    const radius = Number(style.size) || 10;
+    const radius = (0.5 * Number(style.size)) || 10;
     switch (style.mark.wellknownname) {
       case 'circle':
         return new Style({
@@ -249,7 +248,8 @@ function pointStyle(pointsymbolizer) {
             angle: Math.PI / 4,
             fill,
             points: 4,
-            radius,
+            // For square, scale radius so the height of the square equals the given size.
+            radius: radius * Math.sqrt(2.0),
             stroke,
           }),
         });
