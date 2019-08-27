@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.1.0
+
+### Breaking change
+SLDReader is built upon OpenLayers 5 now. It now requires OpenLayers 5.3.0 as a peer dependency. If you still use OpenLayers 4, please stay with the 0.0.x versions.
+
+### Bugfix
+The handing of the Size parameter within a Graphic did not conform to the OpenGIS Symbology Encoding Implementation Specification. This has been fixed. More specifically:
+* When using a Mark, the Size parameter now correctly sets the diameter (or height in case of a square).
+* When using an ExternalGraphic, the image is scaled so the height equals the given Size. When no Size parameter is given, the image is displayed at its native size.
+
 ## Version 0.0.8
 
 ### Bugfix
