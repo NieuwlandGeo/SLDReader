@@ -29,6 +29,17 @@ describe('Filter tests', () => {
     expect(filter.upperboundary).to.equal('1065512599');
   });
 
+  it('PropertyIsNull', () => {
+    const filterXml = `<Filter>
+      <PropertyIsNull>
+        <PropertyName>PERIMETER</PropertyName>
+      </PropertyIsNull>
+    </Filter>`;
+
+    const filter = Reader(filterXml);
+    expect(filter.type).to.equal('comparison');
+  });
+
   it('PropertyIsLike', () => {
     const filterXml = `<Filter>
       <PropertyIsLike wildCard="%" singleChar="?" escapeChar="\\">

@@ -77,6 +77,18 @@ describe('filter rules', () => {
       expect(filterSelector(filter, featureuneq)).to.be.true;
     });
 
+    it('propertyisnull', () => {
+      const featureeq = { properties: { PERIMETER: 1071304933 } };
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisnull',
+        propertyname: 'PERIMETER',
+      };
+      expect(filterSelector(filter, featureeq)).to.be.false;
+      const featureuneq = { properties: { PERIMETER: null } };
+      expect(filterSelector(filter, featureuneq)).to.be.true;
+    });
+
     it('propertyislessthanorequalto', () => {
       const feature = { properties: { PERIMETER: 1071304933 } };
       const filter = {

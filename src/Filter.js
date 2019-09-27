@@ -21,6 +21,11 @@ function propertyIsEqualTo(comparison, value) {
   return value == comparison.literal;
 }
 
+function propertyIsNull(comparison, value) {
+  /* eslint-disable-next-line eqeqeq */
+  return value == null;
+}
+
 /**
  * A very basic implementation of a PropertyIsLike by converting match pattern to a regex.
  * @private
@@ -99,6 +104,8 @@ function doComparison(comparison, feature, getProperty) {
       );
     case 'propertyisbetween':
       return propertyIsBetween(comparison, value);
+    case 'propertyisnull':
+      return propertyIsNull(comparison, value);
     case 'propertyislike':
       return propertyIsLike(comparison, value);
     default:
