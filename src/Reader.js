@@ -121,6 +121,7 @@ const FilterParsers = {
   PropertyIsGreaterThan: addFilterComparison,
   PropertyIsGreaterThanOrEqualTo: addFilterComparison,
   PropertyIsBetween: addFilterComparison,
+  PropertyIsNull: addFilterComparison,
   PropertyIsLike: (element, obj, prop) => {
     addFilterComparison(element, obj, prop);
     obj.wildcard = element.getAttribute('wildCard');

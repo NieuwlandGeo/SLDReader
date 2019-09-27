@@ -45,6 +45,7 @@ npm start
 - PropertyIsLessThanOrEqualTo
 - PropertyIsGreaterThan
 - PropertyIsGreaterThanOrEqualTo
+- PropertyIsNull
 - PropertyIsLike
 - PropertyIsBetween
 - And
