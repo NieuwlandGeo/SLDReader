@@ -38,6 +38,8 @@ describe('Filter tests', () => {
 
     const filter = Reader(filterXml);
     expect(filter.type).to.equal('comparison');
+    expect(filter.operator).to.equal('propertyisnull');
+    expect(filter.propertyname).to.equal('PERIMETER');
   });
 
   it('PropertyIsLike', () => {
