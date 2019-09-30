@@ -172,7 +172,7 @@ function pointStyle(pointsymbolizer) {
     fill = new Fill({
       color: fillColor,
     });
-    if (stroke && !(Number(stroke.styling.strokeWidth) === 0)) {
+    if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
       const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.styling;
       stroke = new Stroke({
         color: cssStroke || 'black',
