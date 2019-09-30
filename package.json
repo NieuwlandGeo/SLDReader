@@ -1,6 +1,6 @@
 {
   "name": "@nieuwlandgeo/sldreader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SLD reader and formatter for openlayers",
   "main": "dist/sldreader.js",
   "keywords": [
