@@ -74,7 +74,7 @@ describe('creates point style', () => {
           mark: {
             wellknownname: 'circle',
             fill: {},
-            strok: {},
+            stroke: {},
           },
           opactity: 20,
           size: 10,
