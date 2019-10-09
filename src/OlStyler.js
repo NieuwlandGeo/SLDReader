@@ -69,8 +69,30 @@ function hexToRGB(hex, alpha) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-function polygonStyle(style) {
+function createPattern(graphic) {
+  const { image, width, height } = imageCache[graphic.externalgraphic.onlineresource];
+  const maxSide = Math.max(width, height);
 
+  let imageRatio = 1;
+  if (graphic.size && maxSide !== graphic.size) {
+    imageRatio = graphic.size / maxSide;
+  }
+  const cnv = document.createElement('canvas');
+  const ctx = cnv.getContext('2d');
+  if (imageRatio == 1) {
+    return ctx.createPattern(image, 'repeat');
+  } else {
+    const tempCanvas = document.createElement("canvas");
+    const tCtx = tempCanvas.getContext("2d");
+
+    tempCanvas.width = width * imageRatio;
+    tempCanvas.height = height * imageRatio;
+    tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio);
+    return ctx.createPattern(tempCanvas, 'repeat');
+  }
+}
+
+function polygonStyle(style) {
   if (style.fill
         && style.fill.graphicfill
         && style.fill.graphicfill.graphic
@@ -79,31 +101,10 @@ function polygonStyle(style) {
     // Check symbolizer metadata to see if the image has already been loaded.
     switch (style.__loadingState) {
       case IMAGE_LOADED:
-        const { image, width, height } = imageCache[style.fill.graphicfill.graphic.externalgraphic.onlineresource]
-        const maxSide = Math.max(width, height)
-
-        let imageRatio = 1
-        if (style.fill.graphicfill.graphic.size && maxSide != style.fill.graphicfill.graphic.size) {
-            imageRatio = style.fill.graphicfill.graphic.size / maxSide
-        }
-        let cnv = document.createElement('canvas');
-        let ctx = cnv.getContext('2d')
-        let pattern
-        if (imageRatio == 1) {
-            pattern = ctx.createPattern(image, 'repeat')
-        } else {
-            let tempCanvas = document.createElement("canvas")
-            let tCtx = tempCanvas.getContext("2d")
-
-            tempCanvas.width = width * imageRatio
-            tempCanvas.height = height * imageRatio
-            tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio)
-            pattern = ctx.createPattern(tempCanvas, 'repeat')
-        }
         return(new Style({
-            fill: new Fill({
-              color: pattern
-            })
+          fill: new Fill({
+            color: createPattern(style.fill.graphicfill.graphic)
+          })
           }));
 
       case IMAGE_LOADING:
@@ -564,17 +565,17 @@ function processExternalGraphicSymbolizers(
     if (rule.pointsymbolizer
         && rule.pointsymbolizer.graphic
         && rule.pointsymbolizer.graphic.externalgraphic) {
-        symbolizer = rule.pointsymbolizer;
-        graphic = rule.pointsymbolizer.graphic;
+      symbolizer = rule.pointsymbolizer;
+      graphic = rule.pointsymbolizer.graphic;
     } else if (rule.polygonsymbolizer
         && rule.polygonsymbolizer.fill
         && rule.polygonsymbolizer.fill.graphicfill
         && rule.polygonsymbolizer.fill.graphicfill.graphic
         && rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic) {
-        symbolizer = rule.polygonsymbolizer;
-        graphic = rule.polygonsymbolizer.fill.graphicfill.graphic;
+      symbolizer = rule.polygonsymbolizer;
+      graphic = rule.polygonsymbolizer.fill.graphicfill.graphic;
     } else {
-        continue;
+      continue;
     }
 
     const { externalgraphic } = graphic;
@@ -593,7 +594,7 @@ function processExternalGraphicSymbolizers(
       // Change image load state on the symbolizer if it has changed in the meantime.
       symbolizer.__loadingState !== imageLoadState[imageUrl]
     ) {
-      updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl])
+      updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
     }
   }
 }

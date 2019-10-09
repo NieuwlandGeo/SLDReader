@@ -97,7 +97,7 @@ function updateExternalGraphicRules(
   }
 
   featureTypeStyle.rules.forEach(rule => {
-    updateExternalGraphicRule(rule, imageUrl, imageLoadState)
+    updateExternalGraphicRule(rule, imageUrl, imageLoadState);
   });
 }
 
@@ -114,37 +114,37 @@ export function updateExternalGraphicRule(
   imageUrl,
   imageLoadState
 ) {
-    // for pointsymbolizer
-    if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
-        const { graphic } = rule.pointsymbolizer;
-        const { externalgraphic } = graphic;
-        if (
-          externalgraphic &&
-          externalgraphic.onlineresource === imageUrl &&
-          rule.pointsymbolizer.__loadingState !== imageLoadState
-        ) {
-          rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
-            __loadingState: imageLoadState,
-          });
-        }
+  // for pointsymbolizer
+  if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
+    const { graphic } = rule.pointsymbolizer;
+    const { externalgraphic } = graphic;
+    if (
+      externalgraphic &&
+      externalgraphic.onlineresource === imageUrl &&
+      rule.pointsymbolizer.__loadingState !== imageLoadState
+    ) {
+      rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+        __loadingState: imageLoadState,
+      });
     }
-    // for polygonsymbolizer
-    if (rule.polygonsymbolizer
-            && rule.polygonsymbolizer.fill
-            && rule.polygonsymbolizer.fill.graphicfill
-            && rule.polygonsymbolizer.fill.graphicfill.graphic) {
-        const { graphic } = rule.polygonsymbolizer.fill.graphicfill;
-        const { externalgraphic } = graphic;
-        if (
-          externalgraphic &&
-          externalgraphic.onlineresource === imageUrl &&
-          rule.polygonsymbolizer.__loadingState !== imageLoadState
-        ) {
-          rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
-            __loadingState: imageLoadState,
-          });
-        }
+  }
+  // for polygonsymbolizer
+  if (rule.polygonsymbolizer
+        && rule.polygonsymbolizer.fill
+        && rule.polygonsymbolizer.fill.graphicfill
+        && rule.polygonsymbolizer.fill.graphicfill.graphic) {
+    const { graphic } = rule.polygonsymbolizer.fill.graphicfill;
+    const { externalgraphic } = graphic;
+    if (
+      externalgraphic &&
+      externalgraphic.onlineresource === imageUrl &&
+      rule.polygonsymbolizer.__loadingState !== imageLoadState
+    ) {
+      rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
+        __loadingState: imageLoadState,
+      });
     }
+  }
 }
 
 
