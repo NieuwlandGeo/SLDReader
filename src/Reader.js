@@ -146,6 +146,7 @@ const SymbParsers = {
   TextSymbolizer: addProp,
   Fill: addProp,
   Stroke: addProp,
+  GraphicFill: addProp,
   Graphic: addProp,
   ExternalGraphic: addProp,
   Mark: addProp,
