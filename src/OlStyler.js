@@ -79,17 +79,16 @@ function createPattern(graphic) {
   }
   const cnv = document.createElement('canvas');
   const ctx = cnv.getContext('2d');
-  if (imageRatio == 1) {
+  if (imageRatio === 1) {
     return ctx.createPattern(image, 'repeat');
-  } else {
-    const tempCanvas = document.createElement("canvas");
-    const tCtx = tempCanvas.getContext("2d");
-
-    tempCanvas.width = width * imageRatio;
-    tempCanvas.height = height * imageRatio;
-    tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio);
-    return ctx.createPattern(tempCanvas, 'repeat');
   }
+  const tempCanvas = document.createElement('canvas');
+  const tCtx = tempCanvas.getContext('2d');
+
+  tempCanvas.width = width * imageRatio;
+  tempCanvas.height = height * imageRatio;
+  tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio);
+  return ctx.createPattern(tempCanvas, 'repeat');
 }
 
 function polygonStyle(style) {
@@ -101,12 +100,12 @@ function polygonStyle(style) {
     // Check symbolizer metadata to see if the image has already been loaded.
     switch (style.__loadingState) {
       case IMAGE_LOADED:
+        const pattern = createPattern(style.fill.graphicfill.graphic);
         return(new Style({
           fill: new Fill({
-            color: createPattern(style.fill.graphicfill.graphic)
-          })
-          }));
-
+            color: pattern,
+          }),
+        }));
       case IMAGE_LOADING:
         return imageLoadingStyle;
       case IMAGE_ERROR:
