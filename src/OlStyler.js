@@ -119,7 +119,7 @@ function polygonStyle(style) {
     // Check symbolizer metadata to see if the image has already been loaded.
     switch (style.__loadingState) {
       case IMAGE_LOADED:
-        return(new Style({
+        return (new Style({
           fill: new Fill({
             color: createPattern(style.fill.graphicfill.graphic),
           }),
