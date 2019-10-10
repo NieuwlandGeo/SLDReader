@@ -24,7 +24,7 @@ const defaultPointStyle = new Style({
   }),
 });
 
-const imageLoadingStyle = new Style({
+const imageLoadingPointStyle = new Style({
   image: new Circle({
     radius: 5,
     fill: new Fill({
@@ -37,7 +37,17 @@ const imageLoadingStyle = new Style({
   }),
 });
 
-const imageErrorStyle = new Style({
+const imageLoadingPolygonStyle = new Style({
+  fill: new Fill({
+    color: '#DDDDDD',
+  }),
+  stroke: new Stroke({
+    color: '#888888',
+    width: 1,
+  }),
+});
+
+const imageErrorPointStyle = new Style({
   image: new RegularShape({
     angle: Math.PI / 4,
     fill: new Fill({
@@ -50,6 +60,16 @@ const imageErrorStyle = new Style({
       color: 'red',
       width: 4,
     }),
+  }),
+});
+
+const imageErrorPolygonStyle = new Style({
+  fill: new Fill({
+    color: 'red',
+  }),
+  stroke: new Stroke({
+    color: 'red',
+    width: 1,
   }),
 });
 
@@ -71,11 +91,10 @@ function hexToRGB(hex, alpha) {
 
 function createPattern(graphic) {
   const { image, width, height } = imageCache[graphic.externalgraphic.onlineresource];
-  const maxSide = Math.max(width, height);
 
   let imageRatio = 1;
-  if (graphic.size && maxSide !== graphic.size) {
-    imageRatio = graphic.size / maxSide;
+  if (graphic.size && height !== graphic.size) {
+    imageRatio = graphic.size / height;
   }
   const cnv = document.createElement('canvas');
   const ctx = cnv.getContext('2d');
@@ -100,19 +119,18 @@ function polygonStyle(style) {
     // Check symbolizer metadata to see if the image has already been loaded.
     switch (style.__loadingState) {
       case IMAGE_LOADED:
-        const pattern = createPattern(style.fill.graphicfill.graphic);
         return(new Style({
           fill: new Fill({
-            color: pattern,
+            color: createPattern(style.fill.graphicfill.graphic),
           }),
         }));
       case IMAGE_LOADING:
-        return imageLoadingStyle;
+        return imageLoadingPolygonStyle;
       case IMAGE_ERROR:
-        return imageErrorStyle;
+        return imageErrorPolygonStyle;
       default:
         // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
-        return imageLoadingStyle;
+        return imageLoadingPolygonStyle;
     }
   }
 
@@ -178,13 +196,12 @@ function lineStyle(linesymbolizer) {
  */
 function createCachedImageStyle(imageUrl, size) {
   const { image, width, height } = imageCache[imageUrl];
-  const maxSide = Math.max(width, height);
   return new Style({
     image: new Icon({
       img: image,
       imgSize: [width, height],
       // According to SLD spec, if size is given, image height should equal the given size.
-      scale: size / maxSide || 1,
+      scale: size / height || 1,
     }),
   });
 }
@@ -205,12 +222,12 @@ function pointStyle(pointsymbolizer) {
           style.size
         );
       case IMAGE_LOADING:
-        return imageLoadingStyle;
+        return imageLoadingPointStyle;
       case IMAGE_ERROR:
-        return imageErrorStyle;
+        return imageErrorPointStyle;
       default:
         // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
-        return imageLoadingStyle;
+        return imageLoadingPointStyle;
     }
   }
   if (style.mark) {
@@ -559,26 +576,25 @@ function processExternalGraphicSymbolizers(
     const rule = rules[k];
 
     let symbolizer;
-    let graphic;
+    let exgraphic;
 
     if (rule.pointsymbolizer
         && rule.pointsymbolizer.graphic
         && rule.pointsymbolizer.graphic.externalgraphic) {
       symbolizer = rule.pointsymbolizer;
-      graphic = rule.pointsymbolizer.graphic;
+      exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
     } else if (rule.polygonsymbolizer
         && rule.polygonsymbolizer.fill
         && rule.polygonsymbolizer.fill.graphicfill
         && rule.polygonsymbolizer.fill.graphicfill.graphic
         && rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic) {
       symbolizer = rule.polygonsymbolizer;
-      graphic = rule.polygonsymbolizer.fill.graphicfill.graphic;
+      exgraphic = rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
     } else {
       continue;
     }
 
-    const { externalgraphic } = graphic;
-    const imageUrl = externalgraphic.onlineresource;
+    const imageUrl = exgraphic.onlineresource;
     if (!(imageUrl in imageLoadState)) {
       // Start loading the image and set image load state on the symbolizer.
       imageLoadState[imageUrl] = IMAGE_LOADING;
