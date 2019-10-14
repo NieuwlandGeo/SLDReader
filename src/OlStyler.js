@@ -3,7 +3,7 @@
 import { Style, Fill, Stroke, Circle, Icon, RegularShape, Text } from 'ol/style';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
-import { getRules, loadExternalGraphic } from './Utils';
+import { getRules, loadExternalGraphic, updateExternalGraphicRule } from './Utils';
 import getGeometryStyles from './GeometryStyles';
 
 // Global image cache. A map of image Url -> {
@@ -24,7 +24,7 @@ const defaultPointStyle = new Style({
   }),
 });
 
-const imageLoadingStyle = new Style({
+const imageLoadingPointStyle = new Style({
   image: new Circle({
     radius: 5,
     fill: new Fill({
@@ -37,7 +37,17 @@ const imageLoadingStyle = new Style({
   }),
 });
 
-const imageErrorStyle = new Style({
+const imageLoadingPolygonStyle = new Style({
+  fill: new Fill({
+    color: '#DDDDDD',
+  }),
+  stroke: new Stroke({
+    color: '#888888',
+    width: 1,
+  }),
+});
+
+const imageErrorPointStyle = new Style({
   image: new RegularShape({
     angle: Math.PI / 4,
     fill: new Fill({
@@ -50,6 +60,16 @@ const imageErrorStyle = new Style({
       color: 'red',
       width: 4,
     }),
+  }),
+});
+
+const imageErrorPolygonStyle = new Style({
+  fill: new Fill({
+    color: 'red',
+  }),
+  stroke: new Stroke({
+    color: 'red',
+    width: 1,
   }),
 });
 
@@ -69,7 +89,51 @@ function hexToRGB(hex, alpha) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+function createPattern(graphic) {
+  const { image, width, height } = imageCache[graphic.externalgraphic.onlineresource];
+
+  let imageRatio = 1;
+  if (graphic.size && height !== graphic.size) {
+    imageRatio = graphic.size / height;
+  }
+  const cnv = document.createElement('canvas');
+  const ctx = cnv.getContext('2d');
+  if (imageRatio === 1) {
+    return ctx.createPattern(image, 'repeat');
+  }
+  const tempCanvas = document.createElement('canvas');
+  const tCtx = tempCanvas.getContext('2d');
+
+  tempCanvas.width = width * imageRatio;
+  tempCanvas.height = height * imageRatio;
+  tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio);
+  return ctx.createPattern(tempCanvas, 'repeat');
+}
+
 function polygonStyle(style) {
+  if (style.fill
+        && style.fill.graphicfill
+        && style.fill.graphicfill.graphic
+        && style.fill.graphicfill.graphic.externalgraphic
+        && style.fill.graphicfill.graphic.externalgraphic.onlineresource) {
+    // Check symbolizer metadata to see if the image has already been loaded.
+    switch (style.__loadingState) {
+      case IMAGE_LOADED:
+        return (new Style({
+          fill: new Fill({
+            color: createPattern(style.fill.graphicfill.graphic),
+          }),
+        }));
+      case IMAGE_LOADING:
+        return imageLoadingPolygonStyle;
+      case IMAGE_ERROR:
+        return imageErrorPolygonStyle;
+      default:
+        // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
+        return imageLoadingPolygonStyle;
+    }
+  }
+
   const stroke = style.stroke && style.stroke.styling;
   const fill = style.fill && style.fill.styling;
   return new Style({
@@ -158,12 +222,12 @@ function pointStyle(pointsymbolizer) {
           style.size
         );
       case IMAGE_LOADING:
-        return imageLoadingStyle;
+        return imageLoadingPointStyle;
       case IMAGE_ERROR:
-        return imageErrorStyle;
+        return imageErrorPointStyle;
       default:
         // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
-        return imageLoadingStyle;
+        return imageLoadingPointStyle;
     }
   }
   if (style.mark) {
@@ -497,10 +561,10 @@ function processExternalGraphicSymbolizers(
   imageLoadState,
   imageLoadedCallback
 ) {
-  // If a feature has an external graphic point symbolizer, the external image may
+  // If a feature has an external graphic point or polygon symbolizer, the external image may
   // * have never been requested before.
   //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
-  //       When loading is complete, replace all point symbolizers using that image inside the featureTypeStyle
+  //       When loading is complete, replace all symbolizers using that image inside the featureTypeStyle
   //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
   // * be loading.
   //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
@@ -510,18 +574,27 @@ function processExternalGraphicSymbolizers(
   //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
   for (let k = 0; k < rules.length; k += 1) {
     const rule = rules[k];
-    if (
-      !(
-        rule.pointsymbolizer &&
-        rule.pointsymbolizer.graphic &&
-        rule.pointsymbolizer.graphic.externalgraphic
-      )
-    ) {
+
+    let symbolizer;
+    let exgraphic;
+
+    if (rule.pointsymbolizer
+        && rule.pointsymbolizer.graphic
+        && rule.pointsymbolizer.graphic.externalgraphic) {
+      symbolizer = rule.pointsymbolizer;
+      exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
+    } else if (rule.polygonsymbolizer
+        && rule.polygonsymbolizer.fill
+        && rule.polygonsymbolizer.fill.graphicfill
+        && rule.polygonsymbolizer.fill.graphicfill.graphic
+        && rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic) {
+      symbolizer = rule.polygonsymbolizer;
+      exgraphic = rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
+    } else {
       continue;
     }
 
-    const { externalgraphic } = rule.pointsymbolizer.graphic;
-    const imageUrl = externalgraphic.onlineresource;
+    const imageUrl = exgraphic.onlineresource;
     if (!(imageUrl in imageLoadState)) {
       // Start loading the image and set image load state on the symbolizer.
       imageLoadState[imageUrl] = IMAGE_LOADING;
@@ -532,16 +605,11 @@ function processExternalGraphicSymbolizers(
         featureTypeStyle,
         imageLoadedCallback
       );
-      rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
-        __loadingState: IMAGE_LOADING,
-      });
     } else if (
       // Change image load state on the symbolizer if it has changed in the meantime.
-      rule.pointsymbolizer.__loadingState !== imageLoadState[imageUrl]
+      symbolizer.__loadingState !== imageLoadState[imageUrl]
     ) {
-      rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
-        __loadingState: imageLoadState[imageUrl],
-      });
+      updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
     }
   }
 }

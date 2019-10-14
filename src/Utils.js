@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { IMAGE_LOADED, IMAGE_ERROR } from './constants';
+import { IMAGE_LOADED, IMAGE_ERROR, IMAGE_LOADING } from './constants';
 import { scaleSelector, filterSelector } from './Filter';
 /**
  * get all layer names in sld
@@ -97,10 +97,25 @@ function updateExternalGraphicRules(
   }
 
   featureTypeStyle.rules.forEach(rule => {
-    if (!(rule.pointsymbolizer && rule.pointsymbolizer.graphic)) {
-      return;
-    }
+    updateExternalGraphicRule(rule, imageUrl, imageLoadState);
+  });
+}
 
+/**
+ * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
+ * the external graphic is matching the image url.
+ * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
+ * @param {object} featureTypeStyle A feature type style object.
+ * @param {string} imageUrl The image url.
+ * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
+ */
+export function updateExternalGraphicRule(
+  rule,
+  imageUrl,
+  imageLoadState
+) {
+  // for pointsymbolizer
+  if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
     const { graphic } = rule.pointsymbolizer;
     const { externalgraphic } = graphic;
     if (
@@ -112,8 +127,26 @@ function updateExternalGraphicRules(
         __loadingState: imageLoadState,
       });
     }
-  });
+  }
+  // for polygonsymbolizer
+  if (rule.polygonsymbolizer
+        && rule.polygonsymbolizer.fill
+        && rule.polygonsymbolizer.fill.graphicfill
+        && rule.polygonsymbolizer.fill.graphicfill.graphic) {
+    const { graphic } = rule.polygonsymbolizer.fill.graphicfill;
+    const { externalgraphic } = graphic;
+    if (
+      externalgraphic &&
+      externalgraphic.onlineresource === imageUrl &&
+      rule.polygonsymbolizer.__loadingState !== imageLoadState
+    ) {
+      rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
+        __loadingState: imageLoadState,
+      });
+    }
+  }
 }
+
 
 export function loadExternalGraphic(
   imageUrl,
@@ -147,4 +180,5 @@ export function loadExternalGraphic(
   };
 
   image.src = imageUrl;
+  updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADING);
 }
