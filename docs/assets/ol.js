@@ -66,9 +66,13 @@ fetch('assets/sld-tasmania.xml')
       if (sldLayer) {
         const style = SLDReader.getStyle(sldLayer, stylename);
         const featureTypeStyle = style.featuretypestyles[0];
-
         layer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
           convertResolution: convertResolutionFromDegreesToMeters,
+          imageLoadedCallback: () => {
+            // Signal OpenLayers to redraw the layer when an image icon has loaded.
+            // On redraw, the updated symbolizer with the correct image scale will be used to draw the icon.
+            layer.changed();
+          },
         }));
       }
     };
