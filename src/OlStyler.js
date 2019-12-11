@@ -505,6 +505,24 @@ const cachedPolygonStyle = memoize(polygonStyle);
 
 const defaultStyles = [defaultPointStyle];
 
+
+/**
+ * Pushes style to array
+ * @example pushTo(styles, point[j], cachedPointStyle);
+ * @param {array} styles rulesconverter
+ * @param {object} item style description of array of styles description
+ * @param {function} cache function that returns cached style
+ */
+function pushTo(array, item, cache) {
+  if (Array.isArray(item)) {
+    for(let k = 0; k < item.length; k += 1) {
+      array.push(cache(item[k]));
+    }
+  } else {
+    array.push(cache(item));
+  }
+}
+
 /**
  * Create openlayers style
  * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
@@ -524,7 +542,7 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'Polygon':
     case 'MultiPolygon':
       for (let i = 0; i < polygon.length; i += 1) {
-        styles.push(cachedPolygonStyle(polygon[i]));
+        pushTo(styles, polygon[i], cachedPolygonStyle)
       }
       for (let j = 0; j < text.length; j += 1) {
         styles.push(textStyle(text[j], feature, 'polygon'));
@@ -533,7 +551,7 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'LineString':
     case 'MultiLineString':
       for (let j = 0; j < line.length; j += 1) {
-        styles.push(cachedLineStyle(line[j]));
+        pushTo(styles, line[j], cachedLineStyle)
       }
       for (let j = 0; j < text.length; j += 1) {
         styles.push(textStyle(text[j], feature, 'line'));
@@ -542,7 +560,7 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'Point':
     case 'MultiPoint':
       for (let j = 0; j < point.length; j += 1) {
-        styles.push(cachedPointStyle(point[j]));
+        pushTo(styles, point[j], cachedPointStyle)
       }
       for (let j = 0; j < text.length; j += 1) {
         styles.push(textStyle(text[j], feature, 'point'));

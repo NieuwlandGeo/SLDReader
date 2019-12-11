@@ -6,6 +6,7 @@ import OLFormatGeoJSON from 'ol/format/GeoJSON';
 import Reader from '../src/Reader';
 import OlStyler, { createOlStyleFunction } from '../src/OlStyler';
 
+import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
 import { externalGraphicSld } from './data/externalgraphic.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
@@ -122,6 +123,34 @@ describe('Create OL Style function from SLD feature type style', () => {
 
     expect(featureStyle.getStroke().getColor()).to.equal('#000000');
     expect(featureStyle.getStroke().getWidth()).to.equal('4');
+  });
+});
+
+
+describe('Create OL Style function from SLD feature type style 1', () => {
+  let sldObject;
+  let featureTypeStyle;
+  before(() => {
+    sldObject = Reader(sld);
+    [featureTypeStyle] = sldObject.layers[4].styles[0].featuretypestyles;
+  });
+
+  const geojson = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [0, 0],
+    },
+  };
+
+  it('Style function applied to OpenLayers feature', () => {
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+
+    const featureStyle = styleFunction(olFeature, null);
+    console.log(JSON.stringify(featureStyle, null, 2))
   });
 });
 

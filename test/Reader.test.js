@@ -62,7 +62,7 @@ describe('Reads xml', () => {
     expect(rule.pointsymbolizer.graphic.mark).to.have.property('wellknownname');
     expect(rule.pointsymbolizer.graphic.mark.wellknownname).to.equal('cross');
   });
-  it.only('reads multiple pointsymbolizers', () => {
+  it('reads multiple pointsymbolizers', () => {
     const rule = result.layers['4'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule).to.have.property('pointsymbolizer');
     const pointSymbolizers = rule.pointsymbolizer
