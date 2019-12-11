@@ -293,7 +293,7 @@ function pointStyle(pointsymbolizer) {
         return new Style({
           image: new RegularShape({
             fill,
-            points: 8,
+            points: 6,
             radius1: radius,
             stroke:
               stroke ||

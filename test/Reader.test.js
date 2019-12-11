@@ -15,8 +15,8 @@ describe('Reads xml', () => {
     expect(result.layers).to.be.an.instanceof(Array);
   });
   it('returns object for the layers', () => {
-    const layernames = ['WaterBodies', 'Roads', 'Cities', 'Land'];
-    expect(result.layers).to.have.length(4);
+    const layernames = ['WaterBodies', 'Roads', 'Cities', 'Land', 'Hexagons'];
+    expect(result.layers).to.have.length(5);
     for (let i = 0; i < result.layers.length; i += 1) {
       expect(result.layers[i].name).to.equal(layernames[i]);
     }
@@ -61,6 +61,18 @@ describe('Reads xml', () => {
     expect(rule.pointsymbolizer.graphic).to.have.property('size');
     expect(rule.pointsymbolizer.graphic.mark).to.have.property('wellknownname');
     expect(rule.pointsymbolizer.graphic.mark.wellknownname).to.equal('cross');
+  });
+  it.only('reads multiple pointsymbolizers', () => {
+    const rule = result.layers['4'].styles['0'].featuretypestyles['0'].rules['0'];
+    expect(rule).to.have.property('pointsymbolizer');
+    const pointSymbolisers = rule.pointsymbolizer
+    console.log(pointSymbolisers)
+    expect(pointSymbolisers).to.be.an('array').that.includes(2)
+    expect(pointsymbolizers[0]).to.have.property('graphic');
+    expect(pointsymbolizers[0].graphic).to.have.property('mark');
+    expect(pointsymbolizers[0].graphic).to.have.property('size');
+    expect(pointsymbolizers[0].graphic.mark).to.have.property('wellknownname');
+    expect(pointsymbolizers[0].graphic.mark.wellknownname).to.equal('cross');
   });
 });
 
