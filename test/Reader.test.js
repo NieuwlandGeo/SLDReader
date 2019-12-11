@@ -65,14 +65,14 @@ describe('Reads xml', () => {
   it.only('reads multiple pointsymbolizers', () => {
     const rule = result.layers['4'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule).to.have.property('pointsymbolizer');
-    const pointSymbolisers = rule.pointsymbolizer
-    console.log(pointSymbolisers)
-    expect(pointSymbolisers).to.be.an('array').that.includes(2)
-    expect(pointsymbolizers[0]).to.have.property('graphic');
-    expect(pointsymbolizers[0].graphic).to.have.property('mark');
-    expect(pointsymbolizers[0].graphic).to.have.property('size');
-    expect(pointsymbolizers[0].graphic.mark).to.have.property('wellknownname');
-    expect(pointsymbolizers[0].graphic.mark.wellknownname).to.equal('cross');
+    const pointSymbolizers = rule.pointsymbolizer
+    expect(pointSymbolizers).to.be.an('array');
+    expect(pointSymbolizers.length).to.equal(2);
+    expect(pointSymbolizers[0]).to.have.property('graphic');
+    expect(pointSymbolizers[0].graphic).to.have.property('mark');
+    expect(pointSymbolizers[0].graphic).to.have.property('size');
+    expect(pointSymbolizers[0].graphic.mark).to.have.property('wellknownname');
+    expect(pointSymbolizers[0].graphic.mark.wellknownname).to.equal('hexagon');
   });
 });
 

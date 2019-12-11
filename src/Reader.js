@@ -30,7 +30,7 @@ function addPropOrArray(node, obj, prop) {
   } else if (Array.isArray(obj[property])) {
     obj[property].push(item)
   } else {
-    obj[property] = [obj[property]]
+    obj[property] = [obj[property], item]
   }
 }
 
