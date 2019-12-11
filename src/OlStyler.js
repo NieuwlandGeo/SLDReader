@@ -303,6 +303,20 @@ function pointStyle(pointsymbolizer) {
               }),
           }),
         });
+      case 'octagon':
+        return new Style({
+          image: new RegularShape({
+            fill,
+            points: 8,
+            radius1: radius,
+            stroke:
+              stroke ||
+              new Stroke({
+                color: fillColor,
+                width: radius / 2,
+              }),
+          }),
+        });
       case 'x':
         return new Style({
           image: new RegularShape({
