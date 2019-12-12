@@ -143,14 +143,17 @@ describe('Create OL Style function from SLD feature type style 1', () => {
     },
   };
 
-  it('Style function applied to OpenLayers feature', () => {
+  it.only('Multiple styles with the same shape on one feature', () => {
     const fmtGeoJSON = new OLFormatGeoJSON();
     const olFeature = fmtGeoJSON.readFeature(geojson);
 
     const styleFunction = createOlStyleFunction(featureTypeStyle);
 
     const featureStyle = styleFunction(olFeature, null);
-    console.log(JSON.stringify(featureStyle, null, 2))
+    expect(featureStyle).to.be.an('array');
+    expect(featureStyle.length).to.be.equal(2);
+    expect(() => featureStyle[0].getImage().getRadius()).to.not.throw().and.be.equal(7);
+    expect(() => featureStyle[1].getImage().getRadius()).to.not.throw().and.be.equal(2);
   });
 });
 

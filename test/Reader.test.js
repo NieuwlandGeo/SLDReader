@@ -65,7 +65,7 @@ describe('Reads xml', () => {
   it('reads multiple pointsymbolizers', () => {
     const rule = result.layers['4'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule).to.have.property('pointsymbolizer');
-    const pointSymbolizers = rule.pointsymbolizer
+    const pointSymbolizers = rule.pointsymbolizer;
     expect(pointSymbolizers).to.be.an('array');
     expect(pointSymbolizers.length).to.equal(2);
     expect(pointSymbolizers[0]).to.have.property('graphic');

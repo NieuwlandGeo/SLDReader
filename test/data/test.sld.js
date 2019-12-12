@@ -605,7 +605,7 @@ export const sld = `<?xml version="1.0" encoding="UTF-8"?>
                   <sld:SvgParameter name="fill">#ffffff</sld:SvgParameter>
                 </sld:Fill>
                 <sld:Stroke>
-                  <sld:SvgParameter name="stroke">#fa8b39</sld:SvgParameter>
+                  <sld:SvgParameter name="stroke">#ff0000</sld:SvgParameter>
                   <sld:SvgParameter name="stroke-width">2</sld:SvgParameter>
                 </sld:Stroke>
               </sld:Mark>
@@ -617,10 +617,10 @@ export const sld = `<?xml version="1.0" encoding="UTF-8"?>
               <sld:Mark>
                 <sld:WellKnownName>hexagon</sld:WellKnownName>
                 <sld:Fill>
-                  <sld:SvgParameter name="fill">#fab07c</sld:SvgParameter>
+                  <sld:SvgParameter name="fill">#ff0000</sld:SvgParameter>
                 </sld:Fill>
                 <sld:Stroke>
-                  <sld:SvgParameter name="stroke">#fab07c</sld:SvgParameter>
+                  <sld:SvgParameter name="stroke">#ff0000</sld:SvgParameter>
                   <sld:SvgParameter name="stroke-width">1</sld:SvgParameter>
                 </sld:Stroke>
               </sld:Mark>

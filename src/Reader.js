@@ -26,11 +26,11 @@ function addPropOrArray(node, obj, prop) {
   const item = {};
   readNode(node, item);
   if (!(property in obj)) {
-    obj[property] = item
+    obj[property] = item;
   } else if (Array.isArray(obj[property])) {
-    obj[property].push(item)
+    obj[property].push(item);
   } else {
-    obj[property] = [obj[property], item]
+    obj[property] = [obj[property], item];
   }
 }
 

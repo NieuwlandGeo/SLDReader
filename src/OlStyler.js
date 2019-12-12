@@ -515,7 +515,7 @@ const defaultStyles = [defaultPointStyle];
  */
 function pushTo(array, item, cache) {
   if (Array.isArray(item)) {
-    for(let k = 0; k < item.length; k += 1) {
+    for (let k = 0; k < item.length; k += 1) {
       array.push(cache(item[k]));
     }
   } else {
@@ -542,7 +542,7 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'Polygon':
     case 'MultiPolygon':
       for (let i = 0; i < polygon.length; i += 1) {
-        pushTo(styles, polygon[i], cachedPolygonStyle)
+        pushTo(styles, polygon[i], cachedPolygonStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
         styles.push(textStyle(text[j], feature, 'polygon'));
@@ -551,7 +551,7 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'LineString':
     case 'MultiLineString':
       for (let j = 0; j < line.length; j += 1) {
-        pushTo(styles, line[j], cachedLineStyle)
+        pushTo(styles, line[j], cachedLineStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
         styles.push(textStyle(text[j], feature, 'line'));
@@ -560,7 +560,7 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'Point':
     case 'MultiPoint':
       for (let j = 0; j < point.length; j += 1) {
-        pushTo(styles, point[j], cachedPointStyle)
+        pushTo(styles, point[j], cachedPointStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
         styles.push(textStyle(text[j], feature, 'point'));
