@@ -143,7 +143,7 @@ describe('Create OL Style function from SLD feature type style 1', () => {
     },
   };
 
-  it.only('Multiple styles with the same shape on one feature', () => {
+  it('Multiple styles with the same shape on one feature', () => {
     const fmtGeoJSON = new OLFormatGeoJSON();
     const olFeature = fmtGeoJSON.readFeature(geojson);
 
