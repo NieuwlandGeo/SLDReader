@@ -15,6 +15,26 @@ function addPropArray(node, obj, prop) {
 }
 
 /**
+ * Generic parser for elements that can be arrays
+ * @private
+ * @param {Element} node the xml element to parse
+ * @param {object|Array} obj  the object or array to modify
+ * @param {string} prop key on obj to hold array
+ */
+function addPropOrArray(node, obj, prop) {
+  const property = prop.toLowerCase();
+  const item = {};
+  readNode(node, item);
+  if (!(property in obj)) {
+    obj[property] = item;
+  } else if (Array.isArray(obj[property])) {
+    obj[property].push(item);
+  } else {
+    obj[property] = [obj[property], item];
+  }
+}
+
+/**
  * Generic parser for maxOccurs = 1 (the xsd default)
  * it sets result of readNode(node) to array on obj[prop]
  * @private
@@ -140,10 +160,10 @@ const FilterParsers = {
 };
 
 const SymbParsers = {
-  PolygonSymbolizer: addProp,
-  LineSymbolizer: addProp,
-  PointSymbolizer: addProp,
-  TextSymbolizer: addProp,
+  PolygonSymbolizer: addPropOrArray,
+  LineSymbolizer: addPropOrArray,
+  PointSymbolizer: addPropOrArray,
+  TextSymbolizer: addPropOrArray,
   Fill: addProp,
   Stroke: addProp,
   GraphicFill: addProp,

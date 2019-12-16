@@ -591,6 +591,47 @@ export const sld = `<?xml version="1.0" encoding="UTF-8"?>
     </sld:UserStyle>
   </sld:NamedLayer>
 
+  <sld:NamedLayer>
+    <sld:Name>Hexagons</sld:Name>
+    <sld:UserStyle>
+      <sld:Name>Hexagons Style</sld:Name>
+      <sld:FeatureTypeStyle>
+        <sld:Rule>
+          <sld:PointSymbolizer>
+            <sld:Graphic>
+              <sld:Mark>
+                <sld:WellKnownName>hexagon</sld:WellKnownName>
+                <sld:Fill>
+                  <sld:SvgParameter name="fill">#ffffff</sld:SvgParameter>
+                </sld:Fill>
+                <sld:Stroke>
+                  <sld:SvgParameter name="stroke">#ff0000</sld:SvgParameter>
+                  <sld:SvgParameter name="stroke-width">2</sld:SvgParameter>
+                </sld:Stroke>
+              </sld:Mark>
+              <sld:Size>14</sld:Size>
+            </sld:Graphic>
+          </sld:PointSymbolizer>
+          <sld:PointSymbolizer>
+            <sld:Graphic>
+              <sld:Mark>
+                <sld:WellKnownName>hexagon</sld:WellKnownName>
+                <sld:Fill>
+                  <sld:SvgParameter name="fill">#ff0000</sld:SvgParameter>
+                </sld:Fill>
+                <sld:Stroke>
+                  <sld:SvgParameter name="stroke">#ff0000</sld:SvgParameter>
+                  <sld:SvgParameter name="stroke-width">1</sld:SvgParameter>
+                </sld:Stroke>
+              </sld:Mark>
+              <sld:Size>4</sld:Size>
+            </sld:Graphic>
+          </sld:PointSymbolizer>
+        </sld:Rule>
+      </sld:FeatureTypeStyle>
+    </sld:UserStyle>
+  </sld:NamedLayer>
+
 </sld:StyledLayerDescriptor>
 
 `;
