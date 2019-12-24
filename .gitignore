@@ -2,3 +2,4 @@ node_modules
 dist
 .vscode
 docs/_site
+docs/.jekyll_cache
