@@ -18,65 +18,13 @@ import {
   getCachedImageUrls,
   processExternalGraphicSymbolizers,
 } from './imageCache';
-
-const defaultPointStyle = new Style({
-  image: new Circle({
-    radius: 8,
-    fill: new Fill({
-      color: 'blue',
-      fillOpacity: 0.7,
-    }),
-  }),
-});
-
-const imageLoadingPointStyle = new Style({
-  image: new Circle({
-    radius: 5,
-    fill: new Fill({
-      color: '#DDDDDD',
-    }),
-    stroke: new Stroke({
-      width: 1,
-      color: '#888888',
-    }),
-  }),
-});
-
-const imageLoadingPolygonStyle = new Style({
-  fill: new Fill({
-    color: '#DDDDDD',
-  }),
-  stroke: new Stroke({
-    color: '#888888',
-    width: 1,
-  }),
-});
-
-const imageErrorPointStyle = new Style({
-  image: new RegularShape({
-    angle: Math.PI / 4,
-    fill: new Fill({
-      color: 'red',
-    }),
-    points: 4,
-    radius1: 8,
-    radius2: 0,
-    stroke: new Stroke({
-      color: 'red',
-      width: 4,
-    }),
-  }),
-});
-
-const imageErrorPolygonStyle = new Style({
-  fill: new Fill({
-    color: 'red',
-  }),
-  stroke: new Stroke({
-    color: 'red',
-    width: 1,
-  }),
-});
+import {
+  defaultPointStyle,
+  imageLoadingPointStyle,
+  imageLoadingPolygonStyle,
+  imageErrorPointStyle,
+  imageErrorPolygonStyle,
+} from './styles/static';
 
 /**
  * @private
@@ -113,16 +61,11 @@ function createPattern(graphic) {
 
   tempCanvas.width = width * imageRatio;
   tempCanvas.height = height * imageRatio;
+  // prettier-ignore
   tCtx.drawImage(
     image,
-    0,
-    0,
-    width,
-    height,
-    0,
-    0,
-    width * imageRatio,
-    height * imageRatio
+    0, 0, width, height,
+    0, 0, width * imageRatio, height * imageRatio
   );
   return ctx.createPattern(tempCanvas, 'repeat');
 }

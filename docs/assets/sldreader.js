@@ -1046,8 +1046,6 @@
     }
   }
 
-  /* eslint-disable no-continue */
-
   var defaultPointStyle = new style.Style({
     image: new style.Circle({
       radius: 8,
@@ -1107,6 +1105,8 @@
     }),
   });
 
+  /* eslint-disable no-continue */
+
   /**
    * @private
    * @param  {string} hex   eg #AA00FF
@@ -1145,16 +1145,11 @@
 
     tempCanvas.width = width * imageRatio;
     tempCanvas.height = height * imageRatio;
+    // prettier-ignore
     tCtx.drawImage(
       image,
-      0,
-      0,
-      width,
-      height,
-      0,
-      0,
-      width * imageRatio,
-      height * imageRatio
+      0, 0, width, height,
+      0, 0, width * imageRatio, height * imageRatio
     );
     return ctx.createPattern(tempCanvas, 'repeat');
   }
