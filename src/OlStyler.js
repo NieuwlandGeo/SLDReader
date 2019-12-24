@@ -1,18 +1,23 @@
 /* eslint-disable no-continue */
 /* eslint-disable no-underscore-dangle */
-import { Style, Fill, Stroke, Circle, Icon, RegularShape, Text } from 'ol/style';
+import {
+  Style,
+  Fill,
+  Stroke,
+  Circle,
+  Icon,
+  RegularShape,
+  Text,
+} from 'ol/style';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
-import { getRules, loadExternalGraphic, updateExternalGraphicRule } from './Utils';
+import { getRules } from './Utils';
 import getGeometryStyles from './GeometryStyles';
-
-// Global image cache. A map of image Url -> {
-//   url: image url,
-//   image: an Image instance containing image data,
-//   width: image width in pixels,
-//   height: image height in pixels
-// }
-const imageCache = {};
+import {
+  getCachedImage,
+  getCachedImageUrls,
+  processExternalGraphicSymbolizers,
+} from './imageCache';
 
 const defaultPointStyle = new Style({
   image: new Circle({
@@ -90,7 +95,9 @@ function hexToRGB(hex, alpha) {
 }
 
 function createPattern(graphic) {
-  const { image, width, height } = imageCache[graphic.externalgraphic.onlineresource];
+  const { image, width, height } = getCachedImage(
+    graphic.externalgraphic.onlineresource
+  );
 
   let imageRatio = 1;
   if (graphic.size && height !== graphic.size) {
@@ -106,24 +113,36 @@ function createPattern(graphic) {
 
   tempCanvas.width = width * imageRatio;
   tempCanvas.height = height * imageRatio;
-  tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio);
+  tCtx.drawImage(
+    image,
+    0,
+    0,
+    width,
+    height,
+    0,
+    0,
+    width * imageRatio,
+    height * imageRatio
+  );
   return ctx.createPattern(tempCanvas, 'repeat');
 }
 
 function polygonStyle(style) {
-  if (style.fill
-        && style.fill.graphicfill
-        && style.fill.graphicfill.graphic
-        && style.fill.graphicfill.graphic.externalgraphic
-        && style.fill.graphicfill.graphic.externalgraphic.onlineresource) {
+  if (
+    style.fill &&
+    style.fill.graphicfill &&
+    style.fill.graphicfill.graphic &&
+    style.fill.graphicfill.graphic.externalgraphic &&
+    style.fill.graphicfill.graphic.externalgraphic.onlineresource
+  ) {
     // Check symbolizer metadata to see if the image has already been loaded.
     switch (style.__loadingState) {
       case IMAGE_LOADED:
-        return (new Style({
+        return new Style({
           fill: new Fill({
             color: createPattern(style.fill.graphicfill.graphic),
           }),
-        }));
+        });
       case IMAGE_LOADING:
         return imageLoadingPolygonStyle;
       case IMAGE_ERROR:
@@ -195,7 +214,7 @@ function lineStyle(linesymbolizer) {
  * @param {number} size Requested size in pixels.
  */
 function createCachedImageStyle(imageUrl, size) {
-  const { image, width, height } = imageCache[imageUrl];
+  const { image, width, height } = getCachedImage(imageUrl);
   return new Style({
     image: new Icon({
       img: image,
@@ -236,7 +255,11 @@ function pointStyle(pointsymbolizer) {
     fill = new Fill({
       color: fillColor,
     });
-    if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
+    if (
+      stroke &&
+      stroke.styling &&
+      !(Number(stroke.styling.strokeWidth) === 0)
+    ) {
       const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.styling;
       stroke = new Stroke({
         color: cssStroke || 'black',
@@ -245,7 +268,7 @@ function pointStyle(pointsymbolizer) {
     } else {
       stroke = undefined;
     }
-    const radius = (0.5 * Number(style.size)) || 10;
+    const radius = 0.5 * Number(style.size) || 10;
     switch (style.mark.wellknownname) {
       case 'circle':
         return new Style({
@@ -388,9 +411,7 @@ function textStyle(textsymbolizer, feature, type) {
       );
     }, '');
 
-    const fill = textsymbolizer.fill
-      ? textsymbolizer.fill.styling
-      : {};
+    const fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
     const halo =
       textsymbolizer.halo && textsymbolizer.halo.fill
         ? textsymbolizer.halo.fill.styling
@@ -432,37 +453,39 @@ function textStyle(textsymbolizer, feature, type) {
     const placement = type !== 'point' && lineplacement ? 'line' : 'point';
 
     // Halo styling
+    const textStyleOptions = {
+      text,
+      font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
+      offsetX: Number(offsetX),
+      offsetY: Number(offsetY),
+      rotation,
+      placement,
+      textAlign: 'center',
+      textBaseline: 'middle',
+      fill: new Fill({
+        color:
+          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+            ? hexToRGB(fill.fill, fill.fillOpacity)
+            : fill.fill,
+      }),
+    };
+
+    if (textsymbolizer.halo) {
+      textStyleOptions.stroke = new Stroke({
+        color:
+          halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
+            ? hexToRGB(halo.fill, halo.fillOpacity)
+            : halo.fill,
+        // wrong position width radius equal to 2 or 4
+        width:
+          (haloRadius === 2 || haloRadius === 4
+            ? haloRadius - 0.00001
+            : haloRadius) * 2,
+      });
+    }
 
     return new Style({
-      text: new Text({
-        text,
-        font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
-        offsetX: Number(offsetX),
-        offsetY: Number(offsetY),
-        rotation,
-        placement,
-        textAlign: 'center',
-        textBaseline: 'middle',
-        stroke: textsymbolizer.halo
-          ? new Stroke({
-            color:
-                halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-                  ? hexToRGB(halo.fill, halo.fillOpacity)
-                  : halo.fill,
-            // wrong position width radius equal to 2 or 4
-            width:
-                (haloRadius === 2 || haloRadius === 4
-                  ? haloRadius - 0.00001
-                  : haloRadius) * 2,
-          })
-          : undefined,
-        fill: new Fill({
-          color:
-            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-              ? hexToRGB(fill.fill, fill.fillOpacity)
-              : fill.fill,
-        }),
-      }),
+      text: new Text(textStyleOptions),
     });
   }
   return new Style({});
@@ -504,7 +527,6 @@ const cachedLineStyle = memoize(lineStyle);
 const cachedPolygonStyle = memoize(polygonStyle);
 
 const defaultStyles = [defaultPointStyle];
-
 
 /**
  * Pushes style to array
@@ -594,73 +616,6 @@ function getOlFeatureProperty(feature, propertyName) {
 }
 
 /**
- * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
- * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
- * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
- * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
- * @param {object} imageLoadState Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
- * @param {Function} imageLoadedCallback Function to call when an image has loaded.
- */
-function processExternalGraphicSymbolizers(
-  rules,
-  featureTypeStyle,
-  imageLoadState,
-  imageLoadedCallback
-) {
-  // If a feature has an external graphic point or polygon symbolizer, the external image may
-  // * have never been requested before.
-  //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
-  //       When loading is complete, replace all symbolizers using that image inside the featureTypeStyle
-  //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
-  // * be loading.
-  //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
-  // * be loaded and therefore present in the image cache.
-  //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
-  // * be in error. Error is a kind of loaded, but with an error icon style.
-  //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
-  for (let k = 0; k < rules.length; k += 1) {
-    const rule = rules[k];
-
-    let symbolizer;
-    let exgraphic;
-
-    if (rule.pointsymbolizer
-        && rule.pointsymbolizer.graphic
-        && rule.pointsymbolizer.graphic.externalgraphic) {
-      symbolizer = rule.pointsymbolizer;
-      exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
-    } else if (rule.polygonsymbolizer
-        && rule.polygonsymbolizer.fill
-        && rule.polygonsymbolizer.fill.graphicfill
-        && rule.polygonsymbolizer.fill.graphicfill.graphic
-        && rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic) {
-      symbolizer = rule.polygonsymbolizer;
-      exgraphic = rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
-    } else {
-      continue;
-    }
-
-    const imageUrl = exgraphic.onlineresource;
-    if (!(imageUrl in imageLoadState)) {
-      // Start loading the image and set image load state on the symbolizer.
-      imageLoadState[imageUrl] = IMAGE_LOADING;
-      loadExternalGraphic(
-        imageUrl,
-        imageCache,
-        imageLoadState,
-        featureTypeStyle,
-        imageLoadedCallback
-      );
-    } else if (
-      // Change image load state on the symbolizer if it has changed in the meantime.
-      symbolizer.__loadingState !== imageLoadState[imageUrl]
-    ) {
-      updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
-    }
-  }
-}
-
-/**
  * Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
  *
  * **Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
@@ -686,7 +641,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
   const imageLoadState = {};
 
   // Important: if image cache already has loaded images, mark these as loaded in imageLoadState!
-  Object.keys(imageCache).forEach(imageUrl => {
+  getCachedImageUrls().forEach(imageUrl => {
     imageLoadState[imageUrl] = IMAGE_LOADED;
   });
 

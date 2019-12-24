@@ -21,6 +21,26 @@
   }
 
   /**
+   * Generic parser for elements that can be arrays
+   * @private
+   * @param {Element} node the xml element to parse
+   * @param {object|Array} obj  the object or array to modify
+   * @param {string} prop key on obj to hold array
+   */
+  function addPropOrArray(node, obj, prop) {
+    var property = prop.toLowerCase();
+    var item = {};
+    readNode(node, item);
+    if (!(property in obj)) {
+      obj[property] = item;
+    } else if (Array.isArray(obj[property])) {
+      obj[property].push(item);
+    } else {
+      obj[property] = [obj[property], item];
+    }
+  }
+
+  /**
    * Generic parser for maxOccurs = 1 (the xsd default)
    * it sets result of readNode(node) to array on obj[prop]
    * @private
@@ -148,10 +168,10 @@
   };
 
   var SymbParsers = {
-    PolygonSymbolizer: addProp,
-    LineSymbolizer: addProp,
-    PointSymbolizer: addProp,
-    TextSymbolizer: addProp,
+    PolygonSymbolizer: addPropOrArray,
+    LineSymbolizer: addPropOrArray,
+    PointSymbolizer: addPropOrArray,
+    TextSymbolizer: addPropOrArray,
     Fill: addProp,
     Stroke: addProp,
     GraphicFill: addProp,
@@ -671,6 +691,7 @@
   }
 
   /* eslint-disable no-underscore-dangle */
+
   /**
    * get all layer names in sld
    * @param {StyledLayerDescriptor} sld
@@ -750,115 +771,6 @@
   }
 
   /**
-   * Go through all rules with an external graphic matching the image url
-   * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
-   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
-   * @param {object} featureTypeStyle A feature type style object.
-   * @param {string} imageUrl The image url.
-   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
-   */
-  function updateExternalGraphicRules(
-    featureTypeStyle,
-    imageUrl,
-    imageLoadState
-  ) {
-    // Go through all rules with an external graphic matching the image url
-    // and update the __loadingState metadata for the symbolizers with the new imageLoadState.
-    if (!featureTypeStyle.rules) {
-      return;
-    }
-
-    featureTypeStyle.rules.forEach(function (rule) {
-      updateExternalGraphicRule(rule, imageUrl, imageLoadState);
-    });
-  }
-
-  /**
-   * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
-   * the external graphic is matching the image url.
-   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
-   * @param {object} featureTypeStyle A feature type style object.
-   * @param {string} imageUrl The image url.
-   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
-   */
-  function updateExternalGraphicRule(
-    rule,
-    imageUrl,
-    imageLoadState
-  ) {
-    // for pointsymbolizer
-    if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
-      var ref = rule.pointsymbolizer;
-      var graphic = ref.graphic;
-      var externalgraphic = graphic.externalgraphic;
-      if (
-        externalgraphic &&
-        externalgraphic.onlineresource === imageUrl &&
-        rule.pointsymbolizer.__loadingState !== imageLoadState
-      ) {
-        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
-          __loadingState: imageLoadState,
-        });
-      }
-    }
-    // for polygonsymbolizer
-    if (rule.polygonsymbolizer
-          && rule.polygonsymbolizer.fill
-          && rule.polygonsymbolizer.fill.graphicfill
-          && rule.polygonsymbolizer.fill.graphicfill.graphic) {
-      var ref$1 = rule.polygonsymbolizer.fill.graphicfill;
-      var graphic$1 = ref$1.graphic;
-      var ref$2 = graphic$1;
-      var externalgraphic$1 = ref$2.externalgraphic;
-      if (
-        externalgraphic$1 &&
-        externalgraphic$1.onlineresource === imageUrl &&
-        rule.polygonsymbolizer.__loadingState !== imageLoadState
-      ) {
-        rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
-          __loadingState: imageLoadState,
-        });
-      }
-    }
-  }
-
-
-  function loadExternalGraphic(
-    imageUrl,
-    imageCache,
-    imageLoadState,
-    featureTypeStyle,
-    imageLoadedCallback
-  ) {
-    var image = new Image();
-
-    image.onload = function () {
-      imageCache[imageUrl] = {
-        url: imageUrl,
-        image: image,
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-      };
-      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
-      imageLoadState[imageUrl] = IMAGE_LOADED;
-      if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback(imageUrl);
-      }
-    };
-
-    image.onerror = function () {
-      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
-      imageLoadState[imageUrl] = IMAGE_ERROR;
-      if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback();
-      }
-    };
-
-    image.src = imageUrl;
-    updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADING);
-  }
-
-  /**
    * Get styling from rules per geometry type
    * @param  {Rule[]} rules [description]
    * @return {GeometryStyles}
@@ -902,6 +814,7 @@
 
   /* eslint-disable no-continue */
 
+  /* eslint-disable no-underscore-dangle */
   // Global image cache. A map of image Url -> {
   //   url: image url,
   //   image: an Image instance containing image data,
@@ -909,6 +822,206 @@
   //   height: image height in pixels
   // }
   var imageCache = {};
+
+  function setCachedImage(url, imageData) {
+    imageCache[url] = imageData;
+  }
+
+  function getCachedImage(url) {
+    return imageCache[url];
+  }
+
+  function getCachedImageUrls() {
+    return Object.keys(imageCache);
+  }
+
+  /**
+   * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
+   * the external graphic is matching the image url.
+   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
+   * @param {object} featureTypeStyle A feature type style object.
+   * @param {string} imageUrl The image url.
+   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
+   */
+  function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
+    // for pointsymbolizer
+    if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
+      var ref = rule.pointsymbolizer;
+      var graphic = ref.graphic;
+      var externalgraphic = graphic.externalgraphic;
+      if (
+        externalgraphic &&
+        externalgraphic.onlineresource === imageUrl &&
+        rule.pointsymbolizer.__loadingState !== imageLoadState
+      ) {
+        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+          __loadingState: imageLoadState,
+        });
+      }
+    }
+    // for polygonsymbolizer
+    if (
+      rule.polygonsymbolizer &&
+      rule.polygonsymbolizer.fill &&
+      rule.polygonsymbolizer.fill.graphicfill &&
+      rule.polygonsymbolizer.fill.graphicfill.graphic
+    ) {
+      var ref$1 = rule.polygonsymbolizer.fill.graphicfill;
+      var graphic$1 = ref$1.graphic;
+      var ref$2 = graphic$1;
+      var externalgraphic$1 = ref$2.externalgraphic;
+      if (
+        externalgraphic$1 &&
+        externalgraphic$1.onlineresource === imageUrl &&
+        rule.polygonsymbolizer.__loadingState !== imageLoadState
+      ) {
+        rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
+          __loadingState: imageLoadState,
+        });
+      }
+    }
+  }
+
+  /**
+   * Go through all rules with an external graphic matching the image url
+   * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
+   * @param {object} featureTypeStyle A feature type style object.
+   * @param {string} imageUrl The image url.
+   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
+   */
+  function updateExternalGraphicRules(
+    featureTypeStyle,
+    imageUrl,
+    imageLoadState
+  ) {
+    // Go through all rules with an external graphic matching the image url
+    // and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+    if (!featureTypeStyle.rules) {
+      return;
+    }
+
+    featureTypeStyle.rules.forEach(function (rule) {
+      updateExternalGraphicRule(rule, imageUrl, imageLoadState);
+    });
+  }
+
+  /**
+   * Load and cache an image that's used as externalGraphic inside one or more symbolizers inside a feature type style object.
+   * When the image is loaded, it's put into the cache, the __loadingStaet inside the featureTypeStyle symbolizers are updated,
+   * and the imageLoadedCallback is called with the loaded image url.
+   * @param {url} imageUrl Image url.
+   * @param {string} imageLoadState One of IMAGE_LOADING, IMAGE_LOADED or IMAGE_ERROR.
+   * @param {object} featureTypeStyle Feature type style object.
+   * @param {Function} imageLoadedCallback Will be called with the image url when image
+   * has loaded. Will be called with undefined if the loading the image resulted in an error.
+   */
+  function loadExternalGraphic(
+    imageUrl,
+    imageLoadState,
+    featureTypeStyle,
+    imageLoadedCallback
+  ) {
+    var image = new Image();
+
+    image.onload = function () {
+      setCachedImage(imageUrl, {
+        url: imageUrl,
+        image: image,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
+      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
+      imageLoadState[imageUrl] = IMAGE_LOADED;
+      if (typeof imageLoadedCallback === 'function') {
+        imageLoadedCallback(imageUrl);
+      }
+    };
+
+    image.onerror = function () {
+      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
+      imageLoadState[imageUrl] = IMAGE_ERROR;
+      if (typeof imageLoadedCallback === 'function') {
+        imageLoadedCallback();
+      }
+    };
+
+    image.src = imageUrl;
+    updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADING);
+  }
+
+  /**
+   * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
+   * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
+   * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
+   * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
+   * @param {object} imageLoadState Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
+   * @param {Function} imageLoadedCallback Function to call when an image has loaded.
+   */
+  function processExternalGraphicSymbolizers(
+    rules,
+    featureTypeStyle,
+    imageLoadState,
+    imageLoadedCallback
+  ) {
+    // If a feature has an external graphic point or polygon symbolizer, the external image may
+    // * have never been requested before.
+    //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
+    //       When loading is complete, replace all symbolizers using that image inside the featureTypeStyle
+    //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
+    // * be loading.
+    //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
+    // * be loaded and therefore present in the image cache.
+    //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
+    // * be in error. Error is a kind of loaded, but with an error icon style.
+    //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
+    for (var k = 0; k < rules.length; k += 1) {
+      var rule = rules[k];
+
+      var symbolizer = (void 0);
+      var exgraphic = (void 0);
+
+      if (
+        rule.pointsymbolizer &&
+        rule.pointsymbolizer.graphic &&
+        rule.pointsymbolizer.graphic.externalgraphic
+      ) {
+        symbolizer = rule.pointsymbolizer;
+        exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
+      } else if (
+        rule.polygonsymbolizer &&
+        rule.polygonsymbolizer.fill &&
+        rule.polygonsymbolizer.fill.graphicfill &&
+        rule.polygonsymbolizer.fill.graphicfill.graphic &&
+        rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic
+      ) {
+        symbolizer = rule.polygonsymbolizer;
+        exgraphic =
+          rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
+      } else {
+        continue;
+      }
+
+      var imageUrl = exgraphic.onlineresource;
+      if (!(imageUrl in imageLoadState)) {
+        // Start loading the image and set image load state on the symbolizer.
+        imageLoadState[imageUrl] = IMAGE_LOADING;
+        loadExternalGraphic(
+          imageUrl,
+          imageLoadState,
+          featureTypeStyle,
+          imageLoadedCallback
+        );
+      } else if (
+        // Change image load state on the symbolizer if it has changed in the meantime.
+        symbolizer.__loadingState !== imageLoadState[imageUrl]
+      ) {
+        updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
+      }
+    }
+  }
+
+  /* eslint-disable no-continue */
 
   var defaultPointStyle = new style.Style({
     image: new style.Circle({
@@ -986,7 +1099,9 @@
   }
 
   function createPattern(graphic) {
-    var ref = imageCache[graphic.externalgraphic.onlineresource];
+    var ref = getCachedImage(
+      graphic.externalgraphic.onlineresource
+    );
     var image = ref.image;
     var width = ref.width;
     var height = ref.height;
@@ -1005,24 +1120,36 @@
 
     tempCanvas.width = width * imageRatio;
     tempCanvas.height = height * imageRatio;
-    tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio);
+    tCtx.drawImage(
+      image,
+      0,
+      0,
+      width,
+      height,
+      0,
+      0,
+      width * imageRatio,
+      height * imageRatio
+    );
     return ctx.createPattern(tempCanvas, 'repeat');
   }
 
   function polygonStyle(style$1) {
-    if (style$1.fill
-          && style$1.fill.graphicfill
-          && style$1.fill.graphicfill.graphic
-          && style$1.fill.graphicfill.graphic.externalgraphic
-          && style$1.fill.graphicfill.graphic.externalgraphic.onlineresource) {
+    if (
+      style$1.fill &&
+      style$1.fill.graphicfill &&
+      style$1.fill.graphicfill.graphic &&
+      style$1.fill.graphicfill.graphic.externalgraphic &&
+      style$1.fill.graphicfill.graphic.externalgraphic.onlineresource
+    ) {
       // Check symbolizer metadata to see if the image has already been loaded.
       switch (style$1.__loadingState) {
         case IMAGE_LOADED:
-          return (new style.Style({
+          return new style.Style({
             fill: new style.Fill({
               color: createPattern(style$1.fill.graphicfill.graphic),
             }),
-          }));
+          });
         case IMAGE_LOADING:
           return imageLoadingPolygonStyle;
         case IMAGE_ERROR:
@@ -1094,7 +1221,7 @@
    * @param {number} size Requested size in pixels.
    */
   function createCachedImageStyle(imageUrl, size) {
-    var ref = imageCache[imageUrl];
+    var ref = getCachedImage(imageUrl);
     var image = ref.image;
     var width = ref.width;
     var height = ref.height;
@@ -1140,7 +1267,11 @@
       fill = new style.Fill({
         color: fillColor,
       });
-      if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
+      if (
+        stroke &&
+        stroke.styling &&
+        !(Number(stroke.styling.strokeWidth) === 0)
+      ) {
         var ref$1 = stroke.styling;
         var cssStroke = ref$1.stroke;
         var cssStrokeWidth = ref$1.strokeWidth;
@@ -1151,7 +1282,7 @@
       } else {
         stroke = undefined;
       }
-      var radius = (0.5 * Number(style$1.size)) || 10;
+      var radius = 0.5 * Number(style$1.size) || 10;
       switch (style$1.mark.wellknownname) {
         case 'circle':
           return new style.Style({
@@ -1187,6 +1318,34 @@
               points: 4,
               radius1: radius,
               radius2: 0,
+              stroke:
+                stroke ||
+                new style.Stroke({
+                  color: fillColor,
+                  width: radius / 2,
+                }),
+            }),
+          });
+        case 'hexagon':
+          return new style.Style({
+            image: new style.RegularShape({
+              fill: fill,
+              points: 6,
+              radius1: radius,
+              stroke:
+                stroke ||
+                new style.Stroke({
+                  color: fillColor,
+                  width: radius / 2,
+                }),
+            }),
+          });
+        case 'octagon':
+          return new style.Style({
+            image: new style.RegularShape({
+              fill: fill,
+              points: 8,
+              radius1: radius,
               stroke:
                 stroke ||
                 new style.Stroke({
@@ -1270,9 +1429,7 @@
         );
       }, '');
 
-      var fill = textsymbolizer.fill
-        ? textsymbolizer.fill.styling
-        : {};
+      var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
       var halo =
         textsymbolizer.halo && textsymbolizer.halo.fill
           ? textsymbolizer.halo.fill.styling
@@ -1313,37 +1470,39 @@
       var placement = type !== 'point' && lineplacement ? 'line' : 'point';
 
       // Halo styling
+      var textStyleOptions = {
+        text: text,
+        font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
+        offsetX: Number(offsetX),
+        offsetY: Number(offsetY),
+        rotation: rotation,
+        placement: placement,
+        textAlign: 'center',
+        textBaseline: 'middle',
+        fill: new style.Fill({
+          color:
+            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+              ? hexToRGB(fill.fill, fill.fillOpacity)
+              : fill.fill,
+        }),
+      };
+
+      if (textsymbolizer.halo) {
+        textStyleOptions.stroke = new style.Stroke({
+          color:
+            halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
+              ? hexToRGB(halo.fill, halo.fillOpacity)
+              : halo.fill,
+          // wrong position width radius equal to 2 or 4
+          width:
+            (haloRadius === 2 || haloRadius === 4
+              ? haloRadius - 0.00001
+              : haloRadius) * 2,
+        });
+      }
 
       return new style.Style({
-        text: new style.Text({
-          text: text,
-          font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
-          offsetX: Number(offsetX),
-          offsetY: Number(offsetY),
-          rotation: rotation,
-          placement: placement,
-          textAlign: 'center',
-          textBaseline: 'middle',
-          stroke: textsymbolizer.halo
-            ? new style.Stroke({
-              color:
-                  halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-                    ? hexToRGB(halo.fill, halo.fillOpacity)
-                    : halo.fill,
-              // wrong position width radius equal to 2 or 4
-              width:
-                  (haloRadius === 2 || haloRadius === 4
-                    ? haloRadius - 0.00001
-                    : haloRadius) * 2,
-            })
-            : undefined,
-          fill: new style.Fill({
-            color:
-              fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-                ? hexToRGB(fill.fill, fill.fillOpacity)
-                : fill.fill,
-          }),
-        }),
+        text: new style.Text(textStyleOptions),
       });
     }
     return new style.Style({});
@@ -1387,6 +1546,23 @@
   var defaultStyles = [defaultPointStyle];
 
   /**
+   * Pushes style to array
+   * @example pushTo(styles, point[j], cachedPointStyle);
+   * @param {array} styles rulesconverter
+   * @param {object} item style description of array of styles description
+   * @param {function} cache function that returns cached style
+   */
+  function pushTo(array, item, cache) {
+    if (Array.isArray(item)) {
+      for (var k = 0; k < item.length; k += 1) {
+        array.push(cache(item[k]));
+      }
+    } else {
+      array.push(cache(item));
+    }
+  }
+
+  /**
    * Create openlayers style
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
    * @param {GeometryStyles} GeometryStyles rulesconverter
@@ -1408,7 +1584,7 @@
       case 'Polygon':
       case 'MultiPolygon':
         for (var i = 0; i < polygon.length; i += 1) {
-          styles.push(cachedPolygonStyle(polygon[i]));
+          pushTo(styles, polygon[i], cachedPolygonStyle);
         }
         for (var j = 0; j < text.length; j += 1) {
           styles.push(textStyle(text[j], feature, 'polygon'));
@@ -1417,7 +1593,7 @@
       case 'LineString':
       case 'MultiLineString':
         for (var j$1 = 0; j$1 < line.length; j$1 += 1) {
-          styles.push(cachedLineStyle(line[j$1]));
+          pushTo(styles, line[j$1], cachedLineStyle);
         }
         for (var j$2 = 0; j$2 < text.length; j$2 += 1) {
           styles.push(textStyle(text[j$2], feature, 'line'));
@@ -1426,7 +1602,7 @@
       case 'Point':
       case 'MultiPoint':
         for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
-          styles.push(cachedPointStyle(point[j$3]));
+          pushTo(styles, point[j$3], cachedPointStyle);
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
           styles.push(textStyle(text[j$4], feature, 'point'));
@@ -1460,73 +1636,6 @@
   }
 
   /**
-   * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
-   * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
-   * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
-   * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
-   * @param {object} imageLoadState Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
-   * @param {Function} imageLoadedCallback Function to call when an image has loaded.
-   */
-  function processExternalGraphicSymbolizers(
-    rules,
-    featureTypeStyle,
-    imageLoadState,
-    imageLoadedCallback
-  ) {
-    // If a feature has an external graphic point or polygon symbolizer, the external image may
-    // * have never been requested before.
-    //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
-    //       When loading is complete, replace all symbolizers using that image inside the featureTypeStyle
-    //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
-    // * be loading.
-    //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
-    // * be loaded and therefore present in the image cache.
-    //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
-    // * be in error. Error is a kind of loaded, but with an error icon style.
-    //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
-    for (var k = 0; k < rules.length; k += 1) {
-      var rule = rules[k];
-
-      var symbolizer = (void 0);
-      var exgraphic = (void 0);
-
-      if (rule.pointsymbolizer
-          && rule.pointsymbolizer.graphic
-          && rule.pointsymbolizer.graphic.externalgraphic) {
-        symbolizer = rule.pointsymbolizer;
-        exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
-      } else if (rule.polygonsymbolizer
-          && rule.polygonsymbolizer.fill
-          && rule.polygonsymbolizer.fill.graphicfill
-          && rule.polygonsymbolizer.fill.graphicfill.graphic
-          && rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic) {
-        symbolizer = rule.polygonsymbolizer;
-        exgraphic = rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
-      } else {
-        continue;
-      }
-
-      var imageUrl = exgraphic.onlineresource;
-      if (!(imageUrl in imageLoadState)) {
-        // Start loading the image and set image load state on the symbolizer.
-        imageLoadState[imageUrl] = IMAGE_LOADING;
-        loadExternalGraphic(
-          imageUrl,
-          imageCache,
-          imageLoadState,
-          featureTypeStyle,
-          imageLoadedCallback
-        );
-      } else if (
-        // Change image load state on the symbolizer if it has changed in the meantime.
-        symbolizer.__loadingState !== imageLoadState[imageUrl]
-      ) {
-        updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
-      }
-    }
-  }
-
-  /**
    * Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
    *
    * **Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
@@ -1554,7 +1663,7 @@
     var imageLoadState = {};
 
     // Important: if image cache already has loaded images, mark these as loaded in imageLoadState!
-    Object.keys(imageCache).forEach(function (imageUrl) {
+    getCachedImageUrls().forEach(function (imageUrl) {
       imageLoadState[imageUrl] = IMAGE_LOADED;
     });
 
@@ -1600,8 +1709,6 @@
   exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;
-  exports.loadExternalGraphic = loadExternalGraphic;
-  exports.updateExternalGraphicRule = updateExternalGraphicRule;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
