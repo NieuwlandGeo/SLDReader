@@ -775,7 +775,6 @@
    * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
    * Uses a WeakMap internally.
    * Note: This only works for constant symbolizers.
-   * Note: Text symbolizers depend on the feature property and the geometry type, these cannot be cached in this way.
    * @private
    * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
    * @returns {Function} The memoized function of the style conversion function.
@@ -793,6 +792,21 @@
 
       return olStyle;
     };
+  }
+
+  /**
+   * @param  {string} hex   eg #AA00FF
+   * @param  {Number} alpha eg 0.5
+   * @return {string}       rgba(0,0,0,0)
+   */
+  function hexToRGB(hex, alpha) {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    if (alpha) {
+      return ("rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")");
+    }
+    return ("rgb(" + r + ", " + g + ", " + b + ")");
   }
 
   /**
@@ -1046,6 +1060,27 @@
     }
   }
 
+  /**
+   * Create an OL Icon style for an external graphic.
+   * The Graphic must be already loaded and present in the global imageCache.
+   * @param {string} imageUrl Url of the external graphic.
+   * @param {number} size Requested size in pixels.
+   */
+  function createCachedImageStyle(imageUrl, size) {
+    var ref = getCachedImage(imageUrl);
+    var image = ref.image;
+    var width = ref.width;
+    var height = ref.height;
+    return new style.Style({
+      image: new style.Icon({
+        img: image,
+        imgSize: [width, height],
+        // According to SLD spec, if size is given, image height should equal the given size.
+        scale: size / height || 1,
+      }),
+    });
+  }
+
   var defaultPointStyle = new style.Style({
     image: new style.Circle({
       radius: 8,
@@ -1105,23 +1140,222 @@
     }),
   });
 
-  /* eslint-disable no-continue */
+  function getWellKnownSymbol(wellKnownName, radius, stroke, fill) {
+    var fillColor;
+    if (fill && fill.getColor()) {
+      fillColor = fill.getColor();
+    }
+
+    switch (wellKnownName) {
+      case 'circle':
+        return new style.Style({
+          image: new style.Circle({
+            fill: fill,
+            radius: radius,
+            stroke: stroke,
+          }),
+        });
+
+      case 'triangle':
+        return new style.Style({
+          image: new style.RegularShape({
+            fill: fill,
+            points: 3,
+            radius: radius,
+            stroke: stroke,
+          }),
+        });
+
+      case 'star':
+        return new style.Style({
+          image: new style.RegularShape({
+            fill: fill,
+            points: 5,
+            radius1: radius,
+            radius2: radius / 2.5,
+            stroke: stroke,
+          }),
+        });
+
+      case 'cross':
+        return new style.Style({
+          image: new style.RegularShape({
+            fill: fill,
+            points: 4,
+            radius1: radius,
+            radius2: 0,
+            stroke:
+              stroke ||
+              new style.Stroke({
+                color: fillColor,
+                width: radius / 2,
+              }),
+          }),
+        });
+
+      case 'hexagon':
+        return new style.Style({
+          image: new style.RegularShape({
+            fill: fill,
+            points: 6,
+            radius1: radius,
+            stroke:
+              stroke ||
+              new style.Stroke({
+                color: fillColor,
+                width: radius / 2,
+              }),
+          }),
+        });
+
+      case 'octagon':
+        return new style.Style({
+          image: new style.RegularShape({
+            fill: fill,
+            points: 8,
+            radius1: radius,
+            stroke:
+              stroke ||
+              new style.Stroke({
+                color: fillColor,
+                width: radius / 2,
+              }),
+          }),
+        });
+
+      case 'x':
+        return new style.Style({
+          image: new style.RegularShape({
+            angle: Math.PI / 4,
+            fill: fill,
+            points: 4,
+            radius1: radius,
+            radius2: 0,
+            stroke:
+              stroke ||
+              new style.Stroke({
+                color: fillColor,
+                width: radius / 2,
+              }),
+          }),
+        });
+
+      default:
+        // Default is `square`
+        return new style.Style({
+          image: new style.RegularShape({
+            angle: Math.PI / 4,
+            fill: fill,
+            points: 4,
+            // For square, scale radius so the height of the square equals the given size.
+            radius: radius * Math.sqrt(2.0),
+            stroke: stroke,
+          }),
+        });
+    }
+  }
+
+  /* eslint-disable no-underscore-dangle */
 
   /**
    * @private
-   * @param  {string} hex   eg #AA00FF
-   * @param  {Number} alpha eg 0.5
-   * @return {string}       rgba(0,0,0,0)
+   * @param  {PointSymbolizer} pointsymbolizer [description]
+   * @return {object} openlayers style
    */
-  function hexToRGB(hex, alpha) {
-    var r = parseInt(hex.slice(1, 3), 16);
-    var g = parseInt(hex.slice(3, 5), 16);
-    var b = parseInt(hex.slice(5, 7), 16);
-    if (alpha) {
-      return ("rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")");
+  function pointStyle(pointsymbolizer) {
+    var style$1 = pointsymbolizer.graphic;
+    if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
+      // Check symbolizer metadata to see if the image has already been loaded.
+      switch (pointsymbolizer.__loadingState) {
+        case IMAGE_LOADED:
+          return createCachedImageStyle(
+            style$1.externalgraphic.onlineresource,
+            style$1.size
+          );
+        case IMAGE_LOADING:
+          return imageLoadingPointStyle;
+        case IMAGE_ERROR:
+          return imageErrorPointStyle;
+        default:
+          // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
+          return imageLoadingPointStyle;
+      }
     }
-    return ("rgb(" + r + ", " + g + ", " + b + ")");
+    if (style$1.mark) {
+      var ref = style$1.mark;
+      var fill = ref.fill;
+      var stroke = ref.stroke;
+      var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
+      fill = new style.Fill({
+        color: fillColor,
+      });
+      if (
+        stroke &&
+        stroke.styling &&
+        !(Number(stroke.styling.strokeWidth) === 0)
+      ) {
+        var ref$1 = stroke.styling;
+        var cssStroke = ref$1.stroke;
+        var cssStrokeWidth = ref$1.strokeWidth;
+        stroke = new style.Stroke({
+          color: cssStroke || 'black',
+          width: cssStrokeWidth || 2,
+        });
+      } else {
+        stroke = undefined;
+      }
+      var radius = 0.5 * Number(style$1.size) || 10;
+      return getWellKnownSymbol(style$1.mark.wellknownname, radius, stroke, fill);
+    }
+
+    return new style.Style({
+      image: new style.Circle({
+        radius: 4,
+        fill: new style.Fill({
+          color: 'blue',
+        }),
+      }),
+    });
   }
+
+  var cachedPointStyle = memoizeStyleFunction(pointStyle);
+
+  function getPointStyle(symbolizer /* , feature, options = {} */) {
+    // Todo: apply dynamic style values in-place to the cached ol style instance.
+    return cachedPointStyle(symbolizer);
+  }
+
+  /**
+   * @private
+   * @param  {LineSymbolizer} linesymbolizer [description]
+   * @return {object} openlayers style
+   */
+  function lineStyle(linesymbolizer) {
+    var style$1 = {};
+    if (linesymbolizer.stroke) {
+      style$1 = linesymbolizer.stroke.styling;
+    }
+    return new style.Style({
+      stroke: new style.Stroke({
+        color:
+          style$1.strokeOpacity && style$1.stroke && style$1.stroke.slice(0, 1) === '#'
+            ? hexToRGB(style$1.stroke, style$1.strokeOpacity)
+            : style$1.stroke || '#3399CC',
+        width: style$1.strokeWidth || 1.25,
+        lineCap: style$1.strokeLinecap && style$1.strokeLinecap,
+        lineDash: style$1.strokeDasharray && style$1.strokeDasharray.split(' '),
+        lineDashOffset: style$1.strokeDashoffset && style$1.strokeDashoffset,
+        lineJoin: style$1.strokeLinejoin && style$1.strokeLinejoin,
+      }),
+    });
+  }
+
+  var cachedLineStyle = memoizeStyleFunction(lineStyle);
+  function getLineStyle(symbolizer /* , feature, options = {} */) {
+    return cachedLineStyle(symbolizer);
+  }
+
+  /* eslint-disable no-underscore-dangle */
 
   function createPattern(graphic) {
     var ref = getCachedImage(
@@ -1209,209 +1443,9 @@
     });
   }
 
-  /**
-   * @private
-   * @param  {LineSymbolizer} linesymbolizer [description]
-   * @return {object} openlayers style
-   */
-  function lineStyle(linesymbolizer) {
-    var style$1 = {};
-    if (linesymbolizer.stroke) {
-      style$1 = linesymbolizer.stroke.styling;
-    }
-    return new style.Style({
-      stroke: new style.Stroke({
-        color:
-          style$1.strokeOpacity && style$1.stroke && style$1.stroke.slice(0, 1) === '#'
-            ? hexToRGB(style$1.stroke, style$1.strokeOpacity)
-            : style$1.stroke || '#3399CC',
-        width: style$1.strokeWidth || 1.25,
-        lineCap: style$1.strokeLinecap && style$1.strokeLinecap,
-        lineDash: style$1.strokeDasharray && style$1.strokeDasharray.split(' '),
-        lineDashOffset: style$1.strokeDashoffset && style$1.strokeDashoffset,
-        lineJoin: style$1.strokeLinejoin && style$1.strokeLinejoin,
-      }),
-    });
-  }
-
-  /**
-   * Create an OL Icon style for an external graphic.
-   * The Graphic must be already loaded and present in the global imageCache.
-   * @param {string} imageUrl Url of the external graphic.
-   * @param {number} size Requested size in pixels.
-   */
-  function createCachedImageStyle(imageUrl, size) {
-    var ref = getCachedImage(imageUrl);
-    var image = ref.image;
-    var width = ref.width;
-    var height = ref.height;
-    return new style.Style({
-      image: new style.Icon({
-        img: image,
-        imgSize: [width, height],
-        // According to SLD spec, if size is given, image height should equal the given size.
-        scale: size / height || 1,
-      }),
-    });
-  }
-
-  /**
-   * @private
-   * @param  {PointSymbolizer} pointsymbolizer [description]
-   * @return {object} openlayers style
-   */
-  function pointStyle(pointsymbolizer) {
-    var style$1 = pointsymbolizer.graphic;
-    if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
-      // Check symbolizer metadata to see if the image has already been loaded.
-      switch (pointsymbolizer.__loadingState) {
-        case IMAGE_LOADED:
-          return createCachedImageStyle(
-            style$1.externalgraphic.onlineresource,
-            style$1.size
-          );
-        case IMAGE_LOADING:
-          return imageLoadingPointStyle;
-        case IMAGE_ERROR:
-          return imageErrorPointStyle;
-        default:
-          // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
-          return imageLoadingPointStyle;
-      }
-    }
-    if (style$1.mark) {
-      var ref = style$1.mark;
-      var fill = ref.fill;
-      var stroke = ref.stroke;
-      var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-      fill = new style.Fill({
-        color: fillColor,
-      });
-      if (
-        stroke &&
-        stroke.styling &&
-        !(Number(stroke.styling.strokeWidth) === 0)
-      ) {
-        var ref$1 = stroke.styling;
-        var cssStroke = ref$1.stroke;
-        var cssStrokeWidth = ref$1.strokeWidth;
-        stroke = new style.Stroke({
-          color: cssStroke || 'black',
-          width: cssStrokeWidth || 2,
-        });
-      } else {
-        stroke = undefined;
-      }
-      var radius = 0.5 * Number(style$1.size) || 10;
-      switch (style$1.mark.wellknownname) {
-        case 'circle':
-          return new style.Style({
-            image: new style.Circle({
-              fill: fill,
-              radius: radius,
-              stroke: stroke,
-            }),
-          });
-        case 'triangle':
-          return new style.Style({
-            image: new style.RegularShape({
-              fill: fill,
-              points: 3,
-              radius: radius,
-              stroke: stroke,
-            }),
-          });
-        case 'star':
-          return new style.Style({
-            image: new style.RegularShape({
-              fill: fill,
-              points: 5,
-              radius1: radius,
-              radius2: radius / 2.5,
-              stroke: stroke,
-            }),
-          });
-        case 'cross':
-          return new style.Style({
-            image: new style.RegularShape({
-              fill: fill,
-              points: 4,
-              radius1: radius,
-              radius2: 0,
-              stroke:
-                stroke ||
-                new style.Stroke({
-                  color: fillColor,
-                  width: radius / 2,
-                }),
-            }),
-          });
-        case 'hexagon':
-          return new style.Style({
-            image: new style.RegularShape({
-              fill: fill,
-              points: 6,
-              radius1: radius,
-              stroke:
-                stroke ||
-                new style.Stroke({
-                  color: fillColor,
-                  width: radius / 2,
-                }),
-            }),
-          });
-        case 'octagon':
-          return new style.Style({
-            image: new style.RegularShape({
-              fill: fill,
-              points: 8,
-              radius1: radius,
-              stroke:
-                stroke ||
-                new style.Stroke({
-                  color: fillColor,
-                  width: radius / 2,
-                }),
-            }),
-          });
-        case 'x':
-          return new style.Style({
-            image: new style.RegularShape({
-              angle: Math.PI / 4,
-              fill: fill,
-              points: 4,
-              radius1: radius,
-              radius2: 0,
-              stroke:
-                stroke ||
-                new style.Stroke({
-                  color: fillColor,
-                  width: radius / 2,
-                }),
-            }),
-          });
-        default:
-          // Default is `square`
-          return new style.Style({
-            image: new style.RegularShape({
-              angle: Math.PI / 4,
-              fill: fill,
-              points: 4,
-              // For square, scale radius so the height of the square equals the given size.
-              radius: radius * Math.sqrt(2.0),
-              stroke: stroke,
-            }),
-          });
-      }
-    }
-    return new style.Style({
-      image: new style.Circle({
-        radius: 4,
-        fill: new style.Fill({
-          color: 'blue',
-        }),
-      }),
-    });
+  var cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
+  function getPolygonStyle(symbolizer /* , feature, options = {} */) {
+    return cachedPolygonStyle(symbolizer);
   }
 
   /**
@@ -1529,27 +1563,6 @@
       });
     }
     return new style.Style({});
-  }
-
-  // Create memoized versions of the style converters.
-  // They use a WeakMap to return the same OL style object if the symbolizer is the same.
-  // Note: this only works for constant symbolizers!
-  // Todo: find a smart way to optimize text symbolizers.
-
-  // Memoized versions of point, line and polygon style converters.
-  var cachedPointStyle = memoizeStyleFunction(pointStyle);
-  function getPointStyle(symbolizer /* , feature, options = {} */) {
-    return cachedPointStyle(symbolizer);
-  }
-
-  var cachedLineStyle = memoizeStyleFunction(lineStyle);
-  function getLineStyle(symbolizer /* , feature, options = {} */) {
-    return cachedLineStyle(symbolizer);
-  }
-
-  var cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
-  function getPolygonStyle(symbolizer /* , feature, options = {} */) {
-    return cachedPolygonStyle(symbolizer);
   }
 
   var defaultStyles = [defaultPointStyle];
@@ -1721,6 +1734,7 @@
   exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;
+  exports.hexToRGB = hexToRGB;
   exports.memoizeStyleFunction = memoizeStyleFunction;
 
   Object.defineProperty(exports, '__esModule', { value: true });

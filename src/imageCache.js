@@ -1,4 +1,6 @@
 /* eslint-disable no-continue */
+import { Style, Icon } from 'ol/style';
+
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
 
 /* eslint-disable no-underscore-dangle */
@@ -203,4 +205,22 @@ export function processExternalGraphicSymbolizers(
       updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
     }
   }
+}
+
+/**
+ * Create an OL Icon style for an external graphic.
+ * The Graphic must be already loaded and present in the global imageCache.
+ * @param {string} imageUrl Url of the external graphic.
+ * @param {number} size Requested size in pixels.
+ */
+export function createCachedImageStyle(imageUrl, size) {
+  const { image, width, height } = getCachedImage(imageUrl);
+  return new Style({
+    image: new Icon({
+      img: image,
+      imgSize: [width, height],
+      // According to SLD spec, if size is given, image height should equal the given size.
+      scale: size / height || 1,
+    }),
+  });
 }
