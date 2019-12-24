@@ -76,3 +76,28 @@ export function getRules(featureTypeStyle, feature, resolution, options = {}) {
   }
   return result;
 }
+
+/**
+ * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
+ * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
+ * Uses a WeakMap internally.
+ * Note: This only works for constant symbolizers.
+ * Note: Text symbolizers depend on the feature property and the geometry type, these cannot be cached in this way.
+ * @private
+ * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
+ * @returns {Function} The memoized function of the style conversion function.
+ */
+export function memoizeStyleFunction(styleFunction) {
+  const styleCache = new WeakMap();
+
+  return symbolizer => {
+    let olStyle = styleCache.get(symbolizer);
+
+    if (!olStyle) {
+      olStyle = styleFunction(symbolizer);
+      styleCache.set(symbolizer, olStyle);
+    }
+
+    return olStyle;
+  };
+}

@@ -11,7 +11,7 @@ import {
 } from 'ol/style';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
-import { getRules } from './Utils';
+import { getRules, memoizeStyleFunction } from './Utils';
 import getGeometryStyles from './GeometryStyles';
 import {
   getCachedImage,
@@ -388,7 +388,8 @@ function pointStyle(pointsymbolizer) {
  * @param {string} type geometry type, @see {@link http://geojson.org|geojson} for possible types
  * @return {object} openlayers style
  */
-function textStyle(textsymbolizer, feature, type) {
+function getTextStyle(textsymbolizer, feature, options = {}) {
+  const type = options.geometryType;
   const properties = feature.getProperties
     ? feature.getProperties()
     : feature.properties;
@@ -496,52 +497,39 @@ function textStyle(textsymbolizer, feature, type) {
 // Note: this only works for constant symbolizers!
 // Todo: find a smart way to optimize text symbolizers.
 
-/**
- * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
- * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
- * Uses a WeakMap internally.
- * Note: This only works for constant symbolizers.
- * Note: Text symbolizers depend on the feature property and the geometry type, these cannot be cached in this way.
- * @private
- * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
- * @returns {Function} The memoized function of the style conversion function.
- */
-function memoize(styleFunction) {
-  const styleCache = new WeakMap();
-
-  return symbolizer => {
-    let olStyle = styleCache.get(symbolizer);
-
-    if (!olStyle) {
-      olStyle = styleFunction(symbolizer);
-      styleCache.set(symbolizer, olStyle);
-    }
-
-    return olStyle;
-  };
+// Memoized versions of point, line and polygon style converters.
+const cachedPointStyle = memoizeStyleFunction(pointStyle);
+function getPointStyle(symbolizer /* , feature, options = {} */) {
+  return cachedPointStyle(symbolizer);
 }
 
-// Memoized versions of point, line and polygon style converters.
-const cachedPointStyle = memoize(pointStyle);
-const cachedLineStyle = memoize(lineStyle);
-const cachedPolygonStyle = memoize(polygonStyle);
+const cachedLineStyle = memoizeStyleFunction(lineStyle);
+function getLineStyle(symbolizer /* , feature, options = {} */) {
+  return cachedLineStyle(symbolizer);
+}
+
+const cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
+function getPolygonStyle(symbolizer /* , feature, options = {} */) {
+  return cachedPolygonStyle(symbolizer);
+}
 
 const defaultStyles = [defaultPointStyle];
 
 /**
- * Pushes style to array
- * @example pushTo(styles, point[j], cachedPointStyle);
- * @param {array} styles rulesconverter
- * @param {object} item style description of array of styles description
- * @param {function} cache function that returns cached style
+ * Convert symbolizers together with the feature to OL style objects and append them to the styles array.
+ * @example appendStyle(styles, point[j], feature, getPointStyle);
+ * @param {Array<ol/style>} styles Array of OL styles.
+ * @param {object|Array<object>} symbolizers Feature symbolizer object, or array of feature symbolizers.
+ * @param {ol/feature} feature OpenLayers feature.
+ * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
  */
-function pushTo(array, item, cache) {
-  if (Array.isArray(item)) {
-    for (let k = 0; k < item.length; k += 1) {
-      array.push(cache(item[k]));
+function appendStyle(styles, symbolizers, feature, styleFunction) {
+  if (Array.isArray(symbolizers)) {
+    for (let k = 0; k < symbolizers.length; k += 1) {
+      styles.push(styleFunction(symbolizers[k], feature));
     }
   } else {
-    array.push(cache(item));
+    styles.push(styleFunction(symbolizers, feature));
   }
 }
 
@@ -564,28 +552,30 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'Polygon':
     case 'MultiPolygon':
       for (let i = 0; i < polygon.length; i += 1) {
-        pushTo(styles, polygon[i], cachedPolygonStyle);
+        appendStyle(styles, polygon[i], feature, getPolygonStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], feature, 'polygon'));
+        styles.push(
+          getTextStyle(text[j], feature, { geometryType: 'polygon' })
+        );
       }
       break;
     case 'LineString':
     case 'MultiLineString':
       for (let j = 0; j < line.length; j += 1) {
-        pushTo(styles, line[j], cachedLineStyle);
+        appendStyle(styles, line[j], feature, getLineStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], feature, 'line'));
+        styles.push(getTextStyle(text[j], feature, { geometryType: 'line' }));
       }
       break;
     case 'Point':
     case 'MultiPoint':
       for (let j = 0; j < point.length; j += 1) {
-        pushTo(styles, point[j], cachedPointStyle);
+        appendStyle(styles, point[j], feature, getPointStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(textStyle(text[j], feature, 'point'));
+        styles.push(getTextStyle(text[j], feature, { geometryType: 'point' }));
       }
       break;
     default:
