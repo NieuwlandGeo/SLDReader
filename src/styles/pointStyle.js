@@ -31,27 +31,30 @@ function pointStyle(pointsymbolizer) {
         return imageLoadingPointStyle;
     }
   }
+
   if (style.mark) {
-    let { fill, stroke } = style.mark;
+    const { fill, stroke, wellknownname } = style.mark;
     const fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-    fill = new Fill({
+    const olFill = new Fill({
       color: fillColor,
     });
+
+    let olStroke;
     if (
       stroke &&
       stroke.styling &&
       !(Number(stroke.styling.strokeWidth) === 0)
     ) {
       const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.styling;
-      stroke = new Stroke({
+      olStroke = new Stroke({
         color: cssStroke || 'black',
         width: cssStrokeWidth || 2,
       });
-    } else {
-      stroke = undefined;
     }
+
     const radius = 0.5 * Number(style.size) || 10;
-    return getWellKnownSymbol(style.mark.wellknownname, radius, stroke, fill);
+
+    return getWellKnownSymbol(wellknownname, radius, olStroke, olFill);
   }
 
   return new Style({

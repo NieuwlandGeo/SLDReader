@@ -40,13 +40,35 @@ function appendStyle(styles, symbolizers, feature, styleFunction) {
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(GeometryStyles, feature) {
+  const { polygon, line, point, text } = GeometryStyles;
+
   const geometry = feature.getGeometry
     ? feature.getGeometry()
     : feature.geometry;
-  const type = geometry.getType ? geometry.getType() : geometry.type;
-  const { polygon, line, point, text } = GeometryStyles;
+  const geometryType = geometry.getType ? geometry.getType() : geometry.type;
+
   let styles = [];
-  switch (type) {
+  switch (geometryType) {
+    case 'Point':
+    case 'MultiPoint':
+      for (let j = 0; j < point.length; j += 1) {
+        appendStyle(styles, point[j], feature, getPointStyle);
+      }
+      for (let j = 0; j < text.length; j += 1) {
+        styles.push(getTextStyle(text[j], feature, { geometryType: 'point' }));
+      }
+      break;
+
+    case 'LineString':
+    case 'MultiLineString':
+      for (let j = 0; j < line.length; j += 1) {
+        appendStyle(styles, line[j], feature, getLineStyle);
+      }
+      for (let j = 0; j < text.length; j += 1) {
+        styles.push(getTextStyle(text[j], feature, { geometryType: 'line' }));
+      }
+      break;
+
     case 'Polygon':
     case 'MultiPolygon':
       for (let i = 0; i < polygon.length; i += 1) {
@@ -58,27 +80,11 @@ export default function OlStyler(GeometryStyles, feature) {
         );
       }
       break;
-    case 'LineString':
-    case 'MultiLineString':
-      for (let j = 0; j < line.length; j += 1) {
-        appendStyle(styles, line[j], feature, getLineStyle);
-      }
-      for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature, { geometryType: 'line' }));
-      }
-      break;
-    case 'Point':
-    case 'MultiPoint':
-      for (let j = 0; j < point.length; j += 1) {
-        appendStyle(styles, point[j], feature, getPointStyle);
-      }
-      for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature, { geometryType: 'point' }));
-      }
-      break;
+
     default:
       styles = defaultStyles;
   }
+
   return styles;
 }
 

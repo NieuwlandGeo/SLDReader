@@ -1,5 +1,13 @@
 import { Style, Stroke, Circle, RegularShape } from 'ol/style';
 
+/**
+ * Create an OL point style corresponding to a well known symbol identifier.
+ * @param {string} wellKnownName SLD Well Known Name for symbolizer.
+ * Can be 'circle', 'square', 'triangle', 'star', 'cross', 'x', 'hexagon', 'octagon'.
+ * @param {number} radius Symbol radius.
+ * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
+ * @param {ol/style/fill} fill OpenLayers Fill instance.
+ */
 function getWellKnownSymbol(wellKnownName, radius, stroke, fill) {
   let fillColor;
   if (fill && fill.getColor()) {

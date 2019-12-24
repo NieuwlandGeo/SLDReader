@@ -1140,6 +1140,14 @@
     }),
   });
 
+  /**
+   * Create an OL point style corresponding to a well known symbol identifier.
+   * @param {string} wellKnownName SLD Well Known Name for symbolizer.
+   * Can be 'circle', 'square', 'triangle', 'star', 'cross', 'x', 'hexagon', 'octagon'.
+   * @param {number} radius Symbol radius.
+   * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
+   * @param {ol/style/fill} fill OpenLayers Fill instance.
+   */
   function getWellKnownSymbol(wellKnownName, radius, stroke, fill) {
     var fillColor;
     if (fill && fill.getColor()) {
@@ -1281,14 +1289,18 @@
           return imageLoadingPointStyle;
       }
     }
+
     if (style$1.mark) {
       var ref = style$1.mark;
       var fill = ref.fill;
       var stroke = ref.stroke;
+      var wellknownname = ref.wellknownname;
       var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-      fill = new style.Fill({
+      var olFill = new style.Fill({
         color: fillColor,
       });
+
+      var olStroke;
       if (
         stroke &&
         stroke.styling &&
@@ -1297,15 +1309,15 @@
         var ref$1 = stroke.styling;
         var cssStroke = ref$1.stroke;
         var cssStrokeWidth = ref$1.strokeWidth;
-        stroke = new style.Stroke({
+        olStroke = new style.Stroke({
           color: cssStroke || 'black',
           width: cssStrokeWidth || 2,
         });
-      } else {
-        stroke = undefined;
       }
+
       var radius = 0.5 * Number(style$1.size) || 10;
-      return getWellKnownSymbol(style$1.mark.wellknownname, radius, stroke, fill);
+
+      return getWellKnownSymbol(wellknownname, radius, olStroke, olFill);
     }
 
     return new style.Style({
@@ -1459,110 +1471,112 @@
   function getTextStyle(textsymbolizer, feature, options) {
     if ( options === void 0 ) options = {};
 
-    var type = options.geometryType;
+    if (!(textsymbolizer && textsymbolizer.label)) {
+      return new style.Style({});
+    }
+
     var properties = feature.getProperties
       ? feature.getProperties()
       : feature.properties;
-    if (textsymbolizer && textsymbolizer.label) {
-      var parseText = {
-        text: function (part) { return part; },
-        propertyname: function (part, props) {
-          if ( props === void 0 ) props = {};
 
-          return props[part] || '';
-      },
-      };
-      var label = textsymbolizer.label.length
-        ? textsymbolizer.label
-        : [textsymbolizer.label];
+    var parseText = {
+      text: function (part) { return part; },
+      propertyname: function (part, props) {
+        if ( props === void 0 ) props = {};
 
-      var text = label.reduce(function (string, part) {
-        var keys = Object.keys(part);
-        return (
-          string +
-          (keys && parseText[keys[0]]
-            ? parseText[keys[0]](part[keys[0]], properties)
-            : '')
-        );
-      }, '');
+        return props[part] || '';
+    },
+    };
 
-      var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
-      var halo =
-        textsymbolizer.halo && textsymbolizer.halo.fill
-          ? textsymbolizer.halo.fill.styling
-          : {};
-      var haloRadius =
-        textsymbolizer.halo && textsymbolizer.halo.radius
-          ? parseFloat(textsymbolizer.halo.radius)
-          : 1;
-      var ref =
-        textsymbolizer.font && textsymbolizer.font.styling
-          ? textsymbolizer.font.styling
-          : {};
-      var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
-      var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
-      var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
-      var fontWeight = ref.fontWeight; if ( fontWeight === void 0 ) fontWeight = '';
+    var label = textsymbolizer.label.length
+      ? textsymbolizer.label
+      : [textsymbolizer.label];
 
-      var pointplacement =
-        textsymbolizer &&
-        textsymbolizer.labelplacement &&
-        textsymbolizer.labelplacement.pointplacement
-          ? textsymbolizer.labelplacement.pointplacement
-          : {};
-      var displacement =
-        pointplacement && pointplacement.displacement
-          ? pointplacement.displacement
-          : {};
-      var offsetX = displacement.displacementx ? displacement.displacementx : 0;
-      var offsetY = displacement.displacementy ? displacement.displacementy : 0;
-      var lineplacement =
-        textsymbolizer &&
-        textsymbolizer.labelplacement &&
-        textsymbolizer.labelplacement.lineplacement
-          ? textsymbolizer.labelplacement.lineplacement
-          : null;
-      var rotation = pointplacement.rotation ? pointplacement.rotation : 0;
+    var text = label.reduce(function (string, part) {
+      var keys = Object.keys(part);
+      return (
+        string +
+        (keys && parseText[keys[0]]
+          ? parseText[keys[0]](part[keys[0]], properties)
+          : '')
+      );
+    }, '');
 
-      var placement = type !== 'point' && lineplacement ? 'line' : 'point';
+    var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
+    var halo =
+      textsymbolizer.halo && textsymbolizer.halo.fill
+        ? textsymbolizer.halo.fill.styling
+        : {};
+    var haloRadius =
+      textsymbolizer.halo && textsymbolizer.halo.radius
+        ? parseFloat(textsymbolizer.halo.radius)
+        : 1;
+    var ref =
+      textsymbolizer.font && textsymbolizer.font.styling
+        ? textsymbolizer.font.styling
+        : {};
+    var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
+    var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
+    var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
+    var fontWeight = ref.fontWeight; if ( fontWeight === void 0 ) fontWeight = '';
 
-      // Halo styling
-      var textStyleOptions = {
-        text: text,
-        font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
-        offsetX: Number(offsetX),
-        offsetY: Number(offsetY),
-        rotation: rotation,
-        placement: placement,
-        textAlign: 'center',
-        textBaseline: 'middle',
-        fill: new style.Fill({
-          color:
-            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-              ? hexToRGB(fill.fill, fill.fillOpacity)
-              : fill.fill,
-        }),
-      };
+    var pointplacement =
+      textsymbolizer &&
+      textsymbolizer.labelplacement &&
+      textsymbolizer.labelplacement.pointplacement
+        ? textsymbolizer.labelplacement.pointplacement
+        : {};
+    var displacement =
+      pointplacement && pointplacement.displacement
+        ? pointplacement.displacement
+        : {};
+    var offsetX = displacement.displacementx ? displacement.displacementx : 0;
+    var offsetY = displacement.displacementy ? displacement.displacementy : 0;
+    var lineplacement =
+      textsymbolizer &&
+      textsymbolizer.labelplacement &&
+      textsymbolizer.labelplacement.lineplacement
+        ? textsymbolizer.labelplacement.lineplacement
+        : null;
+    var rotation = pointplacement.rotation ? pointplacement.rotation : 0;
+    var placement =
+      options.geometryType !== 'point' && lineplacement ? 'line' : 'point';
 
-      if (textsymbolizer.halo) {
-        textStyleOptions.stroke = new style.Stroke({
-          color:
-            halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-              ? hexToRGB(halo.fill, halo.fillOpacity)
-              : halo.fill,
-          // wrong position width radius equal to 2 or 4
-          width:
-            (haloRadius === 2 || haloRadius === 4
-              ? haloRadius - 0.00001
-              : haloRadius) * 2,
-        });
-      }
+    // Halo styling
+    var textStyleOptions = {
+      text: text,
+      font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
+      offsetX: Number(offsetX),
+      offsetY: Number(offsetY),
+      rotation: rotation,
+      placement: placement,
+      textAlign: 'center',
+      textBaseline: 'middle',
+      fill: new style.Fill({
+        color:
+          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+            ? hexToRGB(fill.fill, fill.fillOpacity)
+            : fill.fill,
+      }),
+    };
 
-      return new style.Style({
-        text: new style.Text(textStyleOptions),
+    if (textsymbolizer.halo) {
+      textStyleOptions.stroke = new style.Stroke({
+        color:
+          halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
+            ? hexToRGB(halo.fill, halo.fillOpacity)
+            : halo.fill,
+        // wrong position width radius equal to 2 or 4
+        width:
+          (haloRadius === 2 || haloRadius === 4
+            ? haloRadius - 0.00001
+            : haloRadius) * 2,
       });
     }
-    return new style.Style({});
+
+    return new style.Style({
+      text: new style.Text(textStyleOptions),
+    });
   }
 
   var defaultStyles = [defaultPointStyle];
@@ -1594,48 +1608,54 @@
    * @return ol.style.Style or array of it
    */
   function OlStyler(GeometryStyles, feature) {
-    var geometry = feature.getGeometry
-      ? feature.getGeometry()
-      : feature.geometry;
-    var type = geometry.getType ? geometry.getType() : geometry.type;
     var polygon = GeometryStyles.polygon;
     var line = GeometryStyles.line;
     var point = GeometryStyles.point;
     var text = GeometryStyles.text;
+
+    var geometry = feature.getGeometry
+      ? feature.getGeometry()
+      : feature.geometry;
+    var geometryType = geometry.getType ? geometry.getType() : geometry.type;
+
     var styles = [];
-    switch (type) {
+    switch (geometryType) {
+      case 'Point':
+      case 'MultiPoint':
+        for (var j = 0; j < point.length; j += 1) {
+          appendStyle(styles, point[j], feature, getPointStyle);
+        }
+        for (var j$1 = 0; j$1 < text.length; j$1 += 1) {
+          styles.push(getTextStyle(text[j$1], feature, { geometryType: 'point' }));
+        }
+        break;
+
+      case 'LineString':
+      case 'MultiLineString':
+        for (var j$2 = 0; j$2 < line.length; j$2 += 1) {
+          appendStyle(styles, line[j$2], feature, getLineStyle);
+        }
+        for (var j$3 = 0; j$3 < text.length; j$3 += 1) {
+          styles.push(getTextStyle(text[j$3], feature, { geometryType: 'line' }));
+        }
+        break;
+
       case 'Polygon':
       case 'MultiPolygon':
         for (var i = 0; i < polygon.length; i += 1) {
           appendStyle(styles, polygon[i], feature, getPolygonStyle);
         }
-        for (var j = 0; j < text.length; j += 1) {
+        for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
           styles.push(
-            getTextStyle(text[j], feature, { geometryType: 'polygon' })
+            getTextStyle(text[j$4], feature, { geometryType: 'polygon' })
           );
         }
         break;
-      case 'LineString':
-      case 'MultiLineString':
-        for (var j$1 = 0; j$1 < line.length; j$1 += 1) {
-          appendStyle(styles, line[j$1], feature, getLineStyle);
-        }
-        for (var j$2 = 0; j$2 < text.length; j$2 += 1) {
-          styles.push(getTextStyle(text[j$2], feature, { geometryType: 'line' }));
-        }
-        break;
-      case 'Point':
-      case 'MultiPoint':
-        for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
-          appendStyle(styles, point[j$3], feature, getPointStyle);
-        }
-        for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          styles.push(getTextStyle(text[j$4], feature, { geometryType: 'point' }));
-        }
-        break;
+
       default:
         styles = defaultStyles;
     }
+
     return styles;
   }
 
