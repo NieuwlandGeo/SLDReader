@@ -10,7 +10,8 @@
     },
     "properties": {
       "countrycode": "be",
-      "size": 24
+      "size": 24,
+      "angle": -15
     }
   },{
     "type": "Feature",
@@ -21,7 +22,8 @@
     },
     "properties": {
       "countrycode": "lu",
-      "size": 18
+      "size": 18,
+      "angle": 0
     }
   },{
     "type": "Feature",
@@ -32,7 +34,8 @@
     },
     "properties": {
       "countrycode": "nl",
-      "size": 36
+      "size": 36,
+      "angle": 30
     }
   }]
 }

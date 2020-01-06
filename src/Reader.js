@@ -233,7 +233,7 @@ const SymbParsers = {
   AnchorPoint: addProp,
   AnchorPointX: addPropWithTextContent,
   AnchorPointY: addPropWithTextContent,
-  Rotation: addPropWithTextContent,
+  Rotation: addFilterExpressionProp,
   Displacement: addProp,
   DisplacementX: addPropWithTextContent,
   DisplacementY: addPropWithTextContent,

@@ -51,14 +51,21 @@ function getMarkStroke(mark) {
  */
 function pointStyle(pointsymbolizer) {
   const { graphic: style } = pointsymbolizer;
-  const pointSize = style.size || DEFAULT_POINT_SIZE;
 
   // If the point size is a dynamic expression, use the default point size and update in-place later.
   let pointSizeValue;
-  if (style.size && pointSize.type === 'expression') {
+  if (style.size && style.size.type === 'expression') {
     pointSizeValue = DEFAULT_POINT_SIZE;
   } else {
     pointSizeValue = style.size || DEFAULT_POINT_SIZE;
+  }
+
+  // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
+  let rotationDegrees;
+  if (style.rotation && style.rotation.type === 'expression') {
+    rotationDegrees = 0.0;
+  } else {
+    rotationDegrees = style.rotation || 0.0;
   }
 
   if (style.externalgraphic && style.externalgraphic.onlineresource) {
@@ -67,7 +74,8 @@ function pointStyle(pointsymbolizer) {
       case IMAGE_LOADED:
         return createCachedImageStyle(
           style.externalgraphic.onlineresource,
-          pointSizeValue
+          pointSizeValue,
+          rotationDegrees
         );
       case IMAGE_LOADING:
         return imageLoadingPointStyle;
@@ -90,7 +98,8 @@ function pointStyle(pointsymbolizer) {
         wellknownname,
         pointSizeValue,
         olStroke,
-        olFill
+        olFill,
+        rotationDegrees
       ),
     });
   }
@@ -109,6 +118,7 @@ const cachedPointStyle = memoizeStyleFunction(pointStyle);
 
 function getPointStyle(symbolizer, feature) {
   const olStyle = cachedPointStyle(symbolizer);
+  const olImage = olStyle.getImage();
 
   // Apply dynamic values to the cached OL style instance before returning it.
 
@@ -116,8 +126,6 @@ function getPointStyle(symbolizer, feature) {
   const { graphic } = symbolizer;
   const { size } = graphic;
   if (size && size.type === 'expression') {
-    const olImage = olStyle.getImage();
-
     const sizeValue = Number(evaluate(size, feature)) || DEFAULT_POINT_SIZE;
 
     if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
@@ -143,6 +151,15 @@ function getPointStyle(symbolizer, feature) {
         );
       }
     }
+  }
+
+  // --- Update dynamic rotation ---
+  const { rotation } = graphic;
+  if (rotation && rotation.type === 'expression') {
+    const rotationDegrees = Number(evaluate(rotation, feature)) || 0.0;
+    // Note: OL angles are in radians.
+    const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
+    olImage.setRotation(rotationRadians);
   }
 
   return olStyle;

@@ -84,6 +84,55 @@
     }
   }
 
+  function addFilterExpressionProp(node, obj, prop, skipEmptyNodes) {
+    if ( skipEmptyNodes === void 0 ) skipEmptyNodes = true;
+
+    var childExpressions = [];
+
+    for (var k = 0; k < node.childNodes.length; k += 1) {
+      var childNode = node.childNodes[k];
+      var childExpression = {};
+      if (
+        childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
+        childNode.localName === 'PropertyName'
+      ) {
+        // Add ogc:PropertyName elements as type:propertyname.
+        childExpression.type = 'propertyname';
+        childExpression.value = childNode.textContent.trim();
+      } else {
+        // Add ogc:Literal elements and plain text nodes as type:literal.
+        childExpression.type = 'literal';
+        childExpression.value = childNode.textContent.trim();
+      }
+
+      if (childExpression.type === 'literal' && skipEmptyNodes) {
+        if (childExpression.value.trim()) {
+          childExpressions.push(childExpression);
+        }
+      } else {
+        childExpressions.push(childExpression);
+      }
+    }
+
+    var property = prop.toLowerCase();
+
+    // If expression children are all literals, concatenate them into a string.
+    var allLiteral = childExpressions.every(
+      function (childExpression) { return childExpression.type === 'literal'; }
+    );
+
+    if (allLiteral) {
+      obj[property] = childExpressions
+        .map(function (expression) { return expression.value; })
+        .join('');
+    } else {
+      obj[property] = {
+        type: 'expression',
+        children: childExpressions,
+      };
+    }
+  }
+
   /**
    * recieves boolean of element with tagName
    * @private
@@ -92,7 +141,10 @@
    * @return {boolean}
    */
   function getBool(element, tagName) {
-    var collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
+    var collection = element.getElementsByTagNameNS(
+      'http://www.opengis.net/sld',
+      tagName
+    );
     if (collection.length) {
       return Boolean(collection.item(0).textContent);
     }
@@ -189,11 +241,11 @@
     AnchorPoint: addProp,
     AnchorPointX: addPropWithTextContent,
     AnchorPointY: addPropWithTextContent,
-    Rotation: addPropWithTextContent,
+    Rotation: addFilterExpressionProp,
     Displacement: addProp,
     DisplacementX: addPropWithTextContent,
     DisplacementY: addPropWithTextContent,
-    Size: addPropWithTextContent,
+    Size: addFilterExpressionProp,
     WellKnownName: addPropWithTextContent,
     VendorOption: parameters,
     OnlineResource: function (element, obj) {
@@ -440,6 +492,8 @@
   var IMAGE_LOADING = 'IMAGE_LOADING';
   var IMAGE_LOADED = 'IMAGE_LOADED';
   var IMAGE_ERROR = 'IMAGE_ERROR';
+
+  var DEFAULT_POINT_SIZE = 20; // pixels
 
   function propertyIsLessThan(comparison, value) {
     return (
@@ -1065,8 +1119,11 @@
    * The Graphic must be already loaded and present in the global imageCache.
    * @param {string} imageUrl Url of the external graphic.
    * @param {number} size Requested size in pixels.
+   * @param {number} [rotationDegrees] Image rotation in degrees (clockwise). Default 0.
    */
-  function createCachedImageStyle(imageUrl, size) {
+  function createCachedImageStyle(imageUrl, size, rotationDegrees) {
+    if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
+
     var ref = getCachedImage(imageUrl);
     var image = ref.image;
     var width = ref.width;
@@ -1077,6 +1134,7 @@
         imgSize: [width, height],
         // According to SLD spec, if size is given, image height should equal the given size.
         scale: size / height || 1,
+        rotation: (Math.PI * rotationDegrees) / 180.0,
       }),
     });
   }
@@ -1144,11 +1202,23 @@
    * Create an OL point style corresponding to a well known symbol identifier.
    * @param {string} wellKnownName SLD Well Known Name for symbolizer.
    * Can be 'circle', 'square', 'triangle', 'star', 'cross', 'x', 'hexagon', 'octagon'.
-   * @param {number} radius Symbol radius.
+   * @param {number} size Symbol size in pixels.
    * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
    * @param {ol/style/fill} fill OpenLayers Fill instance.
+   * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
    */
-  function getWellKnownSymbol(wellKnownName, radius, stroke, fill) {
+  function getWellKnownSymbol(
+    wellKnownName,
+    size,
+    stroke,
+    fill,
+    rotationDegrees
+  ) {
+    if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
+
+    var radius = 0.5 * size;
+    var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
+
     var fillColor;
     if (fill && fill.getColor()) {
       fillColor = fill.getColor();
@@ -1156,114 +1226,186 @@
 
     switch (wellKnownName) {
       case 'circle':
-        return new style.Style({
-          image: new style.Circle({
-            fill: fill,
-            radius: radius,
-            stroke: stroke,
-          }),
+        return new style.Circle({
+          fill: fill,
+          radius: radius,
+          stroke: stroke,
         });
 
       case 'triangle':
-        return new style.Style({
-          image: new style.RegularShape({
-            fill: fill,
-            points: 3,
-            radius: radius,
-            stroke: stroke,
-          }),
+        return new style.RegularShape({
+          fill: fill,
+          points: 3,
+          radius: radius,
+          stroke: stroke,
+          rotation: rotationRadians,
         });
 
       case 'star':
-        return new style.Style({
-          image: new style.RegularShape({
-            fill: fill,
-            points: 5,
-            radius1: radius,
-            radius2: radius / 2.5,
-            stroke: stroke,
-          }),
+        return new style.RegularShape({
+          fill: fill,
+          points: 5,
+          radius1: radius,
+          radius2: radius / 2.5,
+          stroke: stroke,
+          rotation: rotationRadians,
         });
 
       case 'cross':
-        return new style.Style({
-          image: new style.RegularShape({
-            fill: fill,
-            points: 4,
-            radius1: radius,
-            radius2: 0,
-            stroke:
-              stroke ||
-              new style.Stroke({
-                color: fillColor,
-                width: radius / 2,
-              }),
-          }),
+        return new style.RegularShape({
+          fill: fill,
+          points: 4,
+          radius1: radius,
+          radius2: 0,
+          stroke:
+            stroke ||
+            new style.Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          rotation: rotationRadians,
         });
 
       case 'hexagon':
-        return new style.Style({
-          image: new style.RegularShape({
-            fill: fill,
-            points: 6,
-            radius1: radius,
-            stroke:
-              stroke ||
-              new style.Stroke({
-                color: fillColor,
-                width: radius / 2,
-              }),
-          }),
+        return new style.RegularShape({
+          fill: fill,
+          points: 6,
+          radius: radius,
+          stroke:
+            stroke ||
+            new style.Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          rotation: rotationRadians,
         });
 
       case 'octagon':
-        return new style.Style({
-          image: new style.RegularShape({
-            fill: fill,
-            points: 8,
-            radius1: radius,
-            stroke:
-              stroke ||
-              new style.Stroke({
-                color: fillColor,
-                width: radius / 2,
-              }),
-          }),
+        return new style.RegularShape({
+          fill: fill,
+          points: 8,
+          radius: radius,
+          stroke:
+            stroke ||
+            new style.Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          rotation: rotationRadians,
         });
 
       case 'x':
-        return new style.Style({
-          image: new style.RegularShape({
-            angle: Math.PI / 4,
-            fill: fill,
-            points: 4,
-            radius1: radius,
-            radius2: 0,
-            stroke:
-              stroke ||
-              new style.Stroke({
-                color: fillColor,
-                width: radius / 2,
-              }),
-          }),
+        return new style.RegularShape({
+          angle: Math.PI / 4,
+          fill: fill,
+          points: 4,
+          radius1: radius,
+          radius2: 0,
+          stroke:
+            stroke ||
+            new style.Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          rotation: rotationRadians,
         });
 
       default:
         // Default is `square`
-        return new style.Style({
-          image: new style.RegularShape({
-            angle: Math.PI / 4,
-            fill: fill,
-            points: 4,
-            // For square, scale radius so the height of the square equals the given size.
-            radius: radius * Math.sqrt(2.0),
-            stroke: stroke,
-          }),
+        return new style.RegularShape({
+          angle: Math.PI / 4,
+          fill: fill,
+          points: 4,
+          // For square, scale radius so the height of the square equals the given size.
+          radius1: radius * Math.sqrt(2.0),
+          stroke: stroke,
+          rotation: rotationRadians,
         });
     }
   }
 
+  // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
+  // Constant expressions are returned as-is.
+
+  /**
+   * Evaluate the value of a sub-expression.
+   * @param {object} childExpression SLD object expression child.
+   * @param {ol/feature} feature OpenLayers feature instance.feature.
+   */
+  function evaluateChildExpression(childExpression, feature) {
+    // For now, the only valid child types are 'propertyname' and 'literal'.
+    // Todo: add,sub,mul,div. Maybe a few functions as well.
+    if (childExpression.type === 'literal') {
+      return childExpression.value;
+    }
+
+    if (childExpression.type === 'propertyname') {
+      return feature.get(childExpression.value);
+    }
+
+    return null;
+  }
+
+  /**
+   * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
+   * Constant expressions are returned as-is.
+   * @param {object|string} expression SLD object expression.
+   * @param {ol/feature} feature OpenLayers feature instance.
+   */
+  function evaluate(expression, feature) {
+    // The only compound expressions have type: 'expression'.
+    // If it does not have this type, it's probably a plain string (or number).
+    if (expression.type !== 'expression') {
+      return expression;
+    }
+
+    // Evaluate the child expression when there is only one child.
+    if (expression.children.length === 1) {
+      return evaluateChildExpression(expression.children[0], feature);
+    }
+
+    // In case of multiple child expressions, concatenate the evaluated child results.
+    var childValues = [];
+    for (var k = 0; k < expression.children.length; k += 1) {
+      childValues.push(evaluateChildExpression(expression.children[k], feature));
+    }
+    return childValues.join('');
+  }
+
   /* eslint-disable no-underscore-dangle */
+
+  /**
+   * Get OL Fill instance for SLD mark object.
+   * @param {object} mark SLD mark object.
+   */
+  function getMarkFill(mark) {
+    var fill = mark.fill;
+    var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
+    return new style.Fill({
+      color: fillColor,
+    });
+  }
+
+  /**
+   * Get OL Stroke instance for SLD mark object.
+   * @param {object} mark SLD mark object.
+   */
+  function getMarkStroke(mark) {
+    var stroke = mark.stroke;
+
+    var olStroke;
+    if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
+      var ref = stroke.styling;
+      var cssStroke = ref.stroke;
+      var cssStrokeWidth = ref.strokeWidth;
+      olStroke = new style.Stroke({
+        color: cssStroke || 'black',
+        width: cssStrokeWidth || 2,
+      });
+    }
+
+    return olStroke;
+  }
 
   /**
    * @private
@@ -1272,13 +1414,31 @@
    */
   function pointStyle(pointsymbolizer) {
     var style$1 = pointsymbolizer.graphic;
+
+    // If the point size is a dynamic expression, use the default point size and update in-place later.
+    var pointSizeValue;
+    if (style$1.size && style$1.size.type === 'expression') {
+      pointSizeValue = DEFAULT_POINT_SIZE;
+    } else {
+      pointSizeValue = style$1.size || DEFAULT_POINT_SIZE;
+    }
+
+    // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
+    var rotationDegrees;
+    if (style$1.rotation && style$1.rotation.type === 'expression') {
+      rotationDegrees = 0.0;
+    } else {
+      rotationDegrees = style$1.rotation || 0.0;
+    }
+
     if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
       // Check symbolizer metadata to see if the image has already been loaded.
       switch (pointsymbolizer.__loadingState) {
         case IMAGE_LOADED:
           return createCachedImageStyle(
             style$1.externalgraphic.onlineresource,
-            style$1.size
+            pointSizeValue,
+            rotationDegrees
           );
         case IMAGE_LOADING:
           return imageLoadingPointStyle;
@@ -1292,32 +1452,20 @@
 
     if (style$1.mark) {
       var ref = style$1.mark;
-      var fill = ref.fill;
-      var stroke = ref.stroke;
       var wellknownname = ref.wellknownname;
-      var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-      var olFill = new style.Fill({
-        color: fillColor,
+      var olFill = getMarkFill(style$1.mark);
+      var olStroke = getMarkStroke(style$1.mark);
+
+      return new style.Style({
+        // Note: size will be set dynamically later.
+        image: getWellKnownSymbol(
+          wellknownname,
+          pointSizeValue,
+          olStroke,
+          olFill,
+          rotationDegrees
+        ),
       });
-
-      var olStroke;
-      if (
-        stroke &&
-        stroke.styling &&
-        !(Number(stroke.styling.strokeWidth) === 0)
-      ) {
-        var ref$1 = stroke.styling;
-        var cssStroke = ref$1.stroke;
-        var cssStrokeWidth = ref$1.strokeWidth;
-        olStroke = new style.Stroke({
-          color: cssStroke || 'black',
-          width: cssStrokeWidth || 2,
-        });
-      }
-
-      var radius = 0.5 * Number(style$1.size) || 10;
-
-      return getWellKnownSymbol(wellknownname, radius, olStroke, olFill);
     }
 
     return new style.Style({
@@ -1332,9 +1480,53 @@
 
   var cachedPointStyle = memoizeStyleFunction(pointStyle);
 
-  function getPointStyle(symbolizer /* , feature, options = {} */) {
-    // Todo: apply dynamic style values in-place to the cached ol style instance.
-    return cachedPointStyle(symbolizer);
+  function getPointStyle(symbolizer, feature) {
+    var olStyle = cachedPointStyle(symbolizer);
+    var olImage = olStyle.getImage();
+
+    // Apply dynamic values to the cached OL style instance before returning it.
+
+    // --- Update dynamic size ---
+    var graphic = symbolizer.graphic;
+    var size = graphic.size;
+    if (size && size.type === 'expression') {
+      var sizeValue = Number(evaluate(size, feature)) || DEFAULT_POINT_SIZE;
+
+      if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
+        var height = olImage.getSize()[1];
+        var scale = sizeValue / height || 1;
+        olImage.setScale(scale);
+      }
+
+      if (graphic.mark) {
+        // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
+        if (graphic.mark.wellknownname === 'circle') {
+          olImage.setRadius(sizeValue * 0.5);
+        } else {
+          // So, in the case of any other RegularShape, create a new shape instance.
+          olStyle.setImage(
+            getWellKnownSymbol(
+              graphic.mark.wellknownname,
+              sizeValue,
+              // Note: re-use stroke and fill instances for a (small?) performance gain.
+              olImage.getStroke(),
+              olImage.getFill()
+            )
+          );
+        }
+      }
+    }
+
+    // --- Update dynamic rotation ---
+    var rotation = graphic.rotation;
+    if (rotation && rotation.type === 'expression') {
+      var rotationDegrees = Number(evaluate(rotation, feature)) || 0.0;
+      // Note: OL angles are in radians.
+      var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
+      olImage.setRotation(rotationRadians);
+    }
+
+    return olStyle;
   }
 
   /**

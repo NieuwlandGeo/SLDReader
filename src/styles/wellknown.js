@@ -7,9 +7,17 @@ import { Stroke, Circle, RegularShape } from 'ol/style';
  * @param {number} size Symbol size in pixels.
  * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
  * @param {ol/style/fill} fill OpenLayers Fill instance.
+ * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
  */
-function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
+function getWellKnownSymbol(
+  wellKnownName,
+  size,
+  stroke,
+  fill,
+  rotationDegrees = 0.0
+) {
   const radius = 0.5 * size;
+  const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
 
   let fillColor;
   if (fill && fill.getColor()) {
@@ -30,6 +38,7 @@ function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
         points: 3,
         radius,
         stroke,
+        rotation: rotationRadians,
       });
 
     case 'star':
@@ -39,6 +48,7 @@ function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
         radius1: radius,
         radius2: radius / 2.5,
         stroke,
+        rotation: rotationRadians,
       });
 
     case 'cross':
@@ -53,6 +63,7 @@ function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
             color: fillColor,
             width: radius / 2,
           }),
+        rotation: rotationRadians,
       });
 
     case 'hexagon':
@@ -66,6 +77,7 @@ function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
             color: fillColor,
             width: radius / 2,
           }),
+        rotation: rotationRadians,
       });
 
     case 'octagon':
@@ -79,6 +91,7 @@ function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
             color: fillColor,
             width: radius / 2,
           }),
+        rotation: rotationRadians,
       });
 
     case 'x':
@@ -94,6 +107,7 @@ function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
             color: fillColor,
             width: radius / 2,
           }),
+        rotation: rotationRadians,
       });
 
     default:
@@ -105,6 +119,7 @@ function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
         // For square, scale radius so the height of the square equals the given size.
         radius1: radius * Math.sqrt(2.0),
         stroke,
+        rotation: rotationRadians,
       });
   }
 }

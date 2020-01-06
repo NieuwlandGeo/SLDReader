@@ -212,8 +212,9 @@ export function processExternalGraphicSymbolizers(
  * The Graphic must be already loaded and present in the global imageCache.
  * @param {string} imageUrl Url of the external graphic.
  * @param {number} size Requested size in pixels.
+ * @param {number} [rotationDegrees] Image rotation in degrees (clockwise). Default 0.
  */
-export function createCachedImageStyle(imageUrl, size) {
+export function createCachedImageStyle(imageUrl, size, rotationDegrees = 0.0) {
   const { image, width, height } = getCachedImage(imageUrl);
   return new Style({
     image: new Icon({
@@ -221,6 +222,7 @@ export function createCachedImageStyle(imageUrl, size) {
       imgSize: [width, height],
       // According to SLD spec, if size is given, image height should equal the given size.
       scale: size / height || 1,
+      rotation: (Math.PI * rotationDegrees) / 180.0,
     }),
   });
 }
