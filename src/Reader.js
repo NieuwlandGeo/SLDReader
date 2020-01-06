@@ -76,6 +76,53 @@ function addPropWithTextContent(node, obj, prop, trimText = false) {
   }
 }
 
+function addFilterExpressionProp(node, obj, prop, skipEmptyNodes = true) {
+  const childExpressions = [];
+
+  for (let k = 0; k < node.childNodes.length; k += 1) {
+    const childNode = node.childNodes[k];
+    const childExpression = {};
+    if (
+      childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
+      childNode.localName === 'PropertyName'
+    ) {
+      // Add ogc:PropertyName elements as type:propertyname.
+      childExpression.type = 'propertyname';
+      childExpression.value = childNode.textContent.trim();
+    } else {
+      // Add ogc:Literal elements and plain text nodes as type:literal.
+      childExpression.type = 'literal';
+      childExpression.value = childNode.textContent.trim();
+    }
+
+    if (childExpression.type === 'literal' && skipEmptyNodes) {
+      if (childExpression.value.trim()) {
+        childExpressions.push(childExpression);
+      }
+    } else {
+      childExpressions.push(childExpression);
+    }
+  }
+
+  const property = prop.toLowerCase();
+
+  // If expression children are all literals, concatenate them into a string.
+  const allLiteral = childExpressions.every(
+    childExpression => childExpression.type === 'literal'
+  );
+
+  if (allLiteral) {
+    obj[property] = childExpressions
+      .map(expression => expression.value)
+      .join('');
+  } else {
+    obj[property] = {
+      type: 'expression',
+      children: childExpressions,
+    };
+  }
+}
+
 /**
  * recieves boolean of element with tagName
  * @private
@@ -84,7 +131,10 @@ function addPropWithTextContent(node, obj, prop, trimText = false) {
  * @return {boolean}
  */
 function getBool(element, tagName) {
-  const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
+  const collection = element.getElementsByTagNameNS(
+    'http://www.opengis.net/sld',
+    tagName
+  );
   if (collection.length) {
     return Boolean(collection.item(0).textContent);
   }
@@ -150,8 +200,10 @@ const FilterParsers = {
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
-  LowerBoundary: (element, obj, prop) => addPropWithTextContent(element, obj, prop, true),
-  UpperBoundary: (element, obj, prop) => addPropWithTextContent(element, obj, prop, true),
+  LowerBoundary: (element, obj, prop) =>
+    addPropWithTextContent(element, obj, prop, true),
+  UpperBoundary: (element, obj, prop) =>
+    addPropWithTextContent(element, obj, prop, true),
   FeatureId: (element, obj) => {
     obj.type = 'featureid';
     obj.fids = obj.fids || [];
@@ -185,7 +237,7 @@ const SymbParsers = {
   Displacement: addProp,
   DisplacementX: addPropWithTextContent,
   DisplacementY: addPropWithTextContent,
-  Size: addPropWithTextContent,
+  Size: addFilterExpressionProp,
   WellKnownName: addPropWithTextContent,
   VendorOption: parameters,
   OnlineResource: (element, obj) => {
