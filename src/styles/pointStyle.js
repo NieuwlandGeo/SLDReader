@@ -1,11 +1,48 @@
 /* eslint-disable no-underscore-dangle */
 import { Style, Fill, Stroke, Circle } from 'ol/style';
 
-import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from '../constants';
+import {
+  IMAGE_LOADING,
+  IMAGE_LOADED,
+  IMAGE_ERROR,
+  DEFAULT_POINT_SIZE,
+} from '../constants';
 import { memoizeStyleFunction } from '../Utils';
 import { imageLoadingPointStyle, imageErrorPointStyle } from './static';
 import { createCachedImageStyle } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
+import evaluate from '../olEvaluator';
+
+/**
+ * Get OL Fill instance for SLD mark object.
+ * @param {object} mark SLD mark object.
+ */
+function getMarkFill(mark) {
+  const { fill } = mark;
+  const fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
+  return new Fill({
+    color: fillColor,
+  });
+}
+
+/**
+ * Get OL Stroke instance for SLD mark object.
+ * @param {object} mark SLD mark object.
+ */
+function getMarkStroke(mark) {
+  const { stroke } = mark;
+
+  let olStroke;
+  if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
+    const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.styling;
+    olStroke = new Stroke({
+      color: cssStroke || 'black',
+      width: cssStrokeWidth || 2,
+    });
+  }
+
+  return olStroke;
+}
 
 /**
  * @private
@@ -14,13 +51,23 @@ import getWellKnownSymbol from './wellknown';
  */
 function pointStyle(pointsymbolizer) {
   const { graphic: style } = pointsymbolizer;
+  const pointSize = style.size || DEFAULT_POINT_SIZE;
+
+  // If the point size is a dynamic expression, use the default point size and update in-place later.
+  let pointSizeValue;
+  if (style.size && pointSize.type === 'expression') {
+    pointSizeValue = DEFAULT_POINT_SIZE;
+  } else {
+    pointSizeValue = style.size || DEFAULT_POINT_SIZE;
+  }
+
   if (style.externalgraphic && style.externalgraphic.onlineresource) {
     // Check symbolizer metadata to see if the image has already been loaded.
     switch (pointsymbolizer.__loadingState) {
       case IMAGE_LOADED:
         return createCachedImageStyle(
           style.externalgraphic.onlineresource,
-          style.size
+          pointSizeValue
         );
       case IMAGE_LOADING:
         return imageLoadingPointStyle;
@@ -33,28 +80,19 @@ function pointStyle(pointsymbolizer) {
   }
 
   if (style.mark) {
-    const { fill, stroke, wellknownname } = style.mark;
-    const fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-    const olFill = new Fill({
-      color: fillColor,
+    const { wellknownname } = style.mark;
+    const olFill = getMarkFill(style.mark);
+    const olStroke = getMarkStroke(style.mark);
+
+    return new Style({
+      // Note: size will be set dynamically later.
+      image: getWellKnownSymbol(
+        wellknownname,
+        pointSizeValue,
+        olStroke,
+        olFill
+      ),
     });
-
-    let olStroke;
-    if (
-      stroke &&
-      stroke.styling &&
-      !(Number(stroke.styling.strokeWidth) === 0)
-    ) {
-      const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.styling;
-      olStroke = new Stroke({
-        color: cssStroke || 'black',
-        width: cssStrokeWidth || 2,
-      });
-    }
-
-    const radius = 0.5 * Number(style.size) || 10;
-
-    return getWellKnownSymbol(wellknownname, radius, olStroke, olFill);
   }
 
   return new Style({
@@ -69,9 +107,45 @@ function pointStyle(pointsymbolizer) {
 
 const cachedPointStyle = memoizeStyleFunction(pointStyle);
 
-function getPointStyle(symbolizer /* , feature, options = {} */) {
-  // Todo: apply dynamic style values in-place to the cached ol style instance.
-  return cachedPointStyle(symbolizer);
+function getPointStyle(symbolizer, feature) {
+  const olStyle = cachedPointStyle(symbolizer);
+
+  // Apply dynamic values to the cached OL style instance before returning it.
+
+  // --- Update dynamic size ---
+  const { graphic } = symbolizer;
+  const { size } = graphic;
+  if (size && size.type === 'expression') {
+    const olImage = olStyle.getImage();
+
+    const sizeValue = Number(evaluate(size, feature)) || DEFAULT_POINT_SIZE;
+
+    if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
+      const height = olImage.getSize()[1];
+      const scale = sizeValue / height || 1;
+      olImage.setScale(scale);
+    }
+
+    if (graphic.mark) {
+      // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
+      if (graphic.mark.wellknownname === 'circle') {
+        olImage.setRadius(sizeValue * 0.5);
+      } else {
+        // So, in the case of any other RegularShape, create a new shape instance.
+        olStyle.setImage(
+          getWellKnownSymbol(
+            graphic.mark.wellknownname,
+            sizeValue,
+            // Note: re-use stroke and fill instances for a (small?) performance gain.
+            olImage.getStroke(),
+            olImage.getFill()
+          )
+        );
+      }
+    }
+  }
+
+  return olStyle;
 }
 
 export default getPointStyle;
