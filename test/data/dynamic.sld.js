@@ -25,6 +25,9 @@ export const dynamicSld = `<?xml version="1.0" encoding="UTF-8"?>
               <sld:Size>
                 <ogc:PropertyName>size</ogc:PropertyName>
               </sld:Size>
+              <sld:Rotation>
+                <ogc:PropertyName>angle</ogc:PropertyName>
+              </sld:Rotation>
             </sld:Graphic>
           </sld:PointSymbolizer>
         </sld:Rule>

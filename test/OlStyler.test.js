@@ -9,6 +9,7 @@ import OlStyler, { createOlStyleFunction } from '../src/OlStyler';
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
 import { externalGraphicSld } from './data/externalgraphic.sld';
+import { dynamicSld } from './data/dynamic.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 
 const getFeature = type => ({
@@ -126,7 +127,6 @@ describe('Create OL Style function from SLD feature type style', () => {
   });
 });
 
-
 describe('Create OL Style function from SLD feature type style 1', () => {
   let sldObject;
   let featureTypeStyle;
@@ -152,8 +152,12 @@ describe('Create OL Style function from SLD feature type style 1', () => {
     const featureStyle = styleFunction(olFeature, null);
     expect(featureStyle).to.be.an('array');
     expect(featureStyle.length).to.be.equal(2);
-    expect(() => featureStyle[0].getImage().getRadius()).to.not.throw().and.be.equal(7);
-    expect(() => featureStyle[1].getImage().getRadius()).to.not.throw().and.be.equal(2);
+    expect(() => featureStyle[0].getImage().getRadius())
+      .to.not.throw()
+      .and.be.equal(7);
+    expect(() => featureStyle[1].getImage().getRadius())
+      .to.not.throw()
+      .and.be.equal(2);
   });
 });
 
@@ -218,12 +222,49 @@ describe('SLD with external graphics', () => {
     const styleFunction = createOlStyleFunction(featureTypeStyle, {
       imageLoadedCallback: () => {
         // When this function is called, the loading state should be either loaded or error.
-        expect(featureTypeStyle.rules[1].pointsymbolizer.__loadingState).to.equal(IMAGE_LOADED);
+        expect(
+          featureTypeStyle.rules[1].pointsymbolizer.__loadingState
+        ).to.equal(IMAGE_LOADED);
         done();
       },
     });
 
     // Just call the style function to trigger image load.
     styleFunction(olFeature, null);
+  });
+});
+
+describe('Dynamic style properties', () => {
+  const geojson = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [175135, 441200],
+    },
+    properties: {
+      size: 100,
+      angle: 42,
+    },
+  };
+
+  let olFeature;
+  let featureTypeStyle;
+  let styleFunction;
+  before(() => {
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    olFeature = fmtGeoJSON.readFeature(geojson);
+    const sldObject = Reader(dynamicSld);
+    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    styleFunction = createOlStyleFunction(featureTypeStyle);
+  });
+
+  it('Reads size from feature', () => {
+    const style = styleFunction(olFeature)[0];
+    expect(style.getImage().getRadius()).to.equal(50); // Radius should equal half SLD size.
+  });
+
+  it('Reads rotation from feature', () => {
+    const style = styleFunction(olFeature)[0];
+    expect(style.getImage().getRotation()).to.equal(Math.PI * 42.0 / 180.0); // OL rotation is in radians.
   });
 });
