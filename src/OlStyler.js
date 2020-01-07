@@ -55,7 +55,7 @@ export default function OlStyler(GeometryStyles, feature) {
         appendStyle(styles, point[j], feature, getPointStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature, { geometryType: 'point' }));
+        styles.push(getTextStyle(text[j], feature));
       }
       break;
 
@@ -65,7 +65,7 @@ export default function OlStyler(GeometryStyles, feature) {
         appendStyle(styles, line[j], feature, getLineStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature, { geometryType: 'line' }));
+        styles.push(getTextStyle(text[j], feature));
       }
       break;
 
@@ -75,9 +75,7 @@ export default function OlStyler(GeometryStyles, feature) {
         appendStyle(styles, polygon[i], feature, getPolygonStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(
-          getTextStyle(text[j], feature, { geometryType: 'polygon' })
-        );
+        styles.push(getTextStyle(text[j], feature));
       }
       break;
 

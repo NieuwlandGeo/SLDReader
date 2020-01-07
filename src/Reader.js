@@ -89,6 +89,10 @@ function addFilterExpressionProp(node, obj, prop, skipEmptyNodes = true) {
       // Add ogc:PropertyName elements as type:propertyname.
       childExpression.type = 'propertyname';
       childExpression.value = childNode.textContent.trim();
+    } else if (childNode.nodeName === '#cdata-section') {
+      // Add CDATA section text content untrimmed.
+      childExpression.type = 'literal';
+      childExpression.value = childNode.textContent;
     } else {
       // Add ogc:Literal elements and plain text nodes as type:literal.
       childExpression.type = 'literal';
@@ -222,7 +226,7 @@ const SymbParsers = {
   Graphic: addProp,
   ExternalGraphic: addProp,
   Mark: addProp,
-  Label: addTextProp,
+  Label: addFilterExpressionProp,
   Halo: addProp,
   Font: addProp,
   Radius: addPropWithTextContent,
@@ -323,35 +327,6 @@ function readNodeArray(node, obj, prop) {
       obj[property].push(childObj);
     }
   }
-}
-
-/**
- * Generic parser for text props
- * It looks for nodeName #text and #cdata-section to get all text in labels
- * it sets result of readNode(node) to array on obj[prop]
- * @private
- * @param {Element} node the xml element to parse
- * @param {object} obj  the object to modify
- * @param {string} prop key on obj to hold empty object
- */
-function addTextProp(node, obj, prop) {
-  const property = prop.toLowerCase();
-  obj[property] = [];
-  Array.prototype.forEach.call(node.childNodes, child => {
-    if (child && child.nodeName === '#text') {
-      obj[property].push({
-        text: child.textContent.trim(),
-      });
-    } else if (child && child.nodeName === '#cdata-section') {
-      obj[property].push({
-        text: child.textContent,
-      });
-    } else if (child && parsers[child.localName]) {
-      const childObj = {};
-      parsers[child.localName](child, childObj, child.localName);
-      obj[property].push(childObj);
-    }
-  });
 }
 
 /**

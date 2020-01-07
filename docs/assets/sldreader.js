@@ -99,6 +99,10 @@
         // Add ogc:PropertyName elements as type:propertyname.
         childExpression.type = 'propertyname';
         childExpression.value = childNode.textContent.trim();
+      } else if (childNode.nodeName === '#cdata-section') {
+        // Add CDATA section text content untrimmed.
+        childExpression.type = 'literal';
+        childExpression.value = childNode.textContent;
       } else {
         // Add ogc:Literal elements and plain text nodes as type:literal.
         childExpression.type = 'literal';
@@ -230,7 +234,7 @@
     Graphic: addProp,
     ExternalGraphic: addProp,
     Mark: addProp,
-    Label: addTextProp,
+    Label: addFilterExpressionProp,
     Halo: addProp,
     Font: addProp,
     Radius: addPropWithTextContent,
@@ -331,35 +335,6 @@
         obj[property].push(childObj);
       }
     }
-  }
-
-  /**
-   * Generic parser for text props
-   * It looks for nodeName #text and #cdata-section to get all text in labels
-   * it sets result of readNode(node) to array on obj[prop]
-   * @private
-   * @param {Element} node the xml element to parse
-   * @param {object} obj  the object to modify
-   * @param {string} prop key on obj to hold empty object
-   */
-  function addTextProp(node, obj, prop) {
-    var property = prop.toLowerCase();
-    obj[property] = [];
-    Array.prototype.forEach.call(node.childNodes, function (child) {
-      if (child && child.nodeName === '#text') {
-        obj[property].push({
-          text: child.textContent.trim(),
-        });
-      } else if (child && child.nodeName === '#cdata-section') {
-        obj[property].push({
-          text: child.textContent,
-        });
-      } else if (child && parsers[child.localName]) {
-        var childObj = {};
-        parsers[child.localName](child, childObj, child.localName);
-        obj[property].push(childObj);
-      }
-    });
   }
 
   /**
@@ -1653,46 +1628,16 @@
   }
 
   /**
+   * Get the static OL style instance for a text symbolizer.
+   * The text and placement properties will be set on the style object at runtime.
    * @private
-   * @param  {TextSymbolizer} textsymbolizer [description]
-   * @param {object|Feature} feature {@link http://geojson.org|geojson}
-   *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
-   * @param {string} type geometry type, @see {@link http://geojson.org|geojson} for possible types
+   * @param {object} textsymbolizer SLD text symbolizer object.
    * @return {object} openlayers style
    */
-  function getTextStyle(textsymbolizer, feature, options) {
-    if ( options === void 0 ) options = {};
-
+  function textStyle(textsymbolizer) {
     if (!(textsymbolizer && textsymbolizer.label)) {
       return new style.Style({});
     }
-
-    var properties = feature.getProperties
-      ? feature.getProperties()
-      : feature.properties;
-
-    var parseText = {
-      text: function (part) { return part; },
-      propertyname: function (part, props) {
-        if ( props === void 0 ) props = {};
-
-        return props[part] || '';
-    },
-    };
-
-    var label = textsymbolizer.label.length
-      ? textsymbolizer.label
-      : [textsymbolizer.label];
-
-    var text = label.reduce(function (string, part) {
-      var keys = Object.keys(part);
-      return (
-        string +
-        (keys && parseText[keys[0]]
-          ? parseText[keys[0]](part[keys[0]], properties)
-          : '')
-      );
-    }, '');
 
     var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
     var halo =
@@ -1724,24 +1669,15 @@
         : {};
     var offsetX = displacement.displacementx ? displacement.displacementx : 0;
     var offsetY = displacement.displacementy ? displacement.displacementy : 0;
-    var lineplacement =
-      textsymbolizer &&
-      textsymbolizer.labelplacement &&
-      textsymbolizer.labelplacement.lineplacement
-        ? textsymbolizer.labelplacement.lineplacement
-        : null;
+
     var rotation = pointplacement.rotation ? pointplacement.rotation : 0;
-    var placement =
-      options.geometryType !== 'point' && lineplacement ? 'line' : 'point';
 
     // Halo styling
     var textStyleOptions = {
-      text: text,
       font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
       offsetX: Number(offsetX),
       offsetY: Number(offsetY),
       rotation: rotation,
-      placement: placement,
       textAlign: 'center',
       textBaseline: 'middle',
       fill: new style.Fill({
@@ -1769,6 +1705,35 @@
     return new style.Style({
       text: new style.Text(textStyleOptions),
     });
+  }
+
+  var cachedTextStyle = memoizeStyleFunction(textStyle);
+
+  function getTextStyle(symbolizer, feature) {
+    var olStyle = cachedTextStyle(symbolizer);
+
+    // Read text from feature and set it on the text style instance.
+    var label = symbolizer.label;
+    var labelText = evaluate(label, feature);
+    var olText = olStyle.getText();
+    olText.setText(labelText);
+
+    // Set placement dynamically.
+    var geometry = feature.getGeometry
+      ? feature.getGeometry()
+      : feature.geometry;
+    var geometryType = geometry.getType ? geometry.getType() : geometry.type;
+    var lineplacement =
+      symbolizer &&
+      symbolizer.labelplacement &&
+      symbolizer.labelplacement.lineplacement
+        ? symbolizer.labelplacement.lineplacement
+        : null;
+    var placement =
+      geometryType !== 'point' && lineplacement ? 'line' : 'point';
+    olText.setPlacement(placement);
+
+    return olStyle;
   }
 
   var defaultStyles = [defaultPointStyle];
@@ -1818,7 +1783,7 @@
           appendStyle(styles, point[j], feature, getPointStyle);
         }
         for (var j$1 = 0; j$1 < text.length; j$1 += 1) {
-          styles.push(getTextStyle(text[j$1], feature, { geometryType: 'point' }));
+          styles.push(getTextStyle(text[j$1], feature));
         }
         break;
 
@@ -1828,7 +1793,7 @@
           appendStyle(styles, line[j$2], feature, getLineStyle);
         }
         for (var j$3 = 0; j$3 < text.length; j$3 += 1) {
-          styles.push(getTextStyle(text[j$3], feature, { geometryType: 'line' }));
+          styles.push(getTextStyle(text[j$3], feature));
         }
         break;
 
@@ -1838,9 +1803,7 @@
           appendStyle(styles, polygon[i], feature, getPolygonStyle);
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          styles.push(
-            getTextStyle(text[j$4], feature, { geometryType: 'polygon' })
-          );
+          styles.push(getTextStyle(text[j$4], feature));
         }
         break;
 

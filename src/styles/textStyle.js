@@ -1,41 +1,18 @@
 import { Style, Fill, Stroke, Text } from 'ol/style';
-import { hexToRGB } from '../Utils';
+import { hexToRGB, memoizeStyleFunction } from '../Utils';
+import evaluate from '../olEvaluator';
 
 /**
+ * Get the static OL style instance for a text symbolizer.
+ * The text and placement properties will be set on the style object at runtime.
  * @private
- * @param  {TextSymbolizer} textsymbolizer [description]
- * @param {object|Feature} feature {@link http://geojson.org|geojson}
- *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
- * @param {string} type geometry type, @see {@link http://geojson.org|geojson} for possible types
+ * @param {object} textsymbolizer SLD text symbolizer object.
  * @return {object} openlayers style
  */
-function getTextStyle(textsymbolizer, feature, options = {}) {
+function textStyle(textsymbolizer) {
   if (!(textsymbolizer && textsymbolizer.label)) {
     return new Style({});
   }
-
-  const properties = feature.getProperties
-    ? feature.getProperties()
-    : feature.properties;
-
-  const parseText = {
-    text: part => part,
-    propertyname: (part, props = {}) => props[part] || '',
-  };
-
-  const label = textsymbolizer.label.length
-    ? textsymbolizer.label
-    : [textsymbolizer.label];
-
-  const text = label.reduce((string, part) => {
-    const keys = Object.keys(part);
-    return (
-      string +
-      (keys && parseText[keys[0]]
-        ? parseText[keys[0]](part[keys[0]], properties)
-        : '')
-    );
-  }, '');
 
   const fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
   const halo =
@@ -68,24 +45,15 @@ function getTextStyle(textsymbolizer, feature, options = {}) {
       : {};
   const offsetX = displacement.displacementx ? displacement.displacementx : 0;
   const offsetY = displacement.displacementy ? displacement.displacementy : 0;
-  const lineplacement =
-    textsymbolizer &&
-    textsymbolizer.labelplacement &&
-    textsymbolizer.labelplacement.lineplacement
-      ? textsymbolizer.labelplacement.lineplacement
-      : null;
+
   const rotation = pointplacement.rotation ? pointplacement.rotation : 0;
-  const placement =
-    options.geometryType !== 'point' && lineplacement ? 'line' : 'point';
 
   // Halo styling
   const textStyleOptions = {
-    text,
     font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
     offsetX: Number(offsetX),
     offsetY: Number(offsetY),
     rotation,
-    placement,
     textAlign: 'center',
     textBaseline: 'middle',
     fill: new Fill({
@@ -115,5 +83,33 @@ function getTextStyle(textsymbolizer, feature, options = {}) {
   });
 }
 
-// Todo: memoize constant part of text style and set style label in-place.
+const cachedTextStyle = memoizeStyleFunction(textStyle);
+
+function getTextStyle(symbolizer, feature) {
+  const olStyle = cachedTextStyle(symbolizer);
+
+  // Read text from feature and set it on the text style instance.
+  const { label } = symbolizer;
+  const labelText = evaluate(label, feature);
+  const olText = olStyle.getText();
+  olText.setText(labelText);
+
+  // Set placement dynamically.
+  const geometry = feature.getGeometry
+    ? feature.getGeometry()
+    : feature.geometry;
+  const geometryType = geometry.getType ? geometry.getType() : geometry.type;
+  const lineplacement =
+    symbolizer &&
+    symbolizer.labelplacement &&
+    symbolizer.labelplacement.lineplacement
+      ? symbolizer.labelplacement.lineplacement
+      : null;
+  const placement =
+    geometryType !== 'point' && lineplacement ? 'line' : 'point';
+  olText.setPlacement(placement);
+
+  return olStyle;
+}
+
 export default getTextStyle;

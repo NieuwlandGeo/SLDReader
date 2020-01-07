@@ -30,6 +30,33 @@ export const dynamicSld = `<?xml version="1.0" encoding="UTF-8"?>
               </sld:Rotation>
             </sld:Graphic>
           </sld:PointSymbolizer>
+          <sld:TextSymbolizer>
+            <sld:Label>
+              <ogc:PropertyName>title</ogc:PropertyName>
+            </sld:Label>
+            <sld:Font>
+              <sld:SvgParameter name="font-family">Noto Sans</sld:SvgParameter>
+              <sld:SvgParameter name="font-size">13</sld:SvgParameter>
+            </sld:Font>
+            <sld:Halo>
+              <sld:Radius>2</sld:Radius>
+              <sld:Fill>                
+                <sld:SvgParameter name="fill">#FFFFFF</sld:SvgParameter>
+              </sld:Fill>
+            </sld:Halo>
+            <sld:LabelPlacement>
+              <sld:PointPlacement>
+                <sld:AnchorPoint>
+                  <sld:AnchorPointX>0</sld:AnchorPointX>
+                  <sld:AnchorPointY>0.5</sld:AnchorPointY>
+                </sld:AnchorPoint>
+              </sld:PointPlacement>
+            </sld:LabelPlacement>
+            <sld:Fill>
+              <sld:SvgParameter name="fill">#000000</sld:SvgParameter>
+            </sld:Fill>
+            <sld:VendorOption name="maxDisplacement">1</sld:VendorOption>
+          </sld:TextSymbolizer>
         </sld:Rule>
       </sld:FeatureTypeStyle>
     </UserStyle>

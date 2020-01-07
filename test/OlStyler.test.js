@@ -244,27 +244,38 @@ describe('Dynamic style properties', () => {
     properties: {
       size: 100,
       angle: 42,
+      title: 'This is a test',
     },
   };
 
-  let olFeature;
+  let pointFeature;
   let featureTypeStyle;
   let styleFunction;
   before(() => {
     const fmtGeoJSON = new OLFormatGeoJSON();
-    olFeature = fmtGeoJSON.readFeature(geojson);
+    pointFeature = fmtGeoJSON.readFeature(geojson);
     const sldObject = Reader(dynamicSld);
     [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
     styleFunction = createOlStyleFunction(featureTypeStyle);
   });
 
   it('Reads size from feature', () => {
-    const style = styleFunction(olFeature)[0];
+    const style = styleFunction(pointFeature)[0];
     expect(style.getImage().getRadius()).to.equal(50); // Radius should equal half SLD size.
   });
 
   it('Reads rotation from feature', () => {
-    const style = styleFunction(olFeature)[0];
-    expect(style.getImage().getRotation()).to.equal(Math.PI * 42.0 / 180.0); // OL rotation is in radians.
+    const style = styleFunction(pointFeature)[0];
+    expect(style.getImage().getRotation()).to.equal((Math.PI * 42.0) / 180.0); // OL rotation is in radians.
+  });
+
+  it('Reads text for label from feature', () => {
+    const textStyle = styleFunction(pointFeature)[1];
+    expect(textStyle.getText().getText()).to.equal('This is a test');
+  });
+
+  it('Sets label placement according to feature geometry type', () => {
+    const textStyle = styleFunction(pointFeature)[1];
+    expect(textStyle.getText().getPlacement()).to.equal('point');
   });
 });
