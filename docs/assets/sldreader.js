@@ -84,6 +84,28 @@
     }
   }
 
+  /**
+   * This function parses SLD XML nodes that can contain an SLD filter expression.
+   * If the SLD node contains only text elements, the result will be concatenated into a string.
+   * If the SLD node contains one or more non-literal nodes (for now, only PropertyName), the result
+   * will be an object with type:"expression" and an array of child nodes of which one or more have
+   * the type "propertyname".
+   *
+   * Functions and arithmetic operators (Add,Sub,Mul,Div) are not supported (yet).
+   * Note: for now, only these contents will be parsed:
+   * * Plain text nodes.
+   * * CDATA sections.
+   * * ogc:PropertyName elements (property name will be parsed as trimmed text).
+   * * ogc:Literal elements (contents will be parsed as trimmed text).
+   * See also:
+   * * http://schemas.opengis.net/filter/1.1.0/expr.xsd
+   * * https://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html#sld-filter-expression
+   * @private
+   * @param {Element} node XML Node.
+   * @param {object} obj Object to add XML node contents to.
+   * @param {string} prop Property name on obj that will hold the parsed node contents.
+   * @param {bool} [skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
+   */
   function addFilterExpressionProp(node, obj, prop, skipEmptyNodes) {
     if ( skipEmptyNodes === void 0 ) skipEmptyNodes = true;
 
