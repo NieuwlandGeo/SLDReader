@@ -1661,6 +1661,15 @@
       return new style.Style({});
     }
 
+    // If the label is dynamic, set text to empty string.
+    // In that case, text will be set at run time.
+    var labelText;
+    if (textsymbolizer.label.type === 'expression') {
+      labelText = '';
+    } else {
+      labelText = textsymbolizer.label;
+    }
+
     var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
     var halo =
       textsymbolizer.halo && textsymbolizer.halo.fill
@@ -1696,6 +1705,7 @@
 
     // Halo styling
     var textStyleOptions = {
+      text: labelText,
       font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
       offsetX: Number(offsetX),
       offsetY: Number(offsetY),
@@ -1733,12 +1743,19 @@
 
   function getTextStyle(symbolizer, feature) {
     var olStyle = cachedTextStyle(symbolizer);
+    var olText = olStyle.getText();
+    if (!olText) {
+      return olStyle;
+    }
 
     // Read text from feature and set it on the text style instance.
     var label = symbolizer.label;
-    var labelText = evaluate(label, feature);
-    var olText = olStyle.getText();
-    olText.setText(labelText);
+
+    // Set text only if the label expression is dynamic.
+    if (label.type === 'expression') {
+      var labelText = evaluate(label, feature);
+      olText.setText(labelText);
+    }
 
     // Set placement dynamically.
     var geometry = feature.getGeometry

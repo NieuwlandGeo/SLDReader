@@ -14,6 +14,15 @@ function textStyle(textsymbolizer) {
     return new Style({});
   }
 
+  // If the label is dynamic, set text to empty string.
+  // In that case, text will be set at run time.
+  let labelText;
+  if (textsymbolizer.label.type === 'expression') {
+    labelText = '';
+  } else {
+    labelText = textsymbolizer.label;
+  }
+
   const fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
   const halo =
     textsymbolizer.halo && textsymbolizer.halo.fill
@@ -50,6 +59,7 @@ function textStyle(textsymbolizer) {
 
   // Halo styling
   const textStyleOptions = {
+    text: labelText,
     font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
     offsetX: Number(offsetX),
     offsetY: Number(offsetY),
@@ -87,12 +97,19 @@ const cachedTextStyle = memoizeStyleFunction(textStyle);
 
 function getTextStyle(symbolizer, feature) {
   const olStyle = cachedTextStyle(symbolizer);
+  const olText = olStyle.getText();
+  if (!olText) {
+    return olStyle;
+  }
 
   // Read text from feature and set it on the text style instance.
   const { label } = symbolizer;
-  const labelText = evaluate(label, feature);
-  const olText = olStyle.getText();
-  olText.setText(labelText);
+
+  // Set text only if the label expression is dynamic.
+  if (label.type === 'expression') {
+    const labelText = evaluate(label, feature);
+    olText.setText(labelText);
+  }
 
   // Set placement dynamically.
   const geometry = feature.getGeometry
