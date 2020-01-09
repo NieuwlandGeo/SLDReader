@@ -1,5 +1,5 @@
 import { Style, Fill, Stroke, Text } from 'ol/style';
-import { hexToRGB, memoizeStyleFunction } from '../Utils';
+import { hexToRGB, memoizeStyleFunction } from './styleUtils';
 import evaluate from '../olEvaluator';
 
 /**

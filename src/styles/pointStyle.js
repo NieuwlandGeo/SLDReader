@@ -7,7 +7,7 @@ import {
   IMAGE_ERROR,
   DEFAULT_POINT_SIZE,
 } from '../constants';
-import { memoizeStyleFunction } from '../Utils';
+import { memoizeStyleFunction } from './styleUtils';
 import { imageLoadingPointStyle, imageErrorPointStyle } from './static';
 import { createCachedImageStyle } from '../imageCache';
 import getWellKnownSymbol from './wellknown';

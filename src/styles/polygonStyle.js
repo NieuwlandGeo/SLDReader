@@ -2,7 +2,7 @@
 import { Style, Fill, Stroke } from 'ol/style';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from '../constants';
-import { hexToRGB, memoizeStyleFunction } from '../Utils';
+import { hexToRGB, memoizeStyleFunction } from './styleUtils';
 import { getCachedImage } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
 

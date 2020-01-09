@@ -1,6 +1,6 @@
 import { Style, Stroke } from 'ol/style';
 
-import { hexToRGB, memoizeStyleFunction } from '../Utils';
+import { hexToRGB, memoizeStyleFunction } from './styleUtils';
 
 /**
  * @private
