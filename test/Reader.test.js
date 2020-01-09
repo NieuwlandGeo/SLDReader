@@ -2,6 +2,7 @@
 import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
+import { dynamicSld } from './data/dynamic.sld';
 
 let result;
 
@@ -32,11 +33,13 @@ describe('Reads xml', () => {
     expect(style.default).to.be.true;
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle = result.layers['0'].styles['0'].featuretypestyles['0'];
+    const featuretypestyle =
+      result.layers['0'].styles['0'].featuretypestyles['0'];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
   it('rules have props', () => {
-    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule.maxscaledenominator).to.equal('3000000');
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
@@ -46,15 +49,21 @@ describe('Reads xml', () => {
     expect(rule.polygonsymbolizer.stroke.styling.stroke).to.equal('#C0C0C0');
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
-    const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule =
+      result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule).to.have.property('pointsymbolizer');
     expect(rule.pointsymbolizer).to.have.property('graphic');
     expect(rule.pointsymbolizer.graphic).to.have.property('externalgraphic');
-    expect(rule.pointsymbolizer.graphic.externalgraphic).to.have.property('onlineresource');
-    expect(rule.pointsymbolizer.graphic.externalgraphic.onlineresource).to.equal('../img/marker.png');
+    expect(rule.pointsymbolizer.graphic.externalgraphic).to.have.property(
+      'onlineresource'
+    );
+    expect(
+      rule.pointsymbolizer.graphic.externalgraphic.onlineresource
+    ).to.equal('../img/marker.png');
   });
   it('cities layer has pointsymbolizer with graphic mark', () => {
-    const rule = result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
+    const rule =
+      result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
     expect(rule).to.have.property('pointsymbolizer');
     expect(rule.pointsymbolizer).to.have.property('graphic');
     expect(rule.pointsymbolizer.graphic).to.have.property('mark');
@@ -63,7 +72,8 @@ describe('Reads xml', () => {
     expect(rule.pointsymbolizer.graphic.mark.wellknownname).to.equal('cross');
   });
   it('reads multiple pointsymbolizers', () => {
-    const rule = result.layers['4'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule =
+      result.layers['4'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule).to.have.property('pointsymbolizer');
     const pointSymbolizers = rule.pointsymbolizer;
     expect(pointSymbolizers).to.be.an('array');
@@ -99,33 +109,64 @@ describe('Reads xml sld 11', () => {
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle = result.layers['0'].styles['0'].featuretypestyles['0'];
+    const featuretypestyle =
+      result.layers['0'].styles['0'].featuretypestyles['0'];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
     expect(featuretypestyle.rules).to.have.length(4);
   });
   it('rule polygonsymbolizer has props from svg', () => {
-    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill.styling).to.be.an.instanceof(Object);
     expect(rule.polygonsymbolizer.fill.styling.fill).to.equal('#CCCCCC');
   });
   it('rule textsymbolizer label', () => {
-    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
     expect(rule.textsymbolizer).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.label).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.label.some(l => l.propertyname === 'provincienaam')).to.be.true;
+    expect(rule.textsymbolizer.label.type).to.equal('expression');
+    expect(
+      rule.textsymbolizer.label.children.some(
+        l => l.type === 'propertyname' && l.value === 'provincienaam'
+      )
+    ).to.be.true;
   });
   it('rule textsymbolizer has font', () => {
-    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
     expect(rule.textsymbolizer).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.font).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.font.styling).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.font.styling.fontFamily).to.equal('Noto Sans');
   });
   it('rule textsymbolizer has fill', () => {
-    const rule = result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
     expect(rule.textsymbolizer).to.be.an.instanceof(Object);
     expect(rule.textsymbolizer.fill).to.be.an.instanceof(Object);
+  });
+});
+
+describe('Dynamic filter expressions', () => {
+  let featureTypeStyle;
+  before(() => {
+    result = Reader(dynamicSld);
+    [featureTypeStyle] = result.layers[0].styles[0].featuretypestyles;
+  });
+
+  it('Has propertyname expression for size', () => {
+    const rule = featureTypeStyle.rules[0];
+    expect(rule.pointsymbolizer.graphic.size).to.deep.equal({
+      type: 'expression',
+      children: [
+        {
+          type: 'propertyname',
+          value: 'size',
+        },
+      ],
+    });
   });
 });

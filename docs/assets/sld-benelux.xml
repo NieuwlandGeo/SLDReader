@@ -26,8 +26,13 @@
                 <sld:OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/nl/shiny/48.png"/>
                 <sld:Format>image/png</sld:Format>
               </sld:ExternalGraphic>
-              <sld:Size>24</sld:Size>
-            </sld:Graphic>>
+              <sld:Size>
+                <ogc:PropertyName>size</ogc:PropertyName>
+              </sld:Size>
+              <sld:Rotation>
+                <ogc:PropertyName>angle</ogc:PropertyName>
+              </sld:Rotation>
+            </sld:Graphic>
           </sld:PointSymbolizer>
         </sld:Rule>
         <sld:Rule>
@@ -47,7 +52,12 @@
                 <sld:OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/be/shiny/48.png"/>
                 <sld:Format>image/png</sld:Format>
               </sld:ExternalGraphic>
-              <sld:Size>24</sld:Size>
+              <sld:Size>
+                <ogc:PropertyName>size</ogc:PropertyName>
+              </sld:Size>
+              <sld:Rotation>
+                <ogc:PropertyName>angle</ogc:PropertyName>
+              </sld:Rotation>
             </sld:Graphic>
           </sld:PointSymbolizer>
         </sld:Rule>
@@ -68,7 +78,12 @@
                 <sld:OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/lu/shiny/48.png"/>
                 <sld:Format>image/png</sld:Format>
               </sld:ExternalGraphic>
-              <sld:Size>24</sld:Size>
+              <sld:Size>
+                <ogc:PropertyName>size</ogc:PropertyName>
+              </sld:Size>
+              <sld:Rotation>
+                <ogc:PropertyName>angle</ogc:PropertyName>
+              </sld:Rotation>
             </sld:Graphic>
           </sld:PointSymbolizer>
         </sld:Rule>

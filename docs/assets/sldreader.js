@@ -21,6 +21,26 @@
   }
 
   /**
+   * Generic parser for elements that can be arrays
+   * @private
+   * @param {Element} node the xml element to parse
+   * @param {object|Array} obj  the object or array to modify
+   * @param {string} prop key on obj to hold array
+   */
+  function addPropOrArray(node, obj, prop) {
+    var property = prop.toLowerCase();
+    var item = {};
+    readNode(node, item);
+    if (!(property in obj)) {
+      obj[property] = item;
+    } else if (Array.isArray(obj[property])) {
+      obj[property].push(item);
+    } else {
+      obj[property] = [obj[property], item];
+    }
+  }
+
+  /**
    * Generic parser for maxOccurs = 1 (the xsd default)
    * it sets result of readNode(node) to array on obj[prop]
    * @private
@@ -65,6 +85,81 @@
   }
 
   /**
+   * This function parses SLD XML nodes that can contain an SLD filter expression.
+   * If the SLD node contains only text elements, the result will be concatenated into a string.
+   * If the SLD node contains one or more non-literal nodes (for now, only PropertyName), the result
+   * will be an object with type:"expression" and an array of child nodes of which one or more have
+   * the type "propertyname".
+   *
+   * Functions and arithmetic operators (Add,Sub,Mul,Div) are not supported (yet).
+   * Note: for now, only these contents will be parsed:
+   * * Plain text nodes.
+   * * CDATA sections.
+   * * ogc:PropertyName elements (property name will be parsed as trimmed text).
+   * * ogc:Literal elements (contents will be parsed as trimmed text).
+   * See also:
+   * * http://schemas.opengis.net/filter/1.1.0/expr.xsd
+   * * https://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html#sld-filter-expression
+   * @private
+   * @param {Element} node XML Node.
+   * @param {object} obj Object to add XML node contents to.
+   * @param {string} prop Property name on obj that will hold the parsed node contents.
+   * @param {bool} [skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
+   */
+  function addFilterExpressionProp(node, obj, prop, skipEmptyNodes) {
+    if ( skipEmptyNodes === void 0 ) skipEmptyNodes = true;
+
+    var childExpressions = [];
+
+    for (var k = 0; k < node.childNodes.length; k += 1) {
+      var childNode = node.childNodes[k];
+      var childExpression = {};
+      if (
+        childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
+        childNode.localName === 'PropertyName'
+      ) {
+        // Add ogc:PropertyName elements as type:propertyname.
+        childExpression.type = 'propertyname';
+        childExpression.value = childNode.textContent.trim();
+      } else if (childNode.nodeName === '#cdata-section') {
+        // Add CDATA section text content untrimmed.
+        childExpression.type = 'literal';
+        childExpression.value = childNode.textContent;
+      } else {
+        // Add ogc:Literal elements and plain text nodes as type:literal.
+        childExpression.type = 'literal';
+        childExpression.value = childNode.textContent.trim();
+      }
+
+      if (childExpression.type === 'literal' && skipEmptyNodes) {
+        if (childExpression.value.trim()) {
+          childExpressions.push(childExpression);
+        }
+      } else {
+        childExpressions.push(childExpression);
+      }
+    }
+
+    var property = prop.toLowerCase();
+
+    // If expression children are all literals, concatenate them into a string.
+    var allLiteral = childExpressions.every(
+      function (childExpression) { return childExpression.type === 'literal'; }
+    );
+
+    if (allLiteral) {
+      obj[property] = childExpressions
+        .map(function (expression) { return expression.value; })
+        .join('');
+    } else {
+      obj[property] = {
+        type: 'expression',
+        children: childExpressions,
+      };
+    }
+  }
+
+  /**
    * recieves boolean of element with tagName
    * @private
    * @param  {Element} element [description]
@@ -72,7 +167,10 @@
    * @return {boolean}
    */
   function getBool(element, tagName) {
-    var collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
+    var collection = element.getElementsByTagNameNS(
+      'http://www.opengis.net/sld',
+      tagName
+    );
     if (collection.length) {
       return Boolean(collection.item(0).textContent);
     }
@@ -148,17 +246,17 @@
   };
 
   var SymbParsers = {
-    PolygonSymbolizer: addProp,
-    LineSymbolizer: addProp,
-    PointSymbolizer: addProp,
-    TextSymbolizer: addProp,
+    PolygonSymbolizer: addPropOrArray,
+    LineSymbolizer: addPropOrArray,
+    PointSymbolizer: addPropOrArray,
+    TextSymbolizer: addPropOrArray,
     Fill: addProp,
     Stroke: addProp,
     GraphicFill: addProp,
     Graphic: addProp,
     ExternalGraphic: addProp,
     Mark: addProp,
-    Label: addTextProp,
+    Label: addFilterExpressionProp,
     Halo: addProp,
     Font: addProp,
     Radius: addPropWithTextContent,
@@ -169,11 +267,11 @@
     AnchorPoint: addProp,
     AnchorPointX: addPropWithTextContent,
     AnchorPointY: addPropWithTextContent,
-    Rotation: addPropWithTextContent,
+    Rotation: addFilterExpressionProp,
     Displacement: addProp,
     DisplacementX: addPropWithTextContent,
     DisplacementY: addPropWithTextContent,
-    Size: addPropWithTextContent,
+    Size: addFilterExpressionProp,
     WellKnownName: addPropWithTextContent,
     VendorOption: parameters,
     OnlineResource: function (element, obj) {
@@ -259,35 +357,6 @@
         obj[property].push(childObj);
       }
     }
-  }
-
-  /**
-   * Generic parser for text props
-   * It looks for nodeName #text and #cdata-section to get all text in labels
-   * it sets result of readNode(node) to array on obj[prop]
-   * @private
-   * @param {Element} node the xml element to parse
-   * @param {object} obj  the object to modify
-   * @param {string} prop key on obj to hold empty object
-   */
-  function addTextProp(node, obj, prop) {
-    var property = prop.toLowerCase();
-    obj[property] = [];
-    Array.prototype.forEach.call(node.childNodes, function (child) {
-      if (child && child.nodeName === '#text') {
-        obj[property].push({
-          text: child.textContent.trim(),
-        });
-      } else if (child && child.nodeName === '#cdata-section') {
-        obj[property].push({
-          text: child.textContent,
-        });
-      } else if (child && parsers[child.localName]) {
-        var childObj = {};
-        parsers[child.localName](child, childObj, child.localName);
-        obj[property].push(childObj);
-      }
-    });
   }
 
   /**
@@ -420,6 +489,8 @@
   var IMAGE_LOADING = 'IMAGE_LOADING';
   var IMAGE_LOADED = 'IMAGE_LOADED';
   var IMAGE_ERROR = 'IMAGE_ERROR';
+
+  var DEFAULT_POINT_SIZE = 20; // pixels
 
   function propertyIsLessThan(comparison, value) {
     return (
@@ -671,6 +742,7 @@
   }
 
   /* eslint-disable no-underscore-dangle */
+
   /**
    * get all layer names in sld
    * @param {StyledLayerDescriptor} sld
@@ -750,115 +822,6 @@
   }
 
   /**
-   * Go through all rules with an external graphic matching the image url
-   * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
-   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
-   * @param {object} featureTypeStyle A feature type style object.
-   * @param {string} imageUrl The image url.
-   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
-   */
-  function updateExternalGraphicRules(
-    featureTypeStyle,
-    imageUrl,
-    imageLoadState
-  ) {
-    // Go through all rules with an external graphic matching the image url
-    // and update the __loadingState metadata for the symbolizers with the new imageLoadState.
-    if (!featureTypeStyle.rules) {
-      return;
-    }
-
-    featureTypeStyle.rules.forEach(function (rule) {
-      updateExternalGraphicRule(rule, imageUrl, imageLoadState);
-    });
-  }
-
-  /**
-   * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
-   * the external graphic is matching the image url.
-   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
-   * @param {object} featureTypeStyle A feature type style object.
-   * @param {string} imageUrl The image url.
-   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
-   */
-  function updateExternalGraphicRule(
-    rule,
-    imageUrl,
-    imageLoadState
-  ) {
-    // for pointsymbolizer
-    if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
-      var ref = rule.pointsymbolizer;
-      var graphic = ref.graphic;
-      var externalgraphic = graphic.externalgraphic;
-      if (
-        externalgraphic &&
-        externalgraphic.onlineresource === imageUrl &&
-        rule.pointsymbolizer.__loadingState !== imageLoadState
-      ) {
-        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
-          __loadingState: imageLoadState,
-        });
-      }
-    }
-    // for polygonsymbolizer
-    if (rule.polygonsymbolizer
-          && rule.polygonsymbolizer.fill
-          && rule.polygonsymbolizer.fill.graphicfill
-          && rule.polygonsymbolizer.fill.graphicfill.graphic) {
-      var ref$1 = rule.polygonsymbolizer.fill.graphicfill;
-      var graphic$1 = ref$1.graphic;
-      var ref$2 = graphic$1;
-      var externalgraphic$1 = ref$2.externalgraphic;
-      if (
-        externalgraphic$1 &&
-        externalgraphic$1.onlineresource === imageUrl &&
-        rule.polygonsymbolizer.__loadingState !== imageLoadState
-      ) {
-        rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
-          __loadingState: imageLoadState,
-        });
-      }
-    }
-  }
-
-
-  function loadExternalGraphic(
-    imageUrl,
-    imageCache,
-    imageLoadState,
-    featureTypeStyle,
-    imageLoadedCallback
-  ) {
-    var image = new Image();
-
-    image.onload = function () {
-      imageCache[imageUrl] = {
-        url: imageUrl,
-        image: image,
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-      };
-      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
-      imageLoadState[imageUrl] = IMAGE_LOADED;
-      if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback(imageUrl);
-      }
-    };
-
-    image.onerror = function () {
-      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
-      imageLoadState[imageUrl] = IMAGE_ERROR;
-      if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback();
-      }
-    };
-
-    image.src = imageUrl;
-    updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADING);
-  }
-
-  /**
    * Get styling from rules per geometry type
    * @param  {Rule[]} rules [description]
    * @return {GeometryStyles}
@@ -902,6 +865,7 @@
 
   /* eslint-disable no-continue */
 
+  /* eslint-disable no-underscore-dangle */
   // Global image cache. A map of image Url -> {
   //   url: image url,
   //   image: an Image instance containing image data,
@@ -909,6 +873,229 @@
   //   height: image height in pixels
   // }
   var imageCache = {};
+
+  function setCachedImage(url, imageData) {
+    imageCache[url] = imageData;
+  }
+
+  function getCachedImage(url) {
+    return imageCache[url];
+  }
+
+  function getCachedImageUrls() {
+    return Object.keys(imageCache);
+  }
+
+  /**
+   * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
+   * the external graphic is matching the image url.
+   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
+   * @param {object} featureTypeStyle A feature type style object.
+   * @param {string} imageUrl The image url.
+   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
+   */
+  function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
+    // for pointsymbolizer
+    if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
+      var ref = rule.pointsymbolizer;
+      var graphic = ref.graphic;
+      var externalgraphic = graphic.externalgraphic;
+      if (
+        externalgraphic &&
+        externalgraphic.onlineresource === imageUrl &&
+        rule.pointsymbolizer.__loadingState !== imageLoadState
+      ) {
+        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+          __loadingState: imageLoadState,
+        });
+      }
+    }
+    // for polygonsymbolizer
+    if (
+      rule.polygonsymbolizer &&
+      rule.polygonsymbolizer.fill &&
+      rule.polygonsymbolizer.fill.graphicfill &&
+      rule.polygonsymbolizer.fill.graphicfill.graphic
+    ) {
+      var ref$1 = rule.polygonsymbolizer.fill.graphicfill;
+      var graphic$1 = ref$1.graphic;
+      var ref$2 = graphic$1;
+      var externalgraphic$1 = ref$2.externalgraphic;
+      if (
+        externalgraphic$1 &&
+        externalgraphic$1.onlineresource === imageUrl &&
+        rule.polygonsymbolizer.__loadingState !== imageLoadState
+      ) {
+        rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
+          __loadingState: imageLoadState,
+        });
+      }
+    }
+  }
+
+  /**
+   * Go through all rules with an external graphic matching the image url
+   * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
+   * @param {object} featureTypeStyle A feature type style object.
+   * @param {string} imageUrl The image url.
+   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
+   */
+  function updateExternalGraphicRules(
+    featureTypeStyle,
+    imageUrl,
+    imageLoadState
+  ) {
+    // Go through all rules with an external graphic matching the image url
+    // and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+    if (!featureTypeStyle.rules) {
+      return;
+    }
+
+    featureTypeStyle.rules.forEach(function (rule) {
+      updateExternalGraphicRule(rule, imageUrl, imageLoadState);
+    });
+  }
+
+  /**
+   * Load and cache an image that's used as externalGraphic inside one or more symbolizers inside a feature type style object.
+   * When the image is loaded, it's put into the cache, the __loadingStaet inside the featureTypeStyle symbolizers are updated,
+   * and the imageLoadedCallback is called with the loaded image url.
+   * @param {url} imageUrl Image url.
+   * @param {string} imageLoadState One of IMAGE_LOADING, IMAGE_LOADED or IMAGE_ERROR.
+   * @param {object} featureTypeStyle Feature type style object.
+   * @param {Function} imageLoadedCallback Will be called with the image url when image
+   * has loaded. Will be called with undefined if the loading the image resulted in an error.
+   */
+  function loadExternalGraphic(
+    imageUrl,
+    imageLoadState,
+    featureTypeStyle,
+    imageLoadedCallback
+  ) {
+    var image = new Image();
+
+    image.onload = function () {
+      setCachedImage(imageUrl, {
+        url: imageUrl,
+        image: image,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
+      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
+      imageLoadState[imageUrl] = IMAGE_LOADED;
+      if (typeof imageLoadedCallback === 'function') {
+        imageLoadedCallback(imageUrl);
+      }
+    };
+
+    image.onerror = function () {
+      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
+      imageLoadState[imageUrl] = IMAGE_ERROR;
+      if (typeof imageLoadedCallback === 'function') {
+        imageLoadedCallback();
+      }
+    };
+
+    image.src = imageUrl;
+    updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADING);
+  }
+
+  /**
+   * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
+   * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
+   * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
+   * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
+   * @param {object} imageLoadState Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
+   * @param {Function} imageLoadedCallback Function to call when an image has loaded.
+   */
+  function processExternalGraphicSymbolizers(
+    rules,
+    featureTypeStyle,
+    imageLoadState,
+    imageLoadedCallback
+  ) {
+    // If a feature has an external graphic point or polygon symbolizer, the external image may
+    // * have never been requested before.
+    //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
+    //       When loading is complete, replace all symbolizers using that image inside the featureTypeStyle
+    //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
+    // * be loading.
+    //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
+    // * be loaded and therefore present in the image cache.
+    //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
+    // * be in error. Error is a kind of loaded, but with an error icon style.
+    //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
+    for (var k = 0; k < rules.length; k += 1) {
+      var rule = rules[k];
+
+      var symbolizer = (void 0);
+      var exgraphic = (void 0);
+
+      if (
+        rule.pointsymbolizer &&
+        rule.pointsymbolizer.graphic &&
+        rule.pointsymbolizer.graphic.externalgraphic
+      ) {
+        symbolizer = rule.pointsymbolizer;
+        exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
+      } else if (
+        rule.polygonsymbolizer &&
+        rule.polygonsymbolizer.fill &&
+        rule.polygonsymbolizer.fill.graphicfill &&
+        rule.polygonsymbolizer.fill.graphicfill.graphic &&
+        rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic
+      ) {
+        symbolizer = rule.polygonsymbolizer;
+        exgraphic =
+          rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
+      } else {
+        continue;
+      }
+
+      var imageUrl = exgraphic.onlineresource;
+      if (!(imageUrl in imageLoadState)) {
+        // Start loading the image and set image load state on the symbolizer.
+        imageLoadState[imageUrl] = IMAGE_LOADING;
+        loadExternalGraphic(
+          imageUrl,
+          imageLoadState,
+          featureTypeStyle,
+          imageLoadedCallback
+        );
+      } else if (
+        // Change image load state on the symbolizer if it has changed in the meantime.
+        symbolizer.__loadingState !== imageLoadState[imageUrl]
+      ) {
+        updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
+      }
+    }
+  }
+
+  /**
+   * Create an OL Icon style for an external graphic.
+   * The Graphic must be already loaded and present in the global imageCache.
+   * @param {string} imageUrl Url of the external graphic.
+   * @param {number} size Requested size in pixels.
+   * @param {number} [rotationDegrees] Image rotation in degrees (clockwise). Default 0.
+   */
+  function createCachedImageStyle(imageUrl, size, rotationDegrees) {
+    if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
+
+    var ref = getCachedImage(imageUrl);
+    var image = ref.image;
+    var width = ref.width;
+    var height = ref.height;
+    return new style.Style({
+      image: new style.Icon({
+        img: image,
+        imgSize: [width, height],
+        // According to SLD spec, if size is given, image height should equal the given size.
+        scale: size / height || 1,
+        rotation: (Math.PI * rotationDegrees) / 180.0,
+      }),
+    });
+  }
 
   var defaultPointStyle = new style.Style({
     image: new style.Circle({
@@ -970,7 +1157,30 @@
   });
 
   /**
+   * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
+   * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
+   * Uses a WeakMap internally.
+   * Note: This only works for constant symbolizers.
    * @private
+   * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
+   * @returns {Function} The memoized function of the style conversion function.
+   */
+  function memoizeStyleFunction(styleFunction) {
+    var styleCache = new WeakMap();
+
+    return function (symbolizer) {
+      var olStyle = styleCache.get(symbolizer);
+
+      if (!olStyle) {
+        olStyle = styleFunction(symbolizer);
+        styleCache.set(symbolizer, olStyle);
+      }
+
+      return olStyle;
+    };
+  }
+
+  /**
    * @param  {string} hex   eg #AA00FF
    * @param  {Number} alpha eg 0.5
    * @return {string}       rgba(0,0,0,0)
@@ -985,8 +1195,373 @@
     return ("rgb(" + r + ", " + g + ", " + b + ")");
   }
 
+  /**
+   * Create an OL point style corresponding to a well known symbol identifier.
+   * @param {string} wellKnownName SLD Well Known Name for symbolizer.
+   * Can be 'circle', 'square', 'triangle', 'star', 'cross', 'x', 'hexagon', 'octagon'.
+   * @param {number} size Symbol size in pixels.
+   * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
+   * @param {ol/style/fill} fill OpenLayers Fill instance.
+   * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
+   */
+  function getWellKnownSymbol(
+    wellKnownName,
+    size,
+    stroke,
+    fill,
+    rotationDegrees
+  ) {
+    if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
+
+    var radius = 0.5 * size;
+    var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
+
+    var fillColor;
+    if (fill && fill.getColor()) {
+      fillColor = fill.getColor();
+    }
+
+    switch (wellKnownName) {
+      case 'circle':
+        return new style.Circle({
+          fill: fill,
+          radius: radius,
+          stroke: stroke,
+        });
+
+      case 'triangle':
+        return new style.RegularShape({
+          fill: fill,
+          points: 3,
+          radius: radius,
+          stroke: stroke,
+          rotation: rotationRadians,
+        });
+
+      case 'star':
+        return new style.RegularShape({
+          fill: fill,
+          points: 5,
+          radius1: radius,
+          radius2: radius / 2.5,
+          stroke: stroke,
+          rotation: rotationRadians,
+        });
+
+      case 'cross':
+        return new style.RegularShape({
+          fill: fill,
+          points: 4,
+          radius1: radius,
+          radius2: 0,
+          stroke:
+            stroke ||
+            new style.Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          rotation: rotationRadians,
+        });
+
+      case 'hexagon':
+        return new style.RegularShape({
+          fill: fill,
+          points: 6,
+          radius: radius,
+          stroke:
+            stroke ||
+            new style.Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          rotation: rotationRadians,
+        });
+
+      case 'octagon':
+        return new style.RegularShape({
+          fill: fill,
+          points: 8,
+          radius: radius,
+          stroke:
+            stroke ||
+            new style.Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          rotation: rotationRadians,
+        });
+
+      case 'x':
+        return new style.RegularShape({
+          angle: Math.PI / 4,
+          fill: fill,
+          points: 4,
+          radius1: radius,
+          radius2: 0,
+          stroke:
+            stroke ||
+            new style.Stroke({
+              color: fillColor,
+              width: radius / 2,
+            }),
+          rotation: rotationRadians,
+        });
+
+      default:
+        // Default is `square`
+        return new style.RegularShape({
+          angle: Math.PI / 4,
+          fill: fill,
+          points: 4,
+          // For square, scale radius so the height of the square equals the given size.
+          radius1: radius * Math.sqrt(2.0),
+          stroke: stroke,
+          rotation: rotationRadians,
+        });
+    }
+  }
+
+  // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
+  // Constant expressions are returned as-is.
+
+  /**
+   * Evaluate the value of a sub-expression.
+   * @param {object} childExpression SLD object expression child.
+   * @param {ol/feature} feature OpenLayers feature instance.feature.
+   */
+  function evaluateChildExpression(childExpression, feature) {
+    // For now, the only valid child types are 'propertyname' and 'literal'.
+    // Todo: add,sub,mul,div. Maybe a few functions as well.
+    if (childExpression.type === 'literal') {
+      return childExpression.value;
+    }
+
+    if (childExpression.type === 'propertyname') {
+      return feature.get(childExpression.value);
+    }
+
+    return null;
+  }
+
+  /**
+   * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
+   * Constant expressions are returned as-is.
+   * @param {object|string} expression SLD object expression.
+   * @param {ol/feature} feature OpenLayers feature instance.
+   */
+  function evaluate(expression, feature) {
+    // The only compound expressions have type: 'expression'.
+    // If it does not have this type, it's probably a plain string (or number).
+    if (expression.type !== 'expression') {
+      return expression;
+    }
+
+    // Evaluate the child expression when there is only one child.
+    if (expression.children.length === 1) {
+      return evaluateChildExpression(expression.children[0], feature);
+    }
+
+    // In case of multiple child expressions, concatenate the evaluated child results.
+    var childValues = [];
+    for (var k = 0; k < expression.children.length; k += 1) {
+      childValues.push(evaluateChildExpression(expression.children[k], feature));
+    }
+    return childValues.join('');
+  }
+
+  /* eslint-disable no-underscore-dangle */
+
+  /**
+   * Get OL Fill instance for SLD mark object.
+   * @param {object} mark SLD mark object.
+   */
+  function getMarkFill(mark) {
+    var fill = mark.fill;
+    var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
+    return new style.Fill({
+      color: fillColor,
+    });
+  }
+
+  /**
+   * Get OL Stroke instance for SLD mark object.
+   * @param {object} mark SLD mark object.
+   */
+  function getMarkStroke(mark) {
+    var stroke = mark.stroke;
+
+    var olStroke;
+    if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
+      var ref = stroke.styling;
+      var cssStroke = ref.stroke;
+      var cssStrokeWidth = ref.strokeWidth;
+      olStroke = new style.Stroke({
+        color: cssStroke || 'black',
+        width: cssStrokeWidth || 2,
+      });
+    }
+
+    return olStroke;
+  }
+
+  /**
+   * @private
+   * @param  {PointSymbolizer} pointsymbolizer [description]
+   * @return {object} openlayers style
+   */
+  function pointStyle(pointsymbolizer) {
+    var style$1 = pointsymbolizer.graphic;
+
+    // If the point size is a dynamic expression, use the default point size and update in-place later.
+    var pointSizeValue;
+    if (style$1.size && style$1.size.type === 'expression') {
+      pointSizeValue = DEFAULT_POINT_SIZE;
+    } else {
+      pointSizeValue = style$1.size || DEFAULT_POINT_SIZE;
+    }
+
+    // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
+    var rotationDegrees;
+    if (style$1.rotation && style$1.rotation.type === 'expression') {
+      rotationDegrees = 0.0;
+    } else {
+      rotationDegrees = style$1.rotation || 0.0;
+    }
+
+    if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
+      // Check symbolizer metadata to see if the image has already been loaded.
+      switch (pointsymbolizer.__loadingState) {
+        case IMAGE_LOADED:
+          return createCachedImageStyle(
+            style$1.externalgraphic.onlineresource,
+            pointSizeValue,
+            rotationDegrees
+          );
+        case IMAGE_LOADING:
+          return imageLoadingPointStyle;
+        case IMAGE_ERROR:
+          return imageErrorPointStyle;
+        default:
+          // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
+          return imageLoadingPointStyle;
+      }
+    }
+
+    if (style$1.mark) {
+      var ref = style$1.mark;
+      var wellknownname = ref.wellknownname;
+      var olFill = getMarkFill(style$1.mark);
+      var olStroke = getMarkStroke(style$1.mark);
+
+      return new style.Style({
+        // Note: size will be set dynamically later.
+        image: getWellKnownSymbol(
+          wellknownname,
+          pointSizeValue,
+          olStroke,
+          olFill,
+          rotationDegrees
+        ),
+      });
+    }
+
+    return new style.Style({
+      image: new style.Circle({
+        radius: 4,
+        fill: new style.Fill({
+          color: 'blue',
+        }),
+      }),
+    });
+  }
+
+  var cachedPointStyle = memoizeStyleFunction(pointStyle);
+
+  function getPointStyle(symbolizer, feature) {
+    var olStyle = cachedPointStyle(symbolizer);
+    var olImage = olStyle.getImage();
+
+    // Apply dynamic values to the cached OL style instance before returning it.
+
+    // --- Update dynamic size ---
+    var graphic = symbolizer.graphic;
+    var size = graphic.size;
+    if (size && size.type === 'expression') {
+      var sizeValue = Number(evaluate(size, feature)) || DEFAULT_POINT_SIZE;
+
+      if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
+        var height = olImage.getSize()[1];
+        var scale = sizeValue / height || 1;
+        olImage.setScale(scale);
+      }
+
+      if (graphic.mark) {
+        // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
+        if (graphic.mark.wellknownname === 'circle') {
+          olImage.setRadius(sizeValue * 0.5);
+        } else {
+          // So, in the case of any other RegularShape, create a new shape instance.
+          olStyle.setImage(
+            getWellKnownSymbol(
+              graphic.mark.wellknownname,
+              sizeValue,
+              // Note: re-use stroke and fill instances for a (small?) performance gain.
+              olImage.getStroke(),
+              olImage.getFill()
+            )
+          );
+        }
+      }
+    }
+
+    // --- Update dynamic rotation ---
+    var rotation = graphic.rotation;
+    if (rotation && rotation.type === 'expression') {
+      var rotationDegrees = Number(evaluate(rotation, feature)) || 0.0;
+      // Note: OL angles are in radians.
+      var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
+      olImage.setRotation(rotationRadians);
+    }
+
+    return olStyle;
+  }
+
+  /**
+   * @private
+   * @param  {LineSymbolizer} linesymbolizer [description]
+   * @return {object} openlayers style
+   */
+  function lineStyle(linesymbolizer) {
+    var style$1 = {};
+    if (linesymbolizer.stroke) {
+      style$1 = linesymbolizer.stroke.styling;
+    }
+    return new style.Style({
+      stroke: new style.Stroke({
+        color:
+          style$1.strokeOpacity && style$1.stroke && style$1.stroke.slice(0, 1) === '#'
+            ? hexToRGB(style$1.stroke, style$1.strokeOpacity)
+            : style$1.stroke || '#3399CC',
+        width: style$1.strokeWidth || 1.25,
+        lineCap: style$1.strokeLinecap && style$1.strokeLinecap,
+        lineDash: style$1.strokeDasharray && style$1.strokeDasharray.split(' '),
+        lineDashOffset: style$1.strokeDashoffset && style$1.strokeDashoffset,
+        lineJoin: style$1.strokeLinejoin && style$1.strokeLinejoin,
+      }),
+    });
+  }
+
+  var cachedLineStyle = memoizeStyleFunction(lineStyle);
+  function getLineStyle(symbolizer /* , feature, options = {} */) {
+    return cachedLineStyle(symbolizer);
+  }
+
+  /* eslint-disable no-underscore-dangle */
+
   function createPattern(graphic) {
-    var ref = imageCache[graphic.externalgraphic.onlineresource];
+    var ref = getCachedImage(
+      graphic.externalgraphic.onlineresource
+    );
     var image = ref.image;
     var width = ref.width;
     var height = ref.height;
@@ -1005,24 +1580,31 @@
 
     tempCanvas.width = width * imageRatio;
     tempCanvas.height = height * imageRatio;
-    tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio);
+    // prettier-ignore
+    tCtx.drawImage(
+      image,
+      0, 0, width, height,
+      0, 0, width * imageRatio, height * imageRatio
+    );
     return ctx.createPattern(tempCanvas, 'repeat');
   }
 
   function polygonStyle(style$1) {
-    if (style$1.fill
-          && style$1.fill.graphicfill
-          && style$1.fill.graphicfill.graphic
-          && style$1.fill.graphicfill.graphic.externalgraphic
-          && style$1.fill.graphicfill.graphic.externalgraphic.onlineresource) {
+    if (
+      style$1.fill &&
+      style$1.fill.graphicfill &&
+      style$1.fill.graphicfill.graphic &&
+      style$1.fill.graphicfill.graphic.externalgraphic &&
+      style$1.fill.graphicfill.graphic.externalgraphic.onlineresource
+    ) {
       // Check symbolizer metadata to see if the image has already been loaded.
       switch (style$1.__loadingState) {
         case IMAGE_LOADED:
-          return (new style.Style({
+          return new style.Style({
             fill: new style.Fill({
               color: createPattern(style$1.fill.graphicfill.graphic),
             }),
-          }));
+          });
         case IMAGE_LOADING:
           return imageLoadingPolygonStyle;
         case IMAGE_ERROR:
@@ -1062,329 +1644,156 @@
     });
   }
 
-  /**
-   * @private
-   * @param  {LineSymbolizer} linesymbolizer [description]
-   * @return {object} openlayers style
-   */
-  function lineStyle(linesymbolizer) {
-    var style$1 = {};
-    if (linesymbolizer.stroke) {
-      style$1 = linesymbolizer.stroke.styling;
-    }
-    return new style.Style({
-      stroke: new style.Stroke({
-        color:
-          style$1.strokeOpacity && style$1.stroke && style$1.stroke.slice(0, 1) === '#'
-            ? hexToRGB(style$1.stroke, style$1.strokeOpacity)
-            : style$1.stroke || '#3399CC',
-        width: style$1.strokeWidth || 1.25,
-        lineCap: style$1.strokeLinecap && style$1.strokeLinecap,
-        lineDash: style$1.strokeDasharray && style$1.strokeDasharray.split(' '),
-        lineDashOffset: style$1.strokeDashoffset && style$1.strokeDashoffset,
-        lineJoin: style$1.strokeLinejoin && style$1.strokeLinejoin,
-      }),
-    });
+  var cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
+  function getPolygonStyle(symbolizer /* , feature, options = {} */) {
+    return cachedPolygonStyle(symbolizer);
   }
 
   /**
-   * Create an OL Icon style for an external graphic.
-   * The Graphic must be already loaded and present in the global imageCache.
-   * @param {string} imageUrl Url of the external graphic.
-   * @param {number} size Requested size in pixels.
-   */
-  function createCachedImageStyle(imageUrl, size) {
-    var ref = imageCache[imageUrl];
-    var image = ref.image;
-    var width = ref.width;
-    var height = ref.height;
-    return new style.Style({
-      image: new style.Icon({
-        img: image,
-        imgSize: [width, height],
-        // According to SLD spec, if size is given, image height should equal the given size.
-        scale: size / height || 1,
-      }),
-    });
-  }
-
-  /**
+   * Get the static OL style instance for a text symbolizer.
+   * The text and placement properties will be set on the style object at runtime.
    * @private
-   * @param  {PointSymbolizer} pointsymbolizer [description]
+   * @param {object} textsymbolizer SLD text symbolizer object.
    * @return {object} openlayers style
    */
-  function pointStyle(pointsymbolizer) {
-    var style$1 = pointsymbolizer.graphic;
-    if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
-      // Check symbolizer metadata to see if the image has already been loaded.
-      switch (pointsymbolizer.__loadingState) {
-        case IMAGE_LOADED:
-          return createCachedImageStyle(
-            style$1.externalgraphic.onlineresource,
-            style$1.size
-          );
-        case IMAGE_LOADING:
-          return imageLoadingPointStyle;
-        case IMAGE_ERROR:
-          return imageErrorPointStyle;
-        default:
-          // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
-          return imageLoadingPointStyle;
-      }
+  function textStyle(textsymbolizer) {
+    if (!(textsymbolizer && textsymbolizer.label)) {
+      return new style.Style({});
     }
-    if (style$1.mark) {
-      var ref = style$1.mark;
-      var fill = ref.fill;
-      var stroke = ref.stroke;
-      var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-      fill = new style.Fill({
-        color: fillColor,
-      });
-      if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
-        var ref$1 = stroke.styling;
-        var cssStroke = ref$1.stroke;
-        var cssStrokeWidth = ref$1.strokeWidth;
-        stroke = new style.Stroke({
-          color: cssStroke || 'black',
-          width: cssStrokeWidth || 2,
-        });
-      } else {
-        stroke = undefined;
-      }
-      var radius = (0.5 * Number(style$1.size)) || 10;
-      switch (style$1.mark.wellknownname) {
-        case 'circle':
-          return new style.Style({
-            image: new style.Circle({
-              fill: fill,
-              radius: radius,
-              stroke: stroke,
-            }),
-          });
-        case 'triangle':
-          return new style.Style({
-            image: new style.RegularShape({
-              fill: fill,
-              points: 3,
-              radius: radius,
-              stroke: stroke,
-            }),
-          });
-        case 'star':
-          return new style.Style({
-            image: new style.RegularShape({
-              fill: fill,
-              points: 5,
-              radius1: radius,
-              radius2: radius / 2.5,
-              stroke: stroke,
-            }),
-          });
-        case 'cross':
-          return new style.Style({
-            image: new style.RegularShape({
-              fill: fill,
-              points: 4,
-              radius1: radius,
-              radius2: 0,
-              stroke:
-                stroke ||
-                new style.Stroke({
-                  color: fillColor,
-                  width: radius / 2,
-                }),
-            }),
-          });
-        case 'x':
-          return new style.Style({
-            image: new style.RegularShape({
-              angle: Math.PI / 4,
-              fill: fill,
-              points: 4,
-              radius1: radius,
-              radius2: 0,
-              stroke:
-                stroke ||
-                new style.Stroke({
-                  color: fillColor,
-                  width: radius / 2,
-                }),
-            }),
-          });
-        default:
-          // Default is `square`
-          return new style.Style({
-            image: new style.RegularShape({
-              angle: Math.PI / 4,
-              fill: fill,
-              points: 4,
-              // For square, scale radius so the height of the square equals the given size.
-              radius: radius * Math.sqrt(2.0),
-              stroke: stroke,
-            }),
-          });
-      }
+
+    // If the label is dynamic, set text to empty string.
+    // In that case, text will be set at run time.
+    var labelText;
+    if (textsymbolizer.label.type === 'expression') {
+      labelText = '';
+    } else {
+      labelText = textsymbolizer.label;
     }
-    return new style.Style({
-      image: new style.Circle({
-        radius: 4,
-        fill: new style.Fill({
-          color: 'blue',
-        }),
-      }),
-    });
-  }
 
-  /**
-   * @private
-   * @param  {TextSymbolizer} textsymbolizer [description]
-   * @param {object|Feature} feature {@link http://geojson.org|geojson}
-   *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature}
-   * @param {string} type geometry type, @see {@link http://geojson.org|geojson} for possible types
-   * @return {object} openlayers style
-   */
-  function textStyle(textsymbolizer, feature, type) {
-    var properties = feature.getProperties
-      ? feature.getProperties()
-      : feature.properties;
-    if (textsymbolizer && textsymbolizer.label) {
-      var parseText = {
-        text: function (part) { return part; },
-        propertyname: function (part, props) {
-          if ( props === void 0 ) props = {};
-
-          return props[part] || '';
-      },
-      };
-      var label = textsymbolizer.label.length
-        ? textsymbolizer.label
-        : [textsymbolizer.label];
-
-      var text = label.reduce(function (string, part) {
-        var keys = Object.keys(part);
-        return (
-          string +
-          (keys && parseText[keys[0]]
-            ? parseText[keys[0]](part[keys[0]], properties)
-            : '')
-        );
-      }, '');
-
-      var fill = textsymbolizer.fill
-        ? textsymbolizer.fill.styling
+    var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
+    var halo =
+      textsymbolizer.halo && textsymbolizer.halo.fill
+        ? textsymbolizer.halo.fill.styling
         : {};
-      var halo =
-        textsymbolizer.halo && textsymbolizer.halo.fill
-          ? textsymbolizer.halo.fill.styling
-          : {};
-      var haloRadius =
-        textsymbolizer.halo && textsymbolizer.halo.radius
-          ? parseFloat(textsymbolizer.halo.radius)
-          : 1;
-      var ref =
-        textsymbolizer.font && textsymbolizer.font.styling
-          ? textsymbolizer.font.styling
-          : {};
-      var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
-      var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
-      var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
-      var fontWeight = ref.fontWeight; if ( fontWeight === void 0 ) fontWeight = '';
+    var haloRadius =
+      textsymbolizer.halo && textsymbolizer.halo.radius
+        ? parseFloat(textsymbolizer.halo.radius)
+        : 1;
+    var ref =
+      textsymbolizer.font && textsymbolizer.font.styling
+        ? textsymbolizer.font.styling
+        : {};
+    var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
+    var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
+    var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
+    var fontWeight = ref.fontWeight; if ( fontWeight === void 0 ) fontWeight = '';
 
-      var pointplacement =
-        textsymbolizer &&
-        textsymbolizer.labelplacement &&
-        textsymbolizer.labelplacement.pointplacement
-          ? textsymbolizer.labelplacement.pointplacement
-          : {};
-      var displacement =
-        pointplacement && pointplacement.displacement
-          ? pointplacement.displacement
-          : {};
-      var offsetX = displacement.displacementx ? displacement.displacementx : 0;
-      var offsetY = displacement.displacementy ? displacement.displacementy : 0;
-      var lineplacement =
-        textsymbolizer &&
-        textsymbolizer.labelplacement &&
-        textsymbolizer.labelplacement.lineplacement
-          ? textsymbolizer.labelplacement.lineplacement
-          : null;
-      var rotation = pointplacement.rotation ? pointplacement.rotation : 0;
+    var pointplacement =
+      textsymbolizer &&
+      textsymbolizer.labelplacement &&
+      textsymbolizer.labelplacement.pointplacement
+        ? textsymbolizer.labelplacement.pointplacement
+        : {};
+    var displacement =
+      pointplacement && pointplacement.displacement
+        ? pointplacement.displacement
+        : {};
+    var offsetX = displacement.displacementx ? displacement.displacementx : 0;
+    var offsetY = displacement.displacementy ? displacement.displacementy : 0;
 
-      var placement = type !== 'point' && lineplacement ? 'line' : 'point';
+    var rotation = pointplacement.rotation ? pointplacement.rotation : 0;
 
-      // Halo styling
+    // Halo styling
+    var textStyleOptions = {
+      text: labelText,
+      font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
+      offsetX: Number(offsetX),
+      offsetY: Number(offsetY),
+      rotation: rotation,
+      textAlign: 'center',
+      textBaseline: 'middle',
+      fill: new style.Fill({
+        color:
+          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
+            ? hexToRGB(fill.fill, fill.fillOpacity)
+            : fill.fill,
+      }),
+    };
 
-      return new style.Style({
-        text: new style.Text({
-          text: text,
-          font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
-          offsetX: Number(offsetX),
-          offsetY: Number(offsetY),
-          rotation: rotation,
-          placement: placement,
-          textAlign: 'center',
-          textBaseline: 'middle',
-          stroke: textsymbolizer.halo
-            ? new style.Stroke({
-              color:
-                  halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-                    ? hexToRGB(halo.fill, halo.fillOpacity)
-                    : halo.fill,
-              // wrong position width radius equal to 2 or 4
-              width:
-                  (haloRadius === 2 || haloRadius === 4
-                    ? haloRadius - 0.00001
-                    : haloRadius) * 2,
-            })
-            : undefined,
-          fill: new style.Fill({
-            color:
-              fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-                ? hexToRGB(fill.fill, fill.fillOpacity)
-                : fill.fill,
-          }),
-        }),
+    if (textsymbolizer.halo) {
+      textStyleOptions.stroke = new style.Stroke({
+        color:
+          halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
+            ? hexToRGB(halo.fill, halo.fillOpacity)
+            : halo.fill,
+        // wrong position width radius equal to 2 or 4
+        width:
+          (haloRadius === 2 || haloRadius === 4
+            ? haloRadius - 0.00001
+            : haloRadius) * 2,
       });
     }
-    return new style.Style({});
+
+    return new style.Style({
+      text: new style.Text(textStyleOptions),
+    });
   }
 
-  // Create memoized versions of the style converters.
-  // They use a WeakMap to return the same OL style object if the symbolizer is the same.
-  // Note: this only works for constant symbolizers!
-  // Todo: find a smart way to optimize text symbolizers.
+  var cachedTextStyle = memoizeStyleFunction(textStyle);
 
-  /**
-   * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
-   * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
-   * Uses a WeakMap internally.
-   * Note: This only works for constant symbolizers.
-   * Note: Text symbolizers depend on the feature property and the geometry type, these cannot be cached in this way.
-   * @private
-   * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
-   * @returns {Function} The memoized function of the style conversion function.
-   */
-  function memoize(styleFunction) {
-    var styleCache = new WeakMap();
-
-    return function (symbolizer) {
-      var olStyle = styleCache.get(symbolizer);
-
-      if (!olStyle) {
-        olStyle = styleFunction(symbolizer);
-        styleCache.set(symbolizer, olStyle);
-      }
-
+  function getTextStyle(symbolizer, feature) {
+    var olStyle = cachedTextStyle(symbolizer);
+    var olText = olStyle.getText();
+    if (!olText) {
       return olStyle;
-    };
-  }
+    }
 
-  // Memoized versions of point, line and polygon style converters.
-  var cachedPointStyle = memoize(pointStyle);
-  var cachedLineStyle = memoize(lineStyle);
-  var cachedPolygonStyle = memoize(polygonStyle);
+    // Read text from feature and set it on the text style instance.
+    var label = symbolizer.label;
+
+    // Set text only if the label expression is dynamic.
+    if (label.type === 'expression') {
+      var labelText = evaluate(label, feature);
+      olText.setText(labelText);
+    }
+
+    // Set placement dynamically.
+    var geometry = feature.getGeometry
+      ? feature.getGeometry()
+      : feature.geometry;
+    var geometryType = geometry.getType ? geometry.getType() : geometry.type;
+    var lineplacement =
+      symbolizer &&
+      symbolizer.labelplacement &&
+      symbolizer.labelplacement.lineplacement
+        ? symbolizer.labelplacement.lineplacement
+        : null;
+    var placement =
+      geometryType !== 'point' && lineplacement ? 'line' : 'point';
+    olText.setPlacement(placement);
+
+    return olStyle;
+  }
 
   var defaultStyles = [defaultPointStyle];
+
+  /**
+   * Convert symbolizers together with the feature to OL style objects and append them to the styles array.
+   * @example appendStyle(styles, point[j], feature, getPointStyle);
+   * @param {Array<ol/style>} styles Array of OL styles.
+   * @param {object|Array<object>} symbolizers Feature symbolizer object, or array of feature symbolizers.
+   * @param {ol/feature} feature OpenLayers feature.
+   * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
+   */
+  function appendStyle(styles, symbolizers, feature, styleFunction) {
+    if (Array.isArray(symbolizers)) {
+      for (var k = 0; k < symbolizers.length; k += 1) {
+        styles.push(styleFunction(symbolizers[k], feature));
+      }
+    } else {
+      styles.push(styleFunction(symbolizers, feature));
+    }
+  }
 
   /**
    * Create openlayers style
@@ -1395,46 +1804,52 @@
    * @return ol.style.Style or array of it
    */
   function OlStyler(GeometryStyles, feature) {
-    var geometry = feature.getGeometry
-      ? feature.getGeometry()
-      : feature.geometry;
-    var type = geometry.getType ? geometry.getType() : geometry.type;
     var polygon = GeometryStyles.polygon;
     var line = GeometryStyles.line;
     var point = GeometryStyles.point;
     var text = GeometryStyles.text;
+
+    var geometry = feature.getGeometry
+      ? feature.getGeometry()
+      : feature.geometry;
+    var geometryType = geometry.getType ? geometry.getType() : geometry.type;
+
     var styles = [];
-    switch (type) {
+    switch (geometryType) {
+      case 'Point':
+      case 'MultiPoint':
+        for (var j = 0; j < point.length; j += 1) {
+          appendStyle(styles, point[j], feature, getPointStyle);
+        }
+        for (var j$1 = 0; j$1 < text.length; j$1 += 1) {
+          styles.push(getTextStyle(text[j$1], feature));
+        }
+        break;
+
+      case 'LineString':
+      case 'MultiLineString':
+        for (var j$2 = 0; j$2 < line.length; j$2 += 1) {
+          appendStyle(styles, line[j$2], feature, getLineStyle);
+        }
+        for (var j$3 = 0; j$3 < text.length; j$3 += 1) {
+          styles.push(getTextStyle(text[j$3], feature));
+        }
+        break;
+
       case 'Polygon':
       case 'MultiPolygon':
         for (var i = 0; i < polygon.length; i += 1) {
-          styles.push(cachedPolygonStyle(polygon[i]));
-        }
-        for (var j = 0; j < text.length; j += 1) {
-          styles.push(textStyle(text[j], feature, 'polygon'));
-        }
-        break;
-      case 'LineString':
-      case 'MultiLineString':
-        for (var j$1 = 0; j$1 < line.length; j$1 += 1) {
-          styles.push(cachedLineStyle(line[j$1]));
-        }
-        for (var j$2 = 0; j$2 < text.length; j$2 += 1) {
-          styles.push(textStyle(text[j$2], feature, 'line'));
-        }
-        break;
-      case 'Point':
-      case 'MultiPoint':
-        for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
-          styles.push(cachedPointStyle(point[j$3]));
+          appendStyle(styles, polygon[i], feature, getPolygonStyle);
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          styles.push(textStyle(text[j$4], feature, 'point'));
+          styles.push(getTextStyle(text[j$4], feature));
         }
         break;
+
       default:
         styles = defaultStyles;
     }
+
     return styles;
   }
 
@@ -1457,73 +1872,6 @@
    */
   function getOlFeatureProperty(feature, propertyName) {
     return feature.get(propertyName);
-  }
-
-  /**
-   * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
-   * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
-   * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
-   * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
-   * @param {object} imageLoadState Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
-   * @param {Function} imageLoadedCallback Function to call when an image has loaded.
-   */
-  function processExternalGraphicSymbolizers(
-    rules,
-    featureTypeStyle,
-    imageLoadState,
-    imageLoadedCallback
-  ) {
-    // If a feature has an external graphic point or polygon symbolizer, the external image may
-    // * have never been requested before.
-    //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
-    //       When loading is complete, replace all symbolizers using that image inside the featureTypeStyle
-    //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
-    // * be loading.
-    //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
-    // * be loaded and therefore present in the image cache.
-    //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
-    // * be in error. Error is a kind of loaded, but with an error icon style.
-    //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
-    for (var k = 0; k < rules.length; k += 1) {
-      var rule = rules[k];
-
-      var symbolizer = (void 0);
-      var exgraphic = (void 0);
-
-      if (rule.pointsymbolizer
-          && rule.pointsymbolizer.graphic
-          && rule.pointsymbolizer.graphic.externalgraphic) {
-        symbolizer = rule.pointsymbolizer;
-        exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
-      } else if (rule.polygonsymbolizer
-          && rule.polygonsymbolizer.fill
-          && rule.polygonsymbolizer.fill.graphicfill
-          && rule.polygonsymbolizer.fill.graphicfill.graphic
-          && rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic) {
-        symbolizer = rule.polygonsymbolizer;
-        exgraphic = rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
-      } else {
-        continue;
-      }
-
-      var imageUrl = exgraphic.onlineresource;
-      if (!(imageUrl in imageLoadState)) {
-        // Start loading the image and set image load state on the symbolizer.
-        imageLoadState[imageUrl] = IMAGE_LOADING;
-        loadExternalGraphic(
-          imageUrl,
-          imageCache,
-          imageLoadState,
-          featureTypeStyle,
-          imageLoadedCallback
-        );
-      } else if (
-        // Change image load state on the symbolizer if it has changed in the meantime.
-        symbolizer.__loadingState !== imageLoadState[imageUrl]
-      ) {
-        updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
-      }
-    }
   }
 
   /**
@@ -1554,7 +1902,7 @@
     var imageLoadState = {};
 
     // Important: if image cache already has loaded images, mark these as loaded in imageLoadState!
-    Object.keys(imageCache).forEach(function (imageUrl) {
+    getCachedImageUrls().forEach(function (imageUrl) {
       imageLoadState[imageUrl] = IMAGE_LOADED;
     });
 
@@ -1600,8 +1948,6 @@
   exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;
-  exports.loadExternalGraphic = loadExternalGraphic;
-  exports.updateExternalGraphicRule = updateExternalGraphicRule;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 

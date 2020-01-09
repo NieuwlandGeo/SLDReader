@@ -77,6 +77,79 @@ function addPropWithTextContent(node, obj, prop, trimText = false) {
 }
 
 /**
+ * This function parses SLD XML nodes that can contain an SLD filter expression.
+ * If the SLD node contains only text elements, the result will be concatenated into a string.
+ * If the SLD node contains one or more non-literal nodes (for now, only PropertyName), the result
+ * will be an object with type:"expression" and an array of child nodes of which one or more have
+ * the type "propertyname".
+ *
+ * Functions and arithmetic operators (Add,Sub,Mul,Div) are not supported (yet).
+ * Note: for now, only these contents will be parsed:
+ * * Plain text nodes.
+ * * CDATA sections.
+ * * ogc:PropertyName elements (property name will be parsed as trimmed text).
+ * * ogc:Literal elements (contents will be parsed as trimmed text).
+ * See also:
+ * * http://schemas.opengis.net/filter/1.1.0/expr.xsd
+ * * https://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html#sld-filter-expression
+ * @private
+ * @param {Element} node XML Node.
+ * @param {object} obj Object to add XML node contents to.
+ * @param {string} prop Property name on obj that will hold the parsed node contents.
+ * @param {bool} [skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
+ */
+function addFilterExpressionProp(node, obj, prop, skipEmptyNodes = true) {
+  const childExpressions = [];
+
+  for (let k = 0; k < node.childNodes.length; k += 1) {
+    const childNode = node.childNodes[k];
+    const childExpression = {};
+    if (
+      childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
+      childNode.localName === 'PropertyName'
+    ) {
+      // Add ogc:PropertyName elements as type:propertyname.
+      childExpression.type = 'propertyname';
+      childExpression.value = childNode.textContent.trim();
+    } else if (childNode.nodeName === '#cdata-section') {
+      // Add CDATA section text content untrimmed.
+      childExpression.type = 'literal';
+      childExpression.value = childNode.textContent;
+    } else {
+      // Add ogc:Literal elements and plain text nodes as type:literal.
+      childExpression.type = 'literal';
+      childExpression.value = childNode.textContent.trim();
+    }
+
+    if (childExpression.type === 'literal' && skipEmptyNodes) {
+      if (childExpression.value.trim()) {
+        childExpressions.push(childExpression);
+      }
+    } else {
+      childExpressions.push(childExpression);
+    }
+  }
+
+  const property = prop.toLowerCase();
+
+  // If expression children are all literals, concatenate them into a string.
+  const allLiteral = childExpressions.every(
+    childExpression => childExpression.type === 'literal'
+  );
+
+  if (allLiteral) {
+    obj[property] = childExpressions
+      .map(expression => expression.value)
+      .join('');
+  } else {
+    obj[property] = {
+      type: 'expression',
+      children: childExpressions,
+    };
+  }
+}
+
+/**
  * recieves boolean of element with tagName
  * @private
  * @param  {Element} element [description]
@@ -84,7 +157,10 @@ function addPropWithTextContent(node, obj, prop, trimText = false) {
  * @return {boolean}
  */
 function getBool(element, tagName) {
-  const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
+  const collection = element.getElementsByTagNameNS(
+    'http://www.opengis.net/sld',
+    tagName
+  );
   if (collection.length) {
     return Boolean(collection.item(0).textContent);
   }
@@ -150,8 +226,10 @@ const FilterParsers = {
   },
   PropertyName: addPropWithTextContent,
   Literal: addPropWithTextContent,
-  LowerBoundary: (element, obj, prop) => addPropWithTextContent(element, obj, prop, true),
-  UpperBoundary: (element, obj, prop) => addPropWithTextContent(element, obj, prop, true),
+  LowerBoundary: (element, obj, prop) =>
+    addPropWithTextContent(element, obj, prop, true),
+  UpperBoundary: (element, obj, prop) =>
+    addPropWithTextContent(element, obj, prop, true),
   FeatureId: (element, obj) => {
     obj.type = 'featureid';
     obj.fids = obj.fids || [];
@@ -170,7 +248,7 @@ const SymbParsers = {
   Graphic: addProp,
   ExternalGraphic: addProp,
   Mark: addProp,
-  Label: addTextProp,
+  Label: addFilterExpressionProp,
   Halo: addProp,
   Font: addProp,
   Radius: addPropWithTextContent,
@@ -181,11 +259,11 @@ const SymbParsers = {
   AnchorPoint: addProp,
   AnchorPointX: addPropWithTextContent,
   AnchorPointY: addPropWithTextContent,
-  Rotation: addPropWithTextContent,
+  Rotation: addFilterExpressionProp,
   Displacement: addProp,
   DisplacementX: addPropWithTextContent,
   DisplacementY: addPropWithTextContent,
-  Size: addPropWithTextContent,
+  Size: addFilterExpressionProp,
   WellKnownName: addPropWithTextContent,
   VendorOption: parameters,
   OnlineResource: (element, obj) => {
@@ -271,35 +349,6 @@ function readNodeArray(node, obj, prop) {
       obj[property].push(childObj);
     }
   }
-}
-
-/**
- * Generic parser for text props
- * It looks for nodeName #text and #cdata-section to get all text in labels
- * it sets result of readNode(node) to array on obj[prop]
- * @private
- * @param {Element} node the xml element to parse
- * @param {object} obj  the object to modify
- * @param {string} prop key on obj to hold empty object
- */
-function addTextProp(node, obj, prop) {
-  const property = prop.toLowerCase();
-  obj[property] = [];
-  Array.prototype.forEach.call(node.childNodes, child => {
-    if (child && child.nodeName === '#text') {
-      obj[property].push({
-        text: child.textContent.trim(),
-      });
-    } else if (child && child.nodeName === '#cdata-section') {
-      obj[property].push({
-        text: child.textContent,
-      });
-    } else if (child && parsers[child.localName]) {
-      const childObj = {};
-      parsers[child.localName](child, childObj, child.localName);
-      obj[property].push(childObj);
-    }
-  });
 }
 
 /**
