@@ -2,6 +2,7 @@
 // Constant expressions are returned as-is.
 
 /**
+ * @private
  * Evaluate the value of a sub-expression.
  * @param {object} childExpression SLD object expression child.
  * @param {ol/feature} feature OpenLayers feature instance.feature.
@@ -21,6 +22,7 @@ function evaluateChildExpression(childExpression, feature) {
 }
 
 /**
+ * @private
  * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
  * Constant expressions are returned as-is.
  * @param {object|string} expression SLD object expression.

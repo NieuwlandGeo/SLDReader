@@ -1,10 +1,10 @@
 
 /**
+ * @private
  * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
  * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
  * Uses a WeakMap internally.
  * Note: This only works for constant symbolizers.
- * @private
  * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
  * @returns {Function} The memoized function of the style conversion function.
  */
@@ -24,6 +24,8 @@ export function memoizeStyleFunction(styleFunction) {
 }
 
 /**
+ * @private
+ * Convert a hex color (like #AABBCC) to an rgba-string.
  * @param  {string} hex   eg #AA00FF
  * @param  {Number} alpha eg 0.5
  * @return {string}       rgba(0,0,0,0)

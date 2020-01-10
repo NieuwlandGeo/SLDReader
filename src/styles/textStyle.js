@@ -3,9 +3,9 @@ import { hexToRGB, memoizeStyleFunction } from './styleUtils';
 import evaluate from '../olEvaluator';
 
 /**
+ * @private
  * Get the static OL style instance for a text symbolizer.
  * The text and placement properties will be set on the style object at runtime.
- * @private
  * @param {object} textsymbolizer SLD text symbolizer object.
  * @return {object} openlayers style
  */
@@ -95,6 +95,13 @@ function textStyle(textsymbolizer) {
 
 const cachedTextStyle = memoizeStyleFunction(textStyle);
 
+/**
+ * @private
+ * Get an OL text style instance for a feature according to a symbolizer.
+ * @param {object} symbolizer SLD symbolizer object.
+ * @param {ol/Feature} feature OpenLayers Feature.
+ * @returns {ol/Style} OpenLayers style instance.
+ */
 function getTextStyle(symbolizer, feature) {
   const olStyle = cachedTextStyle(symbolizer);
   const olText = olStyle.getText();

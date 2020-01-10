@@ -14,6 +14,7 @@ import getTextStyle from './styles/textStyle';
 const defaultStyles = [defaultPointStyle];
 
 /**
+ * @private
  * Convert symbolizers together with the feature to OL style objects and append them to the styles array.
  * @example appendStyle(styles, point[j], feature, getPointStyle);
  * @param {Array<ol/style>} styles Array of OL styles.

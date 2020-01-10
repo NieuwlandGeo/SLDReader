@@ -14,6 +14,7 @@ import getWellKnownSymbol from './wellknown';
 import evaluate from '../olEvaluator';
 
 /**
+ * @private
  * Get OL Fill instance for SLD mark object.
  * @param {object} mark SLD mark object.
  */
@@ -26,6 +27,7 @@ function getMarkFill(mark) {
 }
 
 /**
+ * @private
  * Get OL Stroke instance for SLD mark object.
  * @param {object} mark SLD mark object.
  */
@@ -116,6 +118,13 @@ function pointStyle(pointsymbolizer) {
 
 const cachedPointStyle = memoizeStyleFunction(pointStyle);
 
+/**
+ * @private
+ * Get an OL point style instance for a feature according to a symbolizer.
+ * @param {object} symbolizer SLD symbolizer object.
+ * @param {ol/Feature} feature OpenLayers Feature.
+ * @returns {ol/Style} OpenLayers style instance.
+ */
 function getPointStyle(symbolizer, feature) {
   const olStyle = cachedPointStyle(symbolizer);
   const olImage = olStyle.getImage();

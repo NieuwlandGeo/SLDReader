@@ -25,6 +25,7 @@ export function getCachedImageUrls() {
 }
 
 /**
+ * @private
  * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
  * the external graphic is matching the image url.
  * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
@@ -69,6 +70,7 @@ export function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
 }
 
 /**
+ * @private
  * Go through all rules with an external graphic matching the image url
  * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
  * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
@@ -93,6 +95,7 @@ function updateExternalGraphicRules(
 }
 
 /**
+ * @private
  * Load and cache an image that's used as externalGraphic inside one or more symbolizers inside a feature type style object.
  * When the image is loaded, it's put into the cache, the __loadingStaet inside the featureTypeStyle symbolizers are updated,
  * and the imageLoadedCallback is called with the loaded image url.
@@ -137,6 +140,7 @@ export function loadExternalGraphic(
 }
 
 /**
+ * @private
  * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
  * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
  * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
@@ -208,6 +212,7 @@ export function processExternalGraphicSymbolizers(
 }
 
 /**
+ * @private
  * Create an OL Icon style for an external graphic.
  * The Graphic must be already loaded and present in the global imageCache.
  * @param {string} imageUrl Url of the external graphic.

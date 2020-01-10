@@ -1,6 +1,7 @@
 import { Stroke, Circle, RegularShape } from 'ol/style';
 
 /**
+ * @private
  * Create an OL point style corresponding to a well known symbol identifier.
  * @param {string} wellKnownName SLD Well Known Name for symbolizer.
  * Can be 'circle', 'square', 'triangle', 'star', 'cross', 'x', 'hexagon', 'octagon'.

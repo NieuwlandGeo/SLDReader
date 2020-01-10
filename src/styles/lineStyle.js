@@ -28,7 +28,14 @@ function lineStyle(linesymbolizer) {
 }
 
 const cachedLineStyle = memoizeStyleFunction(lineStyle);
-function getLineStyle(symbolizer /* , feature, options = {} */) {
+
+/**
+ * @private
+ * Get an OL line style instance for a feature according to a symbolizer.
+ * @param {object} symbolizer SLD symbolizer object.
+ * @returns {ol/Style} OpenLayers style instance.
+ */
+function getLineStyle(symbolizer) {
   return cachedLineStyle(symbolizer);
 }
 

@@ -887,6 +887,7 @@
   }
 
   /**
+   * @private
    * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
    * the external graphic is matching the image url.
    * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
@@ -934,6 +935,7 @@
   }
 
   /**
+   * @private
    * Go through all rules with an external graphic matching the image url
    * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
    * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
@@ -958,6 +960,7 @@
   }
 
   /**
+   * @private
    * Load and cache an image that's used as externalGraphic inside one or more symbolizers inside a feature type style object.
    * When the image is loaded, it's put into the cache, the __loadingStaet inside the featureTypeStyle symbolizers are updated,
    * and the imageLoadedCallback is called with the loaded image url.
@@ -1002,6 +1005,7 @@
   }
 
   /**
+   * @private
    * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
    * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
    * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
@@ -1073,6 +1077,7 @@
   }
 
   /**
+   * @private
    * Create an OL Icon style for an external graphic.
    * The Graphic must be already loaded and present in the global imageCache.
    * @param {string} imageUrl Url of the external graphic.
@@ -1157,11 +1162,11 @@
   });
 
   /**
+   * @private
    * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
    * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
    * Uses a WeakMap internally.
    * Note: This only works for constant symbolizers.
-   * @private
    * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
    * @returns {Function} The memoized function of the style conversion function.
    */
@@ -1181,6 +1186,8 @@
   }
 
   /**
+   * @private
+   * Convert a hex color (like #AABBCC) to an rgba-string.
    * @param  {string} hex   eg #AA00FF
    * @param  {Number} alpha eg 0.5
    * @return {string}       rgba(0,0,0,0)
@@ -1196,6 +1203,7 @@
   }
 
   /**
+   * @private
    * Create an OL point style corresponding to a well known symbol identifier.
    * @param {string} wellKnownName SLD Well Known Name for symbolizer.
    * Can be 'circle', 'square', 'triangle', 'star', 'cross', 'x', 'hexagon', 'octagon'.
@@ -1325,6 +1333,7 @@
   // Constant expressions are returned as-is.
 
   /**
+   * @private
    * Evaluate the value of a sub-expression.
    * @param {object} childExpression SLD object expression child.
    * @param {ol/feature} feature OpenLayers feature instance.feature.
@@ -1344,6 +1353,7 @@
   }
 
   /**
+   * @private
    * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
    * Constant expressions are returned as-is.
    * @param {object|string} expression SLD object expression.
@@ -1372,6 +1382,7 @@
   /* eslint-disable no-underscore-dangle */
 
   /**
+   * @private
    * Get OL Fill instance for SLD mark object.
    * @param {object} mark SLD mark object.
    */
@@ -1384,6 +1395,7 @@
   }
 
   /**
+   * @private
    * Get OL Stroke instance for SLD mark object.
    * @param {object} mark SLD mark object.
    */
@@ -1477,6 +1489,13 @@
 
   var cachedPointStyle = memoizeStyleFunction(pointStyle);
 
+  /**
+   * @private
+   * Get an OL point style instance for a feature according to a symbolizer.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature} feature OpenLayers Feature.
+   * @returns {ol/Style} OpenLayers style instance.
+   */
   function getPointStyle(symbolizer, feature) {
     var olStyle = cachedPointStyle(symbolizer);
     var olImage = olStyle.getImage();
@@ -1552,7 +1571,14 @@
   }
 
   var cachedLineStyle = memoizeStyleFunction(lineStyle);
-  function getLineStyle(symbolizer /* , feature, options = {} */) {
+
+  /**
+   * @private
+   * Get an OL line style instance for a feature according to a symbolizer.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @returns {ol/Style} OpenLayers style instance.
+   */
+  function getLineStyle(symbolizer) {
     return cachedLineStyle(symbolizer);
   }
 
@@ -1645,14 +1671,21 @@
   }
 
   var cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
-  function getPolygonStyle(symbolizer /* , feature, options = {} */) {
+
+  /**
+   * @private
+   * Get an OL line style instance for a feature according to a symbolizer.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @returns {ol/Style} OpenLayers style instance.
+   */
+  function getPolygonStyle(symbolizer) {
     return cachedPolygonStyle(symbolizer);
   }
 
   /**
+   * @private
    * Get the static OL style instance for a text symbolizer.
    * The text and placement properties will be set on the style object at runtime.
-   * @private
    * @param {object} textsymbolizer SLD text symbolizer object.
    * @return {object} openlayers style
    */
@@ -1741,6 +1774,13 @@
 
   var cachedTextStyle = memoizeStyleFunction(textStyle);
 
+  /**
+   * @private
+   * Get an OL text style instance for a feature according to a symbolizer.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature} feature OpenLayers Feature.
+   * @returns {ol/Style} OpenLayers style instance.
+   */
   function getTextStyle(symbolizer, feature) {
     var olStyle = cachedTextStyle(symbolizer);
     var olText = olStyle.getText();
@@ -1778,6 +1818,7 @@
   var defaultStyles = [defaultPointStyle];
 
   /**
+   * @private
    * Convert symbolizers together with the feature to OL style objects and append them to the styles array.
    * @example appendStyle(styles, point[j], feature, getPointStyle);
    * @param {Array<ol/style>} styles Array of OL styles.
