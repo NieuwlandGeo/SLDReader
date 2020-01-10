@@ -9,7 +9,9 @@
       "coordinates": [509600, 6575000]
     },
     "properties": {
-      "countrycode": "be"
+      "countrycode": "be",
+      "size": 24,
+      "angle": -15
     }
   },{
     "type": "Feature",
@@ -19,7 +21,9 @@
       "coordinates": [679600, 6400000]
     },
     "properties": {
-      "countrycode": "lu"
+      "countrycode": "lu",
+      "size": 18,
+      "angle": 0
     }
   },{
     "type": "Feature",
@@ -29,7 +33,9 @@
       "coordinates": [616000, 6800000]
     },
     "properties": {
-      "countrycode": "nl"
+      "countrycode": "nl",
+      "size": 36,
+      "angle": 30
     }
   }]
 }
