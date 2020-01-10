@@ -14,7 +14,6 @@
     "lint": "eslint src/ test/",
     "lint:win": "eslint src/ test/ --rule \"linebreak-style: off\"",
     "postversion": "git push --tags && npm publish && git rm -r dist && git commit -m 'remove dist' && git push",
-    "preversion": "npm test",
     "start": "npm-run-all -p start:* docker",
     "start:watch": "rollup -c -w --file docs/assets/sldreader.js",
     "start:sync": "browser-sync start --config bs-config.js",
