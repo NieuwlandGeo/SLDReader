@@ -1,7 +1,6 @@
 title: "SLDReader"
 remote_theme: pmarsceill/just-the-docs
 search_enabled: false
-theme: "just-the-docs"
 sass:
   style: compressed
 aux_links:
