@@ -11,7 +11,7 @@ import { memoizeStyleFunction } from './styleUtils';
 import { imageLoadingPointStyle, imageErrorPointStyle } from './static';
 import { createCachedImageStyle } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
-import evaluate from '../olEvaluator';
+import evaluate, { expressionOrDefault } from '../olEvaluator';
 
 /**
  * @private
@@ -55,20 +55,10 @@ function pointStyle(pointsymbolizer) {
   const { graphic: style } = pointsymbolizer;
 
   // If the point size is a dynamic expression, use the default point size and update in-place later.
-  let pointSizeValue;
-  if (style.size && style.size.type === 'expression') {
-    pointSizeValue = DEFAULT_POINT_SIZE;
-  } else {
-    pointSizeValue = style.size || DEFAULT_POINT_SIZE;
-  }
+  const pointSizeValue = expressionOrDefault(style.size, DEFAULT_POINT_SIZE);
 
   // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
-  let rotationDegrees;
-  if (style.rotation && style.rotation.type === 'expression') {
-    rotationDegrees = 0.0;
-  } else {
-    rotationDegrees = style.rotation || 0.0;
-  }
+  const rotationDegrees = expressionOrDefault(style.rotation, 0.0);
 
   if (style.externalgraphic && style.externalgraphic.onlineresource) {
     // Check symbolizer metadata to see if the image has already been loaded.

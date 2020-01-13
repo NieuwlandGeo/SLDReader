@@ -1,6 +1,6 @@
 import { Style, Fill, Stroke, Text } from 'ol/style';
 import { hexToRGB, memoizeStyleFunction } from './styleUtils';
-import evaluate from '../olEvaluator';
+import evaluate, { expressionOrDefault } from '../olEvaluator';
 
 /**
  * @private
@@ -16,12 +16,7 @@ function textStyle(textsymbolizer) {
 
   // If the label is dynamic, set text to empty string.
   // In that case, text will be set at runtime.
-  let labelText;
-  if (textsymbolizer.label.type === 'expression') {
-    labelText = '';
-  } else {
-    labelText = textsymbolizer.label;
-  }
+  const labelText = expressionOrDefault(textsymbolizer.label, '');
 
   const fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
   const halo =
@@ -50,13 +45,7 @@ function textStyle(textsymbolizer) {
       : {};
 
   // If rotation is dynamic, default to 0. Rotation will be set at runtime.
-  const pointPlacementRotation = pointplacement.rotation || 0.0;
-  let labelRotationDegrees;
-  if (pointPlacementRotation.type === 'expression') {
-    labelRotationDegrees = 0.0;
-  } else {
-    labelRotationDegrees = pointPlacementRotation || 0.0;
-  }
+  const labelRotationDegrees = expressionOrDefault(pointplacement.rotation, 0.0);
 
   const displacement =
     pointplacement && pointplacement.displacement
