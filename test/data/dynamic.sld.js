@@ -46,6 +46,9 @@ export const dynamicSld = `<?xml version="1.0" encoding="UTF-8"?>
             </sld:Halo>
             <sld:LabelPlacement>
               <sld:PointPlacement>
+                <sld:Rotation>
+                  <ogc:PropertyName>angle</ogc:PropertyName>
+                </sld:Rotation>
                 <sld:AnchorPoint>
                   <sld:AnchorPointX>0</sld:AnchorPointX>
                   <sld:AnchorPointY>0.5</sld:AnchorPointY>

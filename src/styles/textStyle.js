@@ -15,7 +15,7 @@ function textStyle(textsymbolizer) {
   }
 
   // If the label is dynamic, set text to empty string.
-  // In that case, text will be set at run time.
+  // In that case, text will be set at runtime.
   let labelText;
   if (textsymbolizer.label.type === 'expression') {
     labelText = '';
@@ -48,6 +48,16 @@ function textStyle(textsymbolizer) {
     textsymbolizer.labelplacement.pointplacement
       ? textsymbolizer.labelplacement.pointplacement
       : {};
+
+  // If rotation is dynamic, default to 0. Rotation will be set at runtime.
+  const pointPlacementRotation = pointplacement.rotation || 0.0;
+  let labelRotationDegrees;
+  if (pointPlacementRotation.type === 'expression') {
+    labelRotationDegrees = 0.0;
+  } else {
+    labelRotationDegrees = pointPlacementRotation || 0.0;
+  }
+
   const displacement =
     pointplacement && pointplacement.displacement
       ? pointplacement.displacement
@@ -55,15 +65,13 @@ function textStyle(textsymbolizer) {
   const offsetX = displacement.displacementx ? displacement.displacementx : 0;
   const offsetY = displacement.displacementy ? displacement.displacementy : 0;
 
-  const rotation = pointplacement.rotation ? pointplacement.rotation : 0;
-
   // Halo styling
   const textStyleOptions = {
     text: labelText,
     font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
     offsetX: Number(offsetX),
     offsetY: Number(offsetY),
-    rotation,
+    rotation: (Math.PI * labelRotationDegrees) / 180.0,
     textAlign: 'center',
     textBaseline: 'middle',
     fill: new Fill({
@@ -110,12 +118,21 @@ function getTextStyle(symbolizer, feature) {
   }
 
   // Read text from feature and set it on the text style instance.
-  const { label } = symbolizer;
+  const { label, labelplacement } = symbolizer;
 
   // Set text only if the label expression is dynamic.
   if (label.type === 'expression') {
     const labelText = evaluate(label, feature);
     olText.setText(labelText);
+  }
+
+  // Set rotation if expression is dynamic.
+  const pointPlacementRotation =
+    (labelplacement.pointplacement && labelplacement.pointplacement.rotation) ||
+    0.0;
+  if (pointPlacementRotation.type === 'expression') {
+    const labelRotationDegrees = evaluate(pointPlacementRotation, feature);
+    olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
   }
 
   // Set placement dynamically.
