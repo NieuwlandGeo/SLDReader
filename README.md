@@ -32,7 +32,7 @@ npm start
 
 [Api docs](https://nieuwlandgeo.github.io/SLDReader/api.html)
 
-## Restricions on supported SLD Features
+## Restrictions on supported SLD Features
 The SLDReader library can read both SLD v1.0 and SLD v1.1 documents, but not every part of the SLD standard is (or can be) implemented by the SLDReader and OpenLayers style converter (yet).
 
 ### Symbolizers
