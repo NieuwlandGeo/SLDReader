@@ -266,12 +266,21 @@ describe('Dynamic style properties', () => {
 
   it('Reads rotation from feature', () => {
     const style = styleFunction(pointFeature)[0];
-    expect(style.getImage().getRotation()).to.equal((Math.PI * 42.0) / 180.0); // OL rotation is in radians.
+    // OL rotation is in radians.
+    expect(style.getImage().getRotation()).to.equal((Math.PI * 42.0) / 180.0);
   });
 
   it('Reads text for label from feature', () => {
     const textStyle = styleFunction(pointFeature)[1];
     expect(textStyle.getText().getText()).to.equal('This is a test');
+  });
+
+  it('Reads label rotation from feature', () => {
+    const textStyle = styleFunction(pointFeature)[1];
+    // OL rotation is in radians.
+    expect(textStyle.getText().getRotation()).to.equal(
+      (Math.PI * 42.0) / 180.0
+    );
   });
 
   it('Sets label placement according to feature geometry type', () => {

@@ -47,3 +47,24 @@ export default function evaluate(expression, feature) {
   }
   return childValues.join('');
 }
+
+/**
+ * Utility function for evaluating dynamic expressions without a feature.
+ * If the expression is static, the expression value will be returned.
+ * If the expression is dynamic, defaultValue will be returned.
+ * If the expression is falsy, defaultValue will be returned.
+ * @param {object|string} expression SLD object expression (or string).
+ * @param {any} defaultValue Default value.
+ * @returns {any} The value of a static expression or default value if the expression is dynamic.
+ */
+export function expressionOrDefault(expression, defaultValue) {
+  if (!expression) {
+    return defaultValue;
+  }
+
+  if (expression.type === 'expression') {
+    return defaultValue;
+  }
+
+  return expression;
+}

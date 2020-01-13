@@ -1,6 +1,6 @@
 import { Style, Fill, Stroke, Text } from 'ol/style';
 import { hexToRGB, memoizeStyleFunction } from './styleUtils';
-import evaluate from '../olEvaluator';
+import evaluate, { expressionOrDefault } from '../olEvaluator';
 
 /**
  * @private
@@ -15,13 +15,8 @@ function textStyle(textsymbolizer) {
   }
 
   // If the label is dynamic, set text to empty string.
-  // In that case, text will be set at run time.
-  let labelText;
-  if (textsymbolizer.label.type === 'expression') {
-    labelText = '';
-  } else {
-    labelText = textsymbolizer.label;
-  }
+  // In that case, text will be set at runtime.
+  const labelText = expressionOrDefault(textsymbolizer.label, '');
 
   const fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
   const halo =
@@ -48,6 +43,10 @@ function textStyle(textsymbolizer) {
     textsymbolizer.labelplacement.pointplacement
       ? textsymbolizer.labelplacement.pointplacement
       : {};
+
+  // If rotation is dynamic, default to 0. Rotation will be set at runtime.
+  const labelRotationDegrees = expressionOrDefault(pointplacement.rotation, 0.0);
+
   const displacement =
     pointplacement && pointplacement.displacement
       ? pointplacement.displacement
@@ -55,15 +54,13 @@ function textStyle(textsymbolizer) {
   const offsetX = displacement.displacementx ? displacement.displacementx : 0;
   const offsetY = displacement.displacementy ? displacement.displacementy : 0;
 
-  const rotation = pointplacement.rotation ? pointplacement.rotation : 0;
-
-  // Halo styling
+  // Assemble text style options.
   const textStyleOptions = {
     text: labelText,
     font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
     offsetX: Number(offsetX),
     offsetY: Number(offsetY),
-    rotation,
+    rotation: (Math.PI * labelRotationDegrees) / 180.0,
     textAlign: 'center',
     textBaseline: 'middle',
     fill: new Fill({
@@ -74,6 +71,7 @@ function textStyle(textsymbolizer) {
     }),
   };
 
+  // Convert SLD halo to text symbol stroke.
   if (textsymbolizer.halo) {
     textStyleOptions.stroke = new Stroke({
       color:
@@ -110,7 +108,7 @@ function getTextStyle(symbolizer, feature) {
   }
 
   // Read text from feature and set it on the text style instance.
-  const { label } = symbolizer;
+  const { label, labelplacement } = symbolizer;
 
   // Set text only if the label expression is dynamic.
   if (label.type === 'expression') {
@@ -118,7 +116,16 @@ function getTextStyle(symbolizer, feature) {
     olText.setText(labelText);
   }
 
-  // Set placement dynamically.
+  // Set rotation if expression is dynamic.
+  const pointPlacementRotation =
+    (labelplacement.pointplacement && labelplacement.pointplacement.rotation) ||
+    0.0;
+  if (pointPlacementRotation.type === 'expression') {
+    const labelRotationDegrees = evaluate(pointPlacementRotation, feature);
+    olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+  }
+
+  // Set line or point placement according to geometry type.
   const geometry = feature.getGeometry
     ? feature.getGeometry()
     : feature.geometry;

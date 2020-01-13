@@ -57,9 +57,13 @@ GraphicStroke, GraphicFill, and PerpendicularOffset are not supported.
 Polygons with static fill and stroke style parameters are supported. See LineSymbolizer above for supported stroke css-parameters. GraphicFill is also supported.
 
 #### TextSymbolizer
-Dynamic Labels (with PropertyName elements), Font and Halo are supported. No vendor-specific options are supported. LabelPlacement or PointPlacement are supported. Only static values for label rotation are supported. Graphic elements to display behind the label text are not supported.
-For PointPlacement, AnchorPoint is not supported.
-For LinePlacement, PerpendicularOffset is not supported.
+Dynamic Labels (with PropertyName elements), Font and Halo are supported. No vendor-specific options are supported. LabelPlacement or PointPlacement are supported. Graphic elements to display behind the label text are not supported.
+* For PointPlacement, Displacement is supported<sup>1</sup>.
+* For PointPlacement, Rotation is supported<sup>1</sup>. PropertyName as rotation value is supported.
+* For PointPlacement, AnchorPoint is not supported.
+* For LinePlacement, PerpendicularOffset is not supported.
+
+[1]: according to the SLD-spec, label rotation takes place before displacement, but OpenLayers applies displacement before rotation. Beware when combining rotation and displacement inside a single text symbolizer.
 
 ### Dynamic parameter values
 According to the SLD spec, most values can be mixed type (a combination ofplain text and [Filter expressions](https://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html#sld-filter-expression)). This means that most values can depend on a feature's properties. The SLDReader only supports dynamic values with PropertyName elements in these cases:

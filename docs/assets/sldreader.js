@@ -1379,6 +1379,27 @@
     return childValues.join('');
   }
 
+  /**
+   * Utility function for evaluating dynamic expressions without a feature.
+   * If the expression is static, the expression value will be returned.
+   * If the expression is dynamic, defaultValue will be returned.
+   * If the expression is falsy, defaultValue will be returned.
+   * @param {object|string} expression SLD object expression (or string).
+   * @param {any} defaultValue Default value.
+   * @returns {any} The value of a static expression or default value if the expression is dynamic.
+   */
+  function expressionOrDefault(expression, defaultValue) {
+    if (!expression) {
+      return defaultValue;
+    }
+
+    if (expression.type === 'expression') {
+      return defaultValue;
+    }
+
+    return expression;
+  }
+
   /* eslint-disable no-underscore-dangle */
 
   /**
@@ -1425,20 +1446,10 @@
     var style$1 = pointsymbolizer.graphic;
 
     // If the point size is a dynamic expression, use the default point size and update in-place later.
-    var pointSizeValue;
-    if (style$1.size && style$1.size.type === 'expression') {
-      pointSizeValue = DEFAULT_POINT_SIZE;
-    } else {
-      pointSizeValue = style$1.size || DEFAULT_POINT_SIZE;
-    }
+    var pointSizeValue = expressionOrDefault(style$1.size, DEFAULT_POINT_SIZE);
 
     // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
-    var rotationDegrees;
-    if (style$1.rotation && style$1.rotation.type === 'expression') {
-      rotationDegrees = 0.0;
-    } else {
-      rotationDegrees = style$1.rotation || 0.0;
-    }
+    var rotationDegrees = expressionOrDefault(style$1.rotation, 0.0);
 
     if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
       // Check symbolizer metadata to see if the image has already been loaded.
@@ -1695,13 +1706,8 @@
     }
 
     // If the label is dynamic, set text to empty string.
-    // In that case, text will be set at run time.
-    var labelText;
-    if (textsymbolizer.label.type === 'expression') {
-      labelText = '';
-    } else {
-      labelText = textsymbolizer.label;
-    }
+    // In that case, text will be set at runtime.
+    var labelText = expressionOrDefault(textsymbolizer.label, '');
 
     var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
     var halo =
@@ -1727,6 +1733,10 @@
       textsymbolizer.labelplacement.pointplacement
         ? textsymbolizer.labelplacement.pointplacement
         : {};
+
+    // If rotation is dynamic, default to 0. Rotation will be set at runtime.
+    var labelRotationDegrees = expressionOrDefault(pointplacement.rotation, 0.0);
+
     var displacement =
       pointplacement && pointplacement.displacement
         ? pointplacement.displacement
@@ -1734,15 +1744,13 @@
     var offsetX = displacement.displacementx ? displacement.displacementx : 0;
     var offsetY = displacement.displacementy ? displacement.displacementy : 0;
 
-    var rotation = pointplacement.rotation ? pointplacement.rotation : 0;
-
-    // Halo styling
+    // Assemble text style options.
     var textStyleOptions = {
       text: labelText,
       font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
       offsetX: Number(offsetX),
       offsetY: Number(offsetY),
-      rotation: rotation,
+      rotation: (Math.PI * labelRotationDegrees) / 180.0,
       textAlign: 'center',
       textBaseline: 'middle',
       fill: new style.Fill({
@@ -1753,6 +1761,7 @@
       }),
     };
 
+    // Convert SLD halo to text symbol stroke.
     if (textsymbolizer.halo) {
       textStyleOptions.stroke = new style.Stroke({
         color:
@@ -1790,6 +1799,7 @@
 
     // Read text from feature and set it on the text style instance.
     var label = symbolizer.label;
+    var labelplacement = symbolizer.labelplacement;
 
     // Set text only if the label expression is dynamic.
     if (label.type === 'expression') {
@@ -1797,7 +1807,16 @@
       olText.setText(labelText);
     }
 
-    // Set placement dynamically.
+    // Set rotation if expression is dynamic.
+    var pointPlacementRotation =
+      (labelplacement.pointplacement && labelplacement.pointplacement.rotation) ||
+      0.0;
+    if (pointPlacementRotation.type === 'expression') {
+      var labelRotationDegrees = evaluate(pointPlacementRotation, feature);
+      olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+    }
+
+    // Set line or point placement according to geometry type.
     var geometry = feature.getGeometry
       ? feature.getGeometry()
       : feature.geometry;
