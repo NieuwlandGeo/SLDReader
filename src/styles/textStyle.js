@@ -54,7 +54,7 @@ function textStyle(textsymbolizer) {
   const offsetX = displacement.displacementx ? displacement.displacementx : 0;
   const offsetY = displacement.displacementy ? displacement.displacementy : 0;
 
-  // Halo styling
+  // Assemble text style options.
   const textStyleOptions = {
     text: labelText,
     font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
@@ -71,6 +71,7 @@ function textStyle(textsymbolizer) {
     }),
   };
 
+  // Convert SLD halo to text symbol stroke.
   if (textsymbolizer.halo) {
     textStyleOptions.stroke = new Stroke({
       color:
@@ -124,7 +125,7 @@ function getTextStyle(symbolizer, feature) {
     olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
   }
 
-  // Set placement dynamically.
+  // Set line or point placement according to geometry type.
   const geometry = feature.getGeometry
     ? feature.getGeometry()
     : feature.geometry;
