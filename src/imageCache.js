@@ -43,9 +43,10 @@ export function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
       externalgraphic.onlineresource === imageUrl &&
       rule.pointsymbolizer.__loadingState !== imageLoadState
     ) {
-      rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
+      rule.pointsymbolizer = {
+        ...rule.pointsymbolizer,
         __loadingState: imageLoadState,
-      });
+      };
     }
   }
   // for polygonsymbolizer
@@ -62,9 +63,10 @@ export function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
       externalgraphic.onlineresource === imageUrl &&
       rule.polygonsymbolizer.__loadingState !== imageLoadState
     ) {
-      rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
+      rule.polygonsymbolizer = {
+        ...rule.polygonsymbolizer,
         __loadingState: imageLoadState,
-      });
+      };
     }
   }
 }
