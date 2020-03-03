@@ -13,5 +13,5 @@ export default {
       'ol/style': 'ol.style',
     },
   },
-  plugins: [buble(), resolve()],
+  plugins: [buble({ objectAssign: true }), resolve()],
 };

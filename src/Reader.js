@@ -278,43 +278,40 @@ const SymbParsers = {
  * @private
  * @type {Object}
  */
-const parsers = Object.assign(
-  {
-    NamedLayer: (element, obj) => {
-      addPropArray(element, obj, 'layers');
-    },
-    UserLayer: (element, obj) => {
-      addPropArray(element, obj, 'layers');
-    },
-    UserStyle: (element, obj) => {
-      obj.styles = obj.styles || [];
-      const style = {
-        default: getBool(element, 'IsDefault'),
-        featuretypestyles: [],
-      };
-      readNode(element, style);
-      obj.styles.push(style);
-    },
-    FeatureTypeStyle: (element, obj) => {
-      const featuretypestyle = {
-        rules: [],
-      };
-      readNode(element, featuretypestyle);
-      obj.featuretypestyles.push(featuretypestyle);
-    },
-    Rule: (element, obj) => {
-      const rule = {};
-      readNode(element, rule);
-      obj.rules.push(rule);
-    },
-
-    Name: addPropWithTextContent,
-    MaxScaleDenominator: addPropWithTextContent,
-    MinScaleDenominator: addPropWithTextContent,
+const parsers = {
+  NamedLayer: (element, obj) => {
+    addPropArray(element, obj, 'layers');
   },
-  FilterParsers,
-  SymbParsers
-);
+  UserLayer: (element, obj) => {
+    addPropArray(element, obj, 'layers');
+  },
+  UserStyle: (element, obj) => {
+    obj.styles = obj.styles || [];
+    const style = {
+      default: getBool(element, 'IsDefault'),
+      featuretypestyles: [],
+    };
+    readNode(element, style);
+    obj.styles.push(style);
+  },
+  FeatureTypeStyle: (element, obj) => {
+    const featuretypestyle = {
+      rules: [],
+    };
+    readNode(element, featuretypestyle);
+    obj.featuretypestyles.push(featuretypestyle);
+  },
+  Rule: (element, obj) => {
+    const rule = {};
+    readNode(element, rule);
+    obj.rules.push(rule);
+  },
+  Name: addPropWithTextContent,
+  MaxScaleDenominator: addPropWithTextContent,
+  MinScaleDenominator: addPropWithTextContent,
+  ...FilterParsers,
+  ...SymbParsers,
+};
 
 /**
  * walks over xml nodes

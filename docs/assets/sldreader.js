@@ -2,7 +2,7 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style')) :
   typeof define === 'function' && define.amd ? define(['exports', 'ol/style'], factory) :
   (global = global || self, factory(global.SLDReader = {}, global.ol.style));
-}(this, function (exports, style) { 'use strict';
+}(this, (function (exports, style) { 'use strict';
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -286,43 +286,38 @@
    * @private
    * @type {Object}
    */
-  var parsers = Object.assign(
-    {
-      NamedLayer: function (element, obj) {
-        addPropArray(element, obj, 'layers');
-      },
-      UserLayer: function (element, obj) {
-        addPropArray(element, obj, 'layers');
-      },
-      UserStyle: function (element, obj) {
-        obj.styles = obj.styles || [];
-        var style = {
-          default: getBool(element, 'IsDefault'),
-          featuretypestyles: [],
-        };
-        readNode(element, style);
-        obj.styles.push(style);
-      },
-      FeatureTypeStyle: function (element, obj) {
-        var featuretypestyle = {
-          rules: [],
-        };
-        readNode(element, featuretypestyle);
-        obj.featuretypestyles.push(featuretypestyle);
-      },
-      Rule: function (element, obj) {
-        var rule = {};
-        readNode(element, rule);
-        obj.rules.push(rule);
-      },
-
-      Name: addPropWithTextContent,
-      MaxScaleDenominator: addPropWithTextContent,
-      MinScaleDenominator: addPropWithTextContent,
+  var parsers = Object.assign({}, {NamedLayer: function (element, obj) {
+      addPropArray(element, obj, 'layers');
     },
+    UserLayer: function (element, obj) {
+      addPropArray(element, obj, 'layers');
+    },
+    UserStyle: function (element, obj) {
+      obj.styles = obj.styles || [];
+      var style = {
+        default: getBool(element, 'IsDefault'),
+        featuretypestyles: [],
+      };
+      readNode(element, style);
+      obj.styles.push(style);
+    },
+    FeatureTypeStyle: function (element, obj) {
+      var featuretypestyle = {
+        rules: [],
+      };
+      readNode(element, featuretypestyle);
+      obj.featuretypestyles.push(featuretypestyle);
+    },
+    Rule: function (element, obj) {
+      var rule = {};
+      readNode(element, rule);
+      obj.rules.push(rule);
+    },
+    Name: addPropWithTextContent,
+    MaxScaleDenominator: addPropWithTextContent,
+    MinScaleDenominator: addPropWithTextContent},
     FilterParsers,
-    SymbParsers
-  );
+    SymbParsers);
 
   /**
    * walks over xml nodes
@@ -906,9 +901,8 @@
         externalgraphic.onlineresource === imageUrl &&
         rule.pointsymbolizer.__loadingState !== imageLoadState
       ) {
-        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer, {
-          __loadingState: imageLoadState,
-        });
+        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer,
+          {__loadingState: imageLoadState});
       }
     }
     // for polygonsymbolizer
@@ -927,9 +921,8 @@
         externalgraphic$1.onlineresource === imageUrl &&
         rule.polygonsymbolizer.__loadingState !== imageLoadState
       ) {
-        rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer, {
-          __loadingState: imageLoadState,
-        });
+        rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer,
+          {__loadingState: imageLoadState});
       }
     }
   }
@@ -2011,4 +2004,4 @@
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));

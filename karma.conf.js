@@ -31,7 +31,7 @@ module.exports = function kc(config) {
     },
 
     rollupPreprocessor: {
-      plugins: [buble(), resolve()],
+      plugins: [buble({ objectAssign: true }), resolve()],
       output: {
         format: 'iife', // Helps prevent naming collisions.
         name: 'SLDReader', // Required for 'iife' format.

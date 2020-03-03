@@ -268,9 +268,9 @@ describe('filter rules', () => {
         literal: 'Kwik',
       };
 
-      const kwekFilter = Object.assign({}, kwikFilter, { literal: 'Kwek' });
+      const kwekFilter = { ...kwikFilter, literal: 'Kwek' };
 
-      const kwakFilter = Object.assign({}, kwikFilter, { literal: 'Kwak' });
+      const kwakFilter = { ...kwikFilter, literal: 'Kwak' };
 
       const duckling = { properties: { name: 'Kwak' } };
 
@@ -404,7 +404,8 @@ describe('Custom property extraction', () => {
     };
 
     const result = filterSelector(filter, myFeature, {
-      getProperty: (feature, propertyName) => feature.getAttributes()[propertyName],
+      getProperty: (feature, propertyName) =>
+        feature.getAttributes()[propertyName],
     });
 
     expect(result).to.be.false;
@@ -430,7 +431,8 @@ describe('Custom property extraction', () => {
     };
 
     const result = filterSelector(filter, myFeature, {
-      getProperty: (feature, propertyName) => feature.getAttributes()[propertyName],
+      getProperty: (feature, propertyName) =>
+        feature.getAttributes()[propertyName],
     });
 
     expect(result).to.be.true;
