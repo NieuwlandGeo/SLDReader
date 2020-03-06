@@ -1,6 +1,7 @@
 import { Style, Fill, Stroke, Text } from 'ol/style';
 import { hexToRGB, memoizeStyleFunction } from './styleUtils';
 import evaluate, { expressionOrDefault } from '../olEvaluator';
+import { emptyStyle } from './static';
 
 /**
  * @private
@@ -11,7 +12,7 @@ import evaluate, { expressionOrDefault } from '../olEvaluator';
  */
 function textStyle(textsymbolizer) {
   if (!(textsymbolizer && textsymbolizer.label)) {
-    return new Style({});
+    return emptyStyle;
   }
 
   // If the label is dynamic, set text to empty string.
@@ -45,7 +46,10 @@ function textStyle(textsymbolizer) {
       : {};
 
   // If rotation is dynamic, default to 0. Rotation will be set at runtime.
-  const labelRotationDegrees = expressionOrDefault(pointplacement.rotation, 0.0);
+  const labelRotationDegrees = expressionOrDefault(
+    pointplacement.rotation,
+    0.0
+  );
 
   const displacement =
     pointplacement && pointplacement.displacement
@@ -111,18 +115,21 @@ function getTextStyle(symbolizer, feature) {
   const { label, labelplacement } = symbolizer;
 
   // Set text only if the label expression is dynamic.
-  if (label.type === 'expression') {
+  if (label && label.type === 'expression') {
     const labelText = evaluate(label, feature);
     olText.setText(labelText);
   }
 
   // Set rotation if expression is dynamic.
-  const pointPlacementRotation =
-    (labelplacement.pointplacement && labelplacement.pointplacement.rotation) ||
-    0.0;
-  if (pointPlacementRotation.type === 'expression') {
-    const labelRotationDegrees = evaluate(pointPlacementRotation, feature);
-    olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+  if (labelplacement) {
+    const pointPlacementRotation =
+      (labelplacement.pointplacement &&
+        labelplacement.pointplacement.rotation) ||
+      0.0;
+    if (pointPlacementRotation.type === 'expression') {
+      const labelRotationDegrees = evaluate(pointPlacementRotation, feature);
+      olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+    }
   }
 
   // Set line or point placement according to geometry type.

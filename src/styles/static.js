@@ -1,5 +1,7 @@
 import { Style, Fill, Stroke, Circle, RegularShape } from 'ol/style';
 
+export const emptyStyle = new Style({});
+
 export const defaultPointStyle = new Style({
   image: new Circle({
     radius: 8,

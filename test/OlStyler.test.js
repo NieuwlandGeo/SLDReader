@@ -10,12 +10,13 @@ import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
 import { externalGraphicSld } from './data/externalgraphic.sld';
 import { dynamicSld } from './data/dynamic.sld';
+import { textSymbolizerSld } from './data/textSymbolizer.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 
-const getFeature = type => ({
+const getMockOLFeature = geometryType => ({
   properties: {},
   geometry: {
-    type,
+    type: geometryType,
   },
 });
 
@@ -44,23 +45,23 @@ describe('create ol style object from styledescription', () => {
   };
 
   it('returns array', () => {
-    const style = OlStyler(styleDescription, getFeature('Polygon'));
+    const style = OlStyler(styleDescription, getMockOLFeature('Polygon'));
     expect(style).to.be.an('array');
   });
   it('returns object with polygon style', () => {
-    const style = OlStyler(styleDescription, getFeature('Polygon'));
+    const style = OlStyler(styleDescription, getMockOLFeature('Polygon'));
     expect(style['0']).to.be.an.instanceof(Style);
   });
   it('returns object with polygon fill', () => {
-    const style = OlStyler(styleDescription, getFeature('Polygon'));
+    const style = OlStyler(styleDescription, getMockOLFeature('Polygon'));
     expect(style['0'].getFill().getColor()).to.equal('blue');
   });
   it('returns object linestring style', () => {
-    const style = OlStyler(styleDescription, getFeature('LineString'));
+    const style = OlStyler(styleDescription, getMockOLFeature('LineString'));
     expect(style['0']).to.be.an.instanceof(Style);
   });
   it('returns object with polygon fill', () => {
-    const style = OlStyler(styleDescription, getFeature('LineString'));
+    const style = OlStyler(styleDescription, getMockOLFeature('LineString'));
     expect(style['0'].getStroke().getColor()).to.equal('red');
   });
 });
@@ -86,11 +87,11 @@ describe('creates point style', () => {
     ],
   };
   it('returns array', () => {
-    const style = OlStyler(styleDescription, getFeature('Point'));
+    const style = OlStyler(styleDescription, getMockOLFeature('Point'));
     expect(style).to.be.an('array');
   });
   it('returns style', () => {
-    const style = OlStyler(styleDescription, getFeature('Point'));
+    const style = OlStyler(styleDescription, getMockOLFeature('Point'));
     expect(style['0']).to.be.an.instanceOf(Style);
   });
 });
@@ -107,7 +108,15 @@ describe('Create OL Style function from SLD feature type style', () => {
     type: 'Feature',
     geometry: {
       type: 'Polygon',
-      coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+      coordinates: [
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 1],
+          [0, 0],
+        ],
+      ],
     },
     properties: {
       provincienaam: 'Gelderland',
@@ -286,5 +295,35 @@ describe('Dynamic style properties', () => {
   it('Sets label placement according to feature geometry type', () => {
     const textStyle = styleFunction(pointFeature)[1];
     expect(textStyle.getText().getPlacement()).to.equal('point');
+  });
+});
+
+describe('Text symbolizer', () => {
+  const geojson = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [175135, 441200],
+    },
+    properties: {
+      size: 100,
+      angle: 42,
+      title: 'This is a test',
+    },
+  };
+
+  let pointFeature;
+  let styleFunction;
+  before(() => {
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    pointFeature = fmtGeoJSON.readFeature(geojson);
+    const sldObject = Reader(textSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    styleFunction = createOlStyleFunction(featureTypeStyle);
+  });
+
+  it('Handles TextSymbolizer with only a Label', () => {
+    const textStyle = styleFunction(pointFeature)[0];
+    expect(textStyle.getText().getText()).to.equal('TEST');
   });
 });
