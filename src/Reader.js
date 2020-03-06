@@ -1,3 +1,10 @@
+import {
+  createBinaryFilterComparison,
+  createIsLikeComparison,
+  createIsNullComparison,
+  createIsBetweenComparison,
+} from './Reader/filterElements';
+
 /**
  * Generic parser for elements with maxOccurs > 1
  * it pushes result of readNode(node) to array on obj[prop]
@@ -46,17 +53,6 @@ function addProp(node, obj, prop) {
   const property = prop.toLowerCase();
   obj[property] = {};
   readNode(node, obj[property]);
-}
-
-/**
- * Parser for filter comparison operators
- * @private
- * @type {[type]}
- */
-function addFilterComparison(node, obj, prop) {
-  obj.type = 'comparison';
-  obj.operator = prop.toLowerCase();
-  readNode(node, obj);
 }
 
 /**
@@ -210,26 +206,22 @@ const FilterParsers = {
     obj.predicate = {};
     readNode(element, obj.predicate);
   },
-  PropertyIsEqualTo: addFilterComparison,
-  PropertyIsNotEqualTo: addFilterComparison,
-  PropertyIsLessThan: addFilterComparison,
-  PropertyIsLessThanOrEqualTo: addFilterComparison,
-  PropertyIsGreaterThan: addFilterComparison,
-  PropertyIsGreaterThanOrEqualTo: addFilterComparison,
-  PropertyIsBetween: addFilterComparison,
-  PropertyIsNull: addFilterComparison,
-  PropertyIsLike: (element, obj, prop) => {
-    addFilterComparison(element, obj, prop);
-    obj.wildcard = element.getAttribute('wildCard');
-    obj.singlechar = element.getAttribute('singleChar');
-    obj.escapechar = element.getAttribute('escapeChar');
-  },
-  PropertyName: addPropWithTextContent,
-  Literal: addPropWithTextContent,
-  LowerBoundary: (element, obj, prop) =>
-    addPropWithTextContent(element, obj, prop, true),
-  UpperBoundary: (element, obj, prop) =>
-    addPropWithTextContent(element, obj, prop, true),
+  // PropertyIsEqualTo: addFilterComparison,
+  PropertyIsEqualTo: node => createBinaryFilterComparison(node),
+  PropertyIsNotEqualTo: node => createBinaryFilterComparison(node),
+  PropertyIsLessThan: node => createBinaryFilterComparison(node),
+  PropertyIsLessThanOrEqualTo: node => createBinaryFilterComparison(node),
+  PropertyIsGreaterThan: node => createBinaryFilterComparison(node),
+  PropertyIsGreaterThanOrEqualTo: node => createBinaryFilterComparison(node),
+  PropertyIsBetween: node => createIsBetweenComparison(node),
+  PropertyIsNull: element => createIsNullComparison(element),
+  PropertyIsLike: element => createIsLikeComparison(element),
+  // PropertyName: addPropWithTextContent,
+  // Literal: addPropWithTextContent,
+  // LowerBoundary: (element, obj, prop) =>
+  //   addPropWithTextContent(element, obj, prop, true),
+  // UpperBoundary: (element, obj, prop) =>
+  //   addPropWithTextContent(element, obj, prop, true),
   FeatureId: (element, obj) => {
     obj.type = 'featureid';
     obj.fids = obj.fids || [];
