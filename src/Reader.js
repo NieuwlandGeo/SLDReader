@@ -206,22 +206,25 @@ const FilterParsers = {
     obj.predicate = {};
     readNode(element, obj.predicate);
   },
-  // PropertyIsEqualTo: addFilterComparison,
-  PropertyIsEqualTo: node => createBinaryFilterComparison(node),
-  PropertyIsNotEqualTo: node => createBinaryFilterComparison(node),
-  PropertyIsLessThan: node => createBinaryFilterComparison(node),
-  PropertyIsLessThanOrEqualTo: node => createBinaryFilterComparison(node),
-  PropertyIsGreaterThan: node => createBinaryFilterComparison(node),
-  PropertyIsGreaterThanOrEqualTo: node => createBinaryFilterComparison(node),
-  PropertyIsBetween: node => createIsBetweenComparison(node),
-  PropertyIsNull: element => createIsNullComparison(element),
-  PropertyIsLike: element => createIsLikeComparison(element),
-  // PropertyName: addPropWithTextContent,
-  // Literal: addPropWithTextContent,
-  // LowerBoundary: (element, obj, prop) =>
-  //   addPropWithTextContent(element, obj, prop, true),
-  // UpperBoundary: (element, obj, prop) =>
-  //   addPropWithTextContent(element, obj, prop, true),
+  PropertyIsEqualTo: (node, obj) =>
+    Object.assign(obj, createBinaryFilterComparison(node)),
+  PropertyIsNotEqualTo: (node, obj) =>
+    Object.assign(obj, createBinaryFilterComparison(node)),
+  PropertyIsLessThan: (node, obj) =>
+    Object.assign(obj, createBinaryFilterComparison(node)),
+  PropertyIsLessThanOrEqualTo: (node, obj) =>
+    Object.assign(obj, createBinaryFilterComparison(node)),
+  PropertyIsGreaterThan: (node, obj) =>
+    Object.assign(obj, createBinaryFilterComparison(node)),
+  PropertyIsGreaterThanOrEqualTo: (node, obj) =>
+    Object.assign(obj, createBinaryFilterComparison(node)),
+  PropertyIsBetween: (node, obj) =>
+    Object.assign(obj, createIsBetweenComparison(node)),
+
+  PropertyIsNull: (element, obj) =>
+    Object.assign(obj, createIsNullComparison(element)),
+  PropertyIsLike: (element, obj) =>
+    Object.assign(obj, createIsLikeComparison(element)),
   FeatureId: (element, obj) => {
     obj.type = 'featureid';
     obj.fids = obj.fids || [];

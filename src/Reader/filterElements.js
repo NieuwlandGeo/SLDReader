@@ -14,8 +14,11 @@ const TYPE_COMPARISON = 'comparison';
  */
 function getChildTextContent(node, localName) {
   const propertyNameElement = node
-    .getElementsByTagNameNS('http://www.opengis.net/ogc', localName)
+    .getElementsByTagNameNS(node.namespaceURI, localName)
     .item(0);
+  if (!propertyNameElement) {
+    return null;
+  }
   if (propertyNameElement.parentNode !== node) {
     throw new Error('Expected direct descant');
   }
@@ -69,6 +72,8 @@ export function createIsLikeComparison(element) {
  */
 export function createIsNullComparison(element) {
   const propertyname = getChildTextContent(element, 'PropertyName');
+  console.log('hoihoi');
+
   return {
     type: TYPE_COMPARISON,
     operator: element.localName.toLowerCase(),
