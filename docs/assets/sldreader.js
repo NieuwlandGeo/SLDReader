@@ -4,6 +4,107 @@
   (global = global || self, factory(global.SLDReader = {}, global.ol.style));
 }(this, (function (exports, style) { 'use strict';
 
+  /* eslint-disable import/prefer-default-export */
+
+  /**
+   * Factory methods for filterelements
+   * @module
+   * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
+   */
+  var TYPE_COMPARISON = 'comparison';
+  /**
+   *
+   * @param {string} localName
+   *
+   * @return null|string
+   */
+  function getChildTextContent(node, localName) {
+    var propertyNameElement = node
+      .getElementsByTagNameNS(node.namespaceURI, localName)
+      .item(0);
+    if (!propertyNameElement) {
+      return null;
+    }
+    if (propertyNameElement.parentNode !== node) {
+      throw new Error('Expected direct descant');
+    }
+    return propertyNameElement ? propertyNameElement.textContent.trim() : null;
+  }
+
+  /**
+   * factory for element type BinaryComparisonOpType
+   *
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createBinaryFilterComparison(element) {
+    var propertyname = getChildTextContent(element, 'PropertyName');
+    var literal = getChildTextContent(element, 'Literal');
+
+    return {
+      type: TYPE_COMPARISON,
+      operator: element.localName.toLowerCase(),
+      propertyname: propertyname,
+      literal: literal,
+    };
+  }
+  /**
+   * factory for element type PropertyIsLikeType
+   *
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createIsLikeComparison(element) {
+    var propertyname = getChildTextContent(element, 'PropertyName');
+    var literal = getChildTextContent(element, 'Literal');
+    return {
+      type: TYPE_COMPARISON,
+      operator: element.localName.toLowerCase(),
+      propertyname: propertyname,
+      literal: literal,
+      wildcard: element.getAttribute('wildCard'),
+      singlechar: element.getAttribute('singleChar'),
+      escapechar: element.getAttribute('escapeChar'),
+    };
+  }
+  /**
+   * factory for element type PropertyIsNullType
+   *
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createIsNullComparison(element) {
+    var propertyname = getChildTextContent(element, 'PropertyName');
+
+    return {
+      type: TYPE_COMPARISON,
+      operator: element.localName.toLowerCase(),
+      propertyname: propertyname,
+    };
+  }
+  /**
+   * factory for element type PropertyIsBetweenType
+   *
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createIsBetweenComparison(element) {
+    var propertyname = getChildTextContent(element, 'PropertyName');
+    var lowerboundary = getChildTextContent(element, 'LowerBoundary');
+    var upperboundary = getChildTextContent(element, 'UpperBoundary');
+    return {
+      type: TYPE_COMPARISON,
+      operator: element.localName.toLowerCase(),
+      lowerboundary: lowerboundary,
+      upperboundary: upperboundary,
+      propertyname: propertyname,
+    };
+  }
+
   /**
    * Generic parser for elements with maxOccurs > 1
    * it pushes result of readNode(node) to array on obj[prop]
@@ -52,17 +153,6 @@
     var property = prop.toLowerCase();
     obj[property] = {};
     readNode(node, obj[property]);
-  }
-
-  /**
-   * Parser for filter comparison operators
-   * @private
-   * @type {[type]}
-   */
-  function addFilterComparison(node, obj, prop) {
-    obj.type = 'comparison';
-    obj.operator = prop.toLowerCase();
-    readNode(node, obj);
   }
 
   /**
@@ -220,24 +310,16 @@
       obj.predicate = {};
       readNode(element, obj.predicate);
     },
-    PropertyIsEqualTo: addFilterComparison,
-    PropertyIsNotEqualTo: addFilterComparison,
-    PropertyIsLessThan: addFilterComparison,
-    PropertyIsLessThanOrEqualTo: addFilterComparison,
-    PropertyIsGreaterThan: addFilterComparison,
-    PropertyIsGreaterThanOrEqualTo: addFilterComparison,
-    PropertyIsBetween: addFilterComparison,
-    PropertyIsNull: addFilterComparison,
-    PropertyIsLike: function (element, obj, prop) {
-      addFilterComparison(element, obj, prop);
-      obj.wildcard = element.getAttribute('wildCard');
-      obj.singlechar = element.getAttribute('singleChar');
-      obj.escapechar = element.getAttribute('escapeChar');
-    },
-    PropertyName: addPropWithTextContent,
-    Literal: addPropWithTextContent,
-    LowerBoundary: function (element, obj, prop) { return addPropWithTextContent(element, obj, prop, true); },
-    UpperBoundary: function (element, obj, prop) { return addPropWithTextContent(element, obj, prop, true); },
+    PropertyIsEqualTo: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
+    PropertyIsNotEqualTo: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
+    PropertyIsLessThan: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
+    PropertyIsLessThanOrEqualTo: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
+    PropertyIsGreaterThan: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
+    PropertyIsGreaterThanOrEqualTo: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
+    PropertyIsBetween: function (node, obj) { return Object.assign(obj, createIsBetweenComparison(node)); },
+
+    PropertyIsNull: function (element, obj) { return Object.assign(obj, createIsNullComparison(element)); },
+    PropertyIsLike: function (element, obj) { return Object.assign(obj, createIsLikeComparison(element)); },
     FeatureId: function (element, obj) {
       obj.type = 'featureid';
       obj.fids = obj.fids || [];
@@ -1095,6 +1177,8 @@
     });
   }
 
+  var emptyStyle = new style.Style({});
+
   var defaultPointStyle = new style.Style({
     image: new style.Circle({
       radius: 8,
@@ -1695,7 +1779,7 @@
    */
   function textStyle(textsymbolizer) {
     if (!(textsymbolizer && textsymbolizer.label)) {
-      return new style.Style({});
+      return emptyStyle;
     }
 
     // If the label is dynamic, set text to empty string.
@@ -1728,7 +1812,10 @@
         : {};
 
     // If rotation is dynamic, default to 0. Rotation will be set at runtime.
-    var labelRotationDegrees = expressionOrDefault(pointplacement.rotation, 0.0);
+    var labelRotationDegrees = expressionOrDefault(
+      pointplacement.rotation,
+      0.0
+    );
 
     var displacement =
       pointplacement && pointplacement.displacement
@@ -1795,18 +1882,21 @@
     var labelplacement = symbolizer.labelplacement;
 
     // Set text only if the label expression is dynamic.
-    if (label.type === 'expression') {
+    if (label && label.type === 'expression') {
       var labelText = evaluate(label, feature);
       olText.setText(labelText);
     }
 
     // Set rotation if expression is dynamic.
-    var pointPlacementRotation =
-      (labelplacement.pointplacement && labelplacement.pointplacement.rotation) ||
-      0.0;
-    if (pointPlacementRotation.type === 'expression') {
-      var labelRotationDegrees = evaluate(pointPlacementRotation, feature);
-      olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+    if (labelplacement) {
+      var pointPlacementRotation =
+        (labelplacement.pointplacement &&
+          labelplacement.pointplacement.rotation) ||
+        0.0;
+      if (pointPlacementRotation.type === 'expression') {
+        var labelRotationDegrees = evaluate(pointPlacementRotation, feature);
+        olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+      }
     }
 
     // Set line or point placement according to geometry type.

@@ -72,7 +72,6 @@ export function createIsLikeComparison(element) {
  */
 export function createIsNullComparison(element) {
   const propertyname = getChildTextContent(element, 'PropertyName');
-  console.log('hoihoi');
 
   return {
     type: TYPE_COMPARISON,
