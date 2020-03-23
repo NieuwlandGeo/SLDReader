@@ -4,8 +4,6 @@
   (global = global || self, factory(global.SLDReader = {}, global.ol.style));
 }(this, (function (exports, style) { 'use strict';
 
-  /* eslint-disable import/prefer-default-export */
-
   /**
    * Factory methods for filterelements
    * @module

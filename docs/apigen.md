@@ -43,7 +43,7 @@
         -   [Properties][39]
     -   [GeometryStyles][40]
         -   [Properties][41]
--   [filterElements][42]
+-   [filter][42]
 -   [BINARY_COMPARISON_NAMES][43]
 -   [getChildTextContent][44]
     -   [Parameters][45]
@@ -332,7 +332,7 @@ contains for each geometry type the symbolizer from an array of rules
 -   `line` **[Array][69]&lt;[LineSymbolizer][82]>** linesymbolizers
 -   `point` **[Array][69]&lt;[PointSymbolizer][83]>** pointsymbolizers, same as graphic prop from PointSymbolizer
 
-## filterElements
+## filter
 
 -   **See: [http://schemas.opengis.net/filter/1.0.0/filter.xsd][90]**
 
@@ -525,7 +525,7 @@ Returns **any** The value of a static expression or default value if the express
 
 [41]: #properties-8
 
-[42]: #filterelements
+[42]: #filter-1
 
 [43]: #binary_comparison_names
 
