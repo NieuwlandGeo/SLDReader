@@ -9,7 +9,7 @@
   "scripts": {
     "build": "rollup -c",
     "docker": "docker-compose up -d",
-    "docs:build": "documentation build src/index.js -c docs/documentation.yml -f md --output docs/apigen.md",
+    "docs:build": "jsdoc2md src/**/*.js > docs/apigen.md",
     "docs": "npm-run-all build docs:build && cp dist/sldreader.js docs/assets/sldreader.js",
     "lint": "eslint src/ test/",
     "lint:win": "eslint src/ test/ --rule \"linebreak-style: off\"",
@@ -37,7 +37,6 @@
     "browser-sync": "^2.26.7",
     "chai": "^4.2.0",
     "core-js": "^3.6.4",
-    "documentation": "^12.1.4",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.20.1",
