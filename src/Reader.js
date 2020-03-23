@@ -1,11 +1,4 @@
-import {
-  createBinaryFilterComparison,
-  createIsLikeComparison,
-  createIsNullComparison,
-  createIsBetweenComparison,
-  createBinaryLogic,
-  createUnaryLogic,
-} from './Reader/filterElements';
+import { createFilter } from './Reader/filterElements';
 
 /**
  * Generic parser for elements with maxOccurs > 1
@@ -189,37 +182,11 @@ function parameters(element, obj, prop) {
 }
 
 const FilterParsers = {
-  Filter: addProp,
+  Filter: (element, obj) => {
+    obj.filter = createFilter(element);
+  },
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
-  },
-  Or: (node, obj) => Object.assign(obj, createBinaryLogic(node)),
-  And: (node, obj) => Object.assign(obj, createBinaryLogic(node)),
-  Not: (node, obj) => Object.assign(obj, createUnaryLogic(node)),
-  PropertyIsEqualTo: (node, obj) =>
-    Object.assign(obj, createBinaryFilterComparison(node)),
-  PropertyIsNotEqualTo: (node, obj) =>
-    Object.assign(obj, createBinaryFilterComparison(node)),
-  PropertyIsLessThan: (node, obj) =>
-    Object.assign(obj, createBinaryFilterComparison(node)),
-  PropertyIsLessThanOrEqualTo: (node, obj) =>
-    Object.assign(obj, createBinaryFilterComparison(node)),
-  PropertyIsGreaterThan: (node, obj) =>
-    Object.assign(obj, createBinaryFilterComparison(node)),
-  PropertyIsGreaterThanOrEqualTo: (node, obj) =>
-    Object.assign(obj, createBinaryFilterComparison(node)),
-  PropertyIsBetween: (node, obj) =>
-    Object.assign(obj, createIsBetweenComparison(node)),
-
-  PropertyIsNull: (element, obj) =>
-    Object.assign(obj, createIsNullComparison(element)),
-  PropertyIsLike: (element, obj) =>
-    Object.assign(obj, createIsLikeComparison(element)),
-  // TODO move to filterelements
-  FeatureId: (element, obj) => {
-    obj.type = 'featureid';
-    obj.fids = obj.fids || [];
-    obj.fids.push(element.getAttribute('fid'));
   },
 };
 
@@ -371,38 +338,6 @@ export default function Reader(sld) {
  * @property {LineSymbolizer}  [linesymbolizer]
  * @property {PointSymbolizer} [pointsymbolizer]
  * */
-
-/**
- * A filter predicate.
- * @typedef Filter
- * @name Filter
- * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
- * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
- * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
- * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
- * @property {string} [operator] Required for type='comparison'. Can be one of
- * 'propertyisequalto',
- * 'propertyisnotequalto',
- * 'propertyislessthan',
- * 'propertyislessthanorequalto',
- * 'propertyisgreaterthan',
- * 'propertyisgreaterthanorequalto',
- * 'propertyislike',
- * 'propertyisbetween'
- * @property {Filter[]} [predicates] Required for type='and' or type='or'.
- * An array of filter predicates that must all evaluate to true for 'and', or
- * for which at least one must evaluate to true for 'or'.
- * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
- * @property {string} [propertyname] Required for type='comparison'.
- * @property {string} [literal] A literal value to use in a comparison,
- * required for type='comparison'.
- * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
- * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
- * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
- * @property {string} [singlechar] Required single char match character,
- * required for operator='propertyislike'.
- * @property {string} [escapechar] Required escape character for operator='propertyislike'.
- */
 
 /**
  * @typedef PolygonSymbolizer

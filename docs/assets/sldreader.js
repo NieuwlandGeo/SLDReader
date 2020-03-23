@@ -11,7 +11,25 @@
    * @module
    * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
    */
+
   var TYPE_COMPARISON = 'comparison';
+
+  /**
+   * @var string[] element names of binary comparison
+   */
+  var BINARY_COMPARISON_NAMES = [
+    'PropertyIsEqualTo',
+    'PropertyIsNotEqualTo',
+    'PropertyIsLessThan',
+    'PropertyIsLessThanOrEqualTo',
+    'PropertyIsGreaterThan',
+    'PropertyIsGreaterThanOrEqualTo' ];
+
+  var COMPARISON_NAMES = BINARY_COMPARISON_NAMES.concat([
+    'PropertyIsLike',
+    'PropertyIsNull',
+    'PropertyIsBetween' ]);
+
   /**
    *
    * @param {string} localName
@@ -29,6 +47,37 @@
       throw new Error('Expected direct descant');
     }
     return propertyNameElement ? propertyNameElement.textContent.trim() : null;
+  }
+
+  function isComparison(element) {
+    return COMPARISON_NAMES.includes(element.localName);
+  }
+
+  function isBinary(element) {
+    return ['or', 'and'].includes(element.localName.toLowerCase());
+  }
+
+  /**
+   * factory for comparisonOps
+   *
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createComparison(element) {
+    if (BINARY_COMPARISON_NAMES.includes(element.localName)) {
+      return createBinaryFilterComparison(element);
+    }
+    if (element.localName === 'PropertyIsBetween') {
+      return createIsBetweenComparison(element);
+    }
+    if (element.localName === 'PropertyIsNull') {
+      return createIsNullComparison(element);
+    }
+    if (element.localName === 'PropertyIsLike') {
+      return createIsLikeComparison(element);
+    }
+    throw new Error(("Unknown comparison element " + (element.localName)));
   }
 
   /**
@@ -49,6 +98,7 @@
       literal: literal,
     };
   }
+
   /**
    * factory for element type PropertyIsLikeType
    *
@@ -104,6 +154,105 @@
       propertyname: propertyname,
     };
   }
+
+  /**
+   * Factory for and/or filter
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createBinaryLogic(element) {
+    var predicates = [];
+    for (var n = element.firstElementChild; n; n = n.nextElementSibling) {
+      if (isComparison(n)) {
+        predicates.push(createComparison(n));
+      }
+    }
+    return {
+      type: element.localName.toLowerCase(),
+      predicates: predicates,
+    };
+  }
+
+  /**
+   * Factory for not filter
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createUnaryLogic(element) {
+    var predicate = null;
+    var childElement = element.firstElementChild;
+    if (childElement && isComparison(childElement)) {
+      predicate = createComparison(childElement);
+    }
+    if (childElement && isBinary(childElement)) {
+      predicate = createBinaryLogic(childElement);
+    }
+    return {
+      type: element.localName.toLowerCase(),
+      predicate: predicate,
+    };
+  }
+
+  /**
+   * Factory root filter element
+   * @param {Element} element
+   *
+   * @return {Filter}
+   */
+  function createFilter(element) {
+    var filter = {};
+    for (var n = element.firstElementChild; n; n = n.nextElementSibling) {
+      if (isComparison(n)) {
+        filter = createComparison(n);
+      }
+      if (isBinary(n)) {
+        filter = createBinaryLogic(n);
+      }
+      if (n.localName.toLowerCase() === 'not') {
+        filter = createUnaryLogic(n);
+      }
+      if (n.localName.toLowerCase() === 'featureid') {
+        filter.type = 'featureid';
+        filter.fids = filter.fids || [];
+        filter.fids.push(n.getAttribute('fid'));
+      }
+    }
+    return filter;
+  }
+
+  /**
+   * A filter predicate.
+   * @typedef Filter
+   * @name Filter
+   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+   * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
+   * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
+   * @property {string} [operator] Required for type='comparison'. Can be one of
+   * 'propertyisequalto',
+   * 'propertyisnotequalto',
+   * 'propertyislessthan',
+   * 'propertyislessthanorequalto',
+   * 'propertyisgreaterthan',
+   * 'propertyisgreaterthanorequalto',
+   * 'propertyislike',
+   * 'propertyisbetween'
+   * @property {Filter[]} [predicates] Required for type='and' or type='or'.
+   * An array of filter predicates that must all evaluate to true for 'and', or
+   * for which at least one must evaluate to true for 'or'.
+   * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
+   * @property {string} [propertyname] Required for type='comparison'.
+   * @property {string} [literal] A literal value to use in a comparison,
+   * required for type='comparison'.
+   * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
+   * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
+   * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
+   * @property {string} [singlechar] Required single char match character,
+   * required for operator='propertyislike'.
+   * @property {string} [escapechar] Required escape character for operator='propertyislike'.
+   */
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -291,39 +440,11 @@
   }
 
   var FilterParsers = {
-    Filter: addProp,
+    Filter: function (element, obj) {
+      obj.filter = createFilter(element);
+    },
     ElseFilter: function (element, obj) {
       obj.elsefilter = true;
-    },
-    Or: function (element, obj) {
-      obj.type = 'or';
-      obj.predicates = [];
-      readNodeArray(element, obj, 'predicates');
-    },
-    And: function (element, obj) {
-      obj.type = 'and';
-      obj.predicates = [];
-      readNodeArray(element, obj, 'predicates');
-    },
-    Not: function (element, obj) {
-      obj.type = 'not';
-      obj.predicate = {};
-      readNode(element, obj.predicate);
-    },
-    PropertyIsEqualTo: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
-    PropertyIsNotEqualTo: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
-    PropertyIsLessThan: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
-    PropertyIsLessThanOrEqualTo: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
-    PropertyIsGreaterThan: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
-    PropertyIsGreaterThanOrEqualTo: function (node, obj) { return Object.assign(obj, createBinaryFilterComparison(node)); },
-    PropertyIsBetween: function (node, obj) { return Object.assign(obj, createIsBetweenComparison(node)); },
-
-    PropertyIsNull: function (element, obj) { return Object.assign(obj, createIsNullComparison(element)); },
-    PropertyIsLike: function (element, obj) { return Object.assign(obj, createIsLikeComparison(element)); },
-    FeatureId: function (element, obj) {
-      obj.type = 'featureid';
-      obj.fids = obj.fids || [];
-      obj.fids.push(element.getAttribute('fid'));
     },
   };
 
@@ -417,26 +538,6 @@
   }
 
   /**
-   * Parse all children of an element as an array in obj[prop]
-   * @private
-   * @param {Element} node parent xml element
-   * @param {object} obj the object to modify
-   * @param {string} prop the name of the array prop to fill with parsed child nodes
-   * @return {void}
-   */
-  function readNodeArray(node, obj, prop) {
-    var property = prop.toLowerCase();
-    obj[property] = [];
-    for (var n = node.firstElementChild; n; n = n.nextElementSibling) {
-      if (parsers[n.localName]) {
-        var childObj = {};
-        parsers[n.localName](n, childObj, n.localName);
-        obj[property].push(childObj);
-      }
-    }
-  }
-
-  /**
    * Creates a object from an sld xml string,
    * @param  {string} sld xml string
    * @return {StyledLayerDescriptor}  object representing sld style
@@ -493,38 +594,6 @@
    * @property {LineSymbolizer}  [linesymbolizer]
    * @property {PointSymbolizer} [pointsymbolizer]
    * */
-
-  /**
-   * A filter predicate.
-   * @typedef Filter
-   * @name Filter
-   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
-   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
-   * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
-   * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
-   * @property {string} [operator] Required for type='comparison'. Can be one of
-   * 'propertyisequalto',
-   * 'propertyisnotequalto',
-   * 'propertyislessthan',
-   * 'propertyislessthanorequalto',
-   * 'propertyisgreaterthan',
-   * 'propertyisgreaterthanorequalto',
-   * 'propertyislike',
-   * 'propertyisbetween'
-   * @property {Filter[]} [predicates] Required for type='and' or type='or'.
-   * An array of filter predicates that must all evaluate to true for 'and', or
-   * for which at least one must evaluate to true for 'or'.
-   * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
-   * @property {string} [propertyname] Required for type='comparison'.
-   * @property {string} [literal] A literal value to use in a comparison,
-   * required for type='comparison'.
-   * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
-   * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
-   * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
-   * @property {string} [singlechar] Required single char match character,
-   * required for operator='propertyislike'.
-   * @property {string} [escapechar] Required escape character for operator='propertyislike'.
-   */
 
   /**
    * @typedef PolygonSymbolizer

@@ -4,7 +4,8 @@ import { sld } from './data/test.sld';
 
 describe('Filter tests', () => {
   it('PropertyIsBetween', () => {
-    const filterXml = `<Filter xmlns="http://www.opengis.net/ogc">
+    const filterXml = `<?xml version="1.0" encoding="UTF-8"?>
+    <StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
       <PropertyIsBetween>
         <PropertyName>AREA</PropertyName>
         <LowerBoundary>
@@ -14,9 +15,9 @@ describe('Filter tests', () => {
           <Literal>1065512599</Literal>
         </UpperBoundary>
       </PropertyIsBetween>
-    </Filter>`;
+    </Filter></StyledLayerDescriptor>`;
 
-    const filter = Reader(filterXml);
+    const { filter } = Reader(filterXml);
     expect(filter.type).to.equal('comparison');
     expect(filter.propertyname).to.equal('AREA');
     expect(filter.lowerboundary).to.equal('1064866676');
@@ -24,27 +25,27 @@ describe('Filter tests', () => {
   });
 
   it('PropertyIsNull', () => {
-    const filterXml = `<Filter xmlns="http://www.opengis.net/ogc">
+    const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
       <PropertyIsNull>
         <PropertyName>PERIMETER</PropertyName>
       </PropertyIsNull>
-    </Filter>`;
+    </Filter></StyledLayerDescriptor>`;
 
-    const filter = Reader(filterXml);
+    const { filter } = Reader(filterXml);
     expect(filter.type).to.equal('comparison');
     expect(filter.operator).to.equal('propertyisnull');
     expect(filter.propertyname).to.equal('PERIMETER');
   });
 
   it('PropertyIsLike', () => {
-    const filterXml = `<Filter xmlns="http://www.opengis.net/ogc">
+    const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
       <PropertyIsLike wildCard="%" singleChar="?" escapeChar="\\">
         <PropertyName>name</PropertyName>
         <Literal>j?ns%</Literal>
       </PropertyIsLike>
-    </Filter>`;
+    </Filter></StyledLayerDescriptor>`;
 
-    const filter = Reader(filterXml);
+    const { filter } = Reader(filterXml);
     expect(filter.type).to.equal('comparison');
     expect(filter.operator).to.equal('propertyislike');
     expect(filter.wildcard).to.equal('%');
@@ -55,16 +56,16 @@ describe('Filter tests', () => {
   });
 
   it('NOT filter', () => {
-    const filterXml = `<Filter>
+    const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
       <Not>
         <PropertyIsEqualTo>
           <PropertyName>PERIMETER</PropertyName>
           <Literal>1071304933</Literal>
         </PropertyIsEqualTo>
       </Not>
-    </Filter>`;
+    </Filter></StyledLayerDescriptor>`;
 
-    const filter = Reader(filterXml);
+    const { filter } = Reader(filterXml);
     expect(filter.type).to.equal('not');
     expect(filter.predicate).to.be.ok;
     expect(filter.predicate.type).to.equal('comparison');
