@@ -20,6 +20,12 @@ const BINARY_COMPARISON_NAMES = [
   'PropertyIsGreaterThanOrEqualTo',
 ];
 
+const COMPARISON_NAMES = BINARY_COMPARISON_NAMES.concat([
+  'PropertyIsLike',
+  'PropertyIsNull',
+  'PropertyIsBetween',
+]);
+
 /**
  *
  * @param {string} localName
@@ -37,6 +43,37 @@ function getChildTextContent(node, localName) {
     throw new Error('Expected direct descant');
   }
   return propertyNameElement ? propertyNameElement.textContent.trim() : null;
+}
+
+function isComparison(element) {
+  return COMPARISON_NAMES.includes(element.localName);
+}
+
+function isBinary(element) {
+  return ['or', 'and'].includes(element.localName.toLowerCase());
+}
+
+/**
+ * factory for comparisonOps
+ *
+ * @param {Element} element
+ *
+ * @return {object}
+ */
+function createComparison(element) {
+  if (BINARY_COMPARISON_NAMES.includes(element.localName)) {
+    return createBinaryFilterComparison(element);
+  }
+  if (element.localName === 'PropertyIsBetween') {
+    return createIsBetweenComparison(element);
+  }
+  if (element.localName === 'PropertyIsNull') {
+    return createIsNullComparison(element);
+  }
+  if (element.localName === 'PropertyIsLike') {
+    return createIsLikeComparison(element);
+  }
+  throw new Error(`Unknown comparison element ${element.localName}`);
 }
 
 /**
@@ -123,22 +160,27 @@ export function createIsBetweenComparison(element) {
 export function createBinaryLogic(element) {
   const predicates = [];
   for (let n = element.firstElementChild; n; n = n.nextElementSibling) {
-    if (BINARY_COMPARISON_NAMES.includes(n.localName)) {
-      predicates.push(createBinaryFilterComparison(n));
+    if (isComparison(n)) {
+      predicates.push(createComparison(n));
     }
-    if (n.localName === 'PropertyIsBetween') {
-      predicates.push(createIsBetweenComparison(n));
-    }
-    if (n.localName === 'PropertyIsNull') {
-      predicates.push(createIsNullComparison(n));
-    }
-    if (n.localName === 'PropertyIsLike') {
-      predicates.push(createIsLikeComparison(n));
-    }
-    // TODO FeatureId?
   }
   return {
     type: element.localName.toLowerCase(),
     predicates,
+  };
+}
+
+export function createUnaryLogic(element) {
+  let predicate = null;
+  const childElement = element.firstElementChild;
+  if (childElement && isComparison(childElement)) {
+    predicate = createComparison(childElement);
+  }
+  if (childElement && isBinary(childElement)) {
+    predicate = createBinaryLogic(childElement);
+  }
+  return {
+    type: element.localName.toLowerCase(),
+    predicate,
   };
 }
