@@ -1,5 +1,3 @@
-/* eslint-disable import/prefer-default-export */
-
 /**
  * Factory methods for filterelements
  * @module
@@ -197,7 +195,7 @@ function createUnaryLogic(element) {
  *
  * @return {Filter}
  */
-export function createFilter(element) {
+export default function createFilter(element) {
   let filter = {};
   for (let n = element.firstElementChild; n; n = n.nextElementSibling) {
     if (isComparison(n)) {

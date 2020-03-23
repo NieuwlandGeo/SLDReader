@@ -1,4 +1,4 @@
-import { createFilter } from './Reader/filterElements';
+import createFilter from './filter';
 
 /**
  * Generic parser for elements with maxOccurs > 1
