@@ -3,6 +3,7 @@ import {
   createIsLikeComparison,
   createIsNullComparison,
   createIsBetweenComparison,
+  createBinaryLogic,
 } from './Reader/filterElements';
 
 /**
@@ -191,16 +192,8 @@ const FilterParsers = {
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
   },
-  Or: (element, obj) => {
-    obj.type = 'or';
-    obj.predicates = [];
-    readNodeArray(element, obj, 'predicates');
-  },
-  And: (element, obj) => {
-    obj.type = 'and';
-    obj.predicates = [];
-    readNodeArray(element, obj, 'predicates');
-  },
+  Or: (node, obj) => Object.assign(obj, createBinaryLogic(node)),
+  And: (node, obj) => Object.assign(obj, createBinaryLogic(node)),
   Not: (element, obj) => {
     obj.type = 'not';
     obj.predicate = {};
@@ -225,6 +218,7 @@ const FilterParsers = {
     Object.assign(obj, createIsNullComparison(element)),
   PropertyIsLike: (element, obj) =>
     Object.assign(obj, createIsLikeComparison(element)),
+  // TODO move to filterelements
   FeatureId: (element, obj) => {
     obj.type = 'featureid';
     obj.fids = obj.fids || [];

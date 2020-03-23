@@ -5,7 +5,21 @@
  * @module
  * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
  */
+
 const TYPE_COMPARISON = 'comparison';
+
+/**
+ * @var string[] element names of binary comparison
+ */
+const BINARY_COMPARISON_NAMES = [
+  'PropertyIsEqualTo',
+  'PropertyIsNotEqualTo',
+  'PropertyIsLessThan',
+  'PropertyIsLessThanOrEqualTo',
+  'PropertyIsGreaterThan',
+  'PropertyIsGreaterThanOrEqualTo',
+];
+
 /**
  *
  * @param {string} localName
@@ -43,6 +57,7 @@ export function createBinaryFilterComparison(element) {
     literal,
   };
 }
+
 /**
  * factory for element type PropertyIsLikeType
  *
@@ -96,5 +111,34 @@ export function createIsBetweenComparison(element) {
     lowerboundary,
     upperboundary,
     propertyname,
+  };
+}
+
+/**
+ * Factory for and/or filter
+ * @param {Element} element
+ *
+ * @return {object}
+ */
+export function createBinaryLogic(element) {
+  const predicates = [];
+  for (let n = element.firstElementChild; n; n = n.nextElementSibling) {
+    if (BINARY_COMPARISON_NAMES.includes(n.localName)) {
+      predicates.push(createBinaryFilterComparison(n));
+    }
+    if (n.localName === 'PropertyIsBetween') {
+      predicates.push(createIsBetweenComparison(n));
+    }
+    if (n.localName === 'PropertyIsNull') {
+      predicates.push(createIsNullComparison(n));
+    }
+    if (n.localName === 'PropertyIsLike') {
+      predicates.push(createIsLikeComparison(n));
+    }
+    // TODO FeatureId?
+  }
+  return {
+    type: element.localName.toLowerCase(),
+    predicates,
   };
 }
