@@ -8,9 +8,48 @@
 <dd></dd>
 </dl>
 
+## Functions
+
+<dl>
+<dt><a href="#getGeometryStyles">getGeometryStyles(rules)</a> ⇒ <code><a href="#GeometryStyles">GeometryStyles</a></code></dt>
+<dd><p>Get styling from rules per geometry type</p>
+</dd>
+<dt><a href="#expressionOrDefault">expressionOrDefault(expression, defaultValue)</a> ⇒ <code>any</code></dt>
+<dd><p>Utility function for evaluating dynamic expressions without a feature.
+If the expression is static, the expression value will be returned.
+If the expression is dynamic, defaultValue will be returned.
+If the expression is falsy, defaultValue will be returned.</p>
+</dd>
+<dt><a href="#createOlStyleFunction">createOlStyleFunction(featureTypeStyle, options)</a> ⇒ <code>function</code></dt>
+<dd><p>Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.</p>
+<p><strong>Important!</strong> When using externalGraphics for point styling, make sure to call .changed() on the layer
+inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
+image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).</p>
+</dd>
+<dt><a href="#getLayerNames">getLayerNames(sld)</a> ⇒ <code>Array.&lt;string&gt;</code></dt>
+<dd><p>get all layer names in sld</p>
+</dd>
+<dt><a href="#getLayer">getLayer(sld, [layername])</a> ⇒ <code><a href="#Layer">Layer</a></code></dt>
+<dd><p>Get layer definition from sld</p>
+</dd>
+<dt><a href="#getStyleNames">getStyleNames(layer)</a> ⇒ <code>Array.&lt;string&gt;</code></dt>
+<dd><p>getStyleNames, notice name is not required for userstyle, you might get undefined</p>
+</dd>
+<dt><a href="#getStyle">getStyle(layer, [name])</a> ⇒ <code>object</code></dt>
+<dd><p>get style from array layer.styles, if name is undefined it returns default style.
+null is no style found</p>
+</dd>
+<dt><a href="#getRules">getRules(featureTypeStyle, feature, resolution)</a> ⇒ <code><a href="#Rule">Array.&lt;Rule&gt;</a></code></dt>
+<dd><p>get rules for specific feature after applying filters</p>
+</dd>
+</dl>
+
 ## Typedefs
 
 <dl>
+<dt><a href="#GeometryStyles">GeometryStyles</a></dt>
+<dd><p>contains for each geometry type the symbolizer from an array of rules</p>
+</dd>
 <dt><a href="#Filter">Filter</a></dt>
 <dd><p><a href="http://schemas.opengis.net/filter/1.1.0/filter.xsd">filter operators</a>, see also
 <a href="http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html">geoserver</a></p>
@@ -72,6 +111,143 @@ Creates a object from an sld xml string,
 | Param | Type | Description |
 | --- | --- | --- |
 | sld | <code>string</code> | xml string |
+
+<a name="getGeometryStyles"></a>
+
+## getGeometryStyles(rules) ⇒ [<code>GeometryStyles</code>](#GeometryStyles)
+Get styling from rules per geometry type
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| rules | [<code>Array.&lt;Rule&gt;</code>](#Rule) | [description] |
+
+<a name="expressionOrDefault"></a>
+
+## expressionOrDefault(expression, defaultValue) ⇒ <code>any</code>
+Utility function for evaluating dynamic expressions without a feature.
+If the expression is static, the expression value will be returned.
+If the expression is dynamic, defaultValue will be returned.
+If the expression is falsy, defaultValue will be returned.
+
+**Kind**: global function  
+**Returns**: <code>any</code> - The value of a static expression or default value if the expression is dynamic.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| expression | <code>object</code> \| <code>string</code> | SLD object expression (or string). |
+| defaultValue | <code>any</code> | Default value. |
+
+<a name="createOlStyleFunction"></a>
+
+## createOlStyleFunction(featureTypeStyle, options) ⇒ <code>function</code>
+Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
+
+**Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
+inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
+image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
+
+**Kind**: global function  
+**Returns**: <code>function</code> - A function that can be set as style function on an OpenLayers vector style layer.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| featureTypeStyle | [<code>FeatureTypeStyle</code>](#FeatureTypeStyle) | Feature Type Style object. |
+| options | <code>object</code> | Options |
+| options.convertResolution | <code>function</code> | An optional function to convert the resolution in map units/pixel to resolution in meters/pixel. When not given, the map resolution is used as-is. |
+| options.imageLoadedCallback | <code>function</code> | Optional callback that will be called with the url of an externalGraphic when an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image. |
+
+**Example**  
+```js
+myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
+  imageLoadedCallback: () => { myOlVectorLayer.changed(); }
+}));
+```
+<a name="getLayerNames"></a>
+
+## getLayerNames(sld) ⇒ <code>Array.&lt;string&gt;</code>
+get all layer names in sld
+
+**Kind**: global function  
+**Returns**: <code>Array.&lt;string&gt;</code> - registered layernames  
+
+| Param | Type |
+| --- | --- |
+| sld | [<code>StyledLayerDescriptor</code>](#StyledLayerDescriptor) | 
+
+<a name="getLayer"></a>
+
+## getLayer(sld, [layername]) ⇒ [<code>Layer</code>](#Layer)
+Get layer definition from sld
+
+**Kind**: global function  
+**Returns**: [<code>Layer</code>](#Layer) - [description]  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| sld | [<code>StyledLayerDescriptor</code>](#StyledLayerDescriptor) | [description] |
+| [layername] | <code>string</code> | optional layername |
+
+<a name="getStyleNames"></a>
+
+## getStyleNames(layer) ⇒ <code>Array.&lt;string&gt;</code>
+getStyleNames, notice name is not required for userstyle, you might get undefined
+
+**Kind**: global function  
+**Returns**: <code>Array.&lt;string&gt;</code> - [description]  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| layer | [<code>Layer</code>](#Layer) | [description] |
+
+<a name="getStyle"></a>
+
+## getStyle(layer, [name]) ⇒ <code>object</code>
+get style from array layer.styles, if name is undefined it returns default style.
+null is no style found
+
+**Kind**: global function  
+**Returns**: <code>object</code> - the style from layer.styles matching the name  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| layer | [<code>Layer</code>](#Layer) | [description] |
+| [name] | <code>string</code> | of style |
+
+<a name="getRules"></a>
+
+## getRules(featureTypeStyle, feature, resolution) ⇒ [<code>Array.&lt;Rule&gt;</code>](#Rule)
+get rules for specific feature after applying filters
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| featureTypeStyle | [<code>FeatureTypeStyle</code>](#FeatureTypeStyle) |  |
+| feature | <code>object</code> | geojson |
+| resolution | <code>number</code> | m/px |
+| options.getProperty | <code>function</code> | An optional function with parameters (feature, propertyName) that can be used to extract a property value from a feature. When not given, properties are read from feature.properties directly.Error |
+| options.getFeatureId | <code>function</code> | An optional function to extract the feature id from a feature.Error When not given, feature id is read from feature.id. |
+
+**Example**  
+```js
+const style = getStyle(sldLayer, stylename);
+getRules(style.featuretypestyles['0'], geojson, resolution);
+```
+<a name="GeometryStyles"></a>
+
+## GeometryStyles
+contains for each geometry type the symbolizer from an array of rules
+
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| polygon | [<code>Array.&lt;PolygonSymbolizer&gt;</code>](#PolygonSymbolizer) | polygonsymbolizers |
+| line | [<code>Array.&lt;LineSymbolizer&gt;</code>](#LineSymbolizer) | linesymbolizers |
+| point | [<code>Array.&lt;PointSymbolizer&gt;</code>](#PointSymbolizer) | pointsymbolizers, same as graphic prop from PointSymbolizer |
 
 <a name="Filter"></a>
 

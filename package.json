@@ -9,7 +9,7 @@
   "scripts": {
     "build": "rollup -c",
     "docker": "docker-compose up -d",
-    "docs:build": "jsdoc2md src/**/*.js > docs/apigen.md",
+    "docs:build": "jsdoc2md 'src/**/*.js' > docs/apigen.md",
     "docs": "npm-run-all build docs:build && cp dist/sldreader.js docs/assets/sldreader.js",
     "lint": "eslint src/ test/",
     "lint:win": "eslint src/ test/ --rule \"linebreak-style: off\"",
