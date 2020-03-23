@@ -1,13 +1,15 @@
 /**
  * Factory methods for filterelements
- * @module
  * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
+ *
+ * @module
  */
 
 const TYPE_COMPARISON = 'comparison';
 
 /**
  * @var string[] element names of binary comparison
+ * @private
  */
 const BINARY_COMPARISON_NAMES = [
   'PropertyIsEqualTo',
@@ -25,7 +27,7 @@ const COMPARISON_NAMES = BINARY_COMPARISON_NAMES.concat([
 ]);
 
 /**
- *
+ * @private
  * @param {string} localName
  *
  * @return null|string
@@ -53,7 +55,7 @@ function isBinary(element) {
 
 /**
  * factory for comparisonOps
- *
+ * @private
  * @param {Element} element
  *
  * @return {object}
@@ -76,7 +78,7 @@ function createComparison(element) {
 
 /**
  * factory for element type BinaryComparisonOpType
- *
+ * @private
  * @param {Element} element
  *
  * @return {object}
@@ -95,7 +97,7 @@ function createBinaryFilterComparison(element) {
 
 /**
  * factory for element type PropertyIsLikeType
- *
+ * @private
  * @param {Element} element
  *
  * @return {object}
@@ -115,7 +117,7 @@ function createIsLikeComparison(element) {
 }
 /**
  * factory for element type PropertyIsNullType
- *
+ * @private
  * @param {Element} element
  *
  * @return {object}
@@ -131,7 +133,7 @@ function createIsNullComparison(element) {
 }
 /**
  * factory for element type PropertyIsBetweenType
- *
+ * @private
  * @param {Element} element
  *
  * @return {object}
@@ -151,6 +153,7 @@ function createIsBetweenComparison(element) {
 
 /**
  * Factory for and/or filter
+ * @private
  * @param {Element} element
  *
  * @return {object}
@@ -170,6 +173,7 @@ function createBinaryLogic(element) {
 
 /**
  * Factory for not filter
+ * @private
  * @param {Element} element
  *
  * @return {object}

@@ -1,6 +1,10 @@
 import createFilter from './filter';
 
 /**
+ * @module
+ */
+
+/**
  * Generic parser for elements with maxOccurs > 1
  * it pushes result of readNode(node) to array on obj[prop]
  * @private

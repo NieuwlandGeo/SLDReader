@@ -6,14 +6,16 @@
 
   /**
    * Factory methods for filterelements
-   * @module
    * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
+   *
+   * @module
    */
 
   var TYPE_COMPARISON = 'comparison';
 
   /**
    * @var string[] element names of binary comparison
+   * @private
    */
   var BINARY_COMPARISON_NAMES = [
     'PropertyIsEqualTo',
@@ -29,7 +31,7 @@
     'PropertyIsBetween' ]);
 
   /**
-   *
+   * @private
    * @param {string} localName
    *
    * @return null|string
@@ -57,7 +59,7 @@
 
   /**
    * factory for comparisonOps
-   *
+   * @private
    * @param {Element} element
    *
    * @return {object}
@@ -80,7 +82,7 @@
 
   /**
    * factory for element type BinaryComparisonOpType
-   *
+   * @private
    * @param {Element} element
    *
    * @return {object}
@@ -99,7 +101,7 @@
 
   /**
    * factory for element type PropertyIsLikeType
-   *
+   * @private
    * @param {Element} element
    *
    * @return {object}
@@ -119,7 +121,7 @@
   }
   /**
    * factory for element type PropertyIsNullType
-   *
+   * @private
    * @param {Element} element
    *
    * @return {object}
@@ -135,7 +137,7 @@
   }
   /**
    * factory for element type PropertyIsBetweenType
-   *
+   * @private
    * @param {Element} element
    *
    * @return {object}
@@ -155,6 +157,7 @@
 
   /**
    * Factory for and/or filter
+   * @private
    * @param {Element} element
    *
    * @return {object}
@@ -174,6 +177,7 @@
 
   /**
    * Factory for not filter
+   * @private
    * @param {Element} element
    *
    * @return {object}
@@ -250,6 +254,10 @@
    * @property {string} [singlechar] Required single char match character,
    * required for operator='propertyislike'.
    * @property {string} [escapechar] Required escape character for operator='propertyislike'.
+   */
+
+  /**
+   * @module
    */
 
   /**
