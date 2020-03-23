@@ -105,21 +105,6 @@ describe('Filter tests', () => {
         '0'
       ].rules['0'];
 
-      /*
-      <ogc:Not>
-        <ogc:Or>
-          <ogc:PropertyIsEqualTo>
-            <ogc:PropertyName>PERIMETER</ogc:PropertyName>
-            <ogc:Literal>1071304933</ogc:Literal>
-          </ogc:PropertyIsEqualTo>
-          <ogc:PropertyIsLessThan>
-            <ogc:PropertyName>AREA</ogc:PropertyName>
-            <ogc:Literal>1065512599</ogc:Literal>
-          </ogc:PropertyIsLessThan>
-        </ogc:Or>
-      </ogc:Not>
-      */
-
       expect(filter.type).to.equal('not');
 
       const { predicate } = filter;
