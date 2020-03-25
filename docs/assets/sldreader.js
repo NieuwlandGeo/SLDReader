@@ -425,10 +425,9 @@
   /**
    * css and svg params
    * @private
-   * @param  {[type]} element          [description]
-   * @param  {[type]} obj              [description]
-   * @param  {String} [propname='css'] [description]
-   * @return {[type]}                  [description]
+   * @param  {Element} element
+   * @param  {object} obj
+   * @param  {String} prop
    */
   function parameters(element, obj, prop) {
     var propnames = {
@@ -1532,6 +1531,7 @@
   }
 
   /**
+   * @private
    * Utility function for evaluating dynamic expressions without a feature.
    * If the expression is static, the expression value will be returned.
    * If the expression is dynamic, defaultValue will be returned.

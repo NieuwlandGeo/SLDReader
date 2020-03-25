@@ -14,12 +14,6 @@
 <dt><a href="#getGeometryStyles">getGeometryStyles(rules)</a> ⇒ <code><a href="#GeometryStyles">GeometryStyles</a></code></dt>
 <dd><p>Get styling from rules per geometry type</p>
 </dd>
-<dt><a href="#expressionOrDefault">expressionOrDefault(expression, defaultValue)</a> ⇒ <code>any</code></dt>
-<dd><p>Utility function for evaluating dynamic expressions without a feature.
-If the expression is static, the expression value will be returned.
-If the expression is dynamic, defaultValue will be returned.
-If the expression is falsy, defaultValue will be returned.</p>
-</dd>
 <dt><a href="#createOlStyleFunction">createOlStyleFunction(featureTypeStyle, options)</a> ⇒ <code>function</code></dt>
 <dd><p>Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.</p>
 <p><strong>Important!</strong> When using externalGraphics for point styling, make sure to call .changed() on the layer
@@ -122,22 +116,6 @@ Get styling from rules per geometry type
 | Param | Type | Description |
 | --- | --- | --- |
 | rules | [<code>Array.&lt;Rule&gt;</code>](#Rule) | [description] |
-
-<a name="expressionOrDefault"></a>
-
-## expressionOrDefault(expression, defaultValue) ⇒ <code>any</code>
-Utility function for evaluating dynamic expressions without a feature.
-If the expression is static, the expression value will be returned.
-If the expression is dynamic, defaultValue will be returned.
-If the expression is falsy, defaultValue will be returned.
-
-**Kind**: global function  
-**Returns**: <code>any</code> - The value of a static expression or default value if the expression is dynamic.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| expression | <code>object</code> \| <code>string</code> | SLD object expression (or string). |
-| defaultValue | <code>any</code> | Default value. |
 
 <a name="createOlStyleFunction"></a>
 
