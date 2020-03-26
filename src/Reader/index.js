@@ -1,3 +1,9 @@
+import createFilter from './filter';
+
+/**
+ * @module
+ */
+
 /**
  * Generic parser for elements with maxOccurs > 1
  * it pushes result of readNode(node) to array on obj[prop]
@@ -46,17 +52,6 @@ function addProp(node, obj, prop) {
   const property = prop.toLowerCase();
   obj[property] = {};
   readNode(node, obj[property]);
-}
-
-/**
- * Parser for filter comparison operators
- * @private
- * @type {[type]}
- */
-function addFilterComparison(node, obj, prop) {
-  obj.type = 'comparison';
-  obj.operator = prop.toLowerCase();
-  readNode(node, obj);
 }
 
 /**
@@ -170,10 +165,9 @@ function getBool(element, tagName) {
 /**
  * css and svg params
  * @private
- * @param  {[type]} element          [description]
- * @param  {[type]} obj              [description]
- * @param  {String} [propname='css'] [description]
- * @return {[type]}                  [description]
+ * @param  {Element} element
+ * @param  {object} obj
+ * @param  {String} prop
  */
 function parameters(element, obj, prop) {
   const propnames = {
@@ -191,49 +185,11 @@ function parameters(element, obj, prop) {
 }
 
 const FilterParsers = {
-  Filter: addProp,
+  Filter: (element, obj) => {
+    obj.filter = createFilter(element);
+  },
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
-  },
-  Or: (element, obj) => {
-    obj.type = 'or';
-    obj.predicates = [];
-    readNodeArray(element, obj, 'predicates');
-  },
-  And: (element, obj) => {
-    obj.type = 'and';
-    obj.predicates = [];
-    readNodeArray(element, obj, 'predicates');
-  },
-  Not: (element, obj) => {
-    obj.type = 'not';
-    obj.predicate = {};
-    readNode(element, obj.predicate);
-  },
-  PropertyIsEqualTo: addFilterComparison,
-  PropertyIsNotEqualTo: addFilterComparison,
-  PropertyIsLessThan: addFilterComparison,
-  PropertyIsLessThanOrEqualTo: addFilterComparison,
-  PropertyIsGreaterThan: addFilterComparison,
-  PropertyIsGreaterThanOrEqualTo: addFilterComparison,
-  PropertyIsBetween: addFilterComparison,
-  PropertyIsNull: addFilterComparison,
-  PropertyIsLike: (element, obj, prop) => {
-    addFilterComparison(element, obj, prop);
-    obj.wildcard = element.getAttribute('wildCard');
-    obj.singlechar = element.getAttribute('singleChar');
-    obj.escapechar = element.getAttribute('escapeChar');
-  },
-  PropertyName: addPropWithTextContent,
-  Literal: addPropWithTextContent,
-  LowerBoundary: (element, obj, prop) =>
-    addPropWithTextContent(element, obj, prop, true),
-  UpperBoundary: (element, obj, prop) =>
-    addPropWithTextContent(element, obj, prop, true),
-  FeatureId: (element, obj) => {
-    obj.type = 'featureid';
-    obj.fids = obj.fids || [];
-    obj.fids.push(element.getAttribute('fid'));
   },
 };
 
@@ -329,26 +285,6 @@ function readNode(node, obj) {
 }
 
 /**
- * Parse all children of an element as an array in obj[prop]
- * @private
- * @param {Element} node parent xml element
- * @param {object} obj the object to modify
- * @param {string} prop the name of the array prop to fill with parsed child nodes
- * @return {void}
- */
-function readNodeArray(node, obj, prop) {
-  const property = prop.toLowerCase();
-  obj[property] = [];
-  for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
-    if (parsers[n.localName]) {
-      const childObj = {};
-      parsers[n.localName](n, childObj, n.localName);
-      obj[property].push(childObj);
-    }
-  }
-}
-
-/**
  * Creates a object from an sld xml string,
  * @param  {string} sld xml string
  * @return {StyledLayerDescriptor}  object representing sld style
@@ -405,38 +341,6 @@ export default function Reader(sld) {
  * @property {LineSymbolizer}  [linesymbolizer]
  * @property {PointSymbolizer} [pointsymbolizer]
  * */
-
-/**
- * A filter predicate.
- * @typedef Filter
- * @name Filter
- * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
- * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
- * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
- * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
- * @property {string} [operator] Required for type='comparison'. Can be one of
- * 'propertyisequalto',
- * 'propertyisnotequalto',
- * 'propertyislessthan',
- * 'propertyislessthanorequalto',
- * 'propertyisgreaterthan',
- * 'propertyisgreaterthanorequalto',
- * 'propertyislike',
- * 'propertyisbetween'
- * @property {Filter[]} [predicates] Required for type='and' or type='or'.
- * An array of filter predicates that must all evaluate to true for 'and', or
- * for which at least one must evaluate to true for 'or'.
- * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
- * @property {string} [propertyname] Required for type='comparison'.
- * @property {string} [literal] A literal value to use in a comparison,
- * required for type='comparison'.
- * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
- * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
- * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
- * @property {string} [singlechar] Required single char match character,
- * required for operator='propertyislike'.
- * @property {string} [escapechar] Required escape character for operator='propertyislike'.
- */
 
 /**
  * @typedef PolygonSymbolizer

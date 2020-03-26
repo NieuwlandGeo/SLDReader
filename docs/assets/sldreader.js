@@ -5,6 +5,262 @@
 }(this, (function (exports, style) { 'use strict';
 
   /**
+   * Factory methods for filterelements
+   * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
+   *
+   * @module
+   */
+
+  var TYPE_COMPARISON = 'comparison';
+
+  /**
+   * @var string[] element names of binary comparison
+   * @private
+   */
+  var BINARY_COMPARISON_NAMES = [
+    'PropertyIsEqualTo',
+    'PropertyIsNotEqualTo',
+    'PropertyIsLessThan',
+    'PropertyIsLessThanOrEqualTo',
+    'PropertyIsGreaterThan',
+    'PropertyIsGreaterThanOrEqualTo' ];
+
+  var COMPARISON_NAMES = BINARY_COMPARISON_NAMES.concat([
+    'PropertyIsLike',
+    'PropertyIsNull',
+    'PropertyIsBetween' ]);
+
+  /**
+   * @private
+   * @param {string} localName
+   *
+   * @return null|string
+   */
+  function getChildTextContent(node, localName) {
+    var propertyNameElement = node
+      .getElementsByTagNameNS(node.namespaceURI, localName)
+      .item(0);
+    if (!propertyNameElement) {
+      return null;
+    }
+    if (propertyNameElement.parentNode !== node) {
+      throw new Error('Expected direct descant');
+    }
+    return propertyNameElement ? propertyNameElement.textContent.trim() : null;
+  }
+
+  function isComparison(element) {
+    return COMPARISON_NAMES.includes(element.localName);
+  }
+
+  function isBinary(element) {
+    return ['or', 'and'].includes(element.localName.toLowerCase());
+  }
+
+  /**
+   * factory for comparisonOps
+   * @private
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createComparison(element) {
+    if (BINARY_COMPARISON_NAMES.includes(element.localName)) {
+      return createBinaryFilterComparison(element);
+    }
+    if (element.localName === 'PropertyIsBetween') {
+      return createIsBetweenComparison(element);
+    }
+    if (element.localName === 'PropertyIsNull') {
+      return createIsNullComparison(element);
+    }
+    if (element.localName === 'PropertyIsLike') {
+      return createIsLikeComparison(element);
+    }
+    throw new Error(("Unknown comparison element " + (element.localName)));
+  }
+
+  /**
+   * factory for element type BinaryComparisonOpType
+   * @private
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createBinaryFilterComparison(element) {
+    var propertyname = getChildTextContent(element, 'PropertyName');
+    var literal = getChildTextContent(element, 'Literal');
+
+    return {
+      type: TYPE_COMPARISON,
+      operator: element.localName.toLowerCase(),
+      propertyname: propertyname,
+      literal: literal,
+    };
+  }
+
+  /**
+   * factory for element type PropertyIsLikeType
+   * @private
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createIsLikeComparison(element) {
+    var propertyname = getChildTextContent(element, 'PropertyName');
+    var literal = getChildTextContent(element, 'Literal');
+    return {
+      type: TYPE_COMPARISON,
+      operator: element.localName.toLowerCase(),
+      propertyname: propertyname,
+      literal: literal,
+      wildcard: element.getAttribute('wildCard'),
+      singlechar: element.getAttribute('singleChar'),
+      escapechar: element.getAttribute('escapeChar'),
+    };
+  }
+  /**
+   * factory for element type PropertyIsNullType
+   * @private
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createIsNullComparison(element) {
+    var propertyname = getChildTextContent(element, 'PropertyName');
+
+    return {
+      type: TYPE_COMPARISON,
+      operator: element.localName.toLowerCase(),
+      propertyname: propertyname,
+    };
+  }
+  /**
+   * factory for element type PropertyIsBetweenType
+   * @private
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createIsBetweenComparison(element) {
+    var propertyname = getChildTextContent(element, 'PropertyName');
+    var lowerboundary = getChildTextContent(element, 'LowerBoundary');
+    var upperboundary = getChildTextContent(element, 'UpperBoundary');
+    return {
+      type: TYPE_COMPARISON,
+      operator: element.localName.toLowerCase(),
+      lowerboundary: lowerboundary,
+      upperboundary: upperboundary,
+      propertyname: propertyname,
+    };
+  }
+
+  /**
+   * Factory for and/or filter
+   * @private
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createBinaryLogic(element) {
+    var predicates = [];
+    for (var n = element.firstElementChild; n; n = n.nextElementSibling) {
+      if (isComparison(n)) {
+        predicates.push(createComparison(n));
+      }
+    }
+    return {
+      type: element.localName.toLowerCase(),
+      predicates: predicates,
+    };
+  }
+
+  /**
+   * Factory for not filter
+   * @private
+   * @param {Element} element
+   *
+   * @return {object}
+   */
+  function createUnaryLogic(element) {
+    var predicate = null;
+    var childElement = element.firstElementChild;
+    if (childElement && isComparison(childElement)) {
+      predicate = createComparison(childElement);
+    }
+    if (childElement && isBinary(childElement)) {
+      predicate = createBinaryLogic(childElement);
+    }
+    return {
+      type: element.localName.toLowerCase(),
+      predicate: predicate,
+    };
+  }
+
+  /**
+   * Factory root filter element
+   * @param {Element} element
+   *
+   * @return {Filter}
+   */
+  function createFilter(element) {
+    var filter = {};
+    for (var n = element.firstElementChild; n; n = n.nextElementSibling) {
+      if (isComparison(n)) {
+        filter = createComparison(n);
+      }
+      if (isBinary(n)) {
+        filter = createBinaryLogic(n);
+      }
+      if (n.localName.toLowerCase() === 'not') {
+        filter = createUnaryLogic(n);
+      }
+      if (n.localName.toLowerCase() === 'featureid') {
+        filter.type = 'featureid';
+        filter.fids = filter.fids || [];
+        filter.fids.push(n.getAttribute('fid'));
+      }
+    }
+    return filter;
+  }
+
+  /**
+   * A filter predicate.
+   * @typedef Filter
+   * @name Filter
+   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+   * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
+   * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
+   * @property {string} [operator] Required for type='comparison'. Can be one of
+   * 'propertyisequalto',
+   * 'propertyisnotequalto',
+   * 'propertyislessthan',
+   * 'propertyislessthanorequalto',
+   * 'propertyisgreaterthan',
+   * 'propertyisgreaterthanorequalto',
+   * 'propertyislike',
+   * 'propertyisbetween'
+   * @property {Filter[]} [predicates] Required for type='and' or type='or'.
+   * An array of filter predicates that must all evaluate to true for 'and', or
+   * for which at least one must evaluate to true for 'or'.
+   * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
+   * @property {string} [propertyname] Required for type='comparison'.
+   * @property {string} [literal] A literal value to use in a comparison,
+   * required for type='comparison'.
+   * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
+   * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
+   * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
+   * @property {string} [singlechar] Required single char match character,
+   * required for operator='propertyislike'.
+   * @property {string} [escapechar] Required escape character for operator='propertyislike'.
+   */
+
+  /**
+   * @module
+   */
+
+  /**
    * Generic parser for elements with maxOccurs > 1
    * it pushes result of readNode(node) to array on obj[prop]
    * @private
@@ -52,17 +308,6 @@
     var property = prop.toLowerCase();
     obj[property] = {};
     readNode(node, obj[property]);
-  }
-
-  /**
-   * Parser for filter comparison operators
-   * @private
-   * @type {[type]}
-   */
-  function addFilterComparison(node, obj, prop) {
-    obj.type = 'comparison';
-    obj.operator = prop.toLowerCase();
-    readNode(node, obj);
   }
 
   /**
@@ -180,10 +425,9 @@
   /**
    * css and svg params
    * @private
-   * @param  {[type]} element          [description]
-   * @param  {[type]} obj              [description]
-   * @param  {String} [propname='css'] [description]
-   * @return {[type]}                  [description]
+   * @param  {Element} element
+   * @param  {object} obj
+   * @param  {String} prop
    */
   function parameters(element, obj, prop) {
     var propnames = {
@@ -201,47 +445,11 @@
   }
 
   var FilterParsers = {
-    Filter: addProp,
+    Filter: function (element, obj) {
+      obj.filter = createFilter(element);
+    },
     ElseFilter: function (element, obj) {
       obj.elsefilter = true;
-    },
-    Or: function (element, obj) {
-      obj.type = 'or';
-      obj.predicates = [];
-      readNodeArray(element, obj, 'predicates');
-    },
-    And: function (element, obj) {
-      obj.type = 'and';
-      obj.predicates = [];
-      readNodeArray(element, obj, 'predicates');
-    },
-    Not: function (element, obj) {
-      obj.type = 'not';
-      obj.predicate = {};
-      readNode(element, obj.predicate);
-    },
-    PropertyIsEqualTo: addFilterComparison,
-    PropertyIsNotEqualTo: addFilterComparison,
-    PropertyIsLessThan: addFilterComparison,
-    PropertyIsLessThanOrEqualTo: addFilterComparison,
-    PropertyIsGreaterThan: addFilterComparison,
-    PropertyIsGreaterThanOrEqualTo: addFilterComparison,
-    PropertyIsBetween: addFilterComparison,
-    PropertyIsNull: addFilterComparison,
-    PropertyIsLike: function (element, obj, prop) {
-      addFilterComparison(element, obj, prop);
-      obj.wildcard = element.getAttribute('wildCard');
-      obj.singlechar = element.getAttribute('singleChar');
-      obj.escapechar = element.getAttribute('escapeChar');
-    },
-    PropertyName: addPropWithTextContent,
-    Literal: addPropWithTextContent,
-    LowerBoundary: function (element, obj, prop) { return addPropWithTextContent(element, obj, prop, true); },
-    UpperBoundary: function (element, obj, prop) { return addPropWithTextContent(element, obj, prop, true); },
-    FeatureId: function (element, obj) {
-      obj.type = 'featureid';
-      obj.fids = obj.fids || [];
-      obj.fids.push(element.getAttribute('fid'));
     },
   };
 
@@ -335,26 +543,6 @@
   }
 
   /**
-   * Parse all children of an element as an array in obj[prop]
-   * @private
-   * @param {Element} node parent xml element
-   * @param {object} obj the object to modify
-   * @param {string} prop the name of the array prop to fill with parsed child nodes
-   * @return {void}
-   */
-  function readNodeArray(node, obj, prop) {
-    var property = prop.toLowerCase();
-    obj[property] = [];
-    for (var n = node.firstElementChild; n; n = n.nextElementSibling) {
-      if (parsers[n.localName]) {
-        var childObj = {};
-        parsers[n.localName](n, childObj, n.localName);
-        obj[property].push(childObj);
-      }
-    }
-  }
-
-  /**
    * Creates a object from an sld xml string,
    * @param  {string} sld xml string
    * @return {StyledLayerDescriptor}  object representing sld style
@@ -411,38 +599,6 @@
    * @property {LineSymbolizer}  [linesymbolizer]
    * @property {PointSymbolizer} [pointsymbolizer]
    * */
-
-  /**
-   * A filter predicate.
-   * @typedef Filter
-   * @name Filter
-   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
-   * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
-   * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
-   * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
-   * @property {string} [operator] Required for type='comparison'. Can be one of
-   * 'propertyisequalto',
-   * 'propertyisnotequalto',
-   * 'propertyislessthan',
-   * 'propertyislessthanorequalto',
-   * 'propertyisgreaterthan',
-   * 'propertyisgreaterthanorequalto',
-   * 'propertyislike',
-   * 'propertyisbetween'
-   * @property {Filter[]} [predicates] Required for type='and' or type='or'.
-   * An array of filter predicates that must all evaluate to true for 'and', or
-   * for which at least one must evaluate to true for 'or'.
-   * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
-   * @property {string} [propertyname] Required for type='comparison'.
-   * @property {string} [literal] A literal value to use in a comparison,
-   * required for type='comparison'.
-   * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
-   * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
-   * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
-   * @property {string} [singlechar] Required single char match character,
-   * required for operator='propertyislike'.
-   * @property {string} [escapechar] Required escape character for operator='propertyislike'.
-   */
 
   /**
    * @typedef PolygonSymbolizer
@@ -1095,6 +1251,8 @@
     });
   }
 
+  var emptyStyle = new style.Style({});
+
   var defaultPointStyle = new style.Style({
     image: new style.Circle({
       radius: 8,
@@ -1373,6 +1531,7 @@
   }
 
   /**
+   * @private
    * Utility function for evaluating dynamic expressions without a feature.
    * If the expression is static, the expression value will be returned.
    * If the expression is dynamic, defaultValue will be returned.
@@ -1695,7 +1854,7 @@
    */
   function textStyle(textsymbolizer) {
     if (!(textsymbolizer && textsymbolizer.label)) {
-      return new style.Style({});
+      return emptyStyle;
     }
 
     // If the label is dynamic, set text to empty string.
@@ -1728,7 +1887,10 @@
         : {};
 
     // If rotation is dynamic, default to 0. Rotation will be set at runtime.
-    var labelRotationDegrees = expressionOrDefault(pointplacement.rotation, 0.0);
+    var labelRotationDegrees = expressionOrDefault(
+      pointplacement.rotation,
+      0.0
+    );
 
     var displacement =
       pointplacement && pointplacement.displacement
@@ -1795,18 +1957,21 @@
     var labelplacement = symbolizer.labelplacement;
 
     // Set text only if the label expression is dynamic.
-    if (label.type === 'expression') {
+    if (label && label.type === 'expression') {
       var labelText = evaluate(label, feature);
       olText.setText(labelText);
     }
 
     // Set rotation if expression is dynamic.
-    var pointPlacementRotation =
-      (labelplacement.pointplacement && labelplacement.pointplacement.rotation) ||
-      0.0;
-    if (pointPlacementRotation.type === 'expression') {
-      var labelRotationDegrees = evaluate(pointPlacementRotation, feature);
-      olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+    if (labelplacement) {
+      var pointPlacementRotation =
+        (labelplacement.pointplacement &&
+          labelplacement.pointplacement.rotation) ||
+        0.0;
+      if (pointPlacementRotation.type === 'expression') {
+        var labelRotationDegrees = evaluate(pointPlacementRotation, feature);
+        olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+      }
     }
 
     // Set line or point placement according to geometry type.

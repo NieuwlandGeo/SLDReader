@@ -49,6 +49,7 @@ export default function evaluate(expression, feature) {
 }
 
 /**
+ * @private
  * Utility function for evaluating dynamic expressions without a feature.
  * If the expression is static, the expression value will be returned.
  * If the expression is dynamic, defaultValue will be returned.
