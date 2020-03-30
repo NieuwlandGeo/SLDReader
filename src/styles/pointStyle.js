@@ -7,7 +7,7 @@ import {
   IMAGE_ERROR,
   DEFAULT_POINT_SIZE,
 } from '../constants';
-import { memoizeStyleFunction } from './styleUtils';
+import { hexToRGB, memoizeStyleFunction } from './styleUtils';
 import { imageLoadingPointStyle, imageErrorPointStyle } from './static';
 import { createCachedImageStyle } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
@@ -21,8 +21,11 @@ import evaluate, { expressionOrDefault } from '../olEvaluator';
 function getMarkFill(mark) {
   const { fill } = mark;
   const fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
+  const fillOpacity = (fill && fill.styling && fill.styling.fillOpacity) || 1.0;
   return new Fill({
-    color: fillColor,
+    color: fillOpacity && fillColor && fillColor.slice(0, 1) === '#'
+      ? hexToRGB(fillColor, fillOpacity)
+      : fillColor,
   });
 }
 
@@ -36,9 +39,12 @@ function getMarkStroke(mark) {
 
   let olStroke;
   if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
-    const { stroke: cssStroke, strokeWidth: cssStrokeWidth } = stroke.styling;
+    const { stroke: cssStroke, strokeWidth: cssStrokeWidth, strokeOpacity: cssStrokeOpacity } = stroke.styling;
     olStroke = new Stroke({
-      color: cssStroke || 'black',
+      color:
+        cssStrokeOpacity && cssStroke && cssStroke.slice(0, 1) === '#'
+          ? hexToRGB(cssStroke, cssStrokeOpacity)
+          : cssStroke || 'black',
       width: cssStrokeWidth || 2,
     });
   }

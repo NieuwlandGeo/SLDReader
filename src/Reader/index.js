@@ -200,6 +200,7 @@ const SymbParsers = {
   TextSymbolizer: addPropOrArray,
   Fill: addProp,
   Stroke: addProp,
+  GraphicStroke: addProp,
   GraphicFill: addProp,
   Graphic: addProp,
   ExternalGraphic: addProp,
@@ -215,6 +216,7 @@ const SymbParsers = {
   AnchorPoint: addProp,
   AnchorPointX: addPropWithTextContent,
   AnchorPointY: addPropWithTextContent,
+  Opacity: addFilterExpressionProp,
   Rotation: addFilterExpressionProp,
   Displacement: addProp,
   DisplacementX: addPropWithTextContent,
@@ -360,6 +362,15 @@ export default function Reader(sld) {
  * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
  * @property {Object} stroke
  * @property {Object[]} stroke.css one object per CssParameter with props name (camelcased) & value
+ * @property {Object} graphicstroke
+ * @property {Object} graphicstroke.graphic
+ * @property {Object} graphicstroke.graphic.mark
+ * @property {string} graphicstroke.graphic.mark.wellknownname
+ * @property {Object} graphicstroke.graphic.mark.fill
+ * @property {Object} graphicstroke.graphic.mark.stroke
+ * @property {Number} graphicstroke.graphic.opacity
+ * @property {Number} graphicstroke.graphic.size
+ * @property {Number} graphicstroke.graphic.rotation
  * */
 
 /**
