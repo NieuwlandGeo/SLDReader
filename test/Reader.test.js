@@ -207,7 +207,7 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('rule linesymbolizer has props from svg 1', () => {
     const linesymbolizer1 =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['0'];    
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['0'];
     expect(linesymbolizer1.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling.stroke).to.equal('#FF0000');
@@ -215,14 +215,14 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('rule linesymbolizer has props from svg 2', () => {
     const linesymbolizer2 =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['1'];    
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['1'];
     expect(linesymbolizer2.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling.strokeDasharray).to.equal('2 6');
   });
   it('rule linesymbolizer has graphicstroke', () => {
-    const stroke =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['1'].stroke;    
+    const { stroke } =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['1'];
     expect(stroke.graphicstroke).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.have.property('mark');
