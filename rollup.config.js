@@ -11,6 +11,9 @@ export default {
     name: 'SLDReader',
     globals: {
       'ol/style': 'ol.style',
+      'ol/render': 'ol.render',
+      'ol/extent': 'ol.extent',
+      'ol/geom': 'ol.geom',            
     },
   },
   plugins: [buble({ objectAssign: true }), resolve()],

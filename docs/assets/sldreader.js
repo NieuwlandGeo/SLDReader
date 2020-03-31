@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'ol/style'], factory) :
-  (global = global || self, factory(global.SLDReader = {}, global.ol.style));
-}(this, (function (exports, style) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style'), require('ol/render'), require('ol/geom'), require('ol/extent')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style', 'ol/render', 'ol/geom', 'ol/extent'], factory) :
+  (global = global || self, factory(global.SLDReader = {}, global.ol.style, global.ol.render, global.ol.geom, global.ol.extent));
+}(this, (function (exports, style, render, geom, extent) { 'use strict';
 
   /**
    * Factory methods for filterelements
@@ -460,6 +460,7 @@
     TextSymbolizer: addPropOrArray,
     Fill: addProp,
     Stroke: addProp,
+    GraphicStroke: addProp,
     GraphicFill: addProp,
     Graphic: addProp,
     ExternalGraphic: addProp,
@@ -475,6 +476,7 @@
     AnchorPoint: addProp,
     AnchorPointX: addPropWithTextContent,
     AnchorPointY: addPropWithTextContent,
+    Opacity: addFilterExpressionProp,
     Rotation: addFilterExpressionProp,
     Displacement: addProp,
     DisplacementX: addPropWithTextContent,
@@ -618,6 +620,15 @@
    * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
    * @property {Object} stroke
    * @property {Object[]} stroke.css one object per CssParameter with props name (camelcased) & value
+   * @property {Object} graphicstroke
+   * @property {Object} graphicstroke.graphic
+   * @property {Object} graphicstroke.graphic.mark
+   * @property {string} graphicstroke.graphic.mark.wellknownname
+   * @property {Object} graphicstroke.graphic.mark.fill
+   * @property {Object} graphicstroke.graphic.mark.stroke
+   * @property {Number} graphicstroke.graphic.opacity
+   * @property {Number} graphicstroke.graphic.size
+   * @property {Number} graphicstroke.graphic.rotation
    * */
 
   /**
@@ -1562,8 +1573,11 @@
   function getMarkFill(mark) {
     var fill = mark.fill;
     var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
+    var fillOpacity = (fill && fill.styling && fill.styling.fillOpacity) || 1.0;
     return new style.Fill({
-      color: fillColor,
+      color: fillOpacity && fillColor && fillColor.slice(0, 1) === '#'
+        ? hexToRGB(fillColor, fillOpacity)
+        : fillColor,
     });
   }
 
@@ -1580,8 +1594,12 @@
       var ref = stroke.styling;
       var cssStroke = ref.stroke;
       var cssStrokeWidth = ref.strokeWidth;
+      var cssStrokeOpacity = ref.strokeOpacity;
       olStroke = new style.Stroke({
-        color: cssStroke || 'black',
+        color:
+          cssStrokeOpacity && cssStroke && cssStroke.slice(0, 1) === '#'
+            ? hexToRGB(cssStroke, cssStrokeOpacity)
+            : cssStroke || 'black',
         width: cssStrokeWidth || 2,
       });
     }
@@ -1708,6 +1726,84 @@
     return olStyle;
   }
 
+  function splitLineString(geometry, minSegmentLength, options) {
+    function calculatePointsDistance(coord1, coord2) {
+      var dx = coord1[0] - coord2[0];
+      var dy = coord1[1] - coord2[1];
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function calculateSplitPointCoords(startNode, nextNode, distanceBetweenNodes, distanceToSplitPoint) {
+      var d = distanceToSplitPoint / distanceBetweenNodes;
+      var x = nextNode[0] + (startNode[0] - nextNode[0]) * d;
+      var y = nextNode[1] + (startNode[1] - nextNode[1]) * d;
+      return [x, y];
+    }
+
+    function calculateAngle(startNode, nextNode, alwaysUp) {
+      var x = (startNode[0] - nextNode[0]);
+      var y = (startNode[1] - nextNode[1]);
+      var angle = Math.atan(x / y);
+      if (!alwaysUp) {
+        if (y > 0) {
+          angle += Math.PI;
+        } else if (x < 0) {
+          angle += Math.PI * 2;
+        }
+        // angle = y > 0 ? angle + Math.PI : x < 0 ? angle + Math.PI * 2 : angle;
+      }
+      return angle;
+    }
+
+    var splitPoints = [];
+    var coords = geometry.getCoordinates();
+
+    var coordIndex = 0;
+    var startPoint = coords[coordIndex];
+    var nextPoint = coords[coordIndex + 1];
+    var angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
+
+    var n = Math.ceil(geometry.getLength() / minSegmentLength);
+    var segmentLength = geometry.getLength() / n;
+    var currentSegmentLength = options.midPoints ? segmentLength / 2 : segmentLength;
+
+    for (var i = 0; i <= n; i += 1) {
+      var distanceBetweenPoints = calculatePointsDistance(startPoint, nextPoint);
+      currentSegmentLength += distanceBetweenPoints;
+
+      if (currentSegmentLength < segmentLength) {
+        coordIndex += 1;
+        if (coordIndex < coords.length - 1) {
+          startPoint = coords[coordIndex];
+          nextPoint = coords[coordIndex + 1];
+          angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
+          i -= 1;
+          // continue;
+        } else {
+          if (!options.midPoints) {
+            var splitPointCoords = nextPoint;
+            if (!options.extent || extent.containsCoordinate(options.extent, splitPointCoords)) {
+              splitPointCoords.push(angle);
+              splitPoints.push(splitPointCoords);
+            }
+          }
+          break;
+        }
+      } else {
+        var distanceToSplitPoint = currentSegmentLength - segmentLength;
+        var splitPointCoords$1 = calculateSplitPointCoords(startPoint, nextPoint, distanceBetweenPoints, distanceToSplitPoint);
+        startPoint = splitPointCoords$1.slice();
+        if (!options.extent || extent.containsCoordinate(options.extent, splitPointCoords$1)) {
+          splitPointCoords$1.push(angle);
+          splitPoints.push(splitPointCoords$1);
+        }
+        currentSegmentLength = 0;
+      }
+    }
+
+    return splitPoints;
+  }
+
   /**
    * @private
    * @param  {LineSymbolizer} linesymbolizer [description]
@@ -1717,6 +1813,39 @@
     var style$1 = {};
     if (linesymbolizer.stroke) {
       style$1 = linesymbolizer.stroke.styling;
+
+      if (linesymbolizer.stroke.graphicstroke) {
+        return new style.Style({
+          renderer: function (pixelCoords, renderState) {
+            // TODO: Error handling, alternatives, etc.
+            var render$1 = render.toContext(renderState.context);
+
+            var pointStyle = getPointStyle(linesymbolizer.stroke.graphicstroke, renderState.feature);
+
+            var size = expressionOrDefault(linesymbolizer.stroke.graphicstroke.graphic.size, DEFAULT_POINT_SIZE); // TODO: Dynamic size?
+            var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+
+            // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
+            // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
+            if (linesymbolizer.stroke.styling && linesymbolizer.stroke.styling.strokeDasharray) {
+              var dash = linesymbolizer.stroke.styling.strokeDasharray.split(' ');
+              if (dash.length >= 2 && dash[0] !== 0) {
+                multiplier = dash[1] / dash[0] + 1;
+              }
+            }
+
+            var splitPoints = splitLineString(new geom.LineString(pixelCoords), multiplier * size,
+              // eslint-disable-next-line no-underscore-dangle
+              { alwaysUp: true, midPoints: false, extent: render$1.extent_ });
+            splitPoints.forEach(function (point) {
+              var image = pointStyle.getImage().clone();
+              image.setRotation(image.getRotation() - point[2]); // TODO: Do some tests on rotation
+              render$1.setImageStyle(image);
+              render$1.drawPoint(new geom.Point([point[0], point[1]]));
+            });
+          },
+        });
+      }
     }
     return new style.Style({
       stroke: new style.Stroke({
