@@ -117,7 +117,8 @@ function lineStyle(linesymbolizer) {
           }
 
           const splitPoints = splitLineString(new LineString(pixelCoords), multiplier * size,
-            { alwaysUp: true, midPoints: false, extent: render.extent_ }); // TODO: Check .getExtent()
+            // eslint-disable-next-line no-underscore-dangle
+            { alwaysUp: true, midPoints: false, extent: render.extent_ });
           splitPoints.forEach(point => {
             const image = pointStyle.getImage().clone();
             image.setRotation(image.getRotation() - point[2]); // TODO: Do some tests on rotation

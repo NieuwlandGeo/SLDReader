@@ -1835,7 +1835,8 @@
             }
 
             var splitPoints = splitLineString(new geom.LineString(pixelCoords), multiplier * size,
-              { alwaysUp: true, midPoints: false, extent: render$1.extent_ }); // TODO: Check .getExtent()
+              // eslint-disable-next-line no-underscore-dangle
+              { alwaysUp: true, midPoints: false, extent: render$1.extent_ });
             splitPoints.forEach(function (point) {
               var image = pointStyle.getImage().clone();
               image.setRotation(image.getRotation() - point[2]); // TODO: Do some tests on rotation
