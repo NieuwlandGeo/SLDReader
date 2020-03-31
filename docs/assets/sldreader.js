@@ -1726,6 +1726,8 @@
     return olStyle;
   }
 
+  /* eslint-disable no-underscore-dangle */
+
   function splitLineString(geometry, minSegmentLength, options) {
     function calculatePointsDistance(coord1, coord2) {
       var dx = coord1[0] - coord2[0];
@@ -1804,6 +1806,34 @@
     return splitPoints;
   }
 
+  // A flag to prevent multiple renderer patches.
+  var rendererPatched = false;
+  function patchRenderer(renderer) {
+    if (rendererPatched) {
+      return;
+    }
+
+    // Add setImageStyle2 function that does the same as setImageStyle, except that it sets rotation
+    // to a given value instead of taking it from imageStyle.getRotation().
+    // This fixes a problem with re-use of the (cached) image style instance when drawing
+    // many points inside a single line feature that are aligned according to line segment direction.
+    var rendererProto = Object.getPrototypeOf(renderer);
+    // eslint-disable-next-line func-names
+    rendererProto.setImageStyle2 = function (imageStyle, rotation) {
+      // First call the original setImageStyle method.
+      rendererProto.setImageStyle.call(this, imageStyle);
+
+      // Then set rotation according to the given parameter.
+      // This overrides the following line in setImageStyle:
+      // this.imageRotation_ = imageStyle.getRotation()
+      if (this.image_) {
+        this.imageRotation_ = rotation;
+      }
+    };
+
+    rendererPatched = true;
+  }
+
   /**
    * @private
    * @param  {LineSymbolizer} linesymbolizer [description]
@@ -1819,10 +1849,11 @@
           renderer: function (pixelCoords, renderState) {
             // TODO: Error handling, alternatives, etc.
             var render$1 = render.toContext(renderState.context);
+            patchRenderer(render$1);
 
             var pointStyle = getPointStyle(linesymbolizer.stroke.graphicstroke, renderState.feature);
 
-            var size = expressionOrDefault(linesymbolizer.stroke.graphicstroke.graphic.size, DEFAULT_POINT_SIZE); // TODO: Dynamic size?
+            var size = expressionOrDefault(linesymbolizer.stroke.graphicstroke.graphic.size, DEFAULT_POINT_SIZE);
             var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
 
             // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
@@ -1835,12 +1866,11 @@
             }
 
             var splitPoints = splitLineString(new geom.LineString(pixelCoords), multiplier * size,
-              // eslint-disable-next-line no-underscore-dangle
               { alwaysUp: true, midPoints: false, extent: render$1.extent_ });
             splitPoints.forEach(function (point) {
-              var image = pointStyle.getImage().clone();
-              image.setRotation(image.getRotation() - point[2]); // TODO: Do some tests on rotation
-              render$1.setImageStyle(image);
+              var image = pointStyle.getImage();
+              var splitPointAngle = image.getRotation() - point[2];
+              render$1.setImageStyle2(image, splitPointAngle);
               render$1.drawPoint(new geom.Point([point[0], point[1]]));
             });
           },
