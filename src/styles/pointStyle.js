@@ -8,7 +8,11 @@ import {
   DEFAULT_POINT_SIZE,
 } from '../constants';
 import { memoizeStyleFunction } from './styleUtils';
-import { imageLoadingPointStyle, imageErrorPointStyle } from './static';
+import {
+  imageLoadingPointStyle,
+  imageErrorPointStyle,
+  emptyStyle,
+} from './static';
 import { createCachedImageStyle } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
 import evaluate, { expressionOrDefault } from '../olEvaluator';
@@ -90,6 +94,11 @@ const cachedPointStyle = memoizeStyleFunction(pointStyle);
  * @returns {ol/Style} OpenLayers style instance.
  */
 function getPointStyle(symbolizer, feature) {
+  // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
+  if (!(symbolizer && symbolizer.graphic)) {
+    return emptyStyle;
+  }
+
   const olStyle = cachedPointStyle(symbolizer);
   let olImage = olStyle.getImage();
 

@@ -168,6 +168,12 @@ function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle) {
     return;
   }
 
+  // Don't render anything when the pointStyle has no image.
+  const image = pointStyle.getImage();
+  if (!image) {
+    return;
+  }
+
   const splitPoints = splitLineString(
     new LineString(pixelCoords),
     minSegmentLength,
@@ -175,7 +181,6 @@ function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle) {
   );
 
   splitPoints.forEach(point => {
-    const image = pointStyle.getImage();
     const splitPointAngle = image.getRotation() - point[2];
     render.setImageStyle2(image, splitPointAngle);
     render.drawPoint(new Point([point[0], point[1]]));
