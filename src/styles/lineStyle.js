@@ -6,7 +6,7 @@ import { containsCoordinate } from 'ol/extent';
 
 import { hexToRGB, memoizeStyleFunction } from './styleUtils';
 import { DEFAULT_POINT_SIZE } from '../constants';
-import { expressionOrDefault } from '../olEvaluator';
+import evaluate from '../olEvaluator';
 import getPointStyle from './pointStyle';
 
 function splitLineString(geometry, minSegmentLength, options) {
@@ -137,6 +137,29 @@ function patchRenderer(renderer) {
 }
 
 /**
+ * Directly render graphic stroke marks for a line onto canvas.
+ * @param {ol/render/canvas/Immediate} render Instance of CanvasImmediateRenderer used to paint stroke marks directly to the canvas.
+ * @param {Array<Array<number>>} pixelCoords A line as array of [x,y] point coordinate arrays in pixel space.
+ * @param {number} minSegmentLength Minimum segment length in pixels for distributing stroke marks along the line.
+ * @param {ol/style/Style} pointStyle OpenLayers style instance used for rendering stroke marks.
+ * @returns {void}
+ */
+function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle) {
+  const splitPoints = splitLineString(
+    new LineString(pixelCoords),
+    minSegmentLength,
+    { alwaysUp: true, midPoints: false, extent: render.extent_ }
+  );
+
+  splitPoints.forEach(point => {
+    const image = pointStyle.getImage();
+    const splitPointAngle = image.getRotation() - point[2];
+    render.setImageStyle2(image, splitPointAngle);
+    render.drawPoint(new Point([point[0], point[1]]));
+  });
+}
+
+/**
  * @private
  * @param  {LineSymbolizer} linesymbolizer [description]
  * @return {object} openlayers style
@@ -146,7 +169,8 @@ function lineStyle(linesymbolizer) {
   if (linesymbolizer.stroke) {
     style = linesymbolizer.stroke.styling;
 
-    if (linesymbolizer.stroke.graphicstroke) {
+    const { graphicstroke } = linesymbolizer.stroke;
+    if (graphicstroke) {
       // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
       // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
       let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
@@ -163,31 +187,18 @@ function lineStyle(linesymbolizer) {
           const render = toContext(renderState.context);
           patchRenderer(render);
 
-          const pointStyle = getPointStyle(
-            linesymbolizer.stroke.graphicstroke,
-            renderState.feature
-          );
+          const pointStyle = getPointStyle(graphicstroke, renderState.feature);
+          const pointSize =
+            Number(evaluate(graphicstroke.graphic.size, renderState.feature)) ||
+            DEFAULT_POINT_SIZE;
+          const minSegmentLength = multiplier * pointSize;
 
-          const size = expressionOrDefault(
-            linesymbolizer.stroke.graphicstroke.graphic.size,
-            DEFAULT_POINT_SIZE
-          );
-
-          const splitPoints = splitLineString(
-            new LineString(pixelCoords),
-            multiplier * size,
-            { alwaysUp: true, midPoints: false, extent: render.extent_ }
-          );
-          splitPoints.forEach(point => {
-            const image = pointStyle.getImage();
-            const splitPointAngle = image.getRotation() - point[2];
-            render.setImageStyle2(image, splitPointAngle);
-            render.drawPoint(new Point([point[0], point[1]]));
-          });
+          renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle);
         },
       });
     }
   }
+
   return new Style({
     stroke: new Stroke({
       color:
