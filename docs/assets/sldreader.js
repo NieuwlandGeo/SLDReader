@@ -652,7 +652,7 @@
   var IMAGE_LOADED = 'IMAGE_LOADED';
   var IMAGE_ERROR = 'IMAGE_ERROR';
 
-  var DEFAULT_POINT_SIZE = 20; // pixels
+  var DEFAULT_POINT_SIZE = 6; // pixels
 
   function propertyIsLessThan(comparison, value) {
     return (
@@ -1563,49 +1563,69 @@
     return expression;
   }
 
-  /* eslint-disable no-underscore-dangle */
+  /* eslint-disable import/prefer-default-export */
 
   /**
+   * Get an OL style/Stroke instance from the css/svg properties of the .stroke property
+   * of an SLD symbolizer object.
    * @private
-   * Get OL Fill instance for SLD mark object.
-   * @param {object} mark SLD mark object.
+   * @param  {object} stroke SLD symbolizer.stroke object.
+   * @return {object} OpenLayers style/Stroke instance. Returns undefined when input is null or undefined.
    */
-  function getMarkFill(mark) {
-    var fill = mark.fill;
-    var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-    var fillOpacity = (fill && fill.styling && fill.styling.fillOpacity) || 1.0;
-    return new style.Fill({
-      color: fillOpacity && fillColor && fillColor.slice(0, 1) === '#'
-        ? hexToRGB(fillColor, fillOpacity)
-        : fillColor,
+  function getSimpleStroke(stroke) {
+    // According to SLD spec, if no Stroke element is present inside a symbolizer element,
+    // no stroke is to be rendered.
+    if (!stroke) {
+      return undefined;
+    }
+
+    var styleParams = stroke.styling || {};
+    return new style.Stroke({
+      color:
+        styleParams.strokeOpacity &&
+        styleParams.stroke &&
+        styleParams.stroke.slice(0, 1) === '#'
+          ? hexToRGB(styleParams.stroke, styleParams.strokeOpacity)
+          : styleParams.stroke || 'black',
+      width: styleParams.strokeWidth || 1,
+      lineCap: styleParams.strokeLinecap,
+      lineDash:
+        styleParams.strokeDasharray && styleParams.strokeDasharray.split(' '),
+      lineDashOffset: styleParams.strokeDashoffset,
+      lineJoin: styleParams.strokeLinejoin,
     });
   }
 
   /**
+   * Get an OL style/Fill instance from the css/svg properties of the .fill property
+   * of an SLD symbolizer object.
    * @private
-   * Get OL Stroke instance for SLD mark object.
-   * @param {object} mark SLD mark object.
+   * @param  {object} fill SLD symbolizer.fill object.
+   * @return {object} OpenLayers style/Fill instance. Returns undefined when input is null or undefined.
    */
-  function getMarkStroke(mark) {
-    var stroke = mark.stroke;
-
-    var olStroke;
-    if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
-      var ref = stroke.styling;
-      var cssStroke = ref.stroke;
-      var cssStrokeWidth = ref.strokeWidth;
-      var cssStrokeOpacity = ref.strokeOpacity;
-      olStroke = new style.Stroke({
-        color:
-          cssStrokeOpacity && cssStroke && cssStroke.slice(0, 1) === '#'
-            ? hexToRGB(cssStroke, cssStrokeOpacity)
-            : cssStroke || 'black',
-        width: cssStrokeWidth || 2,
-      });
+  function getSimpleFill(fill) {
+    // According to SLD spec, if no Fill element is present inside a symbolizer element,
+    // no fill is to be rendered.
+    if (!fill) {
+      return undefined;
     }
 
-    return olStroke;
+    var styleParams = fill.styling || {};
+
+    return new style.Fill({
+      color:
+        styleParams.fillOpacity &&
+        styleParams.fill &&
+        styleParams.fill.slice(0, 1) === '#'
+          ? hexToRGB(styleParams.fill, styleParams.fillOpacity)
+          : styleParams.fill || 'black',
+    });
   }
+
+  /* eslint-disable no-underscore-dangle */
+
+  var defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
+  var defaultMarkStroke = getSimpleStroke({ styling: { stroke: {} } });
 
   /**
    * @private
@@ -1643,8 +1663,8 @@
     if (style$1.mark) {
       var ref = style$1.mark;
       var wellknownname = ref.wellknownname;
-      var olFill = getMarkFill(style$1.mark);
-      var olStroke = getMarkStroke(style$1.mark);
+      var olFill = getSimpleFill(style$1.mark.fill);
+      var olStroke = getSimpleStroke(style$1.mark.stroke);
 
       return new style.Style({
         // Note: size will be set dynamically later.
@@ -1658,13 +1678,16 @@
       });
     }
 
+    // SLD spec: when no ExternalGraphic or Mark is specified,
+    // use a square of 6 pixels with 50% gray fill and a black outline.
     return new style.Style({
-      image: new style.Circle({
-        radius: 4,
-        fill: new style.Fill({
-          color: 'blue',
-        }),
-      }),
+      image: getWellKnownSymbol(
+        'square',
+        pointSizeValue,
+        defaultMarkStroke,
+        defaultMarkFill,
+        rotationDegrees
+      ),
     });
   }
 
@@ -1678,6 +1701,11 @@
    * @returns {ol/Style} OpenLayers style instance.
    */
   function getPointStyle(symbolizer, feature) {
+    // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
+    if (!(symbolizer && symbolizer.graphic)) {
+      return emptyStyle;
+    }
+
     var olStyle = cachedPointStyle(symbolizer);
     var olImage = olStyle.getImage();
 
@@ -1693,24 +1721,19 @@
         var height = olImage.getSize()[1];
         var scale = sizeValue / height || 1;
         olImage.setScale(scale);
-      }
-
-      if (graphic.mark) {
+      } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
         // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
-        if (graphic.mark.wellknownname === 'circle') {
-          olImage.setRadius(sizeValue * 0.5);
-        } else {
-          // So, in the case of any other RegularShape, create a new shape instance.
-          olStyle.setImage(
-            getWellKnownSymbol(
-              graphic.mark.wellknownname,
-              sizeValue,
-              // Note: re-use stroke and fill instances for a (small?) performance gain.
-              olImage.getStroke(),
-              olImage.getFill()
-            )
-          );
-        }
+        olImage.setRadius(sizeValue * 0.5);
+      } else {
+        // For a non-Circle RegularShape, create a new olImage in order to update the size.
+        olImage = getWellKnownSymbol(
+          (graphic.mark && graphic.mark.wellknownname) || 'square',
+          sizeValue,
+          // Note: re-use stroke and fill instances for a (small?) performance gain.
+          olImage.getStroke(),
+          olImage.getFill()
+        );
+        olStyle.setImage(olImage);
       }
     }
 
@@ -1735,7 +1758,12 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
 
-    function calculateSplitPointCoords(startNode, nextNode, distanceBetweenNodes, distanceToSplitPoint) {
+    function calculateSplitPointCoords(
+      startNode,
+      nextNode,
+      distanceBetweenNodes,
+      distanceToSplitPoint
+    ) {
       var d = distanceToSplitPoint / distanceBetweenNodes;
       var x = nextNode[0] + (startNode[0] - nextNode[0]) * d;
       var y = nextNode[1] + (startNode[1] - nextNode[1]) * d;
@@ -1743,8 +1771,8 @@
     }
 
     function calculateAngle(startNode, nextNode, alwaysUp) {
-      var x = (startNode[0] - nextNode[0]);
-      var y = (startNode[1] - nextNode[1]);
+      var x = startNode[0] - nextNode[0];
+      var y = startNode[1] - nextNode[1];
       var angle = Math.atan(x / y);
       if (!alwaysUp) {
         if (y > 0) {
@@ -1767,10 +1795,15 @@
 
     var n = Math.ceil(geometry.getLength() / minSegmentLength);
     var segmentLength = geometry.getLength() / n;
-    var currentSegmentLength = options.midPoints ? segmentLength / 2 : segmentLength;
+    var currentSegmentLength = options.midPoints
+      ? segmentLength / 2
+      : segmentLength;
 
     for (var i = 0; i <= n; i += 1) {
-      var distanceBetweenPoints = calculatePointsDistance(startPoint, nextPoint);
+      var distanceBetweenPoints = calculatePointsDistance(
+        startPoint,
+        nextPoint
+      );
       currentSegmentLength += distanceBetweenPoints;
 
       if (currentSegmentLength < segmentLength) {
@@ -1784,7 +1817,10 @@
         } else {
           if (!options.midPoints) {
             var splitPointCoords = nextPoint;
-            if (!options.extent || extent.containsCoordinate(options.extent, splitPointCoords)) {
+            if (
+              !options.extent ||
+              extent.containsCoordinate(options.extent, splitPointCoords)
+            ) {
               splitPointCoords.push(angle);
               splitPoints.push(splitPointCoords);
             }
@@ -1793,9 +1829,17 @@
         }
       } else {
         var distanceToSplitPoint = currentSegmentLength - segmentLength;
-        var splitPointCoords$1 = calculateSplitPointCoords(startPoint, nextPoint, distanceBetweenPoints, distanceToSplitPoint);
+        var splitPointCoords$1 = calculateSplitPointCoords(
+          startPoint,
+          nextPoint,
+          distanceBetweenPoints,
+          distanceToSplitPoint
+        );
         startPoint = splitPointCoords$1.slice();
-        if (!options.extent || extent.containsCoordinate(options.extent, splitPointCoords$1)) {
+        if (
+          !options.extent ||
+          extent.containsCoordinate(options.extent, splitPointCoords$1)
+        ) {
           splitPointCoords$1.push(angle);
           splitPoints.push(splitPointCoords$1);
         }
@@ -1818,8 +1862,8 @@
     // This fixes a problem with re-use of the (cached) image style instance when drawing
     // many points inside a single line feature that are aligned according to line segment direction.
     var rendererProto = Object.getPrototypeOf(renderer);
-    // eslint-disable-next-line func-names
-    rendererProto.setImageStyle2 = function (imageStyle, rotation) {
+    // eslint-disable-next-line
+    rendererProto.setImageStyle2 = function(imageStyle, rotation) {
       // First call the original setImageStyle method.
       rendererProto.setImageStyle.call(this, imageStyle);
 
@@ -1835,60 +1879,134 @@
   }
 
   /**
-   * @private
-   * @param  {LineSymbolizer} linesymbolizer [description]
-   * @return {object} openlayers style
+   * Directly render graphic stroke marks for a line onto canvas.
+   * @param {ol/render/canvas/Immediate} render Instance of CanvasImmediateRenderer used to paint stroke marks directly to the canvas.
+   * @param {Array<Array<number>>} pixelCoords A line as array of [x,y] point coordinate arrays in pixel space.
+   * @param {number} minSegmentLength Minimum segment length in pixels for distributing stroke marks along the line.
+   * @param {ol/style/Style} pointStyle OpenLayers style instance used for rendering stroke marks.
+   * @returns {void}
    */
-  function lineStyle(linesymbolizer) {
-    var style$1 = {};
-    if (linesymbolizer.stroke) {
-      style$1 = linesymbolizer.stroke.styling;
+  function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle) {
+    if (!pixelCoords) {
+      return;
+    }
 
-      if (linesymbolizer.stroke.graphicstroke) {
-        return new style.Style({
-          renderer: function (pixelCoords, renderState) {
-            // TODO: Error handling, alternatives, etc.
-            var render$1 = render.toContext(renderState.context);
-            patchRenderer(render$1);
+    // The first element of the first pixelCoords entry should be a number (x-coordinate of first point).
+    // If it's an array instead, then we're dealing with a multiline or (multi)polygon.
+    // In that case, recursively call renderStrokeMarks for each child coordinate array.
+    if (Array.isArray(pixelCoords[0][0])) {
+      pixelCoords.forEach(function (pixelCoordsChildArray) {
+        renderStrokeMarks(
+          render,
+          pixelCoordsChildArray,
+          minSegmentLength,
+          pointStyle
+        );
+      });
+      return;
+    }
 
-            var pointStyle = getPointStyle(linesymbolizer.stroke.graphicstroke, renderState.feature);
+    // Line should be a proper line with at least two coordinates.
+    if (pixelCoords.length < 2) {
+      return;
+    }
 
-            var size = expressionOrDefault(linesymbolizer.stroke.graphicstroke.graphic.size, DEFAULT_POINT_SIZE);
-            var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+    // Don't render anything when the pointStyle has no image.
+    var image = pointStyle.getImage();
+    if (!image) {
+      return;
+    }
 
-            // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
-            // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
-            if (linesymbolizer.stroke.styling && linesymbolizer.stroke.styling.strokeDasharray) {
-              var dash = linesymbolizer.stroke.styling.strokeDasharray.split(' ');
-              if (dash.length >= 2 && dash[0] !== 0) {
-                multiplier = dash[1] / dash[0] + 1;
-              }
-            }
+    var splitPoints = splitLineString(
+      new geom.LineString(pixelCoords),
+      minSegmentLength,
+      { alwaysUp: true, midPoints: false, extent: render.extent_ }
+    );
 
-            var splitPoints = splitLineString(new geom.LineString(pixelCoords), multiplier * size,
-              { alwaysUp: true, midPoints: false, extent: render$1.extent_ });
-            splitPoints.forEach(function (point) {
-              var image = pointStyle.getImage();
-              var splitPointAngle = image.getRotation() - point[2];
-              render$1.setImageStyle2(image, splitPointAngle);
-              render$1.drawPoint(new geom.Point([point[0], point[1]]));
-            });
-          },
-        });
+    splitPoints.forEach(function (point) {
+      var splitPointAngle = image.getRotation() - point[2];
+      render.setImageStyle2(image, splitPointAngle);
+      render.drawPoint(new geom.Point([point[0], point[1]]));
+    });
+  }
+
+  /**
+   * Create a renderer function for renderining GraphicStroke marks
+   * to be used inside an OpenLayers Style.renderer function.
+   * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+   * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
+   */
+  function getGraphicStrokeRenderer(linesymbolizer) {
+    if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+      throw new Error(
+        'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
+      );
+    }
+
+    var ref = linesymbolizer.stroke;
+    var graphicstroke = ref.graphicstroke;
+    var styling = ref.styling;
+    // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
+    // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
+    var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+    if (styling && styling.strokeDasharray) {
+      var dash = styling.strokeDasharray.split(' ');
+      if (dash.length >= 2 && dash[0] !== 0) {
+        multiplier = dash[1] / dash[0] + 1;
       }
     }
+
+    return function (pixelCoords, renderState) {
+      // Abort when feature geometry is (Multi)Point.
+      var geometryType = renderState.feature.getGeometry().getType();
+      if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+        return;
+      }
+
+      // TODO: Error handling, alternatives, etc.
+      var render$1 = render.toContext(renderState.context);
+      patchRenderer(render$1);
+
+      var pointStyle = getPointStyle(graphicstroke, renderState.feature);
+      var graphicSize =
+        (graphicstroke.graphic && graphicstroke.graphic.size) ||
+        DEFAULT_POINT_SIZE;
+      var pointSize = Number(evaluate(graphicSize, renderState.feature));
+      var minSegmentLength = multiplier * pointSize;
+
+      renderStrokeMarks(render$1, pixelCoords, minSegmentLength, pointStyle);
+    };
+  }
+
+  /**
+   * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
+   * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+   * @returns {ol/style/Style} An OpenLayers style instance.
+   */
+  function getGraphicStrokeStyle(linesymbolizer) {
+    if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+      throw new Error(
+        'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
+      );
+    }
+
     return new style.Style({
-      stroke: new style.Stroke({
-        color:
-          style$1.strokeOpacity && style$1.stroke && style$1.stroke.slice(0, 1) === '#'
-            ? hexToRGB(style$1.stroke, style$1.strokeOpacity)
-            : style$1.stroke || '#3399CC',
-        width: style$1.strokeWidth || 1.25,
-        lineCap: style$1.strokeLinecap && style$1.strokeLinecap,
-        lineDash: style$1.strokeDasharray && style$1.strokeDasharray.split(' '),
-        lineDashOffset: style$1.strokeDashoffset && style$1.strokeDashoffset,
-        lineJoin: style$1.strokeLinejoin && style$1.strokeLinejoin,
-      }),
+      renderer: getGraphicStrokeRenderer(linesymbolizer),
+    });
+  }
+
+  /**
+   * @private
+   * @param  {object} symbolizer SLD symbolizer object.
+   * @return {object} OpenLayers style instance corresponding to the stroke of the given symbolizer.
+   */
+  function lineStyle(symbolizer) {
+    if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+      return getGraphicStrokeStyle(symbolizer);
+    }
+
+    return new style.Style({
+      stroke: getSimpleStroke(symbolizer.stroke),
     });
   }
 
@@ -1937,20 +2055,20 @@
     return ctx.createPattern(tempCanvas, 'repeat');
   }
 
-  function polygonStyle(style$1) {
+  function polygonStyle(symbolizer) {
     if (
-      style$1.fill &&
-      style$1.fill.graphicfill &&
-      style$1.fill.graphicfill.graphic &&
-      style$1.fill.graphicfill.graphic.externalgraphic &&
-      style$1.fill.graphicfill.graphic.externalgraphic.onlineresource
+      symbolizer.fill &&
+      symbolizer.fill.graphicfill &&
+      symbolizer.fill.graphicfill.graphic &&
+      symbolizer.fill.graphicfill.graphic.externalgraphic &&
+      symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource
     ) {
       // Check symbolizer metadata to see if the image has already been loaded.
-      switch (style$1.__loadingState) {
+      switch (symbolizer.__loadingState) {
         case IMAGE_LOADED:
           return new style.Style({
             fill: new style.Fill({
-              color: createPattern(style$1.fill.graphicfill.graphic),
+              color: createPattern(symbolizer.fill.graphicfill.graphic),
             }),
           });
         case IMAGE_LOADING:
@@ -1963,32 +2081,40 @@
       }
     }
 
-    var stroke = style$1.stroke && style$1.stroke.styling;
-    var fill = style$1.fill && style$1.fill.styling;
+    var polygonFill = getSimpleFill(symbolizer.fill);
+
+    // When a polygon has a GraphicStroke, use a custom renderer to combine
+    // GraphicStroke with fill. This is needed because a custom renderer
+    // ignores any stroke, fill and image present in the style.
+    if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+      var renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
+      return new style.Style({
+        renderer: function (pixelCoords, renderState) {
+          // First render the fill (if any).
+          if (polygonFill) {
+            var feature = renderState.feature;
+            var context = renderState.context;
+            var render$1 = render.toContext(context);
+            render$1.setFillStrokeStyle(polygonFill, undefined);
+            var geometryType = feature.getGeometry().getType();
+            if (geometryType === 'Polygon') {
+              render$1.drawPolygon(new geom.Polygon(pixelCoords));
+            } else if (geometryType === 'MultiPolygon') {
+              render$1.drawMultiPolygon(new geom.MultiPolygon(pixelCoords));
+            }
+          }
+
+          // Then, render the graphic stroke.
+          renderGraphicStroke(pixelCoords, renderState);
+        },
+      });
+    }
+
+    var polygonStroke = getSimpleStroke(symbolizer.stroke);
+
     return new style.Style({
-      fill:
-        fill &&
-        new style.Fill({
-          color:
-            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-              ? hexToRGB(fill.fill, fill.fillOpacity)
-              : fill.fill,
-        }),
-      stroke:
-        stroke &&
-        new style.Stroke({
-          color:
-            stroke.strokeOpacity &&
-            stroke.stroke &&
-            stroke.stroke.slice(0, 1) === '#'
-              ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
-              : stroke.stroke || '#3399CC',
-          width: stroke.strokeWidth || 1.25,
-          lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
-          lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
-          lineDashOffset: stroke.strokeDashoffset && stroke.strokeDashoffset,
-          lineJoin: stroke.strokeLinejoin && stroke.strokeLinejoin,
-        }),
+      fill: polygonFill,
+      stroke: polygonStroke,
     });
   }
 
