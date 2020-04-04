@@ -145,6 +145,30 @@ function patchRenderer(renderer) {
  * @returns {void}
  */
 function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle) {
+  if (!pixelCoords) {
+    return;
+  }
+
+  // The first element of the first pixelCoords entry should be a number (x-coordinate of first point).
+  // If it's an array instead, then we're dealing with a multiline or (multi)polygon.
+  // In that case, recursively call renderStrokeMarks for each child coordinate array.
+  if (Array.isArray(pixelCoords[0][0])) {
+    pixelCoords.forEach(pixelCoordsChildArray => {
+      renderStrokeMarks(
+        render,
+        pixelCoordsChildArray,
+        minSegmentLength,
+        pointStyle
+      );
+    });
+    return;
+  }
+
+  // Line should be a proper line with at least two coordinates.
+  if (pixelCoords.length < 2) {
+    return;
+  }
+
   const splitPoints = splitLineString(
     new LineString(pixelCoords),
     minSegmentLength,
@@ -183,6 +207,12 @@ function lineStyle(linesymbolizer) {
 
       return new Style({
         renderer: (pixelCoords, renderState) => {
+          // Abort when feature geometry is (Multi)Point.
+          const geometryType = renderState.feature.getGeometry().getType();
+          if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+            return;
+          }
+
           // TODO: Error handling, alternatives, etc.
           const render = toContext(renderState.context);
           patchRenderer(render);
