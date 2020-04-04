@@ -16,7 +16,12 @@ function splitLineString(geometry, minSegmentLength, options) {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  function calculateSplitPointCoords(startNode, nextNode, distanceBetweenNodes, distanceToSplitPoint) {
+  function calculateSplitPointCoords(
+    startNode,
+    nextNode,
+    distanceBetweenNodes,
+    distanceToSplitPoint
+  ) {
     const d = distanceToSplitPoint / distanceBetweenNodes;
     const x = nextNode[0] + (startNode[0] - nextNode[0]) * d;
     const y = nextNode[1] + (startNode[1] - nextNode[1]) * d;
@@ -24,8 +29,8 @@ function splitLineString(geometry, minSegmentLength, options) {
   }
 
   function calculateAngle(startNode, nextNode, alwaysUp) {
-    const x = (startNode[0] - nextNode[0]);
-    const y = (startNode[1] - nextNode[1]);
+    const x = startNode[0] - nextNode[0];
+    const y = startNode[1] - nextNode[1];
     let angle = Math.atan(x / y);
     if (!alwaysUp) {
       if (y > 0) {
@@ -48,10 +53,15 @@ function splitLineString(geometry, minSegmentLength, options) {
 
   const n = Math.ceil(geometry.getLength() / minSegmentLength);
   const segmentLength = geometry.getLength() / n;
-  let currentSegmentLength = options.midPoints ? segmentLength / 2 : segmentLength;
+  let currentSegmentLength = options.midPoints
+    ? segmentLength / 2
+    : segmentLength;
 
   for (let i = 0; i <= n; i += 1) {
-    const distanceBetweenPoints = calculatePointsDistance(startPoint, nextPoint);
+    const distanceBetweenPoints = calculatePointsDistance(
+      startPoint,
+      nextPoint
+    );
     currentSegmentLength += distanceBetweenPoints;
 
     if (currentSegmentLength < segmentLength) {
@@ -65,7 +75,10 @@ function splitLineString(geometry, minSegmentLength, options) {
       } else {
         if (!options.midPoints) {
           const splitPointCoords = nextPoint;
-          if (!options.extent || containsCoordinate(options.extent, splitPointCoords)) {
+          if (
+            !options.extent ||
+            containsCoordinate(options.extent, splitPointCoords)
+          ) {
             splitPointCoords.push(angle);
             splitPoints.push(splitPointCoords);
           }
@@ -74,9 +87,17 @@ function splitLineString(geometry, minSegmentLength, options) {
       }
     } else {
       const distanceToSplitPoint = currentSegmentLength - segmentLength;
-      const splitPointCoords = calculateSplitPointCoords(startPoint, nextPoint, distanceBetweenPoints, distanceToSplitPoint);
+      const splitPointCoords = calculateSplitPointCoords(
+        startPoint,
+        nextPoint,
+        distanceBetweenPoints,
+        distanceToSplitPoint
+      );
       startPoint = splitPointCoords.slice();
-      if (!options.extent || containsCoordinate(options.extent, splitPointCoords)) {
+      if (
+        !options.extent ||
+        containsCoordinate(options.extent, splitPointCoords)
+      ) {
         splitPointCoords.push(angle);
         splitPoints.push(splitPointCoords);
       }
@@ -99,8 +120,8 @@ function patchRenderer(renderer) {
   // This fixes a problem with re-use of the (cached) image style instance when drawing
   // many points inside a single line feature that are aligned according to line segment direction.
   const rendererProto = Object.getPrototypeOf(renderer);
-  // eslint-disable-next-line func-names
-  rendererProto.setImageStyle2 = function (imageStyle, rotation) {
+  // eslint-disable-next-line
+  rendererProto.setImageStyle2 = function(imageStyle, rotation) {
     // First call the original setImageStyle method.
     rendererProto.setImageStyle.call(this, imageStyle);
 
@@ -132,22 +153,36 @@ function lineStyle(linesymbolizer) {
           const render = toContext(renderState.context);
           patchRenderer(render);
 
-          const pointStyle = getPointStyle(linesymbolizer.stroke.graphicstroke, renderState.feature);
+          const pointStyle = getPointStyle(
+            linesymbolizer.stroke.graphicstroke,
+            renderState.feature
+          );
 
-          const size = expressionOrDefault(linesymbolizer.stroke.graphicstroke.graphic.size, DEFAULT_POINT_SIZE);
+          const size = expressionOrDefault(
+            linesymbolizer.stroke.graphicstroke.graphic.size,
+            DEFAULT_POINT_SIZE
+          );
           let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
 
           // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
           // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
-          if (linesymbolizer.stroke.styling && linesymbolizer.stroke.styling.strokeDasharray) {
-            const dash = linesymbolizer.stroke.styling.strokeDasharray.split(' ');
+          if (
+            linesymbolizer.stroke.styling &&
+            linesymbolizer.stroke.styling.strokeDasharray
+          ) {
+            const dash = linesymbolizer.stroke.styling.strokeDasharray.split(
+              ' '
+            );
             if (dash.length >= 2 && dash[0] !== 0) {
               multiplier = dash[1] / dash[0] + 1;
             }
           }
 
-          const splitPoints = splitLineString(new LineString(pixelCoords), multiplier * size,
-            { alwaysUp: true, midPoints: false, extent: render.extent_ });
+          const splitPoints = splitLineString(
+            new LineString(pixelCoords),
+            multiplier * size,
+            { alwaysUp: true, midPoints: false, extent: render.extent_ }
+          );
           splitPoints.forEach(point => {
             const image = pointStyle.getImage();
             const splitPointAngle = image.getRotation() - point[2];
