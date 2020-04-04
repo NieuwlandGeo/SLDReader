@@ -182,10 +182,16 @@ function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle) {
   });
 }
 
-function getGraphicStrokeStyle(linesymbolizer) {
+/**
+ * Create a renderer function for renderining GraphicStroke marks
+ * to be used inside an OpenLayers Style.renderer function.
+ * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+ * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
+ */
+export function getGraphicStrokeRenderer(linesymbolizer) {
   if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
     throw new Error(
-      'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
+      'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
     );
   }
 
@@ -200,26 +206,41 @@ function getGraphicStrokeStyle(linesymbolizer) {
     }
   }
 
+  return (pixelCoords, renderState) => {
+    // Abort when feature geometry is (Multi)Point.
+    const geometryType = renderState.feature.getGeometry().getType();
+    if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+      return;
+    }
+
+    // TODO: Error handling, alternatives, etc.
+    const render = toContext(renderState.context);
+    patchRenderer(render);
+
+    const pointStyle = getPointStyle(graphicstroke, renderState.feature);
+    const pointSize =
+      Number(evaluate(graphicstroke.graphic.size, renderState.feature)) ||
+      DEFAULT_POINT_SIZE;
+    const minSegmentLength = multiplier * pointSize;
+
+    renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle);
+  };
+}
+
+/**
+ * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
+ * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+ * @returns {ol/style/Style} An OpenLayers style instance.
+ */
+function getGraphicStrokeStyle(linesymbolizer) {
+  if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+    throw new Error(
+      'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
+    );
+  }
+
   return new Style({
-    renderer: (pixelCoords, renderState) => {
-      // Abort when feature geometry is (Multi)Point.
-      const geometryType = renderState.feature.getGeometry().getType();
-      if (geometryType === 'Point' || geometryType === 'MultiPoint') {
-        return;
-      }
-
-      // TODO: Error handling, alternatives, etc.
-      const render = toContext(renderState.context);
-      patchRenderer(render);
-
-      const pointStyle = getPointStyle(graphicstroke, renderState.feature);
-      const pointSize =
-        Number(evaluate(graphicstroke.graphic.size, renderState.feature)) ||
-        DEFAULT_POINT_SIZE;
-      const minSegmentLength = multiplier * pointSize;
-
-      renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle);
-    },
+    renderer: getGraphicStrokeRenderer(linesymbolizer),
   });
 }
 
