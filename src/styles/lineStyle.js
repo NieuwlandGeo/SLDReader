@@ -1,4 +1,3 @@
-
 import { Style, Stroke } from 'ol/style';
 
 import { hexToRGB, memoizeStyleFunction } from './styleUtils';
@@ -14,19 +13,23 @@ function lineStyle(linesymbolizer) {
     return getGraphicStrokeStyle(linesymbolizer);
   }
 
-  const style = (linesymbolizer.stroke && linesymbolizer.stroke.styling) || {};
+  const style = linesymbolizer.stroke && linesymbolizer.stroke.styling;
   return new Style({
-    stroke: new Stroke({
-      color:
-        style.strokeOpacity && style.stroke && style.stroke.slice(0, 1) === '#'
-          ? hexToRGB(style.stroke, style.strokeOpacity)
-          : style.stroke || '#3399CC',
-      width: style.strokeWidth || 1.25,
-      lineCap: style.strokeLinecap && style.strokeLinecap,
-      lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
-      lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
-      lineJoin: style.strokeLinejoin && style.strokeLinejoin,
-    }),
+    stroke:
+      style &&
+      new Stroke({
+        color:
+          style.strokeOpacity &&
+          style.stroke &&
+          style.stroke.slice(0, 1) === '#'
+            ? hexToRGB(style.stroke, style.strokeOpacity)
+            : style.stroke || '#3399CC',
+        width: style.strokeWidth || 1.25,
+        lineCap: style.strokeLinecap && style.strokeLinecap,
+        lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
+        lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
+        lineJoin: style.strokeLinejoin && style.strokeLinejoin,
+      }),
   });
 }
 
