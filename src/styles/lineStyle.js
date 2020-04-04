@@ -1,35 +1,21 @@
-import { Style, Stroke } from 'ol/style';
+import { Style } from 'ol/style';
 
-import { hexToRGB, memoizeStyleFunction } from './styleUtils';
+import { memoizeStyleFunction } from './styleUtils';
+import { getSimpleStroke } from './simpleStyles';
 import getGraphicStrokeStyle from './graphicStrokeStyle';
 
 /**
  * @private
- * @param  {LineSymbolizer} linesymbolizer [description]
- * @return {object} openlayers style
+ * @param  {object} symbolizer SLD symbolizer object.
+ * @return {object} OpenLayers style instance corresponding to the stroke of the given symbolizer.
  */
-function lineStyle(linesymbolizer) {
-  if (linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke) {
-    return getGraphicStrokeStyle(linesymbolizer);
+function lineStyle(symbolizer) {
+  if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+    return getGraphicStrokeStyle(symbolizer);
   }
 
-  const style = linesymbolizer.stroke && linesymbolizer.stroke.styling;
   return new Style({
-    stroke:
-      style &&
-      new Stroke({
-        color:
-          style.strokeOpacity &&
-          style.stroke &&
-          style.stroke.slice(0, 1) === '#'
-            ? hexToRGB(style.stroke, style.strokeOpacity)
-            : style.stroke || '#3399CC',
-        width: style.strokeWidth || 1.25,
-        lineCap: style.strokeLinecap && style.strokeLinecap,
-        lineDash: style.strokeDasharray && style.strokeDasharray.split(' '),
-        lineDashOffset: style.strokeDashoffset && style.strokeDashoffset,
-        lineJoin: style.strokeLinejoin && style.strokeLinejoin,
-      }),
+    stroke: getSimpleStroke(symbolizer.stroke),
   });
 }
 

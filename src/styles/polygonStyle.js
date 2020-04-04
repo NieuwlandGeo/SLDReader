@@ -1,10 +1,11 @@
 /* eslint-disable no-underscore-dangle */
-import { Style, Fill, Stroke } from 'ol/style';
+import { Style, Fill } from 'ol/style';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from '../constants';
-import { hexToRGB, memoizeStyleFunction } from './styleUtils';
+import { memoizeStyleFunction } from './styleUtils';
 import { getCachedImage } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
+import { getSimpleStroke, getSimpleFill } from './simpleStyles';
 
 function createPattern(graphic) {
   const { image, width, height } = getCachedImage(
@@ -34,20 +35,20 @@ function createPattern(graphic) {
   return ctx.createPattern(tempCanvas, 'repeat');
 }
 
-function polygonStyle(style) {
+function polygonStyle(symbolizer) {
   if (
-    style.fill &&
-    style.fill.graphicfill &&
-    style.fill.graphicfill.graphic &&
-    style.fill.graphicfill.graphic.externalgraphic &&
-    style.fill.graphicfill.graphic.externalgraphic.onlineresource
+    symbolizer.fill &&
+    symbolizer.fill.graphicfill &&
+    symbolizer.fill.graphicfill.graphic &&
+    symbolizer.fill.graphicfill.graphic.externalgraphic &&
+    symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource
   ) {
     // Check symbolizer metadata to see if the image has already been loaded.
-    switch (style.__loadingState) {
+    switch (symbolizer.__loadingState) {
       case IMAGE_LOADED:
         return new Style({
           fill: new Fill({
-            color: createPattern(style.fill.graphicfill.graphic),
+            color: createPattern(symbolizer.fill.graphicfill.graphic),
           }),
         });
       case IMAGE_LOADING:
@@ -60,32 +61,9 @@ function polygonStyle(style) {
     }
   }
 
-  const stroke = style.stroke && style.stroke.styling;
-  const fill = style.fill && style.fill.styling;
   return new Style({
-    fill:
-      fill &&
-      new Fill({
-        color:
-          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-            ? hexToRGB(fill.fill, fill.fillOpacity)
-            : fill.fill,
-      }),
-    stroke:
-      stroke &&
-      new Stroke({
-        color:
-          stroke.strokeOpacity &&
-          stroke.stroke &&
-          stroke.stroke.slice(0, 1) === '#'
-            ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
-            : stroke.stroke || '#3399CC',
-        width: stroke.strokeWidth || 1.25,
-        lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
-        lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
-        lineDashOffset: stroke.strokeDashoffset && stroke.strokeDashoffset,
-        lineJoin: stroke.strokeLinejoin && stroke.strokeLinejoin,
-      }),
+    fill: getSimpleFill(symbolizer.fill),
+    stroke: getSimpleStroke(symbolizer.stroke),
   });
 }
 
