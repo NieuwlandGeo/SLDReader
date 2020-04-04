@@ -1,11 +1,14 @@
 /* eslint-disable no-underscore-dangle */
+import { toContext } from 'ol/render';
 import { Style, Fill } from 'ol/style';
+import { Polygon, MultiPolygon } from 'ol/geom';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from '../constants';
 import { memoizeStyleFunction } from './styleUtils';
 import { getCachedImage } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
 import { getSimpleStroke, getSimpleFill } from './simpleStyles';
+import { getGraphicStrokeRenderer } from './graphicStrokeStyle';
 
 function createPattern(graphic) {
   const { image, width, height } = getCachedImage(
@@ -61,9 +64,39 @@ function polygonStyle(symbolizer) {
     }
   }
 
+  const polygonFill = getSimpleFill(symbolizer.fill);
+
+  // When a polygon has a GraphicStroke, use a custom renderer to combine
+  // GraphicStroke with fill. This is needed because a custom renderer
+  // ignores any stroke, fill and image present in the style.
+  if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+    const renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
+    return new Style({
+      renderer: (pixelCoords, renderState) => {
+        // First render the fill (if any).
+        if (polygonFill) {
+          const { feature, context } = renderState;
+          const render = toContext(context);
+          render.setFillStrokeStyle(polygonFill, undefined);
+          const geometryType = feature.getGeometry().getType();
+          if (geometryType === 'Polygon') {
+            render.drawPolygon(new Polygon(pixelCoords));
+          } else if (geometryType === 'MultiPolygon') {
+            render.drawMultiPolygon(new MultiPolygon(pixelCoords));
+          }
+        }
+
+        // Then, render the graphic stroke.
+        renderGraphicStroke(pixelCoords, renderState);
+      },
+    });
+  }
+
+  const polygonStroke = getSimpleStroke(symbolizer.stroke);
+
   return new Style({
-    fill: getSimpleFill(symbolizer.fill),
-    stroke: getSimpleStroke(symbolizer.stroke),
+    fill: polygonFill,
+    stroke: polygonStroke,
   });
 }
 
