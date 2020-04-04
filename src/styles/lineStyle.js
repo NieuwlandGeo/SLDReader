@@ -147,6 +147,16 @@ function lineStyle(linesymbolizer) {
     style = linesymbolizer.stroke.styling;
 
     if (linesymbolizer.stroke.graphicstroke) {
+      // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
+      // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
+      let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+      if (style && style.strokeDasharray) {
+        const dash = style.strokeDasharray.split(' ');
+        if (dash.length >= 2 && dash[0] !== 0) {
+          multiplier = dash[1] / dash[0] + 1;
+        }
+      }
+
       return new Style({
         renderer: (pixelCoords, renderState) => {
           // TODO: Error handling, alternatives, etc.
@@ -162,21 +172,6 @@ function lineStyle(linesymbolizer) {
             linesymbolizer.stroke.graphicstroke.graphic.size,
             DEFAULT_POINT_SIZE
           );
-          let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
-
-          // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
-          // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
-          if (
-            linesymbolizer.stroke.styling &&
-            linesymbolizer.stroke.styling.strokeDasharray
-          ) {
-            const dash = linesymbolizer.stroke.styling.strokeDasharray.split(
-              ' '
-            );
-            if (dash.length >= 2 && dash[0] !== 0) {
-              multiplier = dash[1] / dash[0] + 1;
-            }
-          }
 
           const splitPoints = splitLineString(
             new LineString(pixelCoords),
