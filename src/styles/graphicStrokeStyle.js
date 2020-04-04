@@ -218,9 +218,10 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
     patchRenderer(render);
 
     const pointStyle = getPointStyle(graphicstroke, renderState.feature);
-    const pointSize =
-      Number(evaluate(graphicstroke.graphic.size, renderState.feature)) ||
+    const graphicSize =
+      (graphicstroke.graphic && graphicstroke.graphic.size) ||
       DEFAULT_POINT_SIZE;
+    const pointSize = Number(evaluate(graphicSize, renderState.feature));
     const minSegmentLength = multiplier * pointSize;
 
     renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle);

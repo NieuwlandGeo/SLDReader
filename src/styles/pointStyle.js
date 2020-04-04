@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { Style, Fill, Stroke, Circle } from 'ol/style';
+import { Style } from 'ol/style';
 
 import {
   IMAGE_LOADING,
@@ -7,50 +7,15 @@ import {
   IMAGE_ERROR,
   DEFAULT_POINT_SIZE,
 } from '../constants';
-import { hexToRGB, memoizeStyleFunction } from './styleUtils';
+import { memoizeStyleFunction } from './styleUtils';
 import { imageLoadingPointStyle, imageErrorPointStyle } from './static';
 import { createCachedImageStyle } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
 import evaluate, { expressionOrDefault } from '../olEvaluator';
+import { getSimpleFill, getSimpleStroke } from './simpleStyles';
 
-/**
- * @private
- * Get OL Fill instance for SLD mark object.
- * @param {object} mark SLD mark object.
- */
-function getMarkFill(mark) {
-  const { fill } = mark;
-  const fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-  const fillOpacity = (fill && fill.styling && fill.styling.fillOpacity) || 1.0;
-  return new Fill({
-    color: fillOpacity && fillColor && fillColor.slice(0, 1) === '#'
-      ? hexToRGB(fillColor, fillOpacity)
-      : fillColor,
-  });
-}
-
-/**
- * @private
- * Get OL Stroke instance for SLD mark object.
- * @param {object} mark SLD mark object.
- */
-function getMarkStroke(mark) {
-  const { stroke } = mark;
-
-  let olStroke;
-  if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
-    const { stroke: cssStroke, strokeWidth: cssStrokeWidth, strokeOpacity: cssStrokeOpacity } = stroke.styling;
-    olStroke = new Stroke({
-      color:
-        cssStrokeOpacity && cssStroke && cssStroke.slice(0, 1) === '#'
-          ? hexToRGB(cssStroke, cssStrokeOpacity)
-          : cssStroke || 'black',
-      width: cssStrokeWidth || 2,
-    });
-  }
-
-  return olStroke;
-}
+const defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
+const defaultMarkStroke = getSimpleStroke({ styling: { stroke: {} } });
 
 /**
  * @private
@@ -87,8 +52,8 @@ function pointStyle(pointsymbolizer) {
 
   if (style.mark) {
     const { wellknownname } = style.mark;
-    const olFill = getMarkFill(style.mark);
-    const olStroke = getMarkStroke(style.mark);
+    const olFill = getSimpleFill(style.mark.fill);
+    const olStroke = getSimpleStroke(style.mark.stroke);
 
     return new Style({
       // Note: size will be set dynamically later.
@@ -102,13 +67,16 @@ function pointStyle(pointsymbolizer) {
     });
   }
 
+  // SLD spec: when no ExternalGraphic or Mark is specified,
+  // use a square of 6 pixels with 50% gray fill and a black outline.
   return new Style({
-    image: new Circle({
-      radius: 4,
-      fill: new Fill({
-        color: 'blue',
-      }),
-    }),
+    image: getWellKnownSymbol(
+      'square',
+      pointSizeValue,
+      defaultMarkStroke,
+      defaultMarkFill,
+      rotationDegrees
+    ),
   });
 }
 
@@ -123,7 +91,7 @@ const cachedPointStyle = memoizeStyleFunction(pointStyle);
  */
 function getPointStyle(symbolizer, feature) {
   const olStyle = cachedPointStyle(symbolizer);
-  const olImage = olStyle.getImage();
+  let olImage = olStyle.getImage();
 
   // Apply dynamic values to the cached OL style instance before returning it.
 
@@ -137,24 +105,19 @@ function getPointStyle(symbolizer, feature) {
       const height = olImage.getSize()[1];
       const scale = sizeValue / height || 1;
       olImage.setScale(scale);
-    }
-
-    if (graphic.mark) {
+    } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
       // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
-      if (graphic.mark.wellknownname === 'circle') {
-        olImage.setRadius(sizeValue * 0.5);
-      } else {
-        // So, in the case of any other RegularShape, create a new shape instance.
-        olStyle.setImage(
-          getWellKnownSymbol(
-            graphic.mark.wellknownname,
-            sizeValue,
-            // Note: re-use stroke and fill instances for a (small?) performance gain.
-            olImage.getStroke(),
-            olImage.getFill()
-          )
-        );
-      }
+      olImage.setRadius(sizeValue * 0.5);
+    } else {
+      // For a non-Circle RegularShape, create a new olImage in order to update the size.
+      olImage = getWellKnownSymbol(
+        (graphic.mark && graphic.mark.wellknownname) || 'square',
+        sizeValue,
+        // Note: re-use stroke and fill instances for a (small?) performance gain.
+        olImage.getStroke(),
+        olImage.getFill()
+      );
+      olStyle.setImage(olImage);
     }
   }
 
