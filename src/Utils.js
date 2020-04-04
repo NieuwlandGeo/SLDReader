@@ -31,6 +31,7 @@ export function getLayer(sld, layername) {
 export function getStyleNames(layer) {
   return layer.styles.map(s => s.name);
 }
+
 /**
  * get style from array layer.styles, if name is undefined it returns default style.
  * null is no style found
@@ -75,4 +76,67 @@ export function getRules(featureTypeStyle, feature, resolution, options = {}) {
     }
   }
   return result;
+}
+
+/**
+ * Get all symbolizers inside a given rule.
+ * Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
+ * @param {object} rule SLD rule object.
+ * @returns {Array<object>} Array of all symbolizers in a rule.
+ */
+export function getAllSymbolizers(rule) {
+  // Helper for adding a symbolizer to a list when the symbolizer can be an array of symbolizers.
+  // Todo: refactor style reader, so symbolizer is always an array.
+  function addSymbolizer(list, symbolizer) {
+    if (!symbolizer) {
+      return;
+    }
+    if (Array.isArray(symbolizer)) {
+      Array.prototype.push.apply(list, symbolizer);
+      return;
+    }
+    list.push(symbolizer);
+  }
+
+  const allSymbolizers = [];
+  addSymbolizer(allSymbolizers, rule.pointsymbolizer);
+  addSymbolizer(allSymbolizers, rule.linesymbolizer);
+  addSymbolizer(allSymbolizers, rule.polygonsymbolizer);
+  addSymbolizer(allSymbolizers, rule.textsymbolizer);
+
+  return allSymbolizers;
+}
+
+/**
+ * Gets a nested property from an object according to a property path.
+ * Note: path fragments may not contain a ".".
+ * Note: returns undefined if input obj is falsy.
+ * @example
+ * getByPath({ a: { b: { c: 42 } } }, "a.b.c") // returns 42.
+ * getByPath({ a: { b: { c: 42 } } }, "a.d.c") // returns undefined, because obj.a has no property .d.
+ * @param {object} obj Object.
+ * @param {string} path Property path.
+ * @returns {any} Value of property at given path inside object, or undefined if any property
+ * in the path does not exist on the object.
+ */
+export function getByPath(obj, path) {
+  if (!obj) {
+    return undefined;
+  }
+
+  // Start from the given object.
+  let value = obj;
+
+  // Walk the object property path.
+  const fragments = (path || '').split('.');
+  for (let k = 0; k < fragments.length; k += 1) {
+    const fragment = fragments[k];
+    // Return undefined if any partial path does not exist in the object.
+    if (!(fragment in value)) {
+      return undefined;
+    }
+    value = value[fragment];
+  }
+
+  return value;
 }

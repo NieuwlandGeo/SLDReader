@@ -2,6 +2,14 @@
 import { Style, Icon } from 'ol/style';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
+import { getAllSymbolizers, getByPath } from './Utils';
+
+// These are possible locations for an external graphic inside a symbolizer.
+const externalGraphicPaths = [
+  'graphic.externalgraphic',
+  'stroke.graphicstroke.graphic.externalgraphic',
+  'fill.graphicfill.graphic.externalgraphic',
+];
 
 /* eslint-disable no-underscore-dangle */
 // Global image cache. A map of image Url -> {
@@ -24,6 +32,42 @@ export function getCachedImageUrls() {
   return Object.keys(imageCache);
 }
 
+function updateSymbolizerLoadingState(symbolizer, imageUrl, imageLoadState) {
+  // Look at all possible paths where an externalgraphic may be present within a symbolizer.
+  // When such an externalgraphic has been found, and its url equals imageUrl,
+  // and its load state is different from imageLoadState, then return an updated copy of the symbolizer.
+  // In all other cases, return the same (unchanged) symbolizer.
+  for (let k = 0; k < externalGraphicPaths.length; k += 1) {
+    // Note: this process assumes that each symbolizer has at most one external graphic element.
+    const path = externalGraphicPaths[k];
+    const externalgraphic = getByPath(symbolizer, path);
+    if (
+      externalgraphic &&
+      externalgraphic.onlineresource === imageUrl &&
+      symbolizer.__loadingState !== imageLoadState
+    ) {
+      // Return an updated copy of the symbolizer.
+      const newSymbolizer = {
+        ...symbolizer,
+        __loadingState: imageLoadState,
+      };
+
+      // If it's a graphicstroke symbolizer, also update the loadingState of the graphicstroke subsymbolizer.
+      // In this way, the graphicstroke renderer can recognize that the cached stroke mark style needs to be refreshed.
+      if (path.indexOf('graphicstroke') > -1) {
+        newSymbolizer.stroke.graphicstroke = {
+          ...newSymbolizer.stroke.graphicstroke,
+          __loadingState: imageLoadState,
+        };
+      }
+      return newSymbolizer;
+    }
+  }
+
+  // If no externalGraphic was found inside the symbolizer, return it unchanged.
+  return symbolizer;
+}
+
 /**
  * @private
  * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
@@ -34,40 +78,33 @@ export function getCachedImageUrls() {
  * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
  */
 export function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
-  // for pointsymbolizer
-  if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
-    const { graphic } = rule.pointsymbolizer;
-    const { externalgraphic } = graphic;
-    if (
-      externalgraphic &&
-      externalgraphic.onlineresource === imageUrl &&
-      rule.pointsymbolizer.__loadingState !== imageLoadState
-    ) {
-      rule.pointsymbolizer = {
-        ...rule.pointsymbolizer,
-        __loadingState: imageLoadState,
-      };
-    }
+  // Todo: support array-valued symbolizer properties.
+  // Todo: refactor reader code, so symbolizer is always an array that may have only one element.
+  const updatedPointSymbolizer = updateSymbolizerLoadingState(
+    rule.pointsymbolizer,
+    imageUrl,
+    imageLoadState
+  );
+  if (updatedPointSymbolizer !== rule.pointsymbolizer) {
+    rule.pointsymbolizer = updatedPointSymbolizer;
   }
-  // for polygonsymbolizer
-  if (
-    rule.polygonsymbolizer &&
-    rule.polygonsymbolizer.fill &&
-    rule.polygonsymbolizer.fill.graphicfill &&
-    rule.polygonsymbolizer.fill.graphicfill.graphic
-  ) {
-    const { graphic } = rule.polygonsymbolizer.fill.graphicfill;
-    const { externalgraphic } = graphic;
-    if (
-      externalgraphic &&
-      externalgraphic.onlineresource === imageUrl &&
-      rule.polygonsymbolizer.__loadingState !== imageLoadState
-    ) {
-      rule.polygonsymbolizer = {
-        ...rule.polygonsymbolizer,
-        __loadingState: imageLoadState,
-      };
-    }
+
+  const updatedLineSymbolizer = updateSymbolizerLoadingState(
+    rule.linesymbolizer,
+    imageUrl,
+    imageLoadState
+  );
+  if (updatedLineSymbolizer !== rule.linesymbolizer) {
+    rule.linesymbolizer = updatedLineSymbolizer;
+  }
+
+  const updatedPolygonSymbolizer = updateSymbolizerLoadingState(
+    rule.polygonsymbolizer,
+    imageUrl,
+    imageLoadState
+  );
+  if (updatedPolygonSymbolizer !== rule.polygonsymbolizer) {
+    rule.polygonsymbolizer = updatedPolygonSymbolizer;
   }
 }
 
@@ -170,46 +207,34 @@ export function processExternalGraphicSymbolizers(
   for (let k = 0; k < rules.length; k += 1) {
     const rule = rules[k];
 
-    let symbolizer;
-    let exgraphic;
+    const allSymbolizers = getAllSymbolizers(rule);
+    allSymbolizers.forEach(symbolizer => {
+      externalGraphicPaths.forEach(path => {
+        const exgraphic = getByPath(symbolizer, path);
+        if (!exgraphic) {
+          return;
+        }
 
-    if (
-      rule.pointsymbolizer &&
-      rule.pointsymbolizer.graphic &&
-      rule.pointsymbolizer.graphic.externalgraphic
-    ) {
-      symbolizer = rule.pointsymbolizer;
-      exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
-    } else if (
-      rule.polygonsymbolizer &&
-      rule.polygonsymbolizer.fill &&
-      rule.polygonsymbolizer.fill.graphicfill &&
-      rule.polygonsymbolizer.fill.graphicfill.graphic &&
-      rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic
-    ) {
-      symbolizer = rule.polygonsymbolizer;
-      exgraphic =
-        rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
-    } else {
-      continue;
-    }
-
-    const imageUrl = exgraphic.onlineresource;
-    if (!(imageUrl in imageLoadState)) {
-      // Start loading the image and set image load state on the symbolizer.
-      imageLoadState[imageUrl] = IMAGE_LOADING;
-      loadExternalGraphic(
-        imageUrl,
-        imageLoadState,
-        featureTypeStyle,
-        imageLoadedCallback
-      );
-    } else if (
-      // Change image load state on the symbolizer if it has changed in the meantime.
-      symbolizer.__loadingState !== imageLoadState[imageUrl]
-    ) {
-      updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
-    }
+        // When an external graphic has been found inside a symbolizer,
+        // either start loading the image, or check if the load state of the image has changed.
+        const imageUrl = exgraphic.onlineresource;
+        if (!(imageUrl in imageLoadState)) {
+          // Start loading the image and set image load state on the symbolizer.
+          imageLoadState[imageUrl] = IMAGE_LOADING;
+          loadExternalGraphic(
+            imageUrl,
+            imageLoadState,
+            featureTypeStyle,
+            imageLoadedCallback
+          );
+        } else if (
+          // Change image load state on the symbolizer if it has changed in the meantime.
+          symbolizer.__loadingState !== imageLoadState[imageUrl]
+        ) {
+          updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
+        }
+      });
+    });
   }
 }
 
