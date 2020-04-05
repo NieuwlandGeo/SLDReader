@@ -11,6 +11,7 @@ import { sld11 } from './data/test11.sld';
 import { externalGraphicSld } from './data/externalgraphic.sld';
 import { dynamicSld } from './data/dynamic.sld';
 import { textSymbolizerSld } from './data/textSymbolizer.sld';
+import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 
 const getMockOLFeature = geometryType => ({
@@ -240,6 +241,41 @@ describe('SLD with external graphics', () => {
 
     // Just call the style function to trigger image load.
     styleFunction(olFeature, null);
+  });
+});
+
+describe('SLD with stacked line symbolizer', () => {
+  let featureTypeStyle;
+  before(() => {
+    const sldObject = Reader(externalGraphicStrokeSld);
+    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+  });
+
+  it('Updates graphicstroke symbolizer when stacked on top of a simple symbolizer', () => {
+    expect(featureTypeStyle).to.be.ok;
+
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [123456, 456789],
+          [234567, 567890],
+        ],
+      },
+      properties: {},
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+
+    // Calling the style function when using a style with external graphic stroke should update loading state
+    // for the graphicstroke sub-symbolizer in the second LineSymbolizer inside the rule.
+    styleFunction(olFeature, null)[0];
+    const graphicStrokeSymbolizer =
+      featureTypeStyle.rules[0].linesymbolizer[1].stroke.graphicstroke;
+    expect(graphicStrokeSymbolizer.__loadingState).to.equal(IMAGE_LOADING);
   });
 });
 
