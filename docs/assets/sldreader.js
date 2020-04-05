@@ -935,6 +935,7 @@
   function getStyleNames(layer) {
     return layer.styles.map(function (s) { return s.name; });
   }
+
   /**
    * get style from array layer.styles, if name is undefined it returns default style.
    * null is no style found
@@ -984,6 +985,69 @@
   }
 
   /**
+   * Get all symbolizers inside a given rule.
+   * Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
+   * @param {object} rule SLD rule object.
+   * @returns {Array<object>} Array of all symbolizers in a rule.
+   */
+  function getAllSymbolizers(rule) {
+    // Helper for adding a symbolizer to a list when the symbolizer can be an array of symbolizers.
+    // Todo: refactor style reader, so symbolizer is always an array.
+    function addSymbolizer(list, symbolizer) {
+      if (!symbolizer) {
+        return;
+      }
+      if (Array.isArray(symbolizer)) {
+        Array.prototype.push.apply(list, symbolizer);
+        return;
+      }
+      list.push(symbolizer);
+    }
+
+    var allSymbolizers = [];
+    addSymbolizer(allSymbolizers, rule.pointsymbolizer);
+    addSymbolizer(allSymbolizers, rule.linesymbolizer);
+    addSymbolizer(allSymbolizers, rule.polygonsymbolizer);
+    addSymbolizer(allSymbolizers, rule.textsymbolizer);
+
+    return allSymbolizers;
+  }
+
+  /**
+   * Gets a nested property from an object according to a property path.
+   * Note: path fragments may not contain a ".".
+   * Note: returns undefined if input obj is falsy.
+   * @example
+   * getByPath({ a: { b: { c: 42 } } }, "a.b.c") // returns 42.
+   * getByPath({ a: { b: { c: 42 } } }, "a.d.c") // returns undefined, because obj.a has no property .d.
+   * @param {object} obj Object.
+   * @param {string} path Property path.
+   * @returns {any} Value of property at given path inside object, or undefined if any property
+   * in the path does not exist on the object.
+   */
+  function getByPath(obj, path) {
+    if (!obj) {
+      return undefined;
+    }
+
+    // Start from the given object.
+    var value = obj;
+
+    // Walk the object property path.
+    var fragments = (path || '').split('.');
+    for (var k = 0; k < fragments.length; k += 1) {
+      var fragment = fragments[k];
+      // Return undefined if any partial path does not exist in the object.
+      if (!(fragment in value)) {
+        return undefined;
+      }
+      value = value[fragment];
+    }
+
+    return value;
+  }
+
+  /**
    * Get styling from rules per geometry type
    * @param  {Rule[]} rules [description]
    * @return {GeometryStyles}
@@ -1027,6 +1091,12 @@
 
   /* eslint-disable no-continue */
 
+  // These are possible locations for an external graphic inside a symbolizer.
+  var externalGraphicPaths = [
+    'graphic.externalgraphic',
+    'stroke.graphicstroke.graphic.externalgraphic',
+    'fill.graphicfill.graphic.externalgraphic' ];
+
   /* eslint-disable no-underscore-dangle */
   // Global image cache. A map of image Url -> {
   //   url: image url,
@@ -1048,6 +1118,71 @@
     return Object.keys(imageCache);
   }
 
+  function getUpdatedSymbolizer(symbolizer, imageUrl, imageLoadState) {
+    // Look at all possible paths where an externalgraphic may be present within a symbolizer.
+    // When such an externalgraphic has been found, and its url equals imageUrl,
+    // and its load state is different from imageLoadState, then return an updated copy of the symbolizer.
+    // In all other cases, return the same (unchanged) symbolizer.
+    for (var k = 0; k < externalGraphicPaths.length; k += 1) {
+      // Note: this process assumes that each symbolizer has at most one external graphic element.
+      var path = externalGraphicPaths[k];
+      var externalgraphic = getByPath(symbolizer, path);
+      if (
+        externalgraphic &&
+        externalgraphic.onlineresource === imageUrl &&
+        symbolizer.__loadingState !== imageLoadState
+      ) {
+        // Return an updated copy of the symbolizer.
+        var newSymbolizer = Object.assign({}, symbolizer,
+          {__loadingState: imageLoadState});
+
+        // If it's a graphicstroke symbolizer, also update the loadingState of the graphicstroke subsymbolizer.
+        // In this way, the graphicstroke renderer can recognize that the cached stroke mark style needs to be refreshed.
+        if (path.indexOf('graphicstroke') > -1) {
+          newSymbolizer.stroke.graphicstroke = Object.assign({}, newSymbolizer.stroke.graphicstroke,
+            {__loadingState: imageLoadState});
+        }
+        return newSymbolizer;
+      }
+    }
+
+    // If no externalGraphic was found inside the symbolizer, return it unchanged.
+    return symbolizer;
+  }
+
+  function updateSymbolizerLoadingState(
+    rule,
+    symbolizerName,
+    imageUrl,
+    imageLoadState
+  ) {
+    // Watch out! Symbolizer may be a symbolizer, or an array of symbolizers.
+    // Todo: make this code less ugly.
+    // Suggestion 1: make symbolizer always be an array.
+    // Suggestion 2: use invalidation flags inside symbolizer instead of replacing symbolizers.
+    if (!Array.isArray(rule[symbolizerName])) {
+      var updatedSymbolizer = getUpdatedSymbolizer(
+        rule[symbolizerName],
+        imageUrl,
+        imageLoadState
+      );
+      if (updatedSymbolizer !== rule[symbolizerName]) {
+        rule[symbolizerName] = updatedSymbolizer;
+      }
+    } else {
+      for (var k = 0; k < rule[symbolizerName].length; k += 1) {
+        var updatedSymbolizer$1 = getUpdatedSymbolizer(
+          rule[symbolizerName][k],
+          imageUrl,
+          imageLoadState
+        );
+        if (updatedSymbolizer$1 !== rule[symbolizerName][k]) {
+          rule[symbolizerName][k] = updatedSymbolizer$1;
+        }
+      }
+    }
+  }
+
   /**
    * @private
    * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
@@ -1058,40 +1193,26 @@
    * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
    */
   function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
-    // for pointsymbolizer
-    if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
-      var ref = rule.pointsymbolizer;
-      var graphic = ref.graphic;
-      var externalgraphic = graphic.externalgraphic;
-      if (
-        externalgraphic &&
-        externalgraphic.onlineresource === imageUrl &&
-        rule.pointsymbolizer.__loadingState !== imageLoadState
-      ) {
-        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer,
-          {__loadingState: imageLoadState});
-      }
-    }
-    // for polygonsymbolizer
-    if (
-      rule.polygonsymbolizer &&
-      rule.polygonsymbolizer.fill &&
-      rule.polygonsymbolizer.fill.graphicfill &&
-      rule.polygonsymbolizer.fill.graphicfill.graphic
-    ) {
-      var ref$1 = rule.polygonsymbolizer.fill.graphicfill;
-      var graphic$1 = ref$1.graphic;
-      var ref$2 = graphic$1;
-      var externalgraphic$1 = ref$2.externalgraphic;
-      if (
-        externalgraphic$1 &&
-        externalgraphic$1.onlineresource === imageUrl &&
-        rule.polygonsymbolizer.__loadingState !== imageLoadState
-      ) {
-        rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer,
-          {__loadingState: imageLoadState});
-      }
-    }
+    updateSymbolizerLoadingState(
+      rule,
+      'pointsymbolizer',
+      imageUrl,
+      imageLoadState
+    );
+
+    updateSymbolizerLoadingState(
+      rule,
+      'linesymbolizer',
+      imageUrl,
+      imageLoadState
+    );
+
+    updateSymbolizerLoadingState(
+      rule,
+      'polygonsymbolizer',
+      imageUrl,
+      imageLoadState
+    );
   }
 
   /**
@@ -1190,50 +1311,40 @@
     //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
     // * be in error. Error is a kind of loaded, but with an error icon style.
     //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
-    for (var k = 0; k < rules.length; k += 1) {
+    var loop = function ( k ) {
       var rule = rules[k];
 
-      var symbolizer = (void 0);
-      var exgraphic = (void 0);
+      var allSymbolizers = getAllSymbolizers(rule);
+      allSymbolizers.forEach(function (symbolizer) {
+        externalGraphicPaths.forEach(function (path) {
+          var exgraphic = getByPath(symbolizer, path);
+          if (!exgraphic) {
+            return;
+          }
 
-      if (
-        rule.pointsymbolizer &&
-        rule.pointsymbolizer.graphic &&
-        rule.pointsymbolizer.graphic.externalgraphic
-      ) {
-        symbolizer = rule.pointsymbolizer;
-        exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
-      } else if (
-        rule.polygonsymbolizer &&
-        rule.polygonsymbolizer.fill &&
-        rule.polygonsymbolizer.fill.graphicfill &&
-        rule.polygonsymbolizer.fill.graphicfill.graphic &&
-        rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic
-      ) {
-        symbolizer = rule.polygonsymbolizer;
-        exgraphic =
-          rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
-      } else {
-        continue;
-      }
+          // When an external graphic has been found inside a symbolizer,
+          // either start loading the image, or check if the load state of the image has changed.
+          var imageUrl = exgraphic.onlineresource;
+          if (!(imageUrl in imageLoadState)) {
+            // Start loading the image and set image load state on the symbolizer.
+            imageLoadState[imageUrl] = IMAGE_LOADING;
+            loadExternalGraphic(
+              imageUrl,
+              imageLoadState,
+              featureTypeStyle,
+              imageLoadedCallback
+            );
+          } else if (
+            // Change image load state on the symbolizer if it has changed in the meantime.
+            symbolizer.__loadingState !== imageLoadState[imageUrl]
+          ) {
+            updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
+          }
+        });
+      });
+    };
 
-      var imageUrl = exgraphic.onlineresource;
-      if (!(imageUrl in imageLoadState)) {
-        // Start loading the image and set image load state on the symbolizer.
-        imageLoadState[imageUrl] = IMAGE_LOADING;
-        loadExternalGraphic(
-          imageUrl,
-          imageLoadState,
-          featureTypeStyle,
-          imageLoadedCallback
-        );
-      } else if (
-        // Change image load state on the symbolizer if it has changed in the meantime.
-        symbolizer.__loadingState !== imageLoadState[imageUrl]
-      ) {
-        updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
-      }
-    }
+    for (var k = 0; k < rules.length; k += 1) loop( k );
   }
 
   /**
@@ -2445,6 +2556,8 @@
   exports.OlStyler = OlStyler;
   exports.Reader = Reader;
   exports.createOlStyleFunction = createOlStyleFunction;
+  exports.getAllSymbolizers = getAllSymbolizers;
+  exports.getByPath = getByPath;
   exports.getGeometryStyles = getGeometryStyles;
   exports.getLayer = getLayer;
   exports.getLayerNames = getLayerNames;

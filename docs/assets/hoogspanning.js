@@ -1,4 +1,5 @@
 /* global ol SLDReader CodeMirror */
+
 // the xml editor
 const editor = CodeMirror.fromTextArea(document.getElementById('sld'), {
   lineNumbers: true,
@@ -56,16 +57,46 @@ function applySLD(vectorLayer, text) {
       const viewCenter = map.getView().getCenter();
       return ol.proj.getPointResolution(viewProjection, viewResolution, viewCenter);
     },
+    imageLoadedCallback: () => {
+      // Signal OpenLayers to redraw the layer when an image icon has loaded.
+      // On redraw, the updated symbolizer with the correct image scale will be used to draw the icon.
+      vectorLayer.changed();
+    },
   }));
 }
 
-fetch('assets/sld-hoogspanning.xml')
-  .then(response => response.text())
-  .then(text => editor.setValue(text));
+function loadSld(mode) {
+  const sldUrl = mode === 'DEMO_MARK'
+    ? 'assets/sld-hoogspanning.xml'
+    : 'assets/sld-external-graphic-mark.xml';
+  fetch(sldUrl)
+    .then(response => response.text())
+    .then(text => editor.setValue(text));
+}
+
+loadSld('DEMO_MARK');
 
 /**
  * update map if sld is edited
  */
 editor.on('change', cm => {
   applySLD(vector, cm.getValue());
+});
+
+// SLD switch handlers.
+const optionMark = document.querySelector('#option-mark').parentElement;
+const optionExternalGraphic = document.querySelector('#option-exgraphic').parentElement;
+
+document.querySelectorAll('.option-input input').forEach(inputNode => {
+  inputNode.addEventListener('change', evt => {
+    if (evt.target.value === 'DEMO_MARK') {
+      loadSld('DEMO_MARK');
+      optionMark.classList.add('option-checked');
+      optionExternalGraphic.classList.remove('option-checked');
+    } else {
+      loadSld('DEMO_EXTERNALGRAPHIC');
+      optionMark.classList.remove('option-checked');
+      optionExternalGraphic.classList.add('option-checked');
+    }
+  });
 });

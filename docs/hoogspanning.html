@@ -1,25 +1,52 @@
 ---
 layout: default
-title: Power lines
+title: GraphicStroke
 nav_order: 3
 ---
+<style>
+.button-box {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
 
-<div class="row">
-  <div class="col-md-12">
-    <h1>Power lines</h1>
-    <p>This example requires an up to date browser!</p>
-    <p><a href="assets/hoogspanning.js">View code</a></p>
-  </div>
+.option-input {
+  display: inline-block;
+  margin-right: 1rem;
+  padding: 0.3rem 0.5rem;
+  background: #e8e8e8;
+  border-radius: 3px;
+}
+
+.option-input > label,
+.option-input > input {
+  cursor: pointer;
+}
+
+.option-input.option-checked {
+  font-weight: bold;
+}
+</style>
+
+<div>
+  <h1>GraphicStroke</h1>
+  <p>This example requires an up to date browser!</p>
+  <p><a href="assets/hoogspanning.js">View code</a></p>
 </div>
-<div class="row">
-  <div class="col-md-6">
-    <div id="olmap"></div>
-  </div>
-  <div class="col-md-6">
-    <textarea id="sld"></textarea>
-  </div>
+<div class="button-box">
+    <div class="option-input option-checked">
+      <input id="option-mark" name="sld-options" type="radio" value="DEMO_MARK" checked></input>
+      <label for="option-mark">GraphicStroke: Mark</label>
+    </div>
+    <div class="option-input">
+      <input id="option-exgraphic" name="sld-options" type="radio" value="DEMO_EXTERNALGRAPHIC"></input>
+      <label for="option-exgraphic">GraphicStroke: ExternalGraphic</label>
+    </div>
 </div>
-</div>
+
+<div id="olmap"></div>
+<textarea id="sld"></textarea>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/mode/xml/xml.min.js"></script>
 <script src="assets/hoogspanning.js"></script>
