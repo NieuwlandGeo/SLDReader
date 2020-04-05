@@ -32,7 +32,7 @@ export function getCachedImageUrls() {
   return Object.keys(imageCache);
 }
 
-function updateSymbolizerLoadingState(symbolizer, imageUrl, imageLoadState) {
+function getUpdatedSymbolizer(symbolizer, imageUrl, imageLoadState) {
   // Look at all possible paths where an externalgraphic may be present within a symbolizer.
   // When such an externalgraphic has been found, and its url equals imageUrl,
   // and its load state is different from imageLoadState, then return an updated copy of the symbolizer.
@@ -68,6 +68,39 @@ function updateSymbolizerLoadingState(symbolizer, imageUrl, imageLoadState) {
   return symbolizer;
 }
 
+function updateSymbolizerLoadingState(
+  rule,
+  symbolizerName,
+  imageUrl,
+  imageLoadState
+) {
+  // Watch out! Symbolizer may be a symbolizer, or an array of symbolizers.
+  // Todo: make this code less ugly.
+  // Suggestion 1: make symbolizer always be an array.
+  // Suggestion 2: use invalidation flags inside symbolizer instead of replacing symbolizers.
+  if (!Array.isArray(rule[symbolizerName])) {
+    const updatedSymbolizer = getUpdatedSymbolizer(
+      rule[symbolizerName],
+      imageUrl,
+      imageLoadState
+    );
+    if (updatedSymbolizer !== rule[symbolizerName]) {
+      rule[symbolizerName] = updatedSymbolizer;
+    }
+  } else {
+    for (let k = 0; k < rule[symbolizerName].length; k += 1) {
+      const updatedSymbolizer = getUpdatedSymbolizer(
+        rule[symbolizerName][k],
+        imageUrl,
+        imageLoadState
+      );
+      if (updatedSymbolizer !== rule[symbolizerName][k]) {
+        rule[symbolizerName][k] = updatedSymbolizer;
+      }
+    }
+  }
+}
+
 /**
  * @private
  * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
@@ -78,34 +111,26 @@ function updateSymbolizerLoadingState(symbolizer, imageUrl, imageLoadState) {
  * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
  */
 export function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
-  // Todo: support array-valued symbolizer properties.
-  // Todo: refactor reader code, so symbolizer is always an array that may have only one element.
-  const updatedPointSymbolizer = updateSymbolizerLoadingState(
-    rule.pointsymbolizer,
+  updateSymbolizerLoadingState(
+    rule,
+    'pointsymbolizer',
     imageUrl,
     imageLoadState
   );
-  if (updatedPointSymbolizer !== rule.pointsymbolizer) {
-    rule.pointsymbolizer = updatedPointSymbolizer;
-  }
 
-  const updatedLineSymbolizer = updateSymbolizerLoadingState(
-    rule.linesymbolizer,
+  updateSymbolizerLoadingState(
+    rule,
+    'linesymbolizer',
     imageUrl,
     imageLoadState
   );
-  if (updatedLineSymbolizer !== rule.linesymbolizer) {
-    rule.linesymbolizer = updatedLineSymbolizer;
-  }
 
-  const updatedPolygonSymbolizer = updateSymbolizerLoadingState(
-    rule.polygonsymbolizer,
+  updateSymbolizerLoadingState(
+    rule,
+    'polygonsymbolizer',
     imageUrl,
     imageLoadState
   );
-  if (updatedPolygonSymbolizer !== rule.polygonsymbolizer) {
-    rule.polygonsymbolizer = updatedPolygonSymbolizer;
-  }
 }
 
 /**
