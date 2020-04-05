@@ -4,7 +4,7 @@ import { toContext } from 'ol/render';
 import { Point, LineString } from 'ol/geom';
 import { containsCoordinate } from 'ol/extent';
 
-import { DEFAULT_POINT_SIZE } from '../constants';
+import { DEFAULT_MARK_SIZE, DEFAULT_EXTERNALGRAPHIC_SIZE } from '../constants';
 import evaluate from '../olEvaluator';
 import getPointStyle from './pointStyle';
 
@@ -222,10 +222,15 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
     const render = toContext(renderState.context);
     patchRenderer(render);
 
+    let defaultGraphicSize = DEFAULT_MARK_SIZE;
+    if (graphicstroke.graphic && graphicstroke.graphic.externalgraphic) {
+      defaultGraphicSize = DEFAULT_EXTERNALGRAPHIC_SIZE;
+    }
+
     const pointStyle = getPointStyle(graphicstroke, renderState.feature);
     const graphicSize =
       (graphicstroke.graphic && graphicstroke.graphic.size) ||
-      DEFAULT_POINT_SIZE;
+      defaultGraphicSize;
     const pointSize = Number(evaluate(graphicSize, renderState.feature));
     const minSegmentLength = multiplier * pointSize;
 

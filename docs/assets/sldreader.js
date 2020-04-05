@@ -652,7 +652,11 @@
   var IMAGE_LOADED = 'IMAGE_LOADED';
   var IMAGE_ERROR = 'IMAGE_ERROR';
 
-  var DEFAULT_POINT_SIZE = 6; // pixels
+  // SLD Spec: Default size for Marks without Size should be 6 pixels.
+  var DEFAULT_MARK_SIZE = 6; // pixels
+  // SLD Spec: Default size for ExternalGraphic with an unknown native size,
+  // like SVG without dimensions, should be 16 pixels.
+  var DEFAULT_EXTERNALGRAPHIC_SIZE = 16; // pixels
 
   function propertyIsLessThan(comparison, value) {
     return (
@@ -1747,12 +1751,18 @@
     var style$1 = pointsymbolizer.graphic;
 
     // If the point size is a dynamic expression, use the default point size and update in-place later.
-    var pointSizeValue = expressionOrDefault(style$1.size, DEFAULT_POINT_SIZE);
+    var pointSizeValue = expressionOrDefault(style$1.size, DEFAULT_MARK_SIZE);
 
     // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
     var rotationDegrees = expressionOrDefault(style$1.rotation, 0.0);
 
     if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
+      // For external graphics: the default size is the native image size.
+      // In that case, set pointSizeValue to null, so no scaling is calculated for the image.
+      if (!style$1.size) {
+        pointSizeValue = null;
+      }
+
       // Check symbolizer metadata to see if the image has already been loaded.
       switch (pointsymbolizer.__loadingState) {
         case IMAGE_LOADED:
@@ -1826,7 +1836,7 @@
     var graphic = symbolizer.graphic;
     var size = graphic.size;
     if (size && size.type === 'expression') {
-      var sizeValue = Number(evaluate(size, feature)) || DEFAULT_POINT_SIZE;
+      var sizeValue = Number(evaluate(size, feature)) || DEFAULT_MARK_SIZE;
 
       if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
         var height = olImage.getSize()[1];
@@ -2078,10 +2088,15 @@
       var render$1 = render.toContext(renderState.context);
       patchRenderer(render$1);
 
+      var defaultGraphicSize = DEFAULT_MARK_SIZE;
+      if (graphicstroke.graphic && graphicstroke.graphic.externalgraphic) {
+        defaultGraphicSize = DEFAULT_EXTERNALGRAPHIC_SIZE;
+      }
+
       var pointStyle = getPointStyle(graphicstroke, renderState.feature);
       var graphicSize =
         (graphicstroke.graphic && graphicstroke.graphic.size) ||
-        DEFAULT_POINT_SIZE;
+        defaultGraphicSize;
       var pointSize = Number(evaluate(graphicSize, renderState.feature));
       var minSegmentLength = multiplier * pointSize;
 

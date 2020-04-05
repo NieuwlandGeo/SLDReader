@@ -5,7 +5,7 @@ import {
   IMAGE_LOADING,
   IMAGE_LOADED,
   IMAGE_ERROR,
-  DEFAULT_POINT_SIZE,
+  DEFAULT_MARK_SIZE,
 } from '../constants';
 import { memoizeStyleFunction } from './styleUtils';
 import {
@@ -30,12 +30,18 @@ function pointStyle(pointsymbolizer) {
   const { graphic: style } = pointsymbolizer;
 
   // If the point size is a dynamic expression, use the default point size and update in-place later.
-  const pointSizeValue = expressionOrDefault(style.size, DEFAULT_POINT_SIZE);
+  let pointSizeValue = expressionOrDefault(style.size, DEFAULT_MARK_SIZE);
 
   // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
   const rotationDegrees = expressionOrDefault(style.rotation, 0.0);
 
   if (style.externalgraphic && style.externalgraphic.onlineresource) {
+    // For external graphics: the default size is the native image size.
+    // In that case, set pointSizeValue to null, so no scaling is calculated for the image.
+    if (!style.size) {
+      pointSizeValue = null;
+    }
+
     // Check symbolizer metadata to see if the image has already been loaded.
     switch (pointsymbolizer.__loadingState) {
       case IMAGE_LOADED:
@@ -108,7 +114,7 @@ function getPointStyle(symbolizer, feature) {
   const { graphic } = symbolizer;
   const { size } = graphic;
   if (size && size.type === 'expression') {
-    const sizeValue = Number(evaluate(size, feature)) || DEFAULT_POINT_SIZE;
+    const sizeValue = Number(evaluate(size, feature)) || DEFAULT_MARK_SIZE;
 
     if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
       const height = olImage.getSize()[1];
