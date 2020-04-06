@@ -907,8 +907,6 @@
     return true;
   }
 
-  /* eslint-disable no-underscore-dangle */
-
   /**
    * get all layer names in sld
    * @param {StyledLayerDescriptor} sld
@@ -1101,7 +1099,6 @@
     'stroke.graphicstroke.graphic.externalgraphic',
     'fill.graphicfill.graphic.externalgraphic' ];
 
-  /* eslint-disable no-underscore-dangle */
   // Global image cache. A map of image Url -> {
   //   url: image url,
   //   image: an Image instance containing image data,
@@ -1122,7 +1119,7 @@
     return Object.keys(imageCache);
   }
 
-  function getUpdatedSymbolizer(symbolizer, imageUrl, imageLoadState) {
+  function checkSymbolizerExternalGraphics(symbolizer, imageUrl, imageLoadState) {
     // Look at all possible paths where an externalgraphic may be present within a symbolizer.
     // When such an externalgraphic has been found, and its url equals imageUrl,
     // and its load state is different from imageLoadState, then return an updated copy of the symbolizer.
@@ -1136,53 +1133,39 @@
         externalgraphic.onlineresource === imageUrl &&
         symbolizer.__loadingState !== imageLoadState
       ) {
-        // Return an updated copy of the symbolizer.
-        var newSymbolizer = Object.assign({}, symbolizer,
-          {__loadingState: imageLoadState});
-
-        // If it's a graphicstroke symbolizer, also update the loadingState of the graphicstroke subsymbolizer.
-        // In this way, the graphicstroke renderer can recognize that the cached stroke mark style needs to be refreshed.
+        symbolizer.__invalidated = true;
+        symbolizer.__loadingState = imageLoadState;
+        // If the symbolizer contains a graphic stroke symbolizer,
+        // also update the nested graphicstroke symbolizer object.
         if (path.indexOf('graphicstroke') > -1) {
-          newSymbolizer.stroke.graphicstroke = Object.assign({}, newSymbolizer.stroke.graphicstroke,
-            {__loadingState: imageLoadState});
+          symbolizer.stroke.graphicstroke.__invalidated = true;
+          symbolizer.stroke.graphicstroke.__loadingState = imageLoadState;
         }
-        return newSymbolizer;
       }
     }
-
-    // If no externalGraphic was found inside the symbolizer, return it unchanged.
-    return symbolizer;
   }
 
-  function updateSymbolizerLoadingState(
+  function updateSymbolizerInvalidatedState(
     rule,
     symbolizerName,
     imageUrl,
     imageLoadState
   ) {
     // Watch out! Symbolizer may be a symbolizer, or an array of symbolizers.
-    // Todo: make this code less ugly.
-    // Suggestion 1: make symbolizer always be an array.
-    // Suggestion 2: use invalidation flags inside symbolizer instead of replacing symbolizers.
+    // Todo: refactor so rule.symbolizers property is always an array with 0..n symbolizer objects.
     if (!Array.isArray(rule[symbolizerName])) {
-      var updatedSymbolizer = getUpdatedSymbolizer(
+      checkSymbolizerExternalGraphics(
         rule[symbolizerName],
         imageUrl,
         imageLoadState
       );
-      if (updatedSymbolizer !== rule[symbolizerName]) {
-        rule[symbolizerName] = updatedSymbolizer;
-      }
     } else {
       for (var k = 0; k < rule[symbolizerName].length; k += 1) {
-        var updatedSymbolizer$1 = getUpdatedSymbolizer(
+        checkSymbolizerExternalGraphics(
           rule[symbolizerName][k],
           imageUrl,
           imageLoadState
         );
-        if (updatedSymbolizer$1 !== rule[symbolizerName][k]) {
-          rule[symbolizerName][k] = updatedSymbolizer$1;
-        }
       }
     }
   }
@@ -1197,21 +1180,21 @@
    * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
    */
   function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
-    updateSymbolizerLoadingState(
+    updateSymbolizerInvalidatedState(
       rule,
       'pointsymbolizer',
       imageUrl,
       imageLoadState
     );
 
-    updateSymbolizerLoadingState(
+    updateSymbolizerInvalidatedState(
       rule,
       'linesymbolizer',
       imageUrl,
       imageLoadState
     );
 
-    updateSymbolizerLoadingState(
+    updateSymbolizerInvalidatedState(
       rule,
       'polygonsymbolizer',
       imageUrl,
@@ -1453,8 +1436,11 @@
     return function (symbolizer) {
       var olStyle = styleCache.get(symbolizer);
 
-      if (!olStyle) {
+      // Create a new style if no style has been created yet, or when symbolizer has been invalidated.
+      if (!olStyle || symbolizer.__invalidated) {
         olStyle = styleFunction(symbolizer);
+        // Clear invalidated flag after creating a new style instance.
+        symbolizer.__invalidated = false;
         styleCache.set(symbolizer, olStyle);
       }
 
@@ -1737,8 +1723,6 @@
     });
   }
 
-  /* eslint-disable no-underscore-dangle */
-
   var defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
   var defaultMarkStroke = getSimpleStroke({ styling: { stroke: {} } });
 
@@ -1869,8 +1853,6 @@
 
     return olStyle;
   }
-
-  /* eslint-disable no-underscore-dangle */
 
   function splitLineString(geometry, minSegmentLength, options) {
     function calculatePointsDistance(coord1, coord2) {
@@ -2147,8 +2129,6 @@
   function getLineStyle(symbolizer) {
     return cachedLineStyle(symbolizer);
   }
-
-  /* eslint-disable no-underscore-dangle */
 
   function createPattern(graphic) {
     var ref = getCachedImage(
