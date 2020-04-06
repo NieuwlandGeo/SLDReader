@@ -275,7 +275,10 @@ describe('SLD with stacked line symbolizer', () => {
     styleFunction(olFeature, null)[0];
     const graphicStrokeSymbolizer =
       featureTypeStyle.rules[0].linesymbolizer[1].stroke.graphicstroke;
+    // Symbolizer should have IMAGE_LOADING metadata flag set.
     expect(graphicStrokeSymbolizer.__loadingState).to.equal(IMAGE_LOADING);
+    // Symbolizer should have invalidated metadata flag set.
+    expect(graphicStrokeSymbolizer.__invalidated).to.be.true;
   });
 });
 

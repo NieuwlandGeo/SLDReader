@@ -32,7 +32,7 @@ export function getCachedImageUrls() {
   return Object.keys(imageCache);
 }
 
-function getUpdatedSymbolizer(symbolizer, imageUrl, imageLoadState) {
+function checkSymbolizerExternalGraphics(symbolizer, imageUrl, imageLoadState) {
   // Look at all possible paths where an externalgraphic may be present within a symbolizer.
   // When such an externalgraphic has been found, and its url equals imageUrl,
   // and its load state is different from imageLoadState, then return an updated copy of the symbolizer.
@@ -46,57 +46,39 @@ function getUpdatedSymbolizer(symbolizer, imageUrl, imageLoadState) {
       externalgraphic.onlineresource === imageUrl &&
       symbolizer.__loadingState !== imageLoadState
     ) {
-      // Return an updated copy of the symbolizer.
-      const newSymbolizer = {
-        ...symbolizer,
-        __loadingState: imageLoadState,
-      };
-
-      // If it's a graphicstroke symbolizer, also update the loadingState of the graphicstroke subsymbolizer.
-      // In this way, the graphicstroke renderer can recognize that the cached stroke mark style needs to be refreshed.
+      symbolizer.__invalidated = true;
+      symbolizer.__loadingState = imageLoadState;
+      // If the symbolizer contains a graphic stroke symbolizer,
+      // also update the nested graphicstroke symbolizer object.
       if (path.indexOf('graphicstroke') > -1) {
-        newSymbolizer.stroke.graphicstroke = {
-          ...newSymbolizer.stroke.graphicstroke,
-          __loadingState: imageLoadState,
-        };
+        symbolizer.stroke.graphicstroke.__invalidated = true;
+        symbolizer.stroke.graphicstroke.__loadingState = imageLoadState;
       }
-      return newSymbolizer;
     }
   }
-
-  // If no externalGraphic was found inside the symbolizer, return it unchanged.
-  return symbolizer;
 }
 
-function updateSymbolizerLoadingState(
+function updateSymbolizerInvalidatedState(
   rule,
   symbolizerName,
   imageUrl,
   imageLoadState
 ) {
   // Watch out! Symbolizer may be a symbolizer, or an array of symbolizers.
-  // Todo: make this code less ugly.
-  // Suggestion 1: make symbolizer always be an array.
-  // Suggestion 2: use invalidation flags inside symbolizer instead of replacing symbolizers.
+  // Todo: refactor so rule.symbolizers property is always an array with 0..n symbolizer objects.
   if (!Array.isArray(rule[symbolizerName])) {
-    const updatedSymbolizer = getUpdatedSymbolizer(
+    checkSymbolizerExternalGraphics(
       rule[symbolizerName],
       imageUrl,
       imageLoadState
     );
-    if (updatedSymbolizer !== rule[symbolizerName]) {
-      rule[symbolizerName] = updatedSymbolizer;
-    }
   } else {
     for (let k = 0; k < rule[symbolizerName].length; k += 1) {
-      const updatedSymbolizer = getUpdatedSymbolizer(
+      checkSymbolizerExternalGraphics(
         rule[symbolizerName][k],
         imageUrl,
         imageLoadState
       );
-      if (updatedSymbolizer !== rule[symbolizerName][k]) {
-        rule[symbolizerName][k] = updatedSymbolizer;
-      }
     }
   }
 }
@@ -111,21 +93,21 @@ function updateSymbolizerLoadingState(
  * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
  */
 export function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
-  updateSymbolizerLoadingState(
+  updateSymbolizerInvalidatedState(
     rule,
     'pointsymbolizer',
     imageUrl,
     imageLoadState
   );
 
-  updateSymbolizerLoadingState(
+  updateSymbolizerInvalidatedState(
     rule,
     'linesymbolizer',
     imageUrl,
     imageLoadState
   );
 
-  updateSymbolizerLoadingState(
+  updateSymbolizerInvalidatedState(
     rule,
     'polygonsymbolizer',
     imageUrl,
