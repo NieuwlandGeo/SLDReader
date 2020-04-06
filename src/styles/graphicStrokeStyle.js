@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { Style } from 'ol/style';
 import { toContext } from 'ol/render';
 import { Point, LineString } from 'ol/geom';

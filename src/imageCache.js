@@ -11,7 +11,6 @@ const externalGraphicPaths = [
   'fill.graphicfill.graphic.externalgraphic',
 ];
 
-/* eslint-disable no-underscore-dangle */
 // Global image cache. A map of image Url -> {
 //   url: image url,
 //   image: an Image instance containing image data,

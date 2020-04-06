@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { scaleSelector, filterSelector } from './Filter';
 
 /**

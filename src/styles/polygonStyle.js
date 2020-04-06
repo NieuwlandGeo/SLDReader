@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { toContext } from 'ol/render';
 import { Style, Fill } from 'ol/style';
 import { Polygon, MultiPolygon } from 'ol/geom';
