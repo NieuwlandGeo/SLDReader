@@ -2,7 +2,7 @@
 import { Style, Icon } from 'ol/style';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
-import { getAllSymbolizers, getByPath } from './Utils';
+import { getRuleSymbolizers, getByPath } from './Utils';
 
 // These are possible locations for an external graphic inside a symbolizer.
 const externalGraphicPaths = [
@@ -31,10 +31,10 @@ export function getCachedImageUrls() {
   return Object.keys(imageCache);
 }
 
-function checkSymbolizerExternalGraphics(symbolizer, imageUrl, imageLoadState) {
+function checkSymbolizerExternalGraphics(symbolizer, imageUrl, loadingState) {
   // Look at all possible paths where an externalgraphic may be present within a symbolizer.
   // When such an externalgraphic has been found, and its url equals imageUrl,
-  // and its load state is different from imageLoadState, then return an updated copy of the symbolizer.
+  // and its load state is different from loadingState, then return an updated copy of the symbolizer.
   // In all other cases, return the same (unchanged) symbolizer.
   for (let k = 0; k < externalGraphicPaths.length; k += 1) {
     // Note: this process assumes that each symbolizer has at most one external graphic element.
@@ -43,15 +43,15 @@ function checkSymbolizerExternalGraphics(symbolizer, imageUrl, imageLoadState) {
     if (
       externalgraphic &&
       externalgraphic.onlineresource === imageUrl &&
-      symbolizer.__loadingState !== imageLoadState
+      symbolizer.__loadingState !== loadingState
     ) {
       symbolizer.__invalidated = true;
-      symbolizer.__loadingState = imageLoadState;
+      symbolizer.__loadingState = loadingState;
       // If the symbolizer contains a graphic stroke symbolizer,
       // also update the nested graphicstroke symbolizer object.
       if (path.indexOf('graphicstroke') > -1) {
         symbolizer.stroke.graphicstroke.__invalidated = true;
-        symbolizer.stroke.graphicstroke.__loadingState = imageLoadState;
+        symbolizer.stroke.graphicstroke.__loadingState = loadingState;
       }
     }
   }
@@ -61,7 +61,7 @@ function updateSymbolizerInvalidatedState(
   rule,
   symbolizerName,
   imageUrl,
-  imageLoadState
+  loadingState
 ) {
   // Watch out! Symbolizer may be a symbolizer, or an array of symbolizers.
   // Todo: refactor so rule.symbolizers property is always an array with 0..n symbolizer objects.
@@ -69,14 +69,14 @@ function updateSymbolizerInvalidatedState(
     checkSymbolizerExternalGraphics(
       rule[symbolizerName],
       imageUrl,
-      imageLoadState
+      loadingState
     );
   } else {
     for (let k = 0; k < rule[symbolizerName].length; k += 1) {
       checkSymbolizerExternalGraphics(
         rule[symbolizerName][k],
         imageUrl,
-        imageLoadState
+        loadingState
       );
     }
   }
@@ -84,58 +84,54 @@ function updateSymbolizerInvalidatedState(
 
 /**
  * @private
- * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
+ * Updates the __loadingState metadata for the symbolizers with the new loadingState, if
  * the external graphic is matching the image url.
  * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
  * @param {object} featureTypeStyle A feature type style object.
  * @param {string} imageUrl The image url.
- * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
+ * @param {string} loadingState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
  */
-export function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
+export function updateExternalGraphicRule(rule, imageUrl, loadingState) {
   updateSymbolizerInvalidatedState(
     rule,
     'pointsymbolizer',
     imageUrl,
-    imageLoadState
+    loadingState
   );
 
   updateSymbolizerInvalidatedState(
     rule,
     'linesymbolizer',
     imageUrl,
-    imageLoadState
+    loadingState
   );
 
   updateSymbolizerInvalidatedState(
     rule,
     'polygonsymbolizer',
     imageUrl,
-    imageLoadState
+    loadingState
   );
 }
 
 /**
  * @private
  * Go through all rules with an external graphic matching the image url
- * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+ * and update the __loadingState metadata for the symbolizers with the new loadingState.
  * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
  * @param {object} featureTypeStyle A feature type style object.
  * @param {string} imageUrl The image url.
- * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
+ * @param {string} loadingState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
  */
-function updateExternalGraphicRules(
-  featureTypeStyle,
-  imageUrl,
-  imageLoadState
-) {
+function updateExternalGraphicRules(featureTypeStyle, imageUrl, loadingState) {
   // Go through all rules with an external graphic matching the image url
-  // and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+  // and update the __loadingState metadata for the symbolizers with the new loadingState.
   if (!featureTypeStyle.rules) {
     return;
   }
 
   featureTypeStyle.rules.forEach(rule => {
-    updateExternalGraphicRule(rule, imageUrl, imageLoadState);
+    updateExternalGraphicRule(rule, imageUrl, loadingState);
   });
 }
 
@@ -145,14 +141,14 @@ function updateExternalGraphicRules(
  * When the image is loaded, it's put into the cache, the __loadingStaet inside the featureTypeStyle symbolizers are updated,
  * and the imageLoadedCallback is called with the loaded image url.
  * @param {url} imageUrl Image url.
- * @param {string} imageLoadState One of IMAGE_LOADING, IMAGE_LOADED or IMAGE_ERROR.
+ * @param {string} imageLoadingStateCache One of IMAGE_LOADING, IMAGE_LOADED or IMAGE_ERROR.
  * @param {object} featureTypeStyle Feature type style object.
  * @param {Function} imageLoadedCallback Will be called with the image url when image
  * has loaded. Will be called with undefined if the loading the image resulted in an error.
  */
 export function loadExternalGraphic(
   imageUrl,
-  imageLoadState,
+  imageLoadingStateCache,
   featureTypeStyle,
   imageLoadedCallback
 ) {
@@ -166,7 +162,7 @@ export function loadExternalGraphic(
       height: image.naturalHeight,
     });
     updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
-    imageLoadState[imageUrl] = IMAGE_LOADED;
+    imageLoadingStateCache[imageUrl] = IMAGE_LOADED;
     if (typeof imageLoadedCallback === 'function') {
       imageLoadedCallback(imageUrl);
     }
@@ -174,7 +170,7 @@ export function loadExternalGraphic(
 
   image.onerror = () => {
     updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
-    imageLoadState[imageUrl] = IMAGE_ERROR;
+    imageLoadingStateCache[imageUrl] = IMAGE_ERROR;
     if (typeof imageLoadedCallback === 'function') {
       imageLoadedCallback();
     }
@@ -190,13 +186,13 @@ export function loadExternalGraphic(
  * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
  * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
  * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
- * @param {object} imageLoadState Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
+ * @param {object} imageLoadingStateCache Cache of image load state: imageUrl -> loadingState (IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR).
  * @param {Function} imageLoadedCallback Function to call when an image has loaded.
  */
 export function processExternalGraphicSymbolizers(
   rules,
   featureTypeStyle,
-  imageLoadState,
+  imageLoadingStateCache,
   imageLoadedCallback
 ) {
   // If a feature has an external graphic point or polygon symbolizer, the external image may
@@ -213,7 +209,7 @@ export function processExternalGraphicSymbolizers(
   for (let k = 0; k < rules.length; k += 1) {
     const rule = rules[k];
 
-    const allSymbolizers = getAllSymbolizers(rule);
+    const allSymbolizers = getRuleSymbolizers(rule);
     allSymbolizers.forEach(symbolizer => {
       externalGraphicPaths.forEach(path => {
         const exgraphic = getByPath(symbolizer, path);
@@ -224,20 +220,24 @@ export function processExternalGraphicSymbolizers(
         // When an external graphic has been found inside a symbolizer,
         // either start loading the image, or check if the load state of the image has changed.
         const imageUrl = exgraphic.onlineresource;
-        if (!(imageUrl in imageLoadState)) {
+        if (!(imageUrl in imageLoadingStateCache)) {
           // Start loading the image and set image load state on the symbolizer.
-          imageLoadState[imageUrl] = IMAGE_LOADING;
+          imageLoadingStateCache[imageUrl] = IMAGE_LOADING;
           loadExternalGraphic(
             imageUrl,
-            imageLoadState,
+            imageLoadingStateCache,
             featureTypeStyle,
             imageLoadedCallback
           );
         } else if (
           // Change image load state on the symbolizer if it has changed in the meantime.
-          symbolizer.__loadingState !== imageLoadState[imageUrl]
+          symbolizer.__loadingState !== imageLoadingStateCache[imageUrl]
         ) {
-          updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
+          updateExternalGraphicRule(
+            rule,
+            imageUrl,
+            imageLoadingStateCache[imageUrl]
+          );
         }
       });
     });

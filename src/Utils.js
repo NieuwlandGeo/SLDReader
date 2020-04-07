@@ -83,7 +83,7 @@ export function getRules(featureTypeStyle, feature, resolution, options = {}) {
  * @param {object} rule SLD rule object.
  * @returns {Array<object>} Array of all symbolizers in a rule.
  */
-export function getAllSymbolizers(rule) {
+export function getRuleSymbolizers(rule) {
   // Helper for adding a symbolizer to a list when the symbolizer can be an array of symbolizers.
   // Todo: refactor style reader, so symbolizer is always an array.
   function addSymbolizer(list, symbolizer) {

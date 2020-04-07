@@ -131,11 +131,11 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
 
   // Keep image loading state separate from image cache.
   // This makes it easier to detect whether a requested image is already loading.
-  const imageLoadState = {};
+  const imageLoadingStateCache = {};
 
-  // Important: if image cache already has loaded images, mark these as loaded in imageLoadState!
+  // Important: if image cache already has loaded images, mark these as loaded in imageLoadingStateCache!
   getCachedImageUrls().forEach(imageUrl => {
-    imageLoadState[imageUrl] = IMAGE_LOADED;
+    imageLoadingStateCache[imageUrl] = IMAGE_LOADED;
   });
 
   return (feature, mapResolution) => {
@@ -157,7 +157,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
     processExternalGraphicSymbolizers(
       rules,
       featureTypeStyle,
-      imageLoadState,
+      imageLoadingStateCache,
       imageLoadedCallback
     );
 
