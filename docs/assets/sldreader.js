@@ -2097,7 +2097,7 @@
       symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
 
     if (fillImageUrl) {
-      // Check symbolizer metadata to see if the image has already been loaded.
+      // Use fallback style when graphicfill image hasn't been loaded yet.
       switch (getImageLoadingState(fillImageUrl)) {
         case IMAGE_LOADED:
           return new style.Style({
@@ -2110,7 +2110,7 @@
         case IMAGE_ERROR:
           return imageErrorPolygonStyle;
         default:
-          // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
+          // Load state of an image should be known at this time, but return 'loading' style as fallback.
           return imageLoadingPolygonStyle;
       }
     }
