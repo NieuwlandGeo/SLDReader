@@ -11,24 +11,47 @@ const externalGraphicPaths = [
   'fill.graphicfill.graphic.externalgraphic',
 ];
 
-// Global image cache. A map of image Url -> {
-//   url: image url,
-//   image: an Image instance containing image data,
-//   width: image width in pixels,
-//   height: image height in pixels
-// }
+/**
+ * Global image cache. A map of image Url -> {
+ *   url: image url,
+ *   image: an Image instance containing image data,
+ *   width: image width in pixels,
+ *   height: image height in pixels
+ * }
+ */
 const imageCache = {};
-
 export function setCachedImage(url, imageData) {
   imageCache[url] = imageData;
 }
-
 export function getCachedImage(url) {
   return imageCache[url];
 }
-
 export function getCachedImageUrls() {
   return Object.keys(imageCache);
+}
+export function clearImageCache() {
+  Object.keys(imageCache).forEach(key => {
+    imageCache[key] = null;
+    delete imageCache[key];
+  });
+}
+
+/**
+ * Global image loading state cache.
+ * A map of image Url -> one of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'
+ */
+const imageLoadingStateCache = {};
+export function setImageLoadingState(url, loadingState) {
+  imageLoadingStateCache[url] = loadingState;
+}
+export function getImageLoadingState(url) {
+  return imageLoadingStateCache[url];
+}
+export function clearImageLoadingStateCache() {
+  Object.keys(imageLoadingStateCache).forEach(key => {
+    imageLoadingStateCache[key] = null;
+    delete imageLoadingStateCache[key];
+  });
 }
 
 function checkSymbolizerExternalGraphics(symbolizer, imageUrl, loadingState) {
@@ -141,14 +164,12 @@ function updateExternalGraphicRules(featureTypeStyle, imageUrl, loadingState) {
  * When the image is loaded, it's put into the cache, the __loadingStaet inside the featureTypeStyle symbolizers are updated,
  * and the imageLoadedCallback is called with the loaded image url.
  * @param {url} imageUrl Image url.
- * @param {string} imageLoadingStateCache One of IMAGE_LOADING, IMAGE_LOADED or IMAGE_ERROR.
  * @param {object} featureTypeStyle Feature type style object.
  * @param {Function} imageLoadedCallback Will be called with the image url when image
  * has loaded. Will be called with undefined if the loading the image resulted in an error.
  */
 export function loadExternalGraphic(
   imageUrl,
-  imageLoadingStateCache,
   featureTypeStyle,
   imageLoadedCallback
 ) {
@@ -161,16 +182,16 @@ export function loadExternalGraphic(
       width: image.naturalWidth,
       height: image.naturalHeight,
     });
+    setImageLoadingState(imageUrl, IMAGE_LOADED);
     updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
-    imageLoadingStateCache[imageUrl] = IMAGE_LOADED;
     if (typeof imageLoadedCallback === 'function') {
       imageLoadedCallback(imageUrl);
     }
   };
 
   image.onerror = () => {
+    setImageLoadingState(imageUrl, IMAGE_ERROR);
     updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
-    imageLoadingStateCache[imageUrl] = IMAGE_ERROR;
     if (typeof imageLoadedCallback === 'function') {
       imageLoadedCallback();
     }
@@ -186,13 +207,11 @@ export function loadExternalGraphic(
  * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
  * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
  * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
- * @param {object} imageLoadingStateCache Cache of image load state: imageUrl -> loadingState (IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR).
  * @param {Function} imageLoadedCallback Function to call when an image has loaded.
  */
 export function processExternalGraphicSymbolizers(
   rules,
   featureTypeStyle,
-  imageLoadingStateCache,
   imageLoadedCallback
 ) {
   // If a feature has an external graphic point or polygon symbolizer, the external image may
@@ -206,9 +225,7 @@ export function processExternalGraphicSymbolizers(
   //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
   // * be in error. Error is a kind of loaded, but with an error icon style.
   //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
-  for (let k = 0; k < rules.length; k += 1) {
-    const rule = rules[k];
-
+  rules.forEach(rule => {
     const allSymbolizers = getRuleSymbolizers(rule);
     allSymbolizers.forEach(symbolizer => {
       externalGraphicPaths.forEach(path => {
@@ -220,28 +237,20 @@ export function processExternalGraphicSymbolizers(
         // When an external graphic has been found inside a symbolizer,
         // either start loading the image, or check if the load state of the image has changed.
         const imageUrl = exgraphic.onlineresource;
-        if (!(imageUrl in imageLoadingStateCache)) {
+        const imageLoadingState = getImageLoadingState(imageUrl);
+        if (!imageLoadingState) {
           // Start loading the image and set image load state on the symbolizer.
-          imageLoadingStateCache[imageUrl] = IMAGE_LOADING;
-          loadExternalGraphic(
-            imageUrl,
-            imageLoadingStateCache,
-            featureTypeStyle,
-            imageLoadedCallback
-          );
+          setImageLoadingState(imageUrl, IMAGE_LOADING);
+          loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
         } else if (
           // Change image load state on the symbolizer if it has changed in the meantime.
-          symbolizer.__loadingState !== imageLoadingStateCache[imageUrl]
+          symbolizer.__loadingState !== imageLoadingState
         ) {
-          updateExternalGraphicRule(
-            rule,
-            imageUrl,
-            imageLoadingStateCache[imageUrl]
-          );
+          updateExternalGraphicRule(rule, imageUrl, imageLoadingState);
         }
       });
     });
-  }
+  });
 }
 
 /**

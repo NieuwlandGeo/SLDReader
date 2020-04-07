@@ -1,4 +1,4 @@
-/* global describe it expect before */
+/* global describe it expect before beforeEach */
 import { Style, Circle } from 'ol/style';
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
@@ -12,6 +12,11 @@ import { dynamicSld } from './data/dynamic.sld';
 import { textSymbolizerSld } from './data/textSymbolizer.sld';
 import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
+import {
+  clearImageCache,
+  clearImageLoadingStateCache,
+  getImageLoadingState,
+} from '../src/imageCache';
 
 const getMockOLFeature = geometryType => ({
   properties: {},
@@ -172,7 +177,9 @@ describe('Create OL Style function from SLD feature type style 1', () => {
 
 describe('SLD with external graphics', () => {
   let featureTypeStyle;
-  before(() => {
+  beforeEach(() => {
+    clearImageCache();
+    clearImageLoadingStateCache();
     const sldObject = Reader(externalGraphicSld);
     [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
   });
@@ -231,9 +238,9 @@ describe('SLD with external graphics', () => {
     const styleFunction = createOlStyleFunction(featureTypeStyle, {
       imageLoadedCallback: () => {
         // When this function is called, the loading state should be either loaded or error.
-        expect(
-          featureTypeStyle.rules[1].pointsymbolizer.__loadingState
-        ).to.equal(IMAGE_LOADED);
+        const symbolizer = featureTypeStyle.rules[1].pointsymbolizer;
+        const imageUrl = symbolizer.graphic.externalgraphic.onlineresource;
+        expect(getImageLoadingState(imageUrl)).to.equal(IMAGE_LOADED);
         done();
       },
     });
@@ -245,7 +252,9 @@ describe('SLD with external graphics', () => {
 
 describe('SLD with stacked line symbolizer', () => {
   let featureTypeStyle;
-  before(() => {
+  beforeEach(() => {
+    clearImageCache();
+    clearImageLoadingStateCache();
     const sldObject = Reader(externalGraphicStrokeSld);
     [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
   });
