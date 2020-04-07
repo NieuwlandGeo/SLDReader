@@ -648,12 +648,6 @@
    * @property {Number} graphic.rotation
    * */
 
-  var IMAGE_LOADING = 'IMAGE_LOADING';
-  var IMAGE_LOADED = 'IMAGE_LOADED';
-  var IMAGE_ERROR = 'IMAGE_ERROR';
-
-  var DEFAULT_POINT_SIZE = 20; // pixels
-
   function propertyIsLessThan(comparison, value) {
     return (
       // Todo: support string comparison as well
@@ -903,8 +897,6 @@
     return true;
   }
 
-  /* eslint-disable no-underscore-dangle */
-
   /**
    * get all layer names in sld
    * @param {StyledLayerDescriptor} sld
@@ -935,6 +927,7 @@
   function getStyleNames(layer) {
     return layer.styles.map(function (s) { return s.name; });
   }
+
   /**
    * get style from array layer.styles, if name is undefined it returns default style.
    * null is no style found
@@ -984,6 +977,69 @@
   }
 
   /**
+   * Get all symbolizers inside a given rule.
+   * Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
+   * @param {object} rule SLD rule object.
+   * @returns {Array<object>} Array of all symbolizers in a rule.
+   */
+  function getRuleSymbolizers(rule) {
+    // Helper for adding a symbolizer to a list when the symbolizer can be an array of symbolizers.
+    // Todo: refactor style reader, so symbolizer is always an array.
+    function addSymbolizer(list, symbolizer) {
+      if (!symbolizer) {
+        return;
+      }
+      if (Array.isArray(symbolizer)) {
+        Array.prototype.push.apply(list, symbolizer);
+        return;
+      }
+      list.push(symbolizer);
+    }
+
+    var allSymbolizers = [];
+    addSymbolizer(allSymbolizers, rule.pointsymbolizer);
+    addSymbolizer(allSymbolizers, rule.linesymbolizer);
+    addSymbolizer(allSymbolizers, rule.polygonsymbolizer);
+    addSymbolizer(allSymbolizers, rule.textsymbolizer);
+
+    return allSymbolizers;
+  }
+
+  /**
+   * Gets a nested property from an object according to a property path.
+   * Note: path fragments may not contain a ".".
+   * Note: returns undefined if input obj is falsy.
+   * @example
+   * getByPath({ a: { b: { c: 42 } } }, "a.b.c") // returns 42.
+   * getByPath({ a: { b: { c: 42 } } }, "a.d.c") // returns undefined, because obj.a has no property .d.
+   * @param {object} obj Object.
+   * @param {string} path Property path.
+   * @returns {any} Value of property at given path inside object, or undefined if any property
+   * in the path does not exist on the object.
+   */
+  function getByPath(obj, path) {
+    if (!obj) {
+      return undefined;
+    }
+
+    // Start from the given object.
+    var value = obj;
+
+    // Walk the object property path.
+    var fragments = (path || '').split('.');
+    for (var k = 0; k < fragments.length; k += 1) {
+      var fragment = fragments[k];
+      // Return undefined if any partial path does not exist in the object.
+      if (!(fragment in value)) {
+        return undefined;
+      }
+      value = value[fragment];
+    }
+
+    return value;
+  }
+
+  /**
    * Get styling from rules per geometry type
    * @param  {Rule[]} rules [description]
    * @return {GeometryStyles}
@@ -1025,114 +1081,116 @@
    * @property {PointSymbolizer[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
    */
 
+  var IMAGE_LOADING = 'IMAGE_LOADING';
+  var IMAGE_LOADED = 'IMAGE_LOADED';
+  var IMAGE_ERROR = 'IMAGE_ERROR';
+
+  // SLD Spec: Default size for Marks without Size should be 6 pixels.
+  var DEFAULT_MARK_SIZE = 6; // pixels
+  // SLD Spec: Default size for ExternalGraphic with an unknown native size,
+  // like SVG without dimensions, should be 16 pixels.
+  var DEFAULT_EXTERNALGRAPHIC_SIZE = 16; // pixels
+
   /* eslint-disable no-continue */
 
-  /* eslint-disable no-underscore-dangle */
-  // Global image cache. A map of image Url -> {
-  //   url: image url,
-  //   image: an Image instance containing image data,
-  //   width: image width in pixels,
-  //   height: image height in pixels
-  // }
-  var imageCache = {};
+  // These are possible locations for an external graphic inside a symbolizer.
+  var externalGraphicPaths = [
+    'graphic.externalgraphic',
+    'stroke.graphicstroke.graphic.externalgraphic',
+    'fill.graphicfill.graphic.externalgraphic' ];
 
+  /**
+   * Global image cache. A map of image Url -> {
+   *   url: image url,
+   *   image: an Image instance containing image data,
+   *   width: image width in pixels,
+   *   height: image height in pixels
+   * }
+   */
+  var imageCache = {};
   function setCachedImage(url, imageData) {
     imageCache[url] = imageData;
   }
-
   function getCachedImage(url) {
     return imageCache[url];
   }
 
-  function getCachedImageUrls() {
-    return Object.keys(imageCache);
+  /**
+   * Global image loading state cache.
+   * A map of image Url -> one of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'
+   */
+  var imageLoadingStateCache = {};
+  function setImageLoadingState(url, loadingState) {
+    imageLoadingStateCache[url] = loadingState;
+  }
+  function getImageLoadingState(url) {
+    return imageLoadingStateCache[url];
   }
 
-  /**
-   * @private
-   * Updates the __loadingState metadata for the symbolizers with the new imageLoadState, if
-   * the external graphic is matching the image url.
-   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
-   * @param {object} featureTypeStyle A feature type style object.
-   * @param {string} imageUrl The image url.
-   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
-   */
-  function updateExternalGraphicRule(rule, imageUrl, imageLoadState) {
-    // for pointsymbolizer
-    if (rule.pointsymbolizer && rule.pointsymbolizer.graphic) {
-      var ref = rule.pointsymbolizer;
-      var graphic = ref.graphic;
-      var externalgraphic = graphic.externalgraphic;
-      if (
-        externalgraphic &&
-        externalgraphic.onlineresource === imageUrl &&
-        rule.pointsymbolizer.__loadingState !== imageLoadState
-      ) {
-        rule.pointsymbolizer = Object.assign({}, rule.pointsymbolizer,
-          {__loadingState: imageLoadState});
+  function invalidateExternalGraphicSymbolizers(symbolizer, imageUrl) {
+    // Look at all possible paths where an externalgraphic may be present within a symbolizer.
+    // When such an externalgraphic has been found, and its url equals imageUrl, invalidate the symbolizer.
+    for (var k = 0; k < externalGraphicPaths.length; k += 1) {
+      // Note: this process assumes that each symbolizer has at most one external graphic element.
+      var path = externalGraphicPaths[k];
+      var externalgraphic = getByPath(symbolizer, path);
+      if (externalgraphic && externalgraphic.onlineresource === imageUrl) {
+        symbolizer.__invalidated = true;
+        // If the symbolizer contains a graphic stroke symbolizer,
+        // also update the nested graphicstroke symbolizer object.
+        if (path.indexOf('graphicstroke') > -1) {
+          symbolizer.stroke.graphicstroke.__invalidated = true;
+        }
       }
     }
-    // for polygonsymbolizer
-    if (
-      rule.polygonsymbolizer &&
-      rule.polygonsymbolizer.fill &&
-      rule.polygonsymbolizer.fill.graphicfill &&
-      rule.polygonsymbolizer.fill.graphicfill.graphic
-    ) {
-      var ref$1 = rule.polygonsymbolizer.fill.graphicfill;
-      var graphic$1 = ref$1.graphic;
-      var ref$2 = graphic$1;
-      var externalgraphic$1 = ref$2.externalgraphic;
-      if (
-        externalgraphic$1 &&
-        externalgraphic$1.onlineresource === imageUrl &&
-        rule.polygonsymbolizer.__loadingState !== imageLoadState
-      ) {
-        rule.polygonsymbolizer = Object.assign({}, rule.polygonsymbolizer,
-          {__loadingState: imageLoadState});
+  }
+
+  function updateSymbolizerInvalidatedState(ruleSymbolizer, imageUrl) {
+    if (!ruleSymbolizer) {
+      return;
+    }
+
+    // Watch out! A symbolizer inside a rule may be a symbolizer, or an array of symbolizers.
+    // Todo: refactor so rule.symbolizers property is always an array with 0..n symbolizer objects.
+    if (!Array.isArray(ruleSymbolizer)) {
+      invalidateExternalGraphicSymbolizers(ruleSymbolizer, imageUrl);
+    } else {
+      for (var k = 0; k < ruleSymbolizer.length; k += 1) {
+        invalidateExternalGraphicSymbolizers(ruleSymbolizer[k], imageUrl);
       }
     }
   }
 
   /**
    * @private
-   * Go through all rules with an external graphic matching the image url
-   * and update the __loadingState metadata for the symbolizers with the new imageLoadState.
-   * This action replaces symbolizers with new symbolizers if they get a new __loadingState.
+   * Invalidate all symbolizers inside a featureTypeStyle's rules having an ExternalGraphic matching the image url
    * @param {object} featureTypeStyle A feature type style object.
    * @param {string} imageUrl The image url.
-   * @param {string} imageLoadState One of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'.
    */
-  function updateExternalGraphicRules(
-    featureTypeStyle,
-    imageUrl,
-    imageLoadState
-  ) {
-    // Go through all rules with an external graphic matching the image url
-    // and update the __loadingState metadata for the symbolizers with the new imageLoadState.
+  function invalidateExternalGraphics(featureTypeStyle, imageUrl) {
     if (!featureTypeStyle.rules) {
       return;
     }
 
     featureTypeStyle.rules.forEach(function (rule) {
-      updateExternalGraphicRule(rule, imageUrl, imageLoadState);
+      updateSymbolizerInvalidatedState(rule.pointsymbolizer, imageUrl);
+      updateSymbolizerInvalidatedState(rule.linesymbolizer, imageUrl);
+      updateSymbolizerInvalidatedState(rule.polygonsymbolizer, imageUrl);
     });
   }
 
   /**
    * @private
    * Load and cache an image that's used as externalGraphic inside one or more symbolizers inside a feature type style object.
-   * When the image is loaded, it's put into the cache, the __loadingStaet inside the featureTypeStyle symbolizers are updated,
+   * When the image is loaded, the symbolizers with ExternalGraphics pointing to the image are invalidated,
    * and the imageLoadedCallback is called with the loaded image url.
    * @param {url} imageUrl Image url.
-   * @param {string} imageLoadState One of IMAGE_LOADING, IMAGE_LOADED or IMAGE_ERROR.
    * @param {object} featureTypeStyle Feature type style object.
    * @param {Function} imageLoadedCallback Will be called with the image url when image
    * has loaded. Will be called with undefined if the loading the image resulted in an error.
    */
   function loadExternalGraphic(
     imageUrl,
-    imageLoadState,
     featureTypeStyle,
     imageLoadedCallback
   ) {
@@ -1145,95 +1203,60 @@
         width: image.naturalWidth,
         height: image.naturalHeight,
       });
-      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADED);
-      imageLoadState[imageUrl] = IMAGE_LOADED;
+      setImageLoadingState(imageUrl, IMAGE_LOADED);
+      invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
         imageLoadedCallback(imageUrl);
       }
     };
 
     image.onerror = function () {
-      updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_ERROR);
-      imageLoadState[imageUrl] = IMAGE_ERROR;
+      setImageLoadingState(imageUrl, IMAGE_ERROR);
+      invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
         imageLoadedCallback();
       }
     };
 
     image.src = imageUrl;
-    updateExternalGraphicRules(featureTypeStyle, imageUrl, IMAGE_LOADING);
+    setImageLoadingState(imageUrl, IMAGE_LOADING);
+    invalidateExternalGraphics(featureTypeStyle, imageUrl);
   }
 
   /**
    * @private
    * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
-   * On image load start or load end, update __loadingState metadata of the symbolizers for that image url.
    * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
    * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
-   * @param {object} imageLoadState Cache of image load state: imageUrl -> IMAGE_LOADING | IMAGE_LOADED | IMAGE_ERROR.
    * @param {Function} imageLoadedCallback Function to call when an image has loaded.
    */
   function processExternalGraphicSymbolizers(
     rules,
     featureTypeStyle,
-    imageLoadState,
     imageLoadedCallback
   ) {
-    // If a feature has an external graphic point or polygon symbolizer, the external image may
-    // * have never been requested before.
-    //   --> set __loadingState IMAGE_LOADING on the symbolizer and start loading the image.
-    //       When loading is complete, replace all symbolizers using that image inside the featureTypeStyle
-    //       with new symbolizers with a new __loadingState. Also call options.imageLoadCallback if one has been provided.
-    // * be loading.
-    //   --> set __loadingState IMAGE_LOADING on the symbolizer if not already so.
-    // * be loaded and therefore present in the image cache.
-    //   --> set __loadingState IMAGE_LOADED on the symbolizer if not already so.
-    // * be in error. Error is a kind of loaded, but with an error icon style.
-    //   --> set __loadingState IMAGE_ERROR on the symbolizer if not already so.
-    for (var k = 0; k < rules.length; k += 1) {
-      var rule = rules[k];
-
-      var symbolizer = (void 0);
-      var exgraphic = (void 0);
-
-      if (
-        rule.pointsymbolizer &&
-        rule.pointsymbolizer.graphic &&
-        rule.pointsymbolizer.graphic.externalgraphic
-      ) {
-        symbolizer = rule.pointsymbolizer;
-        exgraphic = rule.pointsymbolizer.graphic.externalgraphic;
-      } else if (
-        rule.polygonsymbolizer &&
-        rule.polygonsymbolizer.fill &&
-        rule.polygonsymbolizer.fill.graphicfill &&
-        rule.polygonsymbolizer.fill.graphicfill.graphic &&
-        rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic
-      ) {
-        symbolizer = rule.polygonsymbolizer;
-        exgraphic =
-          rule.polygonsymbolizer.fill.graphicfill.graphic.externalgraphic;
-      } else {
-        continue;
-      }
-
-      var imageUrl = exgraphic.onlineresource;
-      if (!(imageUrl in imageLoadState)) {
-        // Start loading the image and set image load state on the symbolizer.
-        imageLoadState[imageUrl] = IMAGE_LOADING;
-        loadExternalGraphic(
-          imageUrl,
-          imageLoadState,
-          featureTypeStyle,
-          imageLoadedCallback
-        );
-      } else if (
-        // Change image load state on the symbolizer if it has changed in the meantime.
-        symbolizer.__loadingState !== imageLoadState[imageUrl]
-      ) {
-        updateExternalGraphicRule(rule, imageUrl, imageLoadState[imageUrl]);
-      }
-    }
+    // Walk over all symbolizers inside all given rules.
+    // Dive into the symbolizers to find ExternalGraphic elements and for each ExternalGraphic,
+    // check if the image url has been encountered before.
+    // If not -> start loading the image into the global image cache.
+    rules.forEach(function (rule) {
+      var allSymbolizers = getRuleSymbolizers(rule);
+      allSymbolizers.forEach(function (symbolizer) {
+        externalGraphicPaths.forEach(function (path) {
+          var exgraphic = getByPath(symbolizer, path);
+          if (!exgraphic) {
+            return;
+          }
+          var imageUrl = exgraphic.onlineresource;
+          var imageLoadingState = getImageLoadingState(imageUrl);
+          if (!imageLoadingState) {
+            // Start loading the image and set image load state on the symbolizer.
+            setImageLoadingState(imageUrl, IMAGE_LOADING);
+            loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
+          }
+        });
+      });
+    });
   }
 
   /**
@@ -1338,8 +1361,11 @@
     return function (symbolizer) {
       var olStyle = styleCache.get(symbolizer);
 
-      if (!olStyle) {
+      // Create a new style if no style has been created yet, or when symbolizer has been invalidated.
+      if (!olStyle || symbolizer.__invalidated) {
         olStyle = styleFunction(symbolizer);
+        // Clear invalidated flag after creating a new style instance.
+        symbolizer.__invalidated = false;
         styleCache.set(symbolizer, olStyle);
       }
 
@@ -1563,49 +1589,67 @@
     return expression;
   }
 
-  /* eslint-disable no-underscore-dangle */
+  /* eslint-disable import/prefer-default-export */
 
   /**
+   * Get an OL style/Stroke instance from the css/svg properties of the .stroke property
+   * of an SLD symbolizer object.
    * @private
-   * Get OL Fill instance for SLD mark object.
-   * @param {object} mark SLD mark object.
+   * @param  {object} stroke SLD symbolizer.stroke object.
+   * @return {object} OpenLayers style/Stroke instance. Returns undefined when input is null or undefined.
    */
-  function getMarkFill(mark) {
-    var fill = mark.fill;
-    var fillColor = (fill && fill.styling && fill.styling.fill) || 'blue';
-    var fillOpacity = (fill && fill.styling && fill.styling.fillOpacity) || 1.0;
-    return new style.Fill({
-      color: fillOpacity && fillColor && fillColor.slice(0, 1) === '#'
-        ? hexToRGB(fillColor, fillOpacity)
-        : fillColor,
+  function getSimpleStroke(stroke) {
+    // According to SLD spec, if no Stroke element is present inside a symbolizer element,
+    // no stroke is to be rendered.
+    if (!stroke) {
+      return undefined;
+    }
+
+    var styleParams = stroke.styling || {};
+    return new style.Stroke({
+      color:
+        styleParams.strokeOpacity &&
+        styleParams.stroke &&
+        styleParams.stroke.slice(0, 1) === '#'
+          ? hexToRGB(styleParams.stroke, styleParams.strokeOpacity)
+          : styleParams.stroke || 'black',
+      width: styleParams.strokeWidth || 1,
+      lineCap: styleParams.strokeLinecap,
+      lineDash:
+        styleParams.strokeDasharray && styleParams.strokeDasharray.split(' '),
+      lineDashOffset: styleParams.strokeDashoffset,
+      lineJoin: styleParams.strokeLinejoin,
     });
   }
 
   /**
+   * Get an OL style/Fill instance from the css/svg properties of the .fill property
+   * of an SLD symbolizer object.
    * @private
-   * Get OL Stroke instance for SLD mark object.
-   * @param {object} mark SLD mark object.
+   * @param  {object} fill SLD symbolizer.fill object.
+   * @return {object} OpenLayers style/Fill instance. Returns undefined when input is null or undefined.
    */
-  function getMarkStroke(mark) {
-    var stroke = mark.stroke;
-
-    var olStroke;
-    if (stroke && stroke.styling && !(Number(stroke.styling.strokeWidth) === 0)) {
-      var ref = stroke.styling;
-      var cssStroke = ref.stroke;
-      var cssStrokeWidth = ref.strokeWidth;
-      var cssStrokeOpacity = ref.strokeOpacity;
-      olStroke = new style.Stroke({
-        color:
-          cssStrokeOpacity && cssStroke && cssStroke.slice(0, 1) === '#'
-            ? hexToRGB(cssStroke, cssStrokeOpacity)
-            : cssStroke || 'black',
-        width: cssStrokeWidth || 2,
-      });
+  function getSimpleFill(fill) {
+    // According to SLD spec, if no Fill element is present inside a symbolizer element,
+    // no fill is to be rendered.
+    if (!fill) {
+      return undefined;
     }
 
-    return olStroke;
+    var styleParams = fill.styling || {};
+
+    return new style.Fill({
+      color:
+        styleParams.fillOpacity &&
+        styleParams.fill &&
+        styleParams.fill.slice(0, 1) === '#'
+          ? hexToRGB(styleParams.fill, styleParams.fillOpacity)
+          : styleParams.fill || 'black',
+    });
   }
+
+  var defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
+  var defaultMarkStroke = getSimpleStroke({ styling: { stroke: {} } });
 
   /**
    * @private
@@ -1616,17 +1660,25 @@
     var style$1 = pointsymbolizer.graphic;
 
     // If the point size is a dynamic expression, use the default point size and update in-place later.
-    var pointSizeValue = expressionOrDefault(style$1.size, DEFAULT_POINT_SIZE);
+    var pointSizeValue = expressionOrDefault(style$1.size, DEFAULT_MARK_SIZE);
 
     // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
     var rotationDegrees = expressionOrDefault(style$1.rotation, 0.0);
 
     if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
-      // Check symbolizer metadata to see if the image has already been loaded.
-      switch (pointsymbolizer.__loadingState) {
+      // For external graphics: the default size is the native image size.
+      // In that case, set pointSizeValue to null, so no scaling is calculated for the image.
+      if (!style$1.size) {
+        pointSizeValue = null;
+      }
+
+      var imageUrl = style$1.externalgraphic.onlineresource;
+
+      // Use fallback point styles when image hasn't been loaded yet.
+      switch (getImageLoadingState(imageUrl)) {
         case IMAGE_LOADED:
           return createCachedImageStyle(
-            style$1.externalgraphic.onlineresource,
+            imageUrl,
             pointSizeValue,
             rotationDegrees
           );
@@ -1643,8 +1695,8 @@
     if (style$1.mark) {
       var ref = style$1.mark;
       var wellknownname = ref.wellknownname;
-      var olFill = getMarkFill(style$1.mark);
-      var olStroke = getMarkStroke(style$1.mark);
+      var olFill = getSimpleFill(style$1.mark.fill);
+      var olStroke = getSimpleStroke(style$1.mark.stroke);
 
       return new style.Style({
         // Note: size will be set dynamically later.
@@ -1658,13 +1710,16 @@
       });
     }
 
+    // SLD spec: when no ExternalGraphic or Mark is specified,
+    // use a square of 6 pixels with 50% gray fill and a black outline.
     return new style.Style({
-      image: new style.Circle({
-        radius: 4,
-        fill: new style.Fill({
-          color: 'blue',
-        }),
-      }),
+      image: getWellKnownSymbol(
+        'square',
+        pointSizeValue,
+        defaultMarkStroke,
+        defaultMarkFill,
+        rotationDegrees
+      ),
     });
   }
 
@@ -1678,6 +1733,11 @@
    * @returns {ol/Style} OpenLayers style instance.
    */
   function getPointStyle(symbolizer, feature) {
+    // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
+    if (!(symbolizer && symbolizer.graphic)) {
+      return emptyStyle;
+    }
+
     var olStyle = cachedPointStyle(symbolizer);
     var olImage = olStyle.getImage();
 
@@ -1687,30 +1747,25 @@
     var graphic = symbolizer.graphic;
     var size = graphic.size;
     if (size && size.type === 'expression') {
-      var sizeValue = Number(evaluate(size, feature)) || DEFAULT_POINT_SIZE;
+      var sizeValue = Number(evaluate(size, feature)) || DEFAULT_MARK_SIZE;
 
       if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
         var height = olImage.getSize()[1];
         var scale = sizeValue / height || 1;
         olImage.setScale(scale);
-      }
-
-      if (graphic.mark) {
+      } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
         // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
-        if (graphic.mark.wellknownname === 'circle') {
-          olImage.setRadius(sizeValue * 0.5);
-        } else {
-          // So, in the case of any other RegularShape, create a new shape instance.
-          olStyle.setImage(
-            getWellKnownSymbol(
-              graphic.mark.wellknownname,
-              sizeValue,
-              // Note: re-use stroke and fill instances for a (small?) performance gain.
-              olImage.getStroke(),
-              olImage.getFill()
-            )
-          );
-        }
+        olImage.setRadius(sizeValue * 0.5);
+      } else {
+        // For a non-Circle RegularShape, create a new olImage in order to update the size.
+        olImage = getWellKnownSymbol(
+          (graphic.mark && graphic.mark.wellknownname) || 'square',
+          sizeValue,
+          // Note: re-use stroke and fill instances for a (small?) performance gain.
+          olImage.getStroke(),
+          olImage.getFill()
+        );
+        olStyle.setImage(olImage);
       }
     }
 
@@ -1733,7 +1788,12 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
 
-    function calculateSplitPointCoords(startNode, nextNode, distanceBetweenNodes, distanceToSplitPoint) {
+    function calculateSplitPointCoords(
+      startNode,
+      nextNode,
+      distanceBetweenNodes,
+      distanceToSplitPoint
+    ) {
       var d = distanceToSplitPoint / distanceBetweenNodes;
       var x = nextNode[0] + (startNode[0] - nextNode[0]) * d;
       var y = nextNode[1] + (startNode[1] - nextNode[1]) * d;
@@ -1741,8 +1801,8 @@
     }
 
     function calculateAngle(startNode, nextNode, alwaysUp) {
-      var x = (startNode[0] - nextNode[0]);
-      var y = (startNode[1] - nextNode[1]);
+      var x = startNode[0] - nextNode[0];
+      var y = startNode[1] - nextNode[1];
       var angle = Math.atan(x / y);
       if (!alwaysUp) {
         if (y > 0) {
@@ -1765,10 +1825,15 @@
 
     var n = Math.ceil(geometry.getLength() / minSegmentLength);
     var segmentLength = geometry.getLength() / n;
-    var currentSegmentLength = options.midPoints ? segmentLength / 2 : segmentLength;
+    var currentSegmentLength = options.midPoints
+      ? segmentLength / 2
+      : segmentLength;
 
     for (var i = 0; i <= n; i += 1) {
-      var distanceBetweenPoints = calculatePointsDistance(startPoint, nextPoint);
+      var distanceBetweenPoints = calculatePointsDistance(
+        startPoint,
+        nextPoint
+      );
       currentSegmentLength += distanceBetweenPoints;
 
       if (currentSegmentLength < segmentLength) {
@@ -1782,7 +1847,10 @@
         } else {
           if (!options.midPoints) {
             var splitPointCoords = nextPoint;
-            if (!options.extent || extent.containsCoordinate(options.extent, splitPointCoords)) {
+            if (
+              !options.extent ||
+              extent.containsCoordinate(options.extent, splitPointCoords)
+            ) {
               splitPointCoords.push(angle);
               splitPoints.push(splitPointCoords);
             }
@@ -1791,9 +1859,17 @@
         }
       } else {
         var distanceToSplitPoint = currentSegmentLength - segmentLength;
-        var splitPointCoords$1 = calculateSplitPointCoords(startPoint, nextPoint, distanceBetweenPoints, distanceToSplitPoint);
+        var splitPointCoords$1 = calculateSplitPointCoords(
+          startPoint,
+          nextPoint,
+          distanceBetweenPoints,
+          distanceToSplitPoint
+        );
         startPoint = splitPointCoords$1.slice();
-        if (!options.extent || extent.containsCoordinate(options.extent, splitPointCoords$1)) {
+        if (
+          !options.extent ||
+          extent.containsCoordinate(options.extent, splitPointCoords$1)
+        ) {
           splitPointCoords$1.push(angle);
           splitPoints.push(splitPointCoords$1);
         }
@@ -1804,61 +1880,168 @@
     return splitPoints;
   }
 
+  // A flag to prevent multiple renderer patches.
+  var rendererPatched = false;
+  function patchRenderer(renderer) {
+    if (rendererPatched) {
+      return;
+    }
+
+    // Add setImageStyle2 function that does the same as setImageStyle, except that it sets rotation
+    // to a given value instead of taking it from imageStyle.getRotation().
+    // This fixes a problem with re-use of the (cached) image style instance when drawing
+    // many points inside a single line feature that are aligned according to line segment direction.
+    var rendererProto = Object.getPrototypeOf(renderer);
+    // eslint-disable-next-line
+    rendererProto.setImageStyle2 = function(imageStyle, rotation) {
+      // First call the original setImageStyle method.
+      rendererProto.setImageStyle.call(this, imageStyle);
+
+      // Then set rotation according to the given parameter.
+      // This overrides the following line in setImageStyle:
+      // this.imageRotation_ = imageStyle.getRotation()
+      if (this.image_) {
+        this.imageRotation_ = rotation;
+      }
+    };
+
+    rendererPatched = true;
+  }
+
   /**
-   * @private
-   * @param  {LineSymbolizer} linesymbolizer [description]
-   * @return {object} openlayers style
+   * Directly render graphic stroke marks for a line onto canvas.
+   * @param {ol/render/canvas/Immediate} render Instance of CanvasImmediateRenderer used to paint stroke marks directly to the canvas.
+   * @param {Array<Array<number>>} pixelCoords A line as array of [x,y] point coordinate arrays in pixel space.
+   * @param {number} minSegmentLength Minimum segment length in pixels for distributing stroke marks along the line.
+   * @param {ol/style/Style} pointStyle OpenLayers style instance used for rendering stroke marks.
+   * @returns {void}
    */
-  function lineStyle(linesymbolizer) {
-    var style$1 = {};
-    if (linesymbolizer.stroke) {
-      style$1 = linesymbolizer.stroke.styling;
+  function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle) {
+    if (!pixelCoords) {
+      return;
+    }
 
-      if (linesymbolizer.stroke.graphicstroke) {
-        return new style.Style({
-          renderer: function (pixelCoords, renderState) {
-            // TODO: Error handling, alternatives, etc.
-            var render$1 = render.toContext(renderState.context);
+    // The first element of the first pixelCoords entry should be a number (x-coordinate of first point).
+    // If it's an array instead, then we're dealing with a multiline or (multi)polygon.
+    // In that case, recursively call renderStrokeMarks for each child coordinate array.
+    if (Array.isArray(pixelCoords[0][0])) {
+      pixelCoords.forEach(function (pixelCoordsChildArray) {
+        renderStrokeMarks(
+          render,
+          pixelCoordsChildArray,
+          minSegmentLength,
+          pointStyle
+        );
+      });
+      return;
+    }
 
-            var pointStyle = getPointStyle(linesymbolizer.stroke.graphicstroke, renderState.feature);
+    // Line should be a proper line with at least two coordinates.
+    if (pixelCoords.length < 2) {
+      return;
+    }
 
-            var size = expressionOrDefault(linesymbolizer.stroke.graphicstroke.graphic.size, DEFAULT_POINT_SIZE); // TODO: Dynamic size?
-            var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+    // Don't render anything when the pointStyle has no image.
+    var image = pointStyle.getImage();
+    if (!image) {
+      return;
+    }
 
-            // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
-            // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
-            if (linesymbolizer.stroke.styling && linesymbolizer.stroke.styling.strokeDasharray) {
-              var dash = linesymbolizer.stroke.styling.strokeDasharray.split(' ');
-              if (dash.length >= 2 && dash[0] !== 0) {
-                multiplier = dash[1] / dash[0] + 1;
-              }
-            }
+    var splitPoints = splitLineString(
+      new geom.LineString(pixelCoords),
+      minSegmentLength,
+      { alwaysUp: true, midPoints: false, extent: render.extent_ }
+    );
 
-            var splitPoints = splitLineString(new geom.LineString(pixelCoords), multiplier * size,
-              // eslint-disable-next-line no-underscore-dangle
-              { alwaysUp: true, midPoints: false, extent: render$1.extent_ });
-            splitPoints.forEach(function (point) {
-              var image = pointStyle.getImage().clone();
-              image.setRotation(image.getRotation() - point[2]); // TODO: Do some tests on rotation
-              render$1.setImageStyle(image);
-              render$1.drawPoint(new geom.Point([point[0], point[1]]));
-            });
-          },
-        });
+    splitPoints.forEach(function (point) {
+      var splitPointAngle = image.getRotation() - point[2];
+      render.setImageStyle2(image, splitPointAngle);
+      render.drawPoint(new geom.Point([point[0], point[1]]));
+    });
+  }
+
+  /**
+   * Create a renderer function for renderining GraphicStroke marks
+   * to be used inside an OpenLayers Style.renderer function.
+   * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+   * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
+   */
+  function getGraphicStrokeRenderer(linesymbolizer) {
+    if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+      throw new Error(
+        'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
+      );
+    }
+
+    var ref = linesymbolizer.stroke;
+    var graphicstroke = ref.graphicstroke;
+    var styling = ref.styling;
+    // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
+    // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
+    var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+    if (styling && styling.strokeDasharray) {
+      var dash = styling.strokeDasharray.split(' ');
+      if (dash.length >= 2 && dash[0] !== 0) {
+        multiplier = dash[1] / dash[0] + 1;
       }
     }
+
+    return function (pixelCoords, renderState) {
+      // Abort when feature geometry is (Multi)Point.
+      var geometryType = renderState.feature.getGeometry().getType();
+      if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+        return;
+      }
+
+      // TODO: Error handling, alternatives, etc.
+      var render$1 = render.toContext(renderState.context);
+      patchRenderer(render$1);
+
+      var defaultGraphicSize = DEFAULT_MARK_SIZE;
+      if (graphicstroke.graphic && graphicstroke.graphic.externalgraphic) {
+        defaultGraphicSize = DEFAULT_EXTERNALGRAPHIC_SIZE;
+      }
+
+      var pointStyle = getPointStyle(graphicstroke, renderState.feature);
+      var graphicSize =
+        (graphicstroke.graphic && graphicstroke.graphic.size) ||
+        defaultGraphicSize;
+      var pointSize = Number(evaluate(graphicSize, renderState.feature));
+      var minSegmentLength = multiplier * pointSize;
+
+      renderStrokeMarks(render$1, pixelCoords, minSegmentLength, pointStyle);
+    };
+  }
+
+  /**
+   * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
+   * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+   * @returns {ol/style/Style} An OpenLayers style instance.
+   */
+  function getGraphicStrokeStyle(linesymbolizer) {
+    if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+      throw new Error(
+        'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
+      );
+    }
+
     return new style.Style({
-      stroke: new style.Stroke({
-        color:
-          style$1.strokeOpacity && style$1.stroke && style$1.stroke.slice(0, 1) === '#'
-            ? hexToRGB(style$1.stroke, style$1.strokeOpacity)
-            : style$1.stroke || '#3399CC',
-        width: style$1.strokeWidth || 1.25,
-        lineCap: style$1.strokeLinecap && style$1.strokeLinecap,
-        lineDash: style$1.strokeDasharray && style$1.strokeDasharray.split(' '),
-        lineDashOffset: style$1.strokeDashoffset && style$1.strokeDashoffset,
-        lineJoin: style$1.strokeLinejoin && style$1.strokeLinejoin,
-      }),
+      renderer: getGraphicStrokeRenderer(linesymbolizer),
+    });
+  }
+
+  /**
+   * @private
+   * @param  {object} symbolizer SLD symbolizer object.
+   * @return {object} OpenLayers style instance corresponding to the stroke of the given symbolizer.
+   */
+  function lineStyle(symbolizer) {
+    if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+      return getGraphicStrokeStyle(symbolizer);
+    }
+
+    return new style.Style({
+      stroke: getSimpleStroke(symbolizer.stroke),
     });
   }
 
@@ -1873,8 +2056,6 @@
   function getLineStyle(symbolizer) {
     return cachedLineStyle(symbolizer);
   }
-
-  /* eslint-disable no-underscore-dangle */
 
   function createPattern(graphic) {
     var ref = getCachedImage(
@@ -1907,20 +2088,21 @@
     return ctx.createPattern(tempCanvas, 'repeat');
   }
 
-  function polygonStyle(style$1) {
-    if (
-      style$1.fill &&
-      style$1.fill.graphicfill &&
-      style$1.fill.graphicfill.graphic &&
-      style$1.fill.graphicfill.graphic.externalgraphic &&
-      style$1.fill.graphicfill.graphic.externalgraphic.onlineresource
-    ) {
-      // Check symbolizer metadata to see if the image has already been loaded.
-      switch (style$1.__loadingState) {
+  function polygonStyle(symbolizer) {
+    var fillImageUrl =
+      symbolizer.fill &&
+      symbolizer.fill.graphicfill &&
+      symbolizer.fill.graphicfill.graphic &&
+      symbolizer.fill.graphicfill.graphic.externalgraphic &&
+      symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
+
+    if (fillImageUrl) {
+      // Use fallback style when graphicfill image hasn't been loaded yet.
+      switch (getImageLoadingState(fillImageUrl)) {
         case IMAGE_LOADED:
           return new style.Style({
             fill: new style.Fill({
-              color: createPattern(style$1.fill.graphicfill.graphic),
+              color: createPattern(symbolizer.fill.graphicfill.graphic),
             }),
           });
         case IMAGE_LOADING:
@@ -1928,37 +2110,45 @@
         case IMAGE_ERROR:
           return imageErrorPolygonStyle;
         default:
-          // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
+          // Load state of an image should be known at this time, but return 'loading' style as fallback.
           return imageLoadingPolygonStyle;
       }
     }
 
-    var stroke = style$1.stroke && style$1.stroke.styling;
-    var fill = style$1.fill && style$1.fill.styling;
+    var polygonFill = getSimpleFill(symbolizer.fill);
+
+    // When a polygon has a GraphicStroke, use a custom renderer to combine
+    // GraphicStroke with fill. This is needed because a custom renderer
+    // ignores any stroke, fill and image present in the style.
+    if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+      var renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
+      return new style.Style({
+        renderer: function (pixelCoords, renderState) {
+          // First render the fill (if any).
+          if (polygonFill) {
+            var feature = renderState.feature;
+            var context = renderState.context;
+            var render$1 = render.toContext(context);
+            render$1.setFillStrokeStyle(polygonFill, undefined);
+            var geometryType = feature.getGeometry().getType();
+            if (geometryType === 'Polygon') {
+              render$1.drawPolygon(new geom.Polygon(pixelCoords));
+            } else if (geometryType === 'MultiPolygon') {
+              render$1.drawMultiPolygon(new geom.MultiPolygon(pixelCoords));
+            }
+          }
+
+          // Then, render the graphic stroke.
+          renderGraphicStroke(pixelCoords, renderState);
+        },
+      });
+    }
+
+    var polygonStroke = getSimpleStroke(symbolizer.stroke);
+
     return new style.Style({
-      fill:
-        fill &&
-        new style.Fill({
-          color:
-            fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-              ? hexToRGB(fill.fill, fill.fillOpacity)
-              : fill.fill,
-        }),
-      stroke:
-        stroke &&
-        new style.Stroke({
-          color:
-            stroke.strokeOpacity &&
-            stroke.stroke &&
-            stroke.stroke.slice(0, 1) === '#'
-              ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
-              : stroke.stroke || '#3399CC',
-          width: stroke.strokeWidth || 1.25,
-          lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
-          lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
-          lineDashOffset: stroke.strokeDashoffset && stroke.strokeDashoffset,
-          lineJoin: stroke.strokeLinejoin && stroke.strokeLinejoin,
-        }),
+      fill: polygonFill,
+      stroke: polygonStroke,
     });
   }
 
@@ -2244,15 +2434,6 @@
 
     var imageLoadedCallback = options.imageLoadedCallback || (function () {});
 
-    // Keep image loading state separate from image cache.
-    // This makes it easier to detect whether a requested image is already loading.
-    var imageLoadState = {};
-
-    // Important: if image cache already has loaded images, mark these as loaded in imageLoadState!
-    getCachedImageUrls().forEach(function (imageUrl) {
-      imageLoadState[imageUrl] = IMAGE_LOADED;
-    });
-
     return function (feature, mapResolution) {
       // Determine resolution in meters/pixel.
       var resolution =
@@ -2272,7 +2453,6 @@
       processExternalGraphicSymbolizers(
         rules,
         featureTypeStyle,
-        imageLoadState,
         imageLoadedCallback
       );
 
@@ -2289,9 +2469,11 @@
   exports.OlStyler = OlStyler;
   exports.Reader = Reader;
   exports.createOlStyleFunction = createOlStyleFunction;
+  exports.getByPath = getByPath;
   exports.getGeometryStyles = getGeometryStyles;
   exports.getLayer = getLayer;
   exports.getLayerNames = getLayerNames;
+  exports.getRuleSymbolizers = getRuleSymbolizers;
   exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;

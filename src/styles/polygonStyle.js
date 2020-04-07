@@ -1,10 +1,13 @@
-/* eslint-disable no-underscore-dangle */
-import { Style, Fill, Stroke } from 'ol/style';
+import { toContext } from 'ol/render';
+import { Style, Fill } from 'ol/style';
+import { Polygon, MultiPolygon } from 'ol/geom';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from '../constants';
-import { hexToRGB, memoizeStyleFunction } from './styleUtils';
-import { getCachedImage } from '../imageCache';
+import { memoizeStyleFunction } from './styleUtils';
+import { getCachedImage, getImageLoadingState } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
+import { getSimpleStroke, getSimpleFill } from './simpleStyles';
+import { getGraphicStrokeRenderer } from './graphicStrokeStyle';
 
 function createPattern(graphic) {
   const { image, width, height } = getCachedImage(
@@ -34,20 +37,21 @@ function createPattern(graphic) {
   return ctx.createPattern(tempCanvas, 'repeat');
 }
 
-function polygonStyle(style) {
-  if (
-    style.fill &&
-    style.fill.graphicfill &&
-    style.fill.graphicfill.graphic &&
-    style.fill.graphicfill.graphic.externalgraphic &&
-    style.fill.graphicfill.graphic.externalgraphic.onlineresource
-  ) {
-    // Check symbolizer metadata to see if the image has already been loaded.
-    switch (style.__loadingState) {
+function polygonStyle(symbolizer) {
+  const fillImageUrl =
+    symbolizer.fill &&
+    symbolizer.fill.graphicfill &&
+    symbolizer.fill.graphicfill.graphic &&
+    symbolizer.fill.graphicfill.graphic.externalgraphic &&
+    symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
+
+  if (fillImageUrl) {
+    // Use fallback style when graphicfill image hasn't been loaded yet.
+    switch (getImageLoadingState(fillImageUrl)) {
       case IMAGE_LOADED:
         return new Style({
           fill: new Fill({
-            color: createPattern(style.fill.graphicfill.graphic),
+            color: createPattern(symbolizer.fill.graphicfill.graphic),
           }),
         });
       case IMAGE_LOADING:
@@ -55,37 +59,44 @@ function polygonStyle(style) {
       case IMAGE_ERROR:
         return imageErrorPolygonStyle;
       default:
-        // A symbolizer should have loading state metadata, but return IMAGE_LOADING just in case.
+        // Load state of an image should be known at this time, but return 'loading' style as fallback.
         return imageLoadingPolygonStyle;
     }
   }
 
-  const stroke = style.stroke && style.stroke.styling;
-  const fill = style.fill && style.fill.styling;
+  const polygonFill = getSimpleFill(symbolizer.fill);
+
+  // When a polygon has a GraphicStroke, use a custom renderer to combine
+  // GraphicStroke with fill. This is needed because a custom renderer
+  // ignores any stroke, fill and image present in the style.
+  if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+    const renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
+    return new Style({
+      renderer: (pixelCoords, renderState) => {
+        // First render the fill (if any).
+        if (polygonFill) {
+          const { feature, context } = renderState;
+          const render = toContext(context);
+          render.setFillStrokeStyle(polygonFill, undefined);
+          const geometryType = feature.getGeometry().getType();
+          if (geometryType === 'Polygon') {
+            render.drawPolygon(new Polygon(pixelCoords));
+          } else if (geometryType === 'MultiPolygon') {
+            render.drawMultiPolygon(new MultiPolygon(pixelCoords));
+          }
+        }
+
+        // Then, render the graphic stroke.
+        renderGraphicStroke(pixelCoords, renderState);
+      },
+    });
+  }
+
+  const polygonStroke = getSimpleStroke(symbolizer.stroke);
+
   return new Style({
-    fill:
-      fill &&
-      new Fill({
-        color:
-          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-            ? hexToRGB(fill.fill, fill.fillOpacity)
-            : fill.fill,
-      }),
-    stroke:
-      stroke &&
-      new Stroke({
-        color:
-          stroke.strokeOpacity &&
-          stroke.stroke &&
-          stroke.stroke.slice(0, 1) === '#'
-            ? hexToRGB(stroke.stroke, stroke.strokeOpacity)
-            : stroke.stroke || '#3399CC',
-        width: stroke.strokeWidth || 1.25,
-        lineCap: stroke.strokeLinecap && stroke.strokeLinecap,
-        lineDash: stroke.strokeDasharray && stroke.strokeDasharray.split(' '),
-        lineDashOffset: stroke.strokeDashoffset && stroke.strokeDashoffset,
-        lineJoin: stroke.strokeLinejoin && stroke.strokeLinejoin,
-      }),
+    fill: polygonFill,
+    stroke: polygonStroke,
   });
 }
 

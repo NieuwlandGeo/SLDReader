@@ -27,7 +27,7 @@ export const externalGraphicSld = `<?xml version="1.0" encoding="UTF-8"?>
                 <sld:Format>image/png</sld:Format>
               </sld:ExternalGraphic>
               <sld:Size>24</sld:Size>
-            </sld:Graphic>>
+            </sld:Graphic>
           </sld:PointSymbolizer>
         </sld:Rule>
         <sld:Rule>

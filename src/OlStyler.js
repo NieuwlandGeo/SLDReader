@@ -1,10 +1,6 @@
-import { IMAGE_LOADED } from './constants';
 import { getRules } from './Utils';
 import getGeometryStyles from './GeometryStyles';
-import {
-  getCachedImageUrls,
-  processExternalGraphicSymbolizers,
-} from './imageCache';
+import { processExternalGraphicSymbolizers } from './imageCache';
 import { defaultPointStyle } from './styles/static';
 import getPointStyle from './styles/pointStyle';
 import getLineStyle from './styles/lineStyle';
@@ -129,15 +125,6 @@ function getOlFeatureProperty(feature, propertyName) {
 export function createOlStyleFunction(featureTypeStyle, options = {}) {
   const imageLoadedCallback = options.imageLoadedCallback || (() => {});
 
-  // Keep image loading state separate from image cache.
-  // This makes it easier to detect whether a requested image is already loading.
-  const imageLoadState = {};
-
-  // Important: if image cache already has loaded images, mark these as loaded in imageLoadState!
-  getCachedImageUrls().forEach(imageUrl => {
-    imageLoadState[imageUrl] = IMAGE_LOADED;
-  });
-
   return (feature, mapResolution) => {
     // Determine resolution in meters/pixel.
     const resolution =
@@ -157,7 +144,6 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
     processExternalGraphicSymbolizers(
       rules,
       featureTypeStyle,
-      imageLoadState,
       imageLoadedCallback
     );
 

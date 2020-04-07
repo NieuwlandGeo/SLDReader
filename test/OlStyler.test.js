@@ -1,5 +1,4 @@
-/* eslint-disable no-underscore-dangle */
-/* global describe it expect before */
+/* global describe it expect before beforeEach */
 import { Style, Circle } from 'ol/style';
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
@@ -11,7 +10,13 @@ import { sld11 } from './data/test11.sld';
 import { externalGraphicSld } from './data/externalgraphic.sld';
 import { dynamicSld } from './data/dynamic.sld';
 import { textSymbolizerSld } from './data/textSymbolizer.sld';
+import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
+import {
+  clearImageCache,
+  clearImageLoadingStateCache,
+  getImageLoadingState,
+} from '../src/imageCache';
 
 const getMockOLFeature = geometryType => ({
   properties: {},
@@ -172,7 +177,9 @@ describe('Create OL Style function from SLD feature type style 1', () => {
 
 describe('SLD with external graphics', () => {
   let featureTypeStyle;
-  before(() => {
+  beforeEach(() => {
+    clearImageCache();
+    clearImageLoadingStateCache();
     const sldObject = Reader(externalGraphicSld);
     [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
   });
@@ -196,18 +203,33 @@ describe('SLD with external graphics', () => {
 
     const featureStyle = styleFunction(olFeature, null)[0];
 
-    // Requesting feature style for a feature with type 2 should only update the loading state for that rule;
-    expect(featureTypeStyle.rules[1].pointsymbolizer.__loadingState).to.equal(
-      IMAGE_LOADING
-    );
+    // Requesting feature style for a feature with type 2 should only update the loading state for the corresponding image.
+    expect(
+      getImageLoadingState(
+        featureTypeStyle.rules[1].pointsymbolizer.graphic.externalgraphic
+          .onlineresource
+      )
+    ).to.equal(IMAGE_LOADING);
 
     // But other symbolizers should be left alone.
-    expect(featureTypeStyle.rules[0].pointsymbolizer.__loadingState).to.be
-      .undefined;
-    expect(featureTypeStyle.rules[2].pointsymbolizer.__loadingState).to.be
-      .undefined;
-    expect(featureTypeStyle.rules[3].pointsymbolizer.__loadingState).to.be
-      .undefined;
+    expect(
+      getImageLoadingState(
+        featureTypeStyle.rules[0].pointsymbolizer.graphic.externalgraphic
+          .onlineresource
+      )
+    ).to.be.undefined;
+    expect(
+      getImageLoadingState(
+        featureTypeStyle.rules[2].pointsymbolizer.graphic.externalgraphic
+          .onlineresource
+      )
+    ).to.be.undefined;
+    expect(
+      getImageLoadingState(
+        featureTypeStyle.rules[3].pointsymbolizer.graphic.externalgraphic
+          .onlineresource
+      )
+    ).to.be.undefined;
 
     // The feature style should be a loading indicator (simple circle style), since the image hasn't loaded yet.
     expect(featureStyle.getImage() instanceof Circle).to.be.true;
@@ -231,15 +253,59 @@ describe('SLD with external graphics', () => {
     const styleFunction = createOlStyleFunction(featureTypeStyle, {
       imageLoadedCallback: () => {
         // When this function is called, the loading state should be either loaded or error.
-        expect(
-          featureTypeStyle.rules[1].pointsymbolizer.__loadingState
-        ).to.equal(IMAGE_LOADED);
+        const symbolizer = featureTypeStyle.rules[1].pointsymbolizer;
+        const imageUrl = symbolizer.graphic.externalgraphic.onlineresource;
+        expect(getImageLoadingState(imageUrl)).to.equal(IMAGE_LOADED);
         done();
       },
     });
 
     // Just call the style function to trigger image load.
     styleFunction(olFeature, null);
+  });
+});
+
+describe('SLD with stacked line symbolizer', () => {
+  let featureTypeStyle;
+  beforeEach(() => {
+    clearImageCache();
+    clearImageLoadingStateCache();
+    const sldObject = Reader(externalGraphicStrokeSld);
+    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+  });
+
+  it('Updates graphicstroke symbolizer when stacked on top of a simple symbolizer', () => {
+    expect(featureTypeStyle).to.be.ok;
+
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [123456, 456789],
+          [234567, 567890],
+        ],
+      },
+      properties: {},
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+
+    // Calling the style function when using a style with external graphic stroke should update loading state
+    // for the graphicstroke sub-symbolizer in the second LineSymbolizer inside the rule.
+    styleFunction(olFeature, null)[0];
+    const graphicStrokeSymbolizer =
+      featureTypeStyle.rules[0].linesymbolizer[1].stroke.graphicstroke;
+    // Symbolizer should have IMAGE_LOADING metadata flag set.
+    expect(
+      getImageLoadingState(
+        graphicStrokeSymbolizer.graphic.externalgraphic.onlineresource
+      )
+    ).to.equal(IMAGE_LOADING);
+    // Symbolizer should have invalidated metadata flag set.
+    expect(graphicStrokeSymbolizer.__invalidated).to.be.true;
   });
 });
 

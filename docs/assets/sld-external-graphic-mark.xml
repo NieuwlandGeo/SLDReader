@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" 
+  xmlns:ogc="http://www.opengis.net/ogc" 
+  xmlns:xlink="http://www.w3.org/1999/xlink" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd">
+  <NamedLayer>
+    <Name>Hoogspanning</Name>
+    <UserStyle>
+      <Name>Hoogspanning</Name>
+      <FeatureTypeStyle>
+        <Rule>
+          <Name>All</Name>
+          <LineSymbolizer>
+            <Stroke>
+              <CssParameter name="stroke">#880000</CssParameter>
+              <CssParameter name="stroke-width">3</CssParameter>
+            </Stroke>
+          </LineSymbolizer>
+          <LineSymbolizer>
+            <Stroke>
+              <GraphicStroke>
+                <Graphic>
+                  <ExternalGraphic>
+                    <!-- Icons made by <a href="https://www.freepik.com/" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/"></a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>-->
+                    <OnlineResource xlink:href=" data:image/png;base64,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"></OnlineResource>
+                    <Format>image/png</Format>
+                  </ExternalGraphic>
+                  <Size>24</Size>
+                </Graphic>
+              </GraphicStroke>
+              <CssParameter name="stroke-dasharray">1 1</CssParameter>
+            </Stroke>
+          </LineSymbolizer>
+        </Rule>
+      </FeatureTypeStyle>
+    </UserStyle>
+  </NamedLayer>
+</StyledLayerDescriptor>

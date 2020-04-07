@@ -1,4 +1,3 @@
-
 /**
  * @private
  * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
@@ -14,8 +13,11 @@ export function memoizeStyleFunction(styleFunction) {
   return symbolizer => {
     let olStyle = styleCache.get(symbolizer);
 
-    if (!olStyle) {
+    // Create a new style if no style has been created yet, or when symbolizer has been invalidated.
+    if (!olStyle || symbolizer.__invalidated) {
       olStyle = styleFunction(symbolizer);
+      // Clear invalidated flag after creating a new style instance.
+      symbolizer.__invalidated = false;
       styleCache.set(symbolizer, olStyle);
     }
 
