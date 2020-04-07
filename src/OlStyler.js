@@ -1,11 +1,6 @@
-import { IMAGE_LOADED } from './constants';
 import { getRules } from './Utils';
 import getGeometryStyles from './GeometryStyles';
-import {
-  getCachedImageUrls,
-  processExternalGraphicSymbolizers,
-  setImageLoadingState,
-} from './imageCache';
+import { processExternalGraphicSymbolizers } from './imageCache';
 import { defaultPointStyle } from './styles/static';
 import getPointStyle from './styles/pointStyle';
 import getLineStyle from './styles/lineStyle';

@@ -12,7 +12,7 @@ import {
   imageErrorPointStyle,
   emptyStyle,
 } from './static';
-import { createCachedImageStyle } from '../imageCache';
+import { createCachedImageStyle, getImageLoadingState } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
 import evaluate, { expressionOrDefault } from '../olEvaluator';
 import { getSimpleFill, getSimpleStroke } from './simpleStyles';
@@ -41,11 +41,13 @@ function pointStyle(pointsymbolizer) {
       pointSizeValue = null;
     }
 
-    // Check symbolizer metadata to see if the image has already been loaded.
-    switch (pointsymbolizer.__loadingState) {
+    const imageUrl = style.externalgraphic.onlineresource;
+
+    // Use fallback point styles when image hasn't been loaded yet.
+    switch (getImageLoadingState(imageUrl)) {
       case IMAGE_LOADED:
         return createCachedImageStyle(
-          style.externalgraphic.onlineresource,
+          imageUrl,
           pointSizeValue,
           rotationDegrees
         );

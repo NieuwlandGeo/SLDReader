@@ -4,7 +4,7 @@ import { Polygon, MultiPolygon } from 'ol/geom';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from '../constants';
 import { memoizeStyleFunction } from './styleUtils';
-import { getCachedImage } from '../imageCache';
+import { getCachedImage, getImageLoadingState } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
 import { getSimpleStroke, getSimpleFill } from './simpleStyles';
 import { getGraphicStrokeRenderer } from './graphicStrokeStyle';
@@ -38,15 +38,16 @@ function createPattern(graphic) {
 }
 
 function polygonStyle(symbolizer) {
-  if (
+  const fillImageUrl =
     symbolizer.fill &&
     symbolizer.fill.graphicfill &&
     symbolizer.fill.graphicfill.graphic &&
     symbolizer.fill.graphicfill.graphic.externalgraphic &&
-    symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource
-  ) {
+    symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
+
+  if (fillImageUrl) {
     // Check symbolizer metadata to see if the image has already been loaded.
-    switch (symbolizer.__loadingState) {
+    switch (getImageLoadingState(fillImageUrl)) {
       case IMAGE_LOADED:
         return new Style({
           fill: new Fill({

@@ -203,18 +203,33 @@ describe('SLD with external graphics', () => {
 
     const featureStyle = styleFunction(olFeature, null)[0];
 
-    // Requesting feature style for a feature with type 2 should only update the loading state for that rule;
-    expect(featureTypeStyle.rules[1].pointsymbolizer.__loadingState).to.equal(
-      IMAGE_LOADING
-    );
+    // Requesting feature style for a feature with type 2 should only update the loading state for the corresponding image.
+    expect(
+      getImageLoadingState(
+        featureTypeStyle.rules[1].pointsymbolizer.graphic.externalgraphic
+          .onlineresource
+      )
+    ).to.equal(IMAGE_LOADING);
 
     // But other symbolizers should be left alone.
-    expect(featureTypeStyle.rules[0].pointsymbolizer.__loadingState).to.be
-      .undefined;
-    expect(featureTypeStyle.rules[2].pointsymbolizer.__loadingState).to.be
-      .undefined;
-    expect(featureTypeStyle.rules[3].pointsymbolizer.__loadingState).to.be
-      .undefined;
+    expect(
+      getImageLoadingState(
+        featureTypeStyle.rules[0].pointsymbolizer.graphic.externalgraphic
+          .onlineresource
+      )
+    ).to.be.undefined;
+    expect(
+      getImageLoadingState(
+        featureTypeStyle.rules[2].pointsymbolizer.graphic.externalgraphic
+          .onlineresource
+      )
+    ).to.be.undefined;
+    expect(
+      getImageLoadingState(
+        featureTypeStyle.rules[3].pointsymbolizer.graphic.externalgraphic
+          .onlineresource
+      )
+    ).to.be.undefined;
 
     // The feature style should be a loading indicator (simple circle style), since the image hasn't loaded yet.
     expect(featureStyle.getImage() instanceof Circle).to.be.true;
@@ -284,7 +299,11 @@ describe('SLD with stacked line symbolizer', () => {
     const graphicStrokeSymbolizer =
       featureTypeStyle.rules[0].linesymbolizer[1].stroke.graphicstroke;
     // Symbolizer should have IMAGE_LOADING metadata flag set.
-    expect(graphicStrokeSymbolizer.__loadingState).to.equal(IMAGE_LOADING);
+    expect(
+      getImageLoadingState(
+        graphicStrokeSymbolizer.graphic.externalgraphic.onlineresource
+      )
+    ).to.equal(IMAGE_LOADING);
     // Symbolizer should have invalidated metadata flag set.
     expect(graphicStrokeSymbolizer.__invalidated).to.be.true;
   });
