@@ -1,6 +1,5 @@
-import buble from 'rollup-plugin-buble';
-
-const resolve = require('rollup-plugin-node-resolve');
+import buble from '@rollup/plugin-buble';
+import resolve from '@rollup/plugin-node-resolve';
 
 export default {
   input: 'src/index.js',
@@ -13,7 +12,7 @@ export default {
       'ol/style': 'ol.style',
       'ol/render': 'ol.render',
       'ol/extent': 'ol.extent',
-      'ol/geom': 'ol.geom',            
+      'ol/geom': 'ol.geom',
     },
   },
   plugins: [buble({ objectAssign: true }), resolve()],
