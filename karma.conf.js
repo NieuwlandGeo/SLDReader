@@ -1,5 +1,5 @@
-const buble = require('rollup-plugin-buble');
-const resolve = require('rollup-plugin-node-resolve');
+const buble = require('@rollup/plugin-buble');
+const resolve = require('@rollup/plugin-node-resolve');
 // Karma configuration
 // Generated on Thu Jun 15 2017 14:53:58 GMT+0200 (CEST)
 
