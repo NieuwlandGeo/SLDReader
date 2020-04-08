@@ -9,7 +9,7 @@ tools. The project consists of two parts:
 * An SLDReader that parses an SLD document into a style object.
 * A function createOlStyleFunction that converts the parsed style object into a function that you can use in OpenLayers to style features.
 
-The OpenLayers style converter tries to efficient by recycling OpenLayers Style instances wherever possible.
+The OpenLayers style converter tries to be as efficient as possible by recycling OpenLayers Style instances whenever possible.
 
 **CONTRIBUTIONS WELCOME!**
 
@@ -51,10 +51,12 @@ Only these static css-parameters are supported:
 * stroke-dasharray
 * stroke-dashoffset
 
-GraphicStroke, GraphicFill, and PerpendicularOffset are not supported.
+GraphicStroke with Mark or ExternalGraphic is supported.
+GraphicFill and PerpendicularOffset are not supported.
 
 #### PolygonSymbolizer
 Polygons with static fill and stroke style parameters are supported. See LineSymbolizer above for supported stroke css-parameters. GraphicFill is also supported.
+GraphicStroke with Mark or ExternalGraphic is supported.
 
 #### TextSymbolizer
 Dynamic Labels (with PropertyName elements), Font and Halo are supported. No vendor-specific options are supported. LabelPlacement or PointPlacement are supported. Graphic elements to display behind the label text are not supported.
