@@ -465,7 +465,7 @@
     Graphic: addProp,
     ExternalGraphic: addProp,
     Mark: addProp,
-    Label: addFilterExpressionProp,
+    Label: function (node, obj, prop) { return addFilterExpressionProp(node, obj, prop, false); },
     Halo: addProp,
     Font: addProp,
     Radius: addPropWithTextContent,

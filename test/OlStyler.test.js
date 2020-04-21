@@ -11,6 +11,7 @@ import { externalGraphicSld } from './data/externalgraphic.sld';
 import { dynamicSld } from './data/dynamic.sld';
 import { textSymbolizerSld } from './data/textSymbolizer.sld';
 import { textSymbolizerDynamicSld } from './data/textSymbolizer-dynamic.sld';
+import { textSymbolizerCDataSld } from './data/textSymbolizer-cdata.sld';
 import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
@@ -400,5 +401,14 @@ describe('Text symbolizer', () => {
     const textStyle = styleFunction(pointFeature)[0];
     // Important: for formatting longer text, OL expects that the text property is always a string.
     expect(textStyle.getText().getText()).to.equal('100');
+  });
+
+  it('Text symbolizer with CDATA sections', () => {
+    const sldObject = Reader(textSymbolizerCDataSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+    const textStyle = styleFunction(pointFeature)[0];
+    // CDATA whitespace should be kept intact.
+    expect(textStyle.getText().getText()).to.equal('Size: 100\nAngle: 42');
   });
 });
