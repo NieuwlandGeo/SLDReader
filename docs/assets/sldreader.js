@@ -2278,7 +2278,8 @@
     // Set text only if the label expression is dynamic.
     if (label && label.type === 'expression') {
       var labelText = evaluate(label, feature);
-      olText.setText(labelText);
+      // Important! OpenLayers expects the text property to always be a string.
+      olText.setText(labelText.toString());
     }
 
     // Set rotation if expression is dynamic.

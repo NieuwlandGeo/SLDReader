@@ -10,6 +10,7 @@ import { sld11 } from './data/test11.sld';
 import { externalGraphicSld } from './data/externalgraphic.sld';
 import { dynamicSld } from './data/dynamic.sld';
 import { textSymbolizerSld } from './data/textSymbolizer.sld';
+import { textSymbolizerDynamicSld } from './data/textSymbolizer-dynamic.sld';
 import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
@@ -379,17 +380,25 @@ describe('Text symbolizer', () => {
   };
 
   let pointFeature;
-  let styleFunction;
   before(() => {
     const fmtGeoJSON = new OLFormatGeoJSON();
     pointFeature = fmtGeoJSON.readFeature(geojson);
-    const sldObject = Reader(textSymbolizerSld);
-    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
-    styleFunction = createOlStyleFunction(featureTypeStyle);
   });
 
   it('Handles TextSymbolizer with only a Label', () => {
+    const sldObject = Reader(textSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
     const textStyle = styleFunction(pointFeature)[0];
     expect(textStyle.getText().getText()).to.equal('TEST');
+  });
+
+  it('Text symbolizer with dynamic label containing a number', () => {
+    const sldObject = Reader(textSymbolizerDynamicSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+    const textStyle = styleFunction(pointFeature)[0];
+    // Important: for formatting longer text, OL expects that the text property is always a string.
+    expect(textStyle.getText().getText()).to.equal('100');
   });
 });
