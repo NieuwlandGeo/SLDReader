@@ -205,7 +205,7 @@ const SymbParsers = {
   Graphic: addProp,
   ExternalGraphic: addProp,
   Mark: addProp,
-  Label: addFilterExpressionProp,
+  Label: (node, obj, prop) => addFilterExpressionProp(node, obj, prop, false),
   Halo: addProp,
   Font: addProp,
   Radius: addPropWithTextContent,
