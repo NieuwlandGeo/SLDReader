@@ -1893,7 +1893,7 @@
     // many points inside a single line feature that are aligned according to line segment direction.
     var rendererProto = Object.getPrototypeOf(renderer);
     // eslint-disable-next-line
-    rendererProto.setImageStyle2 = function(imageStyle, rotation) {
+    rendererProto.setImageStyle2 = function (imageStyle, rotation) {
       // First call the original setImageStyle method.
       rendererProto.setImageStyle.call(this, imageStyle);
 
@@ -1914,9 +1914,10 @@
    * @param {Array<Array<number>>} pixelCoords A line as array of [x,y] point coordinate arrays in pixel space.
    * @param {number} minSegmentLength Minimum segment length in pixels for distributing stroke marks along the line.
    * @param {ol/style/Style} pointStyle OpenLayers style instance used for rendering stroke marks.
+   * @param {number} pixelRatio Ratio of device pixels to css pixels.
    * @returns {void}
    */
-  function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle) {
+  function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle, pixelRatio) {
     if (!pixelCoords) {
       return;
     }
@@ -1930,7 +1931,8 @@
           render,
           pixelCoordsChildArray,
           minSegmentLength,
-          pointStyle
+          pointStyle,
+          pixelRatio
         );
       });
       return;
@@ -1949,14 +1951,14 @@
 
     var splitPoints = splitLineString(
       new geom.LineString(pixelCoords),
-      minSegmentLength,
+      minSegmentLength * pixelRatio,
       { alwaysUp: true, midPoints: false, extent: render.extent_ }
     );
 
     splitPoints.forEach(function (point) {
       var splitPointAngle = image.getRotation() - point[2];
       render.setImageStyle2(image, splitPointAngle);
-      render.drawPoint(new geom.Point([point[0], point[1]]));
+      render.drawPoint(new geom.Point([point[0] / pixelRatio, point[1] / pixelRatio]));
     });
   }
 
@@ -1993,6 +1995,8 @@
         return;
       }
 
+      var pixelRatio = renderState.pixelRatio || 1.0;
+
       // TODO: Error handling, alternatives, etc.
       var render$1 = render.toContext(renderState.context);
       patchRenderer(render$1);
@@ -2009,7 +2013,7 @@
       var pointSize = Number(evaluate(graphicSize, renderState.feature));
       var minSegmentLength = multiplier * pointSize;
 
-      renderStrokeMarks(render$1, pixelCoords, minSegmentLength, pointStyle);
+      renderStrokeMarks(render$1, pixelCoords, minSegmentLength, pointStyle, pixelRatio);
     };
   }
 
