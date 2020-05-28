@@ -25,11 +25,11 @@ export function getSimpleStroke(stroke) {
       styleParams.stroke.slice(0, 1) === '#'
         ? hexToRGB(styleParams.stroke, styleParams.strokeOpacity)
         : styleParams.stroke || 'black',
-    width: styleParams.strokeWidth || 1,
+    width: parseFloat(styleParams.strokeWidth) || 1,
     lineCap: styleParams.strokeLinecap,
     lineDash:
       styleParams.strokeDasharray && styleParams.strokeDasharray.split(' '),
-    lineDashOffset: styleParams.strokeDashoffset,
+    lineDashOffset: parseFloat(styleParams.strokeDashoffset),
     lineJoin: styleParams.strokeLinejoin,
   });
 }
