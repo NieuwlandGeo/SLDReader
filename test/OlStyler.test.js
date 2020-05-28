@@ -139,7 +139,7 @@ describe('Create OL Style function from SLD feature type style', () => {
     const featureStyle = styleFunction(olFeature, null)[0];
 
     expect(featureStyle.getStroke().getColor()).to.equal('#000000');
-    expect(featureStyle.getStroke().getWidth()).to.equal('4');
+    expect(featureStyle.getStroke().getWidth()).to.equal(4);
   });
 });
 
