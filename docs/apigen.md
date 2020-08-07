@@ -36,6 +36,10 @@ null is no style found</p>
 <dt><a href="#getRules">getRules(featureTypeStyle, feature, resolution)</a> ⇒ <code><a href="#Rule">Array.&lt;Rule&gt;</a></code></dt>
 <dd><p>get rules for specific feature after applying filters</p>
 </dd>
+<dt><a href="#getRuleSymbolizers">getRuleSymbolizers(rule)</a> ⇒ <code>Array.&lt;object&gt;</code></dt>
+<dd><p>Get all symbolizers inside a given rule.
+Note: this will be a mix of Point/Line/Polygon/Text symbolizers.</p>
+</dd>
 </dl>
 
 ## Typedefs
@@ -213,6 +217,19 @@ get rules for specific feature after applying filters
 const style = getStyle(sldLayer, stylename);
 getRules(style.featuretypestyles['0'], geojson, resolution);
 ```
+<a name="getRuleSymbolizers"></a>
+
+## getRuleSymbolizers(rule) ⇒ <code>Array.&lt;object&gt;</code>
+Get all symbolizers inside a given rule.
+Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
+
+**Kind**: global function  
+**Returns**: <code>Array.&lt;object&gt;</code> - Array of all symbolizers in a rule.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| rule | <code>object</code> | SLD rule object. |
+
 <a name="GeometryStyles"></a>
 
 ## GeometryStyles
@@ -314,8 +331,7 @@ a typedef for Rule to match a feature: [xsd](http://schemas.opengis.net/se/1.1.0
 <a name="PolygonSymbolizer"></a>
 
 ## PolygonSymbolizer
-a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
-[geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html)
+a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also[geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html)
 
 **Kind**: global typedef  
 **Properties**
@@ -330,8 +346,7 @@ a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer
 <a name="LineSymbolizer"></a>
 
 ## LineSymbolizer
-a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
-[geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
+a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also[geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
 
 **Kind**: global typedef  
 **Properties**
@@ -340,12 +355,20 @@ a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xs
 | --- | --- | --- |
 | stroke | <code>Object</code> |  |
 | stroke.css | <code>Array.&lt;Object&gt;</code> | one object per CssParameter with props name (camelcased) & value |
+| graphicstroke | <code>Object</code> |  |
+| graphicstroke.graphic | <code>Object</code> |  |
+| graphicstroke.graphic.mark | <code>Object</code> |  |
+| graphicstroke.graphic.mark.wellknownname | <code>string</code> |  |
+| graphicstroke.graphic.mark.fill | <code>Object</code> |  |
+| graphicstroke.graphic.mark.stroke | <code>Object</code> |  |
+| graphicstroke.graphic.opacity | <code>Number</code> |  |
+| graphicstroke.graphic.size | <code>Number</code> |  |
+| graphicstroke.graphic.rotation | <code>Number</code> |  |
 
 <a name="PointSymbolizer"></a>
 
 ## PointSymbolizer
-a typedef for PointSymbolizer [xsd](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
-& [geoserver docs](http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html)
+a typedef for PointSymbolizer [xsd](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)& [geoserver docs](http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html)
 
 **Kind**: global typedef  
 **Properties**

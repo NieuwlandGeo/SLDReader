@@ -136,6 +136,7 @@ function patchRenderer(renderer) {
 
 /**
  * Directly render graphic stroke marks for a line onto canvas.
+ * @private
  * @param {ol/render/canvas/Immediate} render Instance of CanvasImmediateRenderer used to paint stroke marks directly to the canvas.
  * @param {Array<Array<number>>} pixelCoords A line as array of [x,y] point coordinate arrays in pixel space.
  * @param {number} minSegmentLength Minimum segment length in pixels for distributing stroke marks along the line.
@@ -191,6 +192,7 @@ function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle, pi
 /**
  * Create a renderer function for renderining GraphicStroke marks
  * to be used inside an OpenLayers Style.renderer function.
+ * @private
  * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
  * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
  */
@@ -243,6 +245,7 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
 
 /**
  * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
+ * @private
  * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
  * @returns {ol/style/Style} An OpenLayers style instance.
  */
