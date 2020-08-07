@@ -1,5 +1,5 @@
 const buble = require('@rollup/plugin-buble');
-const resolve = require('@rollup/plugin-node-resolve');
+const { nodeResolve } = require('@rollup/plugin-node-resolve');
 // Karma configuration
 // Generated on Thu Jun 15 2017 14:53:58 GMT+0200 (CEST)
 
@@ -31,7 +31,7 @@ module.exports = function kc(config) {
     },
 
     rollupPreprocessor: {
-      plugins: [buble({ objectAssign: true }), resolve()],
+      plugins: [buble({ objectAssign: true }), nodeResolve()],
       output: {
         format: 'iife', // Helps prevent naming collisions.
         name: 'SLDReader', // Required for 'iife' format.

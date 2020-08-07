@@ -1,7 +1,7 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style'), require('ol/render'), require('ol/geom'), require('ol/extent')) :
   typeof define === 'function' && define.amd ? define(['exports', 'ol/style', 'ol/render', 'ol/geom', 'ol/extent'], factory) :
-  (global = global || self, factory(global.SLDReader = {}, global.ol.style, global.ol.render, global.ol.geom, global.ol.extent));
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SLDReader = {}, global.ol.style, global.ol.render, global.ol.geom, global.ol.extent));
 }(this, (function (exports, style, render, geom, extent) { 'use strict';
 
   /**
@@ -1009,6 +1009,7 @@
    * Gets a nested property from an object according to a property path.
    * Note: path fragments may not contain a ".".
    * Note: returns undefined if input obj is falsy.
+   * @private
    * @example
    * getByPath({ a: { b: { c: 42 } } }, "a.b.c") // returns 42.
    * getByPath({ a: { b: { c: 42 } } }, "a.d.c") // returns undefined, because obj.a has no property .d.
@@ -1100,6 +1101,7 @@
     'fill.graphicfill.graphic.externalgraphic' ];
 
   /**
+   * @private
    * Global image cache. A map of image Url -> {
    *   url: image url,
    *   image: an Image instance containing image data,
@@ -1116,6 +1118,7 @@
   }
 
   /**
+   * @private
    * Global image loading state cache.
    * A map of image Url -> one of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'
    */
@@ -1409,7 +1412,7 @@
   ) {
     if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
 
-    var radius = 0.5 * size;
+    var radius = 0.5 * parseFloat(size);
     var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
 
     var fillColor;
@@ -1613,11 +1616,11 @@
         styleParams.stroke.slice(0, 1) === '#'
           ? hexToRGB(styleParams.stroke, styleParams.strokeOpacity)
           : styleParams.stroke || 'black',
-      width: styleParams.strokeWidth || 1,
+      width: parseFloat(styleParams.strokeWidth) || 1,
       lineCap: styleParams.strokeLinecap,
       lineDash:
         styleParams.strokeDasharray && styleParams.strokeDasharray.split(' '),
-      lineDashOffset: styleParams.strokeDashoffset,
+      lineDashOffset: parseFloat(styleParams.strokeDashoffset),
       lineJoin: styleParams.strokeLinejoin,
     });
   }
@@ -1910,6 +1913,7 @@
 
   /**
    * Directly render graphic stroke marks for a line onto canvas.
+   * @private
    * @param {ol/render/canvas/Immediate} render Instance of CanvasImmediateRenderer used to paint stroke marks directly to the canvas.
    * @param {Array<Array<number>>} pixelCoords A line as array of [x,y] point coordinate arrays in pixel space.
    * @param {number} minSegmentLength Minimum segment length in pixels for distributing stroke marks along the line.
@@ -1965,6 +1969,7 @@
   /**
    * Create a renderer function for renderining GraphicStroke marks
    * to be used inside an OpenLayers Style.renderer function.
+   * @private
    * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
    * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
    */
@@ -2019,6 +2024,7 @@
 
   /**
    * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
+   * @private
    * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
    * @returns {ol/style/Style} An OpenLayers style instance.
    */

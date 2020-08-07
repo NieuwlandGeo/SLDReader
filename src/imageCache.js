@@ -12,6 +12,7 @@ const externalGraphicPaths = [
 ];
 
 /**
+ * @private
  * Global image cache. A map of image Url -> {
  *   url: image url,
  *   image: an Image instance containing image data,
@@ -37,6 +38,7 @@ export function clearImageCache() {
 }
 
 /**
+ * @private
  * Global image loading state cache.
  * A map of image Url -> one of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'
  */

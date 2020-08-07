@@ -110,6 +110,7 @@ export function getRuleSymbolizers(rule) {
  * Gets a nested property from an object according to a property path.
  * Note: path fragments may not contain a ".".
  * Note: returns undefined if input obj is falsy.
+ * @private
  * @example
  * getByPath({ a: { b: { c: 42 } } }, "a.b.c") // returns 42.
  * getByPath({ a: { b: { c: 42 } } }, "a.d.c") // returns undefined, because obj.a has no property .d.
