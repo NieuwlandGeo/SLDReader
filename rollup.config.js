@@ -1,5 +1,5 @@
 import buble from '@rollup/plugin-buble';
-import resolve from '@rollup/plugin-node-resolve';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 export default {
   input: 'src/index.js',
@@ -15,5 +15,5 @@ export default {
       'ol/geom': 'ol.geom',
     },
   },
-  plugins: [buble({ objectAssign: true }), resolve()],
+  plugins: [buble({ objectAssign: true }), nodeResolve()],
 };
