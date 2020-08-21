@@ -13,6 +13,7 @@ import { textSymbolizerSld } from './data/textSymbolizer.sld';
 import { textSymbolizerDynamicSld } from './data/textSymbolizer-dynamic.sld';
 import { textSymbolizerCDataSld } from './data/textSymbolizer-cdata.sld';
 import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
+import { polyGraphicFillAndStrokeSld } from './data/poly-graphic-fill-and-stroke';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
   clearImageCache,
@@ -263,6 +264,47 @@ describe('SLD with external graphics', () => {
     });
 
     // Just call the style function to trigger image load.
+    styleFunction(olFeature, null);
+  });
+
+  it('Can render both polygon stroke and externalgraphics', done => {
+    const sldObject = Reader(polyGraphicFillAndStrokeSld);
+    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [
+              [175135, 441200],
+              [175135, 441300],
+              [175035, 441200],
+              [175135, 441200],
+            ],
+          ],
+        ],
+      },
+      properties: {},
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    // Wait for image loaded callback.
+    const styleFunction = createOlStyleFunction(featureTypeStyle, {
+      imageLoadedCallback: () => {
+        // The style after image load should have both a stroke and a fill.
+        // Call style function again to get the style with external graphic instead of the load_started style.
+        const [olStyle] = styleFunction(olFeature, null);
+        expect(olStyle.getFill()).to.be.ok;
+        expect(olStyle.getStroke()).to.be.ok;
+        done();
+      },
+    });
+
+    // Create the style for the feature once to kick off the image load process.
     styleFunction(olFeature, null);
   });
 });
