@@ -2098,6 +2098,27 @@
     return ctx.createPattern(tempCanvas, 'repeat');
   }
 
+  function getExternalGraphicFill(symbolizer) {
+    var ref = symbolizer.fill.graphicfill;
+    var graphic = ref.graphic;
+    var fillImageUrl = graphic.externalgraphic.onlineresource;
+
+    // Use fallback style when graphicfill image hasn't been loaded yet.
+    switch (getImageLoadingState(fillImageUrl)) {
+      case IMAGE_LOADED:
+        return new style.Fill({
+          color: createPattern(symbolizer.fill.graphicfill.graphic),
+        });
+      case IMAGE_LOADING:
+        return imageLoadingPolygonStyle.getFill();
+      case IMAGE_ERROR:
+        return imageErrorPolygonStyle.getFill();
+      default:
+        // Load state of an image should be known at this time, but return 'loading' style as fallback.
+        return imageLoadingPolygonStyle.getFill();
+    }
+  }
+
   function polygonStyle(symbolizer) {
     var fillImageUrl =
       symbolizer.fill &&
@@ -2106,26 +2127,9 @@
       symbolizer.fill.graphicfill.graphic.externalgraphic &&
       symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
 
-    if (fillImageUrl) {
-      // Use fallback style when graphicfill image hasn't been loaded yet.
-      switch (getImageLoadingState(fillImageUrl)) {
-        case IMAGE_LOADED:
-          return new style.Style({
-            fill: new style.Fill({
-              color: createPattern(symbolizer.fill.graphicfill.graphic),
-            }),
-          });
-        case IMAGE_LOADING:
-          return imageLoadingPolygonStyle;
-        case IMAGE_ERROR:
-          return imageErrorPolygonStyle;
-        default:
-          // Load state of an image should be known at this time, but return 'loading' style as fallback.
-          return imageLoadingPolygonStyle;
-      }
-    }
-
-    var polygonFill = getSimpleFill(symbolizer.fill);
+    var polygonFill = fillImageUrl
+      ? getExternalGraphicFill(symbolizer)
+      : getSimpleFill(symbolizer.fill);
 
     // When a polygon has a GraphicStroke, use a custom renderer to combine
     // GraphicStroke with fill. This is needed because a custom renderer

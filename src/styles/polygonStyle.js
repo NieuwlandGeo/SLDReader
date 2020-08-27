@@ -37,6 +37,26 @@ function createPattern(graphic) {
   return ctx.createPattern(tempCanvas, 'repeat');
 }
 
+function getExternalGraphicFill(symbolizer) {
+  const { graphic } = symbolizer.fill.graphicfill;
+  const fillImageUrl = graphic.externalgraphic.onlineresource;
+
+  // Use fallback style when graphicfill image hasn't been loaded yet.
+  switch (getImageLoadingState(fillImageUrl)) {
+    case IMAGE_LOADED:
+      return new Fill({
+        color: createPattern(symbolizer.fill.graphicfill.graphic),
+      });
+    case IMAGE_LOADING:
+      return imageLoadingPolygonStyle.getFill();
+    case IMAGE_ERROR:
+      return imageErrorPolygonStyle.getFill();
+    default:
+      // Load state of an image should be known at this time, but return 'loading' style as fallback.
+      return imageLoadingPolygonStyle.getFill();
+  }
+}
+
 function polygonStyle(symbolizer) {
   const fillImageUrl =
     symbolizer.fill &&
@@ -45,26 +65,9 @@ function polygonStyle(symbolizer) {
     symbolizer.fill.graphicfill.graphic.externalgraphic &&
     symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
 
-  if (fillImageUrl) {
-    // Use fallback style when graphicfill image hasn't been loaded yet.
-    switch (getImageLoadingState(fillImageUrl)) {
-      case IMAGE_LOADED:
-        return new Style({
-          fill: new Fill({
-            color: createPattern(symbolizer.fill.graphicfill.graphic),
-          }),
-        });
-      case IMAGE_LOADING:
-        return imageLoadingPolygonStyle;
-      case IMAGE_ERROR:
-        return imageErrorPolygonStyle;
-      default:
-        // Load state of an image should be known at this time, but return 'loading' style as fallback.
-        return imageLoadingPolygonStyle;
-    }
-  }
-
-  const polygonFill = getSimpleFill(symbolizer.fill);
+  const polygonFill = fillImageUrl
+    ? getExternalGraphicFill(symbolizer)
+    : getSimpleFill(symbolizer.fill);
 
   // When a polygon has a GraphicStroke, use a custom renderer to combine
   // GraphicStroke with fill. This is needed because a custom renderer
