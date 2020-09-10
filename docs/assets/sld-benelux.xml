@@ -1,93 +1,86 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sld:StyledLayerDescriptor xmlns="http://www.opengis.net/sld" 
-  xmlns:sld="http://www.opengis.net/sld" 
-  xmlns:ogc="http://www.opengis.net/ogc" 
-  xmlns:gml="http://www.opengis.net/gml" 
-  xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0.0">
+<StyledLayerDescriptor xmlns="http://www.opengis.net/sld"
+  xmlns:ogc="http://www.opengis.net/ogc"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd">
   <NamedLayer>
-    <sld:Name>flags_benelux</sld:Name>
+    <Name>flags_benelux</Name>
     <UserStyle>
-      <sld:Name>flags_benelux</sld:Name>
-      <sld:FeatureTypeStyle>
-        <sld:Rule>
-          <sld:Name>nl</sld:Name>
-          <sld:Description>
-            <sld:Title>The Netherlands</sld:Title>
-          </sld:Description>
+      <Name>flags_benelux</Name>
+      <FeatureTypeStyle>
+        <Rule>
+          <Name>nl</Name>
+          <Title>The Netherlands</Title>
           <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
             <ogc:PropertyIsEqualTo>
               <ogc:PropertyName>countrycode</ogc:PropertyName>
               <ogc:Literal>nl</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
-          <sld:PointSymbolizer>
-            <sld:Graphic>
-              <sld:ExternalGraphic>
-                <sld:OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/nl/shiny/48.png"/>
-                <sld:Format>image/png</sld:Format>
-              </sld:ExternalGraphic>
-              <sld:Size>
+          <PointSymbolizer>
+            <Graphic>
+              <ExternalGraphic>
+                <OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/nl/shiny/48.png"/>
+                <Format>image/png</Format>
+              </ExternalGraphic>
+              <Size>
                 <ogc:PropertyName>size</ogc:PropertyName>
-              </sld:Size>
-              <sld:Rotation>
+              </Size>
+              <Rotation>
                 <ogc:PropertyName>angle</ogc:PropertyName>
-              </sld:Rotation>
-            </sld:Graphic>
-          </sld:PointSymbolizer>
-        </sld:Rule>
-        <sld:Rule>
-          <sld:Name>be</sld:Name>
-          <sld:Description>
-            <sld:Title>Belgium</sld:Title>
-          </sld:Description>
+              </Rotation>
+            </Graphic>
+          </PointSymbolizer>
+        </Rule>
+        <Rule>
+          <Name>be</Name>
+          <Title>Belgium</Title>
           <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
             <ogc:PropertyIsEqualTo>
               <ogc:PropertyName>countrycode</ogc:PropertyName>
               <ogc:Literal>be</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
-          <sld:PointSymbolizer>
-            <sld:Graphic>
-              <sld:ExternalGraphic>
-                <sld:OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/be/shiny/48.png"/>
-                <sld:Format>image/png</sld:Format>
-              </sld:ExternalGraphic>
-              <sld:Size>
+          <PointSymbolizer>
+            <Graphic>
+              <ExternalGraphic>
+                <OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/be/shiny/48.png"/>
+                <Format>image/png</Format>
+              </ExternalGraphic>
+              <Size>
                 <ogc:PropertyName>size</ogc:PropertyName>
-              </sld:Size>
-              <sld:Rotation>
+              </Size>
+              <Rotation>
                 <ogc:PropertyName>angle</ogc:PropertyName>
-              </sld:Rotation>
-            </sld:Graphic>
-          </sld:PointSymbolizer>
-        </sld:Rule>
-        <sld:Rule>
-          <sld:Name>lu</sld:Name>
-          <sld:Description>
-            <sld:Title>Luxembourg</sld:Title>
-          </sld:Description>
+              </Rotation>
+            </Graphic>
+          </PointSymbolizer>
+        </Rule>
+        <Rule>
+          <Name>lu</Name>
+          <Title>Luxembourg</Title>
           <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
             <ogc:PropertyIsEqualTo>
               <ogc:PropertyName>countrycode</ogc:PropertyName>
               <ogc:Literal>lu</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
-          <sld:PointSymbolizer>
-            <sld:Graphic>
-              <sld:ExternalGraphic>
-                <sld:OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/lu/shiny/48.png"/>
-                <sld:Format>image/png</sld:Format>
-              </sld:ExternalGraphic>
-              <sld:Size>
+          <PointSymbolizer>
+            <Graphic>
+              <ExternalGraphic>
+                <OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/lu/shiny/48.png"/>
+                <Format>image/png</Format>
+              </ExternalGraphic>
+              <Size>
                 <ogc:PropertyName>size</ogc:PropertyName>
-              </sld:Size>
-              <sld:Rotation>
+              </Size>
+              <Rotation>
                 <ogc:PropertyName>angle</ogc:PropertyName>
-              </sld:Rotation>
-            </sld:Graphic>
-          </sld:PointSymbolizer>
-        </sld:Rule>
-      </sld:FeatureTypeStyle>
+              </Rotation>
+            </Graphic>
+          </PointSymbolizer>
+        </Rule>
+      </FeatureTypeStyle>
     </UserStyle>
   </NamedLayer>
-</sld:StyledLayerDescriptor>
+</StyledLayerDescriptor>
