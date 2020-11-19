@@ -54,8 +54,14 @@ Only these static css-parameters are supported:
 * stroke-dasharray
 * stroke-dashoffset
 
-GraphicStroke with Mark or ExternalGraphic is supported.
+GraphicStroke with Mark or ExternalGraphic is mostly supported.
 GraphicFill and PerpendicularOffset are not supported.
+
+#### Note about GraphicStroke
+ExternalGraphic is mostly supported with these caveats:
+* The InitialGap property is not supported.
+* Always add a Size-element, even if using an ExternalGraphic instead of a Mark.
+* SLD V1.0.0 does not officially support the Gap property. For this, SLDReader implements the same workaround that Geoserver uses. You can use the `stroke-dasharray` parameter to add a gap between stroke marks. To do this, use a dash array with two parameters: the first parameter being the size of the graphic and the second being the gap size. See the " GraphicStroke: Mark" example.
 
 #### PolygonSymbolizer
 Polygons with static fill and stroke style parameters are supported. See LineSymbolizer above for supported stroke css-parameters. GraphicFill is also supported.

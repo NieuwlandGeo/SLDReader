@@ -28,7 +28,7 @@
                   <Size>24</Size>
                 </Graphic>
               </GraphicStroke>
-              <CssParameter name="stroke-dasharray">1 1</CssParameter>
+              <CssParameter name="stroke-dasharray">24 12</CssParameter>
             </Stroke>
           </LineSymbolizer>
         </Rule>
