@@ -311,7 +311,7 @@
   }
 
   /**
-   * Assigns textcontnet to obj.prop
+   * Assigns textcontent to obj.prop
    * @private
    * @param {Element} node [description]
    * @param {object} obj  [description]
@@ -327,6 +327,20 @@
     } else {
       obj[property] = node.textContent;
     }
+  }
+
+  /**
+   * Assigns numeric value of text content to obj.prop.
+   * Assigns NaN if the text value is not a valid text representation of a floating point number.
+   * @private
+   * @param {Element} node The XML node element.
+   * @param {object} obj  The object to add the element value to.
+   * @param {string} prop The property name.
+   */
+  function addNumericProp(node, obj, prop) {
+    var property = prop.toLowerCase();
+    var value = parseFloat(node.textContent.trim());
+    obj[property] = value;
   }
 
   /**
@@ -464,6 +478,8 @@
     GraphicFill: addProp,
     Graphic: addProp,
     ExternalGraphic: addProp,
+    Gap: addNumericProp,
+    InitialGap: addNumericProp,
     Mark: addProp,
     Label: function (node, obj, prop) { return addFilterExpressionProp(node, obj, prop, false); },
     Halo: addProp,

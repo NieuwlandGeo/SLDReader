@@ -4,6 +4,7 @@ import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
 import { dynamicSld } from './data/dynamic.sld';
 import { graphicstrokeSymbolizerSld } from './data/graphicstrokeSymbolizer.sld';
+import { graphicStrokeWithGap } from './data/graphicstroke-with-gap.sld';
 
 let result;
 
@@ -207,7 +208,8 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('rule linesymbolizer has props from svg 1', () => {
     const linesymbolizer1 =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['0'];
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0']
+        .linesymbolizer['0'];
     expect(linesymbolizer1.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling.stroke).to.equal('#FF0000');
@@ -215,14 +217,16 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('rule linesymbolizer has props from svg 2', () => {
     const linesymbolizer2 =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['1'];
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0']
+        .linesymbolizer['1'];
     expect(linesymbolizer2.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling.strokeDasharray).to.equal('2 6');
   });
   it('rule linesymbolizer has graphicstroke', () => {
-    const { stroke } =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'].linesymbolizer['1'];
+    const { stroke } = result.layers['0'].styles['0'].featuretypestyles[
+      '0'
+    ].rules['0'].linesymbolizer['1'];
     expect(stroke.graphicstroke).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.have.property('mark');
@@ -234,17 +238,84 @@ describe('Graphicstroke symbolizer', () => {
     expect(stroke.graphicstroke.graphic.mark.wellknownname).to.equal('square');
     expect(stroke.graphicstroke.graphic.mark).to.have.property('fill');
     expect(stroke.graphicstroke.graphic.mark.fill).to.have.property('styling');
-    expect(stroke.graphicstroke.graphic.mark.fill.styling).to.have.property('fill');
-    expect(stroke.graphicstroke.graphic.mark.fill.styling.fill).to.equal('#FF0000');
-    expect(stroke.graphicstroke.graphic.mark.fill.styling).to.have.property('fillOpacity');
-    expect(stroke.graphicstroke.graphic.mark.fill.styling.fillOpacity).to.equal('1');
+    expect(stroke.graphicstroke.graphic.mark.fill.styling).to.have.property(
+      'fill'
+    );
+    expect(stroke.graphicstroke.graphic.mark.fill.styling.fill).to.equal(
+      '#FF0000'
+    );
+    expect(stroke.graphicstroke.graphic.mark.fill.styling).to.have.property(
+      'fillOpacity'
+    );
+    expect(stroke.graphicstroke.graphic.mark.fill.styling.fillOpacity).to.equal(
+      '1'
+    );
     expect(stroke.graphicstroke.graphic.mark).to.have.property('stroke');
-    expect(stroke.graphicstroke.graphic.mark.stroke).to.have.property('styling');
-    expect(stroke.graphicstroke.graphic.mark.stroke.styling).to.have.property('stroke');
-    expect(stroke.graphicstroke.graphic.mark.stroke.styling.stroke).to.equal('#000000');
-    expect(stroke.graphicstroke.graphic.mark.stroke.styling).to.have.property('strokeWidth');
-    expect(stroke.graphicstroke.graphic.mark.stroke.styling.strokeWidth).to.equal('1');
-    expect(stroke.graphicstroke.graphic.mark.stroke.styling).to.have.property('strokeOpacity');
-    expect(stroke.graphicstroke.graphic.mark.stroke.styling.strokeOpacity).to.equal('1');
+    expect(stroke.graphicstroke.graphic.mark.stroke).to.have.property(
+      'styling'
+    );
+    expect(stroke.graphicstroke.graphic.mark.stroke.styling).to.have.property(
+      'stroke'
+    );
+    expect(stroke.graphicstroke.graphic.mark.stroke.styling.stroke).to.equal(
+      '#000000'
+    );
+    expect(stroke.graphicstroke.graphic.mark.stroke.styling).to.have.property(
+      'strokeWidth'
+    );
+    expect(
+      stroke.graphicstroke.graphic.mark.stroke.styling.strokeWidth
+    ).to.equal('1');
+    expect(stroke.graphicstroke.graphic.mark.stroke.styling).to.have.property(
+      'strokeOpacity'
+    );
+    expect(
+      stroke.graphicstroke.graphic.mark.stroke.styling.strokeOpacity
+    ).to.equal('1');
+  });
+});
+
+describe('SLD v1.1.0 GraphicStroke properties', () => {
+  let parsedSld;
+  let graphicStroke;
+  before(() => {
+    parsedSld = Reader(graphicStrokeWithGap);
+    graphicStroke = getGraphicStroke(parsedSld);
+  });
+
+  function getGraphicStroke(sldObject) {
+    const rule = sldObject.layers[0].styles[0].featuretypestyles[0].rules[0];
+    const { graphicstroke } = rule.linesymbolizer.stroke;
+    return graphicstroke;
+  }
+
+  it('Has graphicStroke symbolizer', () => {
+    expect(graphicStroke).to.be.ok;
+  });
+
+  it('Has mark', () => {
+    const { mark } = graphicStroke.graphic;
+    expect(mark).to.be.ok;
+  });
+
+  it('Mark stroke style', () => {
+    const { stroke } = graphicStroke.graphic.mark;
+    expect(stroke.styling).to.deep.equal({
+      stroke: '#232323',
+      strokeWidth: '0.5',
+    });
+  });
+
+  it('Mark fill style', () => {
+    const { fill } = graphicStroke.graphic.mark;
+    expect(fill.styling).to.deep.equal({ fill: '#ff8000' });
+  });
+
+  it('Has gap', () => {
+    expect(graphicStroke.gap).to.equal(14);
+  });
+
+  it('Has intialgap', () => {
+    expect(graphicStroke.initialgap).to.equal(6);
   });
 });
