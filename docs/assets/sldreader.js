@@ -960,20 +960,36 @@
   function getRules(featureTypeStyle, feature, resolution, options) {
     if ( options === void 0 ) options = {};
 
-    var result = [];
+    var validRules = [];
+    var elseFilterCount = 0;
     for (var j = 0; j < featureTypeStyle.rules.length; j += 1) {
       var rule = featureTypeStyle.rules[j];
+      // Only keep rules that pass the rule's min/max scale denominator checks.
       if (scaleSelector(rule, resolution)) {
-        if (rule.filter && filterSelector(rule.filter, feature, options)) {
-          result.push(rule);
-        } else if (rule.elsefilter && result.length === 0) {
-          result.push(rule);
-        } else if (!rule.elsefilter && !rule.filter) {
-          result.push(rule);
+        if (rule.elsefilter) {
+          // In the first rule selection step, keep all rules with an ElseFilter.
+          validRules.push(rule);
+          elseFilterCount += 1;
+        } else if (!rule.filter) {
+          // Rules without filter always apply.
+          validRules.push(rule);
+        } else if (filterSelector(rule.filter, feature, options)) {
+          // If a rule has a filter, only keep it if the feature passes the filter.
+          validRules.push(rule);
         }
       }
     }
-    return result;
+
+    // When eligible rules contain only rules with ElseFilter, return them all.
+    // Note: the spec does not forbid more than one ElseFilter remaining at a given scale,
+    // but leaves handling this case up to the implementor.
+    // The SLDLibrary chooses to keep them all.
+    if (elseFilterCount === validRules.length) {
+      return validRules;
+    }
+
+    // If a mix of rules with and without ElseFilter remains, only keep rules without ElseFilter.
+    return validRules.filter(function (rule) { return !rule.elsefilter; });
   }
 
   /**
