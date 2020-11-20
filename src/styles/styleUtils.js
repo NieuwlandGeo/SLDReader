@@ -41,3 +41,30 @@ export function hexToRGB(hex, alpha) {
   }
   return `rgb(${r}, ${g}, ${b})`;
 }
+
+/**
+ * Calculate the center-to-center distance for graphics placed along a line within a GraphicSymbolizer.
+ * @param {object} lineSymbolizer SLD line symbolizer object.
+ * @param {number} graphicWidth Width of the symbolizer graphic in pixels. This size may be dependent on feature properties,
+ * so it has to be supplied separately from the line symbolizer object.
+ * @returns {number} Center-to-center distance for graphics along a line.
+ */
+export function calculateGraphicSpacing(lineSymbolizer, graphicWidth) {
+  const { graphicstroke, styling } = lineSymbolizer.stroke;
+  if ('gap' in graphicstroke) {
+    // Note: gap should be a numeric property after parsing (check reader.test).
+    return graphicstroke.gap + graphicWidth;
+  }
+
+  // If gap is not given, use strokeDasharray to space graphics.
+  // First digit represents size of graphic, second the relative space, e.g.
+  // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
+  let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+  if (styling && styling.strokeDasharray) {
+    const dash = styling.strokeDasharray.split(' ');
+    if (dash.length >= 2 && dash[0] !== 0) {
+      multiplier = dash[1] / dash[0] + 1;
+    }
+  }
+  return multiplier * graphicWidth;
+}

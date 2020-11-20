@@ -311,7 +311,7 @@
   }
 
   /**
-   * Assigns textcontnet to obj.prop
+   * Assigns textcontent to obj.prop
    * @private
    * @param {Element} node [description]
    * @param {object} obj  [description]
@@ -327,6 +327,20 @@
     } else {
       obj[property] = node.textContent;
     }
+  }
+
+  /**
+   * Assigns numeric value of text content to obj.prop.
+   * Assigns NaN if the text value is not a valid text representation of a floating point number.
+   * @private
+   * @param {Element} node The XML node element.
+   * @param {object} obj  The object to add the element value to.
+   * @param {string} prop The property name.
+   */
+  function addNumericProp(node, obj, prop) {
+    var property = prop.toLowerCase();
+    var value = parseFloat(node.textContent.trim());
+    obj[property] = value;
   }
 
   /**
@@ -464,6 +478,8 @@
     GraphicFill: addProp,
     Graphic: addProp,
     ExternalGraphic: addProp,
+    Gap: addNumericProp,
+    InitialGap: addNumericProp,
     Mark: addProp,
     Label: function (node, obj, prop) { return addFilterExpressionProp(node, obj, prop, false); },
     Halo: addProp,
@@ -1410,6 +1426,35 @@
   }
 
   /**
+   * Calculate the center-to-center distance for graphics placed along a line within a GraphicSymbolizer.
+   * @param {object} lineSymbolizer SLD line symbolizer object.
+   * @param {number} graphicWidth Width of the symbolizer graphic in pixels. This size may be dependent on feature properties,
+   * so it has to be supplied separately from the line symbolizer object.
+   * @returns {number} Center-to-center distance for graphics along a line.
+   */
+  function calculateGraphicSpacing(lineSymbolizer, graphicWidth) {
+    var ref = lineSymbolizer.stroke;
+    var graphicstroke = ref.graphicstroke;
+    var styling = ref.styling;
+    if ('gap' in graphicstroke) {
+      // Note: gap should be a numeric property after parsing (check reader.test).
+      return graphicstroke.gap + graphicWidth;
+    }
+
+    // If gap is not given, use strokeDasharray to space graphics.
+    // First digit represents size of graphic, second the relative space, e.g.
+    // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
+    var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+    if (styling && styling.strokeDasharray) {
+      var dash = styling.strokeDasharray.split(' ');
+      if (dash.length >= 2 && dash[0] !== 0) {
+        multiplier = dash[1] / dash[0] + 1;
+      }
+    }
+    return multiplier * graphicWidth;
+  }
+
+  /**
    * @private
    * Create an OL point style corresponding to a well known symbol identifier.
    * @param {string} wellKnownName SLD Well Known Name for symbolizer.
@@ -1800,7 +1845,7 @@
     return olStyle;
   }
 
-  function splitLineString(geometry, minSegmentLength, options) {
+  function splitLineString(geometry, graphicSpacing, options) {
     function calculatePointsDistance(coord1, coord2) {
       var dx = coord1[0] - coord2[0];
       var dy = coord1[1] - coord2[1];
@@ -1842,7 +1887,7 @@
     var nextPoint = coords[coordIndex + 1];
     var angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
 
-    var n = Math.ceil(geometry.getLength() / minSegmentLength);
+    var n = Math.ceil(geometry.getLength() / graphicSpacing);
     var segmentLength = geometry.getLength() / n;
     var currentSegmentLength = options.midPoints
       ? segmentLength / 2
@@ -1932,12 +1977,18 @@
    * @private
    * @param {ol/render/canvas/Immediate} render Instance of CanvasImmediateRenderer used to paint stroke marks directly to the canvas.
    * @param {Array<Array<number>>} pixelCoords A line as array of [x,y] point coordinate arrays in pixel space.
-   * @param {number} minSegmentLength Minimum segment length in pixels for distributing stroke marks along the line.
+   * @param {number} graphicSpacing The center-to-center distance in pixels for stroke marks distributed along the line.
    * @param {ol/style/Style} pointStyle OpenLayers style instance used for rendering stroke marks.
    * @param {number} pixelRatio Ratio of device pixels to css pixels.
    * @returns {void}
    */
-  function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle, pixelRatio) {
+  function renderStrokeMarks(
+    render,
+    pixelCoords,
+    graphicSpacing,
+    pointStyle,
+    pixelRatio
+  ) {
     if (!pixelCoords) {
       return;
     }
@@ -1950,7 +2001,7 @@
         renderStrokeMarks(
           render,
           pixelCoordsChildArray,
-          minSegmentLength,
+          graphicSpacing,
           pointStyle,
           pixelRatio
         );
@@ -1971,7 +2022,7 @@
 
     var splitPoints = splitLineString(
       new geom.LineString(pixelCoords),
-      minSegmentLength * pixelRatio,
+      graphicSpacing * pixelRatio,
       { alwaysUp: true, midPoints: false, extent: render.extent_ }
     );
 
@@ -1998,16 +2049,6 @@
 
     var ref = linesymbolizer.stroke;
     var graphicstroke = ref.graphicstroke;
-    var styling = ref.styling;
-    // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
-    // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
-    var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
-    if (styling && styling.strokeDasharray) {
-      var dash = styling.strokeDasharray.split(' ');
-      if (dash.length >= 2 && dash[0] !== 0) {
-        multiplier = dash[1] / dash[0] + 1;
-      }
-    }
 
     return function (pixelCoords, renderState) {
       // Abort when feature geometry is (Multi)Point.
@@ -2028,13 +2069,26 @@
       }
 
       var pointStyle = getPointStyle(graphicstroke, renderState.feature);
-      var graphicSize =
+
+      // Calculate graphic spacing.
+      // Graphic spacing equals the center-to-center distance of graphics along the line.
+      // If there's no gap, segment length will be equal to graphic size.
+      var graphicSizeExpression =
         (graphicstroke.graphic && graphicstroke.graphic.size) ||
         defaultGraphicSize;
-      var pointSize = Number(evaluate(graphicSize, renderState.feature));
-      var minSegmentLength = multiplier * pointSize;
+      var graphicSize = Number(
+        evaluate(graphicSizeExpression, renderState.feature)
+      );
 
-      renderStrokeMarks(render$1, pixelCoords, minSegmentLength, pointStyle, pixelRatio);
+      var graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
+
+      renderStrokeMarks(
+        render$1,
+        pixelCoords,
+        graphicSpacing,
+        pointStyle,
+        pixelRatio
+      );
     };
   }
 

@@ -6,8 +6,9 @@ import { containsCoordinate } from 'ol/extent';
 import { DEFAULT_MARK_SIZE, DEFAULT_EXTERNALGRAPHIC_SIZE } from '../constants';
 import evaluate from '../olEvaluator';
 import getPointStyle from './pointStyle';
+import { calculateGraphicSpacing } from './styleUtils';
 
-function splitLineString(geometry, minSegmentLength, options) {
+function splitLineString(geometry, graphicSpacing, options) {
   function calculatePointsDistance(coord1, coord2) {
     const dx = coord1[0] - coord2[0];
     const dy = coord1[1] - coord2[1];
@@ -49,7 +50,7 @@ function splitLineString(geometry, minSegmentLength, options) {
   let nextPoint = coords[coordIndex + 1];
   let angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
 
-  const n = Math.ceil(geometry.getLength() / minSegmentLength);
+  const n = Math.ceil(geometry.getLength() / graphicSpacing);
   const segmentLength = geometry.getLength() / n;
   let currentSegmentLength = options.midPoints
     ? segmentLength / 2
@@ -139,12 +140,18 @@ function patchRenderer(renderer) {
  * @private
  * @param {ol/render/canvas/Immediate} render Instance of CanvasImmediateRenderer used to paint stroke marks directly to the canvas.
  * @param {Array<Array<number>>} pixelCoords A line as array of [x,y] point coordinate arrays in pixel space.
- * @param {number} minSegmentLength Minimum segment length in pixels for distributing stroke marks along the line.
+ * @param {number} graphicSpacing The center-to-center distance in pixels for stroke marks distributed along the line.
  * @param {ol/style/Style} pointStyle OpenLayers style instance used for rendering stroke marks.
  * @param {number} pixelRatio Ratio of device pixels to css pixels.
  * @returns {void}
  */
-function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle, pixelRatio) {
+function renderStrokeMarks(
+  render,
+  pixelCoords,
+  graphicSpacing,
+  pointStyle,
+  pixelRatio
+) {
   if (!pixelCoords) {
     return;
   }
@@ -157,7 +164,7 @@ function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle, pi
       renderStrokeMarks(
         render,
         pixelCoordsChildArray,
-        minSegmentLength,
+        graphicSpacing,
         pointStyle,
         pixelRatio
       );
@@ -178,7 +185,7 @@ function renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle, pi
 
   const splitPoints = splitLineString(
     new LineString(pixelCoords),
-    minSegmentLength * pixelRatio,
+    graphicSpacing * pixelRatio,
     { alwaysUp: true, midPoints: false, extent: render.extent_ }
   );
 
@@ -203,16 +210,7 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
     );
   }
 
-  const { graphicstroke, styling } = linesymbolizer.stroke;
-  // Use strokeDasharray to space graphics. First digit represents size of graphic, second the relative space, e.g.
-  // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
-  let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
-  if (styling && styling.strokeDasharray) {
-    const dash = styling.strokeDasharray.split(' ');
-    if (dash.length >= 2 && dash[0] !== 0) {
-      multiplier = dash[1] / dash[0] + 1;
-    }
-  }
+  const { graphicstroke } = linesymbolizer.stroke;
 
   return (pixelCoords, renderState) => {
     // Abort when feature geometry is (Multi)Point.
@@ -233,13 +231,26 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
     }
 
     const pointStyle = getPointStyle(graphicstroke, renderState.feature);
-    const graphicSize =
+
+    // Calculate graphic spacing.
+    // Graphic spacing equals the center-to-center distance of graphics along the line.
+    // If there's no gap, segment length will be equal to graphic size.
+    const graphicSizeExpression =
       (graphicstroke.graphic && graphicstroke.graphic.size) ||
       defaultGraphicSize;
-    const pointSize = Number(evaluate(graphicSize, renderState.feature));
-    const minSegmentLength = multiplier * pointSize;
+    const graphicSize = Number(
+      evaluate(graphicSizeExpression, renderState.feature)
+    );
 
-    renderStrokeMarks(render, pixelCoords, minSegmentLength, pointStyle, pixelRatio);
+    const graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
+
+    renderStrokeMarks(
+      render,
+      pixelCoords,
+      graphicSpacing,
+      pointStyle,
+      pixelRatio
+    );
   };
 }
 
