@@ -1,7 +1,7 @@
 sudo: false
 language: node_js
 node_js:
-  - '12'
+  - '14'
 env:
   - MOZ_HEADLESS=1
 script:
