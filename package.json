@@ -29,7 +29,8 @@
     "type": "git",
     "url": "git+https://github.com/NieuwlandGeo/SLDReader.git"
   },
-  "author": "Allart Kooiman <akooiman@nieuwland.nl>",
+  "author": "Allart Kooiman",
+  "contributors": ["Arjen Kopinga <akopinga@nieuwland.nl>"],
   "license": "ISC",
   "devDependencies": {
     "@rollup/plugin-buble": "^0.21.3",
