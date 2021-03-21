@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style'), require('ol/render'), require('ol/geom'), require('ol/extent')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'ol/style', 'ol/render', 'ol/geom', 'ol/extent'], factory) :
-  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SLDReader = {}, global.ol.style, global.ol.render, global.ol.geom, global.ol.extent));
-}(this, (function (exports, style, render, geom, extent) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style'), require('ol/render'), require('ol/geom'), require('ol/extent'), require('ol/has')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style', 'ol/render', 'ol/geom', 'ol/extent', 'ol/has'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SLDReader = {}, global.ol.style, global.ol.render, global.ol.geom, global.ol.extent, global.ol.has));
+}(this, (function (exports, style, render, geom, extent, has) { 'use strict';
 
   /**
    * Factory methods for filterelements
@@ -2144,19 +2144,23 @@
     var image = ref.image;
     var width = ref.width;
     var height = ref.height;
-
-    var imageRatio = 1;
-    if (graphic.size && height !== graphic.size) {
-      imageRatio = graphic.size / height;
-    }
     var cnv = document.createElement('canvas');
     var ctx = cnv.getContext('2d');
+
+    // Calculate image scale factor.
+    var imageRatio = has.DEVICE_PIXEL_RATIO;
+    if (graphic.size && height !== graphic.size) {
+      imageRatio *= graphic.size / height;
+    }
+
+    // Draw image to canvas directly if no scaling necessary.
     if (imageRatio === 1) {
       return ctx.createPattern(image, 'repeat');
     }
+
+    // Scale the image by drawing onto a temp canvas.
     var tempCanvas = document.createElement('canvas');
     var tCtx = tempCanvas.getContext('2d');
-
     tempCanvas.width = width * imageRatio;
     tempCanvas.height = height * imageRatio;
     // prettier-ignore
@@ -2165,6 +2169,7 @@
       0, 0, width, height,
       0, 0, width * imageRatio, height * imageRatio
     );
+
     return ctx.createPattern(tempCanvas, 'repeat');
   }
 

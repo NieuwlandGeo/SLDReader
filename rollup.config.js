@@ -13,6 +13,7 @@ export default {
       'ol/render': 'ol.render',
       'ol/extent': 'ol.extent',
       'ol/geom': 'ol.geom',
+      'ol/has': 'ol.has',
     },
   },
   plugins: [buble({ objectAssign: true }), nodeResolve()],

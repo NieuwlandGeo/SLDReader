@@ -1,6 +1,7 @@
 import { toContext } from 'ol/render';
 import { Style, Fill } from 'ol/style';
 import { Polygon, MultiPolygon } from 'ol/geom';
+import { DEVICE_PIXEL_RATIO } from 'ol/has';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from '../constants';
 import { memoizeStyleFunction } from './styleUtils';
@@ -13,19 +14,23 @@ function createPattern(graphic) {
   const { image, width, height } = getCachedImage(
     graphic.externalgraphic.onlineresource
   );
-
-  let imageRatio = 1;
-  if (graphic.size && height !== graphic.size) {
-    imageRatio = graphic.size / height;
-  }
   const cnv = document.createElement('canvas');
   const ctx = cnv.getContext('2d');
+
+  // Calculate image scale factor.
+  let imageRatio = DEVICE_PIXEL_RATIO;
+  if (graphic.size && height !== graphic.size) {
+    imageRatio *= graphic.size / height;
+  }
+
+  // Draw image to canvas directly if no scaling necessary.
   if (imageRatio === 1) {
     return ctx.createPattern(image, 'repeat');
   }
+
+  // Scale the image by drawing onto a temp canvas.
   const tempCanvas = document.createElement('canvas');
   const tCtx = tempCanvas.getContext('2d');
-
   tempCanvas.width = width * imageRatio;
   tempCanvas.height = height * imageRatio;
   // prettier-ignore
@@ -34,6 +39,7 @@ function createPattern(graphic) {
     0, 0, width, height,
     0, 0, width * imageRatio, height * imageRatio
   );
+
   return ctx.createPattern(tempCanvas, 'repeat');
 }
 
