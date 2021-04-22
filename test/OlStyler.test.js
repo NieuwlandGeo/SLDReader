@@ -14,6 +14,8 @@ import { textSymbolizerDynamicSld } from './data/textSymbolizer-dynamic.sld';
 import { textSymbolizerCDataSld } from './data/textSymbolizer-cdata.sld';
 import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { polyGraphicFillAndStrokeSld } from './data/poly-graphic-fill-and-stroke';
+import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
+
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
   clearImageCache,
@@ -373,6 +375,7 @@ describe('Dynamic style properties', () => {
   before(() => {
     const fmtGeoJSON = new OLFormatGeoJSON();
     pointFeature = fmtGeoJSON.readFeature(geojson);
+
     const sldObject = Reader(dynamicSld);
     [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
     styleFunction = createOlStyleFunction(featureTypeStyle);
@@ -452,5 +455,37 @@ describe('Text symbolizer', () => {
     const textStyle = styleFunction(pointFeature)[0];
     // CDATA whitespace should be kept intact.
     expect(textStyle.getText().getText()).to.equal('Size: 100\nAngle: 42');
+  });
+});
+
+describe('Polygon styling', () => {
+  const geojson = {
+    type: 'Feature',
+    geometry: {
+      type: 'Polygon',
+      // prettier-ignore
+      coordinates: [[[0, 0], [0, 100], [100, 100], [100, 0], [0, 0]]],
+    },
+    properties: {
+      size: 100,
+      angle: 42,
+      title: 'This is a test',
+    },
+  };
+
+  let polygonFeature;
+  before(() => {
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    polygonFeature = fmtGeoJSON.readFeature(geojson);
+  });
+
+  // When a rule contains a LineSymbolizer, it should be applied to a polygon outline.
+  it('Applies LineSymbolizer to polygon outline', () => {
+    const sldObject = Reader(simpleLineSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+    const olStyle = styleFunction(polygonFeature)[0];
+    expect(olStyle.getStroke().getColor()).to.equal('#FF0000');
+    expect(olStyle.getStroke().getWidth()).to.equal(1);
   });
 });
