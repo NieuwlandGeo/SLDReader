@@ -96,6 +96,7 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'cross2': // cross2 is used by QGIS for the x symbol.
     case 'x':
       return new RegularShape({
         angle: Math.PI / 4,

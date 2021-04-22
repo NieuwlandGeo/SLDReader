@@ -1539,9 +1539,10 @@
 
       case 'octagon':
         return new style.RegularShape({
+          angle: Math.PI / 8,
           fill: fill,
           points: 8,
-          radius: radius,
+          radius: radius / Math.cos(Math.PI / 8),
           stroke:
             stroke ||
             new style.Stroke({
@@ -1551,6 +1552,7 @@
           rotation: rotationRadians,
         });
 
+      case 'cross2': // cross2 is used by QGIS for the x symbol.
       case 'x':
         return new style.RegularShape({
           angle: Math.PI / 4,
