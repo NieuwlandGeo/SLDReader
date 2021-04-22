@@ -113,6 +113,15 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'diamond':
+      return new RegularShape({
+        fill,
+        points: 4,
+        radius1: radius,
+        stroke,
+        rotation: rotationRadians,
+      });
+
     default:
       // Default is `square`
       return new RegularShape({

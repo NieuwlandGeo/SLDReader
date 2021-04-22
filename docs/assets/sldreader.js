@@ -1569,6 +1569,15 @@
           rotation: rotationRadians,
         });
 
+      case 'diamond':
+        return new style.RegularShape({
+          fill: fill,
+          points: 4,
+          radius1: radius,
+          stroke: stroke,
+          rotation: rotationRadians,
+        });
+
       default:
         // Default is `square`
         return new style.RegularShape({
