@@ -83,9 +83,10 @@ function getWellKnownSymbol(
 
     case 'octagon':
       return new RegularShape({
+        angle: Math.PI / 8,
         fill,
         points: 8,
-        radius,
+        radius: radius / Math.cos(Math.PI / 8),
         stroke:
           stroke ||
           new Stroke({
