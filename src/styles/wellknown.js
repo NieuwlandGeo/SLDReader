@@ -83,9 +83,10 @@ function getWellKnownSymbol(
 
     case 'octagon':
       return new RegularShape({
+        angle: Math.PI / 8,
         fill,
         points: 8,
-        radius,
+        radius: radius / Math.cos(Math.PI / 8),
         stroke:
           stroke ||
           new Stroke({
@@ -95,6 +96,7 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'cross2': // cross2 is used by QGIS for the x symbol.
     case 'x':
       return new RegularShape({
         angle: Math.PI / 4,
@@ -108,6 +110,15 @@ function getWellKnownSymbol(
             color: fillColor,
             width: radius / 2,
           }),
+        rotation: rotationRadians,
+      });
+
+    case 'diamond':
+      return new RegularShape({
+        fill,
+        points: 4,
+        radius1: radius,
+        stroke,
         rotation: rotationRadians,
       });
 
