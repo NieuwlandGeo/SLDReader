@@ -71,8 +71,11 @@ export default function OlStyler(GeometryStyles, feature) {
       for (let i = 0; i < polygon.length; i += 1) {
         appendStyle(styles, polygon[i], feature, getPolygonStyle);
       }
-      for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature));
+      for (let j = 0; j < line.length; j += 1) {
+        appendStyle(styles, line[j], feature, getLineStyle);
+      }
+      for (let k = 0; k < text.length; k += 1) {
+        styles.push(getTextStyle(text[k], feature));
       }
       break;
 

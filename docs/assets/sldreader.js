@@ -2479,8 +2479,11 @@
         for (var i = 0; i < polygon.length; i += 1) {
           appendStyle(styles, polygon[i], feature, getPolygonStyle);
         }
-        for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          styles.push(getTextStyle(text[j$4], feature));
+        for (var j$4 = 0; j$4 < line.length; j$4 += 1) {
+          appendStyle(styles, line[j$4], feature, getLineStyle);
+        }
+        for (var k = 0; k < text.length; k += 1) {
+          styles.push(getTextStyle(text[k], feature));
         }
         break;
 
