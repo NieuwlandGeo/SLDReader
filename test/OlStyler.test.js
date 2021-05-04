@@ -181,7 +181,7 @@ describe('Create OL Style function from SLD feature type style 1', () => {
   });
 });
 
-describe.only('SLD with external graphics', () => {
+describe('SLD with external graphics', () => {
   let featureTypeStyle;
   let featureTypeStyle2;
   beforeEach(() => {
@@ -419,10 +419,12 @@ describe.only('SLD with external graphics', () => {
     const styleFunction1 = createOlStyleFunction(featureTypeStyle);
     const styleFunction2 = createOlStyleFunction(featureTypeStyle2, {
       imageLoadedCallback: () => {
-        // When the second style function callback gets called, the pointsymbolizer of the second style object
-        // should also be properly invalidated.
-        const { pointsymbolizer } = featureTypeStyle2.rules[0];
-        expect(pointsymbolizer.__invalidated).to.be.true;
+        expect(featureTypeStyle.rules[1].pointsymbolizer.__invalidated).to.be
+          .true;
+        // The pointsymbolizer of the second style object should also be properly invalidated,
+        // even if it uses the same image for which the first style function triggered the loading.
+        expect(featureTypeStyle2.rules[0].pointsymbolizer.__invalidated).to.be
+          .true;
         done();
       },
     });
