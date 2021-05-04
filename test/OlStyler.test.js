@@ -19,6 +19,7 @@ import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
   clearImageCache,
+  clearImageLoaderCache,
   clearImageLoadingStateCache,
   getImageLoadingState,
 } from '../src/imageCache';
@@ -180,12 +181,13 @@ describe('Create OL Style function from SLD feature type style 1', () => {
   });
 });
 
-describe('SLD with external graphics', () => {
+describe.only('SLD with external graphics', () => {
   let featureTypeStyle;
   let featureTypeStyle2;
   beforeEach(() => {
     clearImageCache();
     clearImageLoadingStateCache();
+    clearImageLoaderCache();
     const sldObject = Reader(externalGraphicSld);
     [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
     [featureTypeStyle2] = sldObject.layers[0].styles[1].featuretypestyles;
@@ -390,6 +392,38 @@ describe('SLD with external graphics', () => {
         if (loadFlags.callback1) {
           done();
         }
+      },
+    });
+
+    // Evaluate both style functions with the same feature resulting in the same image style.
+    // Expected behaviour: each style evaluation gets its own callback called.
+    styleFunction1(olFeature, null);
+    styleFunction2(olFeature, null);
+  });
+
+  it('Different style objects referencing the same image should both be invalidated', done => {
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        type: '2',
+      },
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    const styleFunction1 = createOlStyleFunction(featureTypeStyle);
+    const styleFunction2 = createOlStyleFunction(featureTypeStyle2, {
+      imageLoadedCallback: () => {
+        // When the second style function callback gets called, the pointsymbolizer of the second style object
+        // should also be properly invalidated.
+        const { pointsymbolizer } = featureTypeStyle2.rules[0];
+        expect(pointsymbolizer.__invalidated).to.be.true;
+        done();
       },
     });
 
