@@ -19,6 +19,7 @@ import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
   clearImageCache,
+  clearImageLoaderCache,
   clearImageLoadingStateCache,
   getImageLoadingState,
 } from '../src/imageCache';
@@ -182,11 +183,14 @@ describe('Create OL Style function from SLD feature type style 1', () => {
 
 describe('SLD with external graphics', () => {
   let featureTypeStyle;
+  let featureTypeStyle2;
   beforeEach(() => {
     clearImageCache();
     clearImageLoadingStateCache();
+    clearImageLoaderCache();
     const sldObject = Reader(externalGraphicSld);
     [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    [featureTypeStyle2] = sldObject.layers[0].styles[1].featuretypestyles;
   });
 
   it('Only requests images for matching rules', () => {
@@ -267,6 +271,168 @@ describe('SLD with external graphics', () => {
 
     // Just call the style function to trigger image load.
     styleFunction(olFeature, null);
+  });
+
+  it('Calls imageLoadedCallback only once when multiple features are evaluated for style', done => {
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        type: '2',
+      },
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    let callbackCount = 0;
+    const styleFunction = createOlStyleFunction(featureTypeStyle, {
+      imageLoadedCallback: () => {
+        callbackCount += 1;
+      },
+    });
+
+    // Evaluate the style for multiple features in a row.
+    // ImageLoaded callback should be called only once.
+    styleFunction(olFeature, null);
+    styleFunction(olFeature, null);
+    styleFunction(olFeature, null);
+
+    setTimeout(() => {
+      expect(callbackCount).to.equal(1);
+      done();
+    }, 50);
+  });
+
+  // The two tests below reproduce the case where different style functions contain a symbolizer that points to the same image url.
+  // The imageLoadedCallback should be called for both style functions, even if they happen to display the same image.
+  //
+  // This can happen when:
+  // * Two (or more) style functions are created from the same feature type style.
+  // * Style functions are created from different feature type style that happen to contain the same image.
+  it('ImageLoadedCallback should be called for each style function created from the same style object', done => {
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        type: '2',
+      },
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    const loadFlags = {
+      callback1: false,
+      callback2: false,
+    };
+
+    const styleFunction1 = createOlStyleFunction(featureTypeStyle, {
+      imageLoadedCallback: () => {
+        loadFlags.callback1 = true;
+        if (loadFlags.callback2) {
+          done();
+        }
+      },
+    });
+
+    const styleFunction2 = createOlStyleFunction(featureTypeStyle, {
+      imageLoadedCallback: () => {
+        loadFlags.callback2 = true;
+        if (loadFlags.callback1) {
+          done();
+        }
+      },
+    });
+
+    // Evaluate both style functions with the same feature resulting in the same image style.
+    // Expected behaviour: each style evaluation gets its own callback called.
+    styleFunction1(olFeature, null);
+    styleFunction2(olFeature, null);
+  });
+
+  it('ImageLoadedCallback should be called for each style function created from different style objects containing the same image', done => {
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        type: '2',
+      },
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    const loadFlags = {
+      callback1: false,
+      callback2: false,
+    };
+
+    const styleFunction1 = createOlStyleFunction(featureTypeStyle, {
+      imageLoadedCallback: () => {
+        loadFlags.callback1 = true;
+        if (loadFlags.callback2) {
+          done();
+        }
+      },
+    });
+
+    const styleFunction2 = createOlStyleFunction(featureTypeStyle2, {
+      imageLoadedCallback: () => {
+        loadFlags.callback2 = true;
+        if (loadFlags.callback1) {
+          done();
+        }
+      },
+    });
+
+    // Evaluate both style functions with the same feature resulting in the same image style.
+    // Expected behaviour: each style evaluation gets its own callback called.
+    styleFunction1(olFeature, null);
+    styleFunction2(olFeature, null);
+  });
+
+  it('Different style objects referencing the same image should both be invalidated', done => {
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        type: '2',
+      },
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    const styleFunction1 = createOlStyleFunction(featureTypeStyle);
+    const styleFunction2 = createOlStyleFunction(featureTypeStyle2, {
+      imageLoadedCallback: () => {
+        expect(featureTypeStyle.rules[1].pointsymbolizer.__invalidated).to.be
+          .true;
+        // The pointsymbolizer of the second style object should also be properly invalidated,
+        // even if it uses the same image for which the first style function triggered the loading.
+        expect(featureTypeStyle2.rules[0].pointsymbolizer.__invalidated).to.be
+          .true;
+        done();
+      },
+    });
+
+    // Evaluate both style functions with the same feature resulting in the same image style.
+    // Expected behaviour: each style evaluation gets its own callback called.
+    styleFunction1(olFeature, null);
+    styleFunction2(olFeature, null);
   });
 
   it('Can render both polygon stroke and externalgraphics', done => {
