@@ -86,6 +86,23 @@ export const externalGraphicSld = `<?xml version="1.0" encoding="UTF-8"?>
         </sld:Rule>
       </sld:FeatureTypeStyle>
     </UserStyle>
+    <UserStyle>
+      <sld:Name>icons_puntenlaag_2</sld:Name>
+      <sld:FeatureTypeStyle>
+        <sld:Rule>
+          <sld:Name>Always use the same image</sld:Name>
+          <sld:PointSymbolizer>
+            <sld:Graphic>
+              <sld:ExternalGraphic>
+                <sld:OnlineResource xlink:type="simple" xlink:href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"/>
+                <sld:Format>image/png</sld:Format>
+              </sld:ExternalGraphic>
+              <sld:Size>24</sld:Size>
+            </sld:Graphic>
+          </sld:PointSymbolizer>
+        </sld:Rule>
+      </sld:FeatureTypeStyle>
+    </UserStyle>
   </NamedLayer>
 </sld:StyledLayerDescriptor>`;
 
