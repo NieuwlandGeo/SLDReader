@@ -35,10 +35,17 @@ function compare(a, b, matchcase) {
     return compareNumbers(aNumber, bNumber);
   }
 
-  if (matchcase) {
-    return caseSensitiveCollator.compare(a, b);
-  }
-  return caseInsensitiveCollator.compare(a, b);
+  // If a and/or b is non-numeric, compare both values as strings.
+  const aString = a.toString();
+  const bString = b.toString();
+  return aString.localeCompare(bString, undefined, {
+    sensitivity: matchcase ? 'case' : 'base',
+  });
+
+  // if (matchcase) {
+  //   return caseSensitiveCollator.compare(a, b);
+  // }
+  // return caseInsensitiveCollator.compare(a, b);
 }
 
 function propertyIsLessThan(comparison, value) {
