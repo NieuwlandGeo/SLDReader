@@ -15,6 +15,7 @@ import { textSymbolizerCDataSld } from './data/textSymbolizer-cdata.sld';
 import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { polyGraphicFillAndStrokeSld } from './data/poly-graphic-fill-and-stroke';
 import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
+import { simplePointSymbolizerSld } from './data/simple-point-symbolizer.sld';
 
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
@@ -662,5 +663,56 @@ describe('Polygon styling', () => {
     const olStyle = styleFunction(polygonFeature)[0];
     expect(olStyle.getStroke().getColor()).to.equal('#FF0000');
     expect(olStyle.getStroke().getWidth()).to.equal(1);
+  });
+});
+
+describe('PointSymbolizer inside line or polygon', () => {
+  let styleFunction;
+  let fmtGeoJSON;
+  beforeEach(() => {
+    const sldObject = Reader(simplePointSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    styleFunction = createOlStyleFunction(featureTypeStyle);
+    fmtGeoJSON = new OLFormatGeoJSON();
+  });
+
+  it('Places point in the middle of a LineString', () => {
+    const lineGeoJSON = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        // prettier-ignore
+        coordinates: [[0, 0], [1, 0], [1, 1], [0, 1]],
+      },
+      properties: {},
+    };
+    const feature = fmtGeoJSON.readFeature(lineGeoJSON);
+    const style = styleFunction(feature)[0];
+    // Style should have a custom geometry: the line's mid-point.
+    const midPoint = style.getGeometry();
+    expect(midPoint.getType()).to.equal('Point');
+    expect(midPoint.getCoordinates()).to.deep.equal([1, 0.5]);
+  });
+
+  it('Calculates midpoints for each segment of a MultiLineString', () => {
+    const lineGeoJSON = {
+      type: 'Feature',
+      geometry: {
+        type: 'MultiLineString',
+        // prettier-ignore
+        coordinates: [[[0, 0], [1, 0]], [[1, 1], [2, 1]], [[2, 2], [3, 2]]],
+      },
+      properties: {},
+    };
+    const feature = fmtGeoJSON.readFeature(lineGeoJSON);
+    const style = styleFunction(feature)[0];
+    // Style should have a custom geometry: the line's mid-point.
+    const midPoint = style.getGeometry();
+    expect(midPoint.getType()).to.equal('MultiPoint');
+    expect(midPoint.getCoordinates()).to.deep.equal([
+      [0.5, 0],
+      [1.5, 1],
+      [2.5, 2],
+    ]);
   });
 });
