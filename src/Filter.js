@@ -1,10 +1,10 @@
-const caseInsensitiveCompare = new Intl.Collator(undefined, {
+const caseInsensitiveCollator = new Intl.Collator(undefined, {
   sensitivity: 'base',
-}).compare;
+});
 
-const caseSensitiveCompare = new Intl.Collator(undefined, {
+const caseSensitiveCollator = new Intl.Collator(undefined, {
   sensitivity: 'case',
-}).compare;
+});
 
 function isNullOrUndefined(value) {
   /* eslint-disable-next-line eqeqeq */
@@ -35,9 +35,9 @@ function compare(a, b, matchcase) {
     return compareNumbers(aNumber, bNumber);
   }
   if (matchcase) {
-    return caseSensitiveCompare(a, b);
+    return caseSensitiveCollator.compare(a, b);
   }
-  return caseInsensitiveCompare(a, b);
+  return caseInsensitiveCollator.compare(a, b);
 }
 
 function propertyIsLessThan(comparison, value) {

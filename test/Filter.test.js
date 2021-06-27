@@ -294,7 +294,7 @@ describe('filter rules', () => {
         operator: 'propertyisgreaterthan',
         propertyname: 'text',
         literal: 'Banana',
-        matchcase: false,
+        matchcase: true,
       };
       expect(filterSelector(filter, feature)).to.be.true;
     });
