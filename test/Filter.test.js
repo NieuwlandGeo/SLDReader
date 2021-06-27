@@ -207,7 +207,7 @@ describe('filter rules', () => {
         expect(testLike('%hoi%', 'hoi')).to.be.true;
       });
 
-      it('Case insensitive match with matchcase:false', () => {
+      it('Case insensitive match', () => {
         const feature = { properties: { text: 'TEST' } };
         const filter = {
           type: 'comparison',
@@ -274,19 +274,75 @@ describe('filter rules', () => {
     });
   });
 
-  // describe('Comparisons with strings', () => {
-  //   it('propertyisequalto with matchCase: false', () => {
-  //     const feature = { properties: { text: 'TEST' } };
-  //     const filter = {
-  //       type: 'comparison',
-  //       operator: 'propertyisequalto',
-  //       propertyname: 'text',
-  //       literal: 'test',
-  //       matchcase: false,
-  //     };
-  //     expect(filterSelector(filter, feature)).to.be.true;
-  //   });
-  // });
+  describe('Comparisons with strings', () => {
+    function testComparison(operator, filterText, featureText, matchcase) {
+      const feature = { properties: { text: featureText } };
+      const filter = {
+        type: 'comparison',
+        operator,
+        propertyname: 'text',
+        literal: filterText,
+        matchcase,
+      };
+      return filterSelector(filter, feature);
+    }
+
+    it('propertyisequalto with matchCase: false', () => {
+      expect(testComparison('propertyisequalto', 'TEST', 'test', false)).to.be
+        .true;
+    });
+
+    it('propertyislessthan with matchCase: false', () => {
+      expect(testComparison('propertyislessthan', 'some', 'SOME', false)).to.be
+        .false;
+    });
+
+    it('propertyisgreaterthan with matchCase: true', () => {
+      expect(testComparison('propertyisgreaterthan', 'monkey', 'Banana', true))
+        .to.be.false;
+    });
+
+    describe('propertyisbetween for strings', () => {
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisbetween',
+        propertyname: 'date',
+        lowerboundary: '1980-05-02',
+        upperboundary: '2021-06-27',
+        matchcase: true,
+      };
+
+      it('inside', () => {
+        const feature = { properties: { date: '1999-12-31' } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('at lower bound', () => {
+        const feature = { properties: { date: '1980-05-02' } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('below lower bound', () => {
+        const feature = { properties: { date: '1950-09-07' } };
+        expect(filterSelector(filter, feature)).to.be.false;
+      });
+
+      it('at upper bound', () => {
+        const feature = { properties: { date: '2021-06-27' } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('at upper bound, simple date', () => {
+        const feature = { properties: { date: '2021-06-27' } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('above upper bound', () => {
+        const feature = { properties: { date: '2222-12-21' } };
+        expect(filterSelector(filter, feature)).to.be.false;
+      });
+    });
+  });
 
   describe('Logical filters', () => {
     const lakeFilter = {

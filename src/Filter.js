@@ -1,4 +1,12 @@
-function isNullish(value) {
+const caseInsensitiveCompare = new Intl.Collator(undefined, {
+  sensitivity: 'base',
+}).compare;
+
+const caseSensitiveCompare = new Intl.Collator(undefined, {
+  sensitivity: 'case',
+}).compare;
+
+function isNullOrUndefined(value) {
   /* eslint-disable-next-line eqeqeq */
   return value == null;
 }
@@ -20,17 +28,20 @@ function toNumber(text) {
   return Number(text);
 }
 
-function compare(a, b) {
+function compare(a, b, matchcase) {
   const aNumber = toNumber(a);
   const bNumber = toNumber(b);
   if (!(Number.isNaN(aNumber) || Number.isNaN(bNumber))) {
     return compareNumbers(aNumber, bNumber);
   }
-  throw new Error('TODO: implement string comparison between ' + a + ' and ' + b);
+  if (matchcase) {
+    return caseSensitiveCompare(a, b);
+  }
+  return caseInsensitiveCompare(a, b);
 }
 
 function propertyIsLessThan(comparison, value) {
-  if (isNullish(value)) {
+  if (isNullOrUndefined(value)) {
     return false;
   }
 
@@ -38,7 +49,7 @@ function propertyIsLessThan(comparison, value) {
 }
 
 function propertyIsGreaterThan(comparison, value) {
-  if (isNullish(value)) {
+  if (isNullOrUndefined(value)) {
     return false;
   }
 
@@ -46,7 +57,7 @@ function propertyIsGreaterThan(comparison, value) {
 }
 
 function propertyIsBetween(comparison, value) {
-  if (isNullish(value)) {
+  if (isNullOrUndefined(value)) {
     return false;
   }
 
@@ -61,8 +72,12 @@ function propertyIsBetween(comparison, value) {
 }
 
 function propertyIsEqualTo(comparison, value) {
-  if (isNullish(value)) {
+  if (isNullOrUndefined(value)) {
     return false;
+  }
+
+  if (!comparison.matchcase) {
+    return compare(comparison.literal, value, false) === 0;
   }
 
   /* eslint-disable-next-line eqeqeq */
@@ -73,7 +88,7 @@ function propertyIsEqualTo(comparison, value) {
 // just like in databases.
 // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
 function propertyIsNotEqualTo(comparison, value) {
-  if (isNullish(value)) {
+  if (isNullOrUndefined(value)) {
     return false;
   }
 
@@ -91,7 +106,7 @@ function propertyIsNotEqualTo(comparison, value) {
 function propertyIsLike(comparison, value) {
   const pattern = comparison.literal;
 
-  if (isNullish(value)) {
+  if (isNullOrUndefined(value)) {
     return false;
   }
 
@@ -159,7 +174,7 @@ function doComparison(comparison, feature, getProperty) {
     case 'propertyisbetween':
       return propertyIsBetween(comparison, value);
     case 'propertyisnull':
-      return isNullish(value);
+      return isNullOrUndefined(value);
     case 'propertyislike':
       return propertyIsLike(comparison, value);
     default:
