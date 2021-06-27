@@ -274,6 +274,20 @@ describe('filter rules', () => {
     });
   });
 
+  // describe('Comparisons with strings', () => {
+  //   it('propertyisequalto with matchCase: false', () => {
+  //     const feature = { properties: { text: 'TEST' } };
+  //     const filter = {
+  //       type: 'comparison',
+  //       operator: 'propertyisequalto',
+  //       propertyname: 'text',
+  //       literal: 'test',
+  //       matchcase: false,
+  //     };
+  //     expect(filterSelector(filter, feature)).to.be.true;
+  //   });
+  // });
+
   describe('Logical filters', () => {
     const lakeFilter = {
       type: 'comparison',

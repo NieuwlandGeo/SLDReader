@@ -1,39 +1,67 @@
+function isNullish(value) {
+  /* eslint-disable-next-line eqeqeq */
+  return value == null;
+}
+
+function compareNumbers(a, b) {
+  if (a < b) {
+    return -1;
+  }
+  if (a === b) {
+    return 0;
+  }
+  return 1;
+}
+
+function toNumber(text) {
+  if (text === '') {
+    return NaN;
+  }
+  return Number(text);
+}
+
+function compare(a, b) {
+  const aNumber = toNumber(a);
+  const bNumber = toNumber(b);
+  if (!(Number.isNaN(aNumber) || Number.isNaN(bNumber))) {
+    return compareNumbers(aNumber, bNumber);
+  }
+  throw new Error('TODO: implement string comparison between ' + a + ' and ' + b);
+}
+
 function propertyIsLessThan(comparison, value) {
-  if (propertyIsNull(comparison, value)) {
+  if (isNullish(value)) {
     return false;
   }
 
-  return (
-    // Todo: support string comparison as well
-    typeof value !== 'undefined' && Number(value) < Number(comparison.literal)
-  );
+  return compare(value, comparison.literal) < 0;
 }
 
 function propertyIsGreaterThan(comparison, value) {
-  if (propertyIsNull(comparison, value)) {
+  if (isNullish(value)) {
     return false;
   }
 
-  return (
-    // Todo: support string comparison as well
-    typeof value !== 'undefined' && Number(value) > Number(comparison.literal)
-  );
+  return compare(value, comparison.literal) > 0;
 }
 
 function propertyIsBetween(comparison, value) {
-  if (propertyIsNull(comparison, value)) {
+  if (isNullish(value)) {
     return false;
   }
 
   // Todo: support string comparison as well
-  const lowerBoundary = Number(comparison.lowerboundary);
-  const upperBoundary = Number(comparison.upperboundary);
-  const numericValue = Number(value);
-  return numericValue >= lowerBoundary && numericValue <= upperBoundary;
+  const lowerBoundary = comparison.lowerboundary;
+  const upperBoundary = comparison.upperboundary;
+  const numericValue = value;
+  return (
+    compare(lowerBoundary, numericValue) <= 0 &&
+    compare(upperBoundary, numericValue) >= 0
+  );
 }
 
 function propertyIsEqualTo(comparison, value) {
-  if (propertyIsNull(comparison, value)) {
+  if (isNullish(value)) {
     return false;
   }
 
@@ -45,16 +73,11 @@ function propertyIsEqualTo(comparison, value) {
 // just like in databases.
 // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
 function propertyIsNotEqualTo(comparison, value) {
-  if (propertyIsNull(comparison, value)) {
+  if (isNullish(value)) {
     return false;
   }
 
   return !propertyIsEqualTo(comparison, value);
-}
-
-function propertyIsNull(comparison, value) {
-  /* eslint-disable-next-line eqeqeq */
-  return value == null;
 }
 
 /**
@@ -68,7 +91,7 @@ function propertyIsNull(comparison, value) {
 function propertyIsLike(comparison, value) {
   const pattern = comparison.literal;
 
-  if (propertyIsNull(comparison, value)) {
+  if (isNullish(value)) {
     return false;
   }
 
@@ -95,9 +118,10 @@ function propertyIsLike(comparison, value) {
   // Bookend the regular expression.
   patternAsRegex = `^${patternAsRegex}$`;
 
-  const rex = matchcase === false
-    ? new RegExp(patternAsRegex, 'i')
-    : new RegExp(patternAsRegex);
+  const rex =
+    matchcase === false
+      ? new RegExp(patternAsRegex, 'i')
+      : new RegExp(patternAsRegex);
   return rex.test(value);
 }
 
@@ -135,7 +159,7 @@ function doComparison(comparison, feature, getProperty) {
     case 'propertyisbetween':
       return propertyIsBetween(comparison, value);
     case 'propertyisnull':
-      return propertyIsNull(comparison, value);
+      return isNullish(value);
     case 'propertyislike':
       return propertyIsLike(comparison, value);
     default:
