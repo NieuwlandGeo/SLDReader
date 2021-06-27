@@ -98,10 +98,7 @@ function doComparison(comparison, feature, getProperty) {
         !propertyIsEqualTo(comparison, value)
       );
     case 'propertyisgreaterthanorequalto':
-      return (
-        !propertyIsLessThan(comparison, value) ||
-        propertyIsEqualTo(comparison, value)
-      );
+      return !propertyIsLessThan(comparison, value);
     case 'propertyisbetween':
       return propertyIsBetween(comparison, value);
     case 'propertyisnull':
