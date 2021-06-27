@@ -96,6 +96,8 @@
       operator: element.localName.toLowerCase(),
       propertyname: propertyname,
       literal: literal,
+      // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
+      matchcase: element.getAttribute('matchCase') !== 'false',
     };
   }
 
@@ -109,6 +111,7 @@
   function createIsLikeComparison(element) {
     var propertyname = getChildTextContent(element, 'PropertyName');
     var literal = getChildTextContent(element, 'Literal');
+
     return {
       type: TYPE_COMPARISON,
       operator: element.localName.toLowerCase(),
@@ -117,6 +120,8 @@
       wildcard: element.getAttribute('wildCard'),
       singlechar: element.getAttribute('singleChar'),
       escapechar: element.getAttribute('escapeChar'),
+      // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
+      matchcase: element.getAttribute('matchCase') !== 'false',
     };
   }
   /**
@@ -152,6 +157,8 @@
       lowerboundary: lowerboundary,
       upperboundary: upperboundary,
       propertyname: propertyname,
+      // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
+      matchcase: element.getAttribute('matchCase') !== 'false',
     };
   }
 
@@ -664,32 +671,121 @@
    * @property {Number} graphic.rotation
    * */
 
+  function isNullOrUndefined(value) {
+    /* eslint-disable-next-line eqeqeq */
+    return value == null;
+  }
+
+  function compareNumbers(a, b) {
+    if (a < b) {
+      return -1;
+    }
+    if (a === b) {
+      return 0;
+    }
+    return 1;
+  }
+
+  function toNumber(text) {
+    if (text === '') {
+      return NaN;
+    }
+    return Number(text);
+  }
+
+  function compare(a, b, matchcase) {
+    var aNumber = toNumber(a);
+    var bNumber = toNumber(b);
+    if (!(Number.isNaN(aNumber) || Number.isNaN(bNumber))) {
+      return compareNumbers(aNumber, bNumber);
+    }
+
+    // If a and/or b is non-numeric, compare both values as strings.
+    var aString = a.toString();
+    var bString = b.toString();
+
+    // Note: using locale compare with sensitivity option fails the CI test, while it works on my PC.
+    // So, case insensitive comparison is done in a more brute-force way by using lower case comparison.
+    // Original method:
+    // const caseSensitiveCollator = new Intl.Collator(undefined, { sensitivity: 'case' });
+    // caseSensitiveCollator.compare(string1, string2);
+    if (matchcase) {
+      return aString.localeCompare(bString);
+    }
+
+    return aString.toLowerCase().localeCompare(bString.toLowerCase());
+  }
+
   function propertyIsLessThan(comparison, value) {
-    return (
-      // Todo: support string comparison as well
-      typeof value !== 'undefined' && Number(value) < Number(comparison.literal)
-    );
+    if (isNullOrUndefined(value)) {
+      return false;
+    }
+
+    if (isNullOrUndefined(comparison.literal)) {
+      return false;
+    }
+
+    return compare(value, comparison.literal) < 0;
+  }
+
+  function propertyIsGreaterThan(comparison, value) {
+    if (isNullOrUndefined(value)) {
+      return false;
+    }
+
+    if (isNullOrUndefined(comparison.literal)) {
+      return false;
+    }
+
+    return compare(value, comparison.literal) > 0;
   }
 
   function propertyIsBetween(comparison, value) {
-    // Todo: support string comparison as well
-    var lowerBoundary = Number(comparison.lowerboundary);
-    var upperBoundary = Number(comparison.upperboundary);
-    var numericValue = Number(value);
-    return numericValue >= lowerBoundary && numericValue <= upperBoundary;
+    if (isNullOrUndefined(value)) {
+      return false;
+    }
+
+    var lowerBoundary = comparison.lowerboundary;
+    if (isNullOrUndefined(lowerBoundary)) {
+      return false;
+    }
+
+    var upperBoundary = comparison.upperboundary;
+    if (isNullOrUndefined(upperBoundary)) {
+      return false;
+    }
+
+    return (
+      compare(lowerBoundary, value) <= 0 && compare(upperBoundary, value) >= 0
+    );
   }
 
   function propertyIsEqualTo(comparison, value) {
-    if (typeof value === 'undefined') {
+    if (isNullOrUndefined(value)) {
       return false;
     }
+
+    if (isNullOrUndefined(comparison.literal)) {
+      return false;
+    }
+
+    if (!comparison.matchcase) {
+      return compare(comparison.literal, value, false) === 0;
+    }
+
     /* eslint-disable-next-line eqeqeq */
     return value == comparison.literal;
   }
 
-  function propertyIsNull(comparison, value) {
-    /* eslint-disable-next-line eqeqeq */
-    return value == null;
+  // Watch out! Null-ish values should not pass propertyIsNotEqualTo,
+  // just like in databases.
+  // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
+  function propertyIsNotEqualTo(comparison, value) {
+    if (isNullOrUndefined(value)) {
+      return false;
+    }
+
+    return !propertyIsEqualTo(comparison, value);
   }
 
   /**
@@ -703,7 +799,7 @@
   function propertyIsLike(comparison, value) {
     var pattern = comparison.literal;
 
-    if (typeof value === 'undefined') {
+    if (isNullOrUndefined(value)) {
       return false;
     }
 
@@ -711,6 +807,7 @@
     var wildcard = comparison.wildcard;
     var singlechar = comparison.singlechar;
     var escapechar = comparison.escapechar;
+    var matchcase = comparison.matchcase;
 
     // Replace wildcard by '.*'
     var patternAsRegex = pattern.replace(new RegExp(("[" + wildcard + "]"), 'g'), '.*');
@@ -732,7 +829,10 @@
     // Bookend the regular expression.
     patternAsRegex = "^" + patternAsRegex + "$";
 
-    var rex = new RegExp(patternAsRegex);
+    var rex =
+      matchcase === false
+        ? new RegExp(patternAsRegex, 'i')
+        : new RegExp(patternAsRegex);
     return rex.test(value);
   }
 
@@ -759,21 +859,18 @@
           propertyIsLessThan(comparison, value)
         );
       case 'propertyisnotequalto':
-        return !propertyIsEqualTo(comparison, value);
+        return propertyIsNotEqualTo(comparison, value);
       case 'propertyisgreaterthan':
-        return (
-          !propertyIsLessThan(comparison, value) &&
-          !propertyIsEqualTo(comparison, value)
-        );
+        return propertyIsGreaterThan(comparison, value);
       case 'propertyisgreaterthanorequalto':
         return (
-          !propertyIsLessThan(comparison, value) ||
-          propertyIsEqualTo(comparison, value)
+          propertyIsEqualTo(comparison, value) ||
+          propertyIsGreaterThan(comparison, value)
         );
       case 'propertyisbetween':
         return propertyIsBetween(comparison, value);
       case 'propertyisnull':
-        return propertyIsNull(comparison, value);
+        return isNullOrUndefined(value);
       case 'propertyislike':
         return propertyIsLike(comparison, value);
       default:
