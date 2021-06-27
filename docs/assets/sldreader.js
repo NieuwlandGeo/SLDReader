@@ -2376,6 +2376,29 @@
     var offsetX = displacement.displacementx ? displacement.displacementx : 0;
     var offsetY = displacement.displacementy ? displacement.displacementy : 0;
 
+    // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
+    var anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};
+
+    var textAlign = 'center';
+    var anchorpointx = Number(
+      anchorpoint.anchorpointx === '' ? NaN : anchorpoint.anchorpointx
+    );
+    if (anchorpointx < 0.25) {
+      textAlign = 'left';
+    } else if (anchorpointx > 0.75) {
+      textAlign = 'right';
+    }
+
+    var textBaseline = 'middle';
+    var anchorpointy = Number(
+      anchorpoint.anchorpointy === '' ? NaN : anchorpoint.anchorpointy
+    );
+    if (anchorpointy < 0.25) {
+      textBaseline = 'bottom';
+    } else if (anchorpointy > 0.75) {
+      textBaseline = 'top';
+    }
+
     // Assemble text style options.
     var textStyleOptions = {
       text: labelText,
@@ -2383,8 +2406,8 @@
       offsetX: Number(offsetX),
       offsetY: Number(offsetY),
       rotation: (Math.PI * labelRotationDegrees) / 180.0,
-      textAlign: 'center',
-      textBaseline: 'middle',
+      textAlign: textAlign,
+      textBaseline: textBaseline,
       fill: new style.Fill({
         color:
           fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'

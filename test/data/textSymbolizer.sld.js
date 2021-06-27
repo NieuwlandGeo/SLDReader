@@ -12,6 +12,14 @@ export const textSymbolizerSld = `<?xml version="1.0" encoding="UTF-8"?>
         <Rule>
           <TextSymbolizer>
             <Label>TEST</Label>
+            <LabelPlacement>
+              <PointPlacement>
+                <AnchorPoint>
+                  <AnchorPointX>0</AnchorPointX>
+                  <AnchorPointY>1</AnchorPointY>
+                </AnchorPoint>
+              </PointPlacement>
+            </LabelPlacement>
           </TextSymbolizer>
         </Rule>
       </FeatureTypeStyle>
