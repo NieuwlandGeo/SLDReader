@@ -5,6 +5,13 @@ function propertyIsLessThan(comparison, value) {
   );
 }
 
+function propertyIsGreaterThan(comparison, value) {
+  return (
+    // Todo: support string comparison as well
+    typeof value !== 'undefined' && Number(value) > Number(comparison.literal)
+  );
+}
+
 function propertyIsBetween(comparison, value) {
   // Todo: support string comparison as well
   const lowerBoundary = Number(comparison.lowerboundary);
@@ -93,12 +100,12 @@ function doComparison(comparison, feature, getProperty) {
     case 'propertyisnotequalto':
       return !propertyIsEqualTo(comparison, value);
     case 'propertyisgreaterthan':
-      return (
-        !propertyIsLessThan(comparison, value) &&
-        !propertyIsEqualTo(comparison, value)
-      );
+      return propertyIsGreaterThan(comparison, value);
     case 'propertyisgreaterthanorequalto':
-      return !propertyIsLessThan(comparison, value);
+      return (
+        propertyIsEqualTo(comparison, value) ||
+        propertyIsGreaterThan(comparison, value)
+      );
     case 'propertyisbetween':
       return propertyIsBetween(comparison, value);
     case 'propertyisnull':
