@@ -1,11 +1,3 @@
-const caseInsensitiveCollator = new Intl.Collator(undefined, {
-  sensitivity: 'base',
-});
-
-const caseSensitiveCollator = new Intl.Collator(undefined, {
-  sensitivity: 'case',
-});
-
 function isNullOrUndefined(value) {
   /* eslint-disable-next-line eqeqeq */
   return value == null;
