@@ -1,9 +1,0 @@
-sudo: false
-language: node_js
-node_js:
-  - '14'
-env:
-  - MOZ_HEADLESS=1
-script:
-  - npm run lint
-  - npm test
