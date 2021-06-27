@@ -34,6 +34,7 @@ function compare(a, b, matchcase) {
   if (!(Number.isNaN(aNumber) || Number.isNaN(bNumber))) {
     return compareNumbers(aNumber, bNumber);
   }
+
   if (matchcase) {
     return caseSensitiveCollator.compare(a, b);
   }
@@ -45,11 +46,19 @@ function propertyIsLessThan(comparison, value) {
     return false;
   }
 
+  if (isNullOrUndefined(comparison.literal)) {
+    return false;
+  }
+
   return compare(value, comparison.literal) < 0;
 }
 
 function propertyIsGreaterThan(comparison, value) {
   if (isNullOrUndefined(value)) {
+    return false;
+  }
+
+  if (isNullOrUndefined(comparison.literal)) {
     return false;
   }
 
@@ -61,18 +70,27 @@ function propertyIsBetween(comparison, value) {
     return false;
   }
 
-  // Todo: support string comparison as well
   const lowerBoundary = comparison.lowerboundary;
+  if (isNullOrUndefined(lowerBoundary)) {
+    return false;
+  }
+
   const upperBoundary = comparison.upperboundary;
-  const numericValue = value;
+  if (isNullOrUndefined(upperBoundary)) {
+    return false;
+  }
+
   return (
-    compare(lowerBoundary, numericValue) <= 0 &&
-    compare(upperBoundary, numericValue) >= 0
+    compare(lowerBoundary, value) <= 0 && compare(upperBoundary, value) >= 0
   );
 }
 
 function propertyIsEqualTo(comparison, value) {
   if (isNullOrUndefined(value)) {
+    return false;
+  }
+
+  if (isNullOrUndefined(comparison.literal)) {
     return false;
   }
 
