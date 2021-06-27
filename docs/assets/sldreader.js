@@ -1914,6 +1914,7 @@
     return olStyle;
   }
 
+  // eslint-disable-next-line import/prefer-default-export
   function splitLineString(geometry, graphicSpacing, options) {
     function calculatePointsDistance(coord1, coord2) {
       var dx = coord1[0] - coord2[0];
@@ -2493,6 +2494,50 @@
     return olStyle;
   }
 
+  /**
+   * Get the point located at the middle along a line string.
+   * In case of a multilinestring, a multipoint geometry is returned, one midpoint for each segment.
+   * @param {OLGeometry} geometry An OpenLayers geometry. Must be LineString or MultiLineString.
+   * @returns {OLGeometry} an OpenLayers Point or MultiPoint geometry.
+   */
+  function getLineMidpoint(geometry) {
+    // Use the splitpoints routine to distribute points over the line with
+    // a point-to-point distance along the line equal to half line length.
+    // This results in three points. Take the middle point.
+    var splitPoints = splitLineString(geometry, geometry.getLength() / 2, {
+      alwaysUp: true,
+      midPoints: false,
+    });
+    var ref = splitPoints[1];
+    var x = ref[0];
+    var y = ref[1];
+    return new geom.Point([x, y]);
+  }
+
+  /**
+   * @private
+   * Get an OL point style instance for a line feature according to a symbolizer.
+   * The style will render a point on the middle of the line.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature} feature OpenLayers Feature.
+   * @returns {ol/Style} OpenLayers style instance.
+   */
+  function getLinePointStyle(symbolizer, feature) {
+    var geom = feature.getGeometry();
+    if (!geom) {
+      return null;
+    }
+
+    var pointStyle = null;
+    var geomType = geom.getType();
+    if (geomType === 'LineString') {
+      pointStyle = getPointStyle(symbolizer, feature);
+      pointStyle.setGeometry(getLineMidpoint(geom));
+    }
+
+    return pointStyle;
+  }
+
   var defaultStyles = [defaultPointStyle];
 
   /**
@@ -2550,8 +2595,11 @@
         for (var j$2 = 0; j$2 < line.length; j$2 += 1) {
           appendStyle(styles, line[j$2], feature, getLineStyle);
         }
-        for (var j$3 = 0; j$3 < text.length; j$3 += 1) {
-          styles.push(getTextStyle(text[j$3], feature));
+        for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
+          appendStyle(styles, point[j$3], feature, getLinePointStyle);
+        }
+        for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
+          styles.push(getTextStyle(text[j$4], feature));
         }
         break;
 
@@ -2560,8 +2608,8 @@
         for (var i = 0; i < polygon.length; i += 1) {
           appendStyle(styles, polygon[i], feature, getPolygonStyle);
         }
-        for (var j$4 = 0; j$4 < line.length; j$4 += 1) {
-          appendStyle(styles, line[j$4], feature, getLineStyle);
+        for (var j$5 = 0; j$5 < line.length; j$5 += 1) {
+          appendStyle(styles, line[j$5], feature, getLineStyle);
         }
         for (var k = 0; k < text.length; k += 1) {
           styles.push(getTextStyle(text[k], feature));

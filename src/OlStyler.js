@@ -6,6 +6,7 @@ import getPointStyle from './styles/pointStyle';
 import getLineStyle from './styles/lineStyle';
 import getPolygonStyle from './styles/polygonStyle';
 import getTextStyle from './styles/textStyle';
+import getLinePointStyle from './styles/linePointStyle';
 
 const defaultStyles = [defaultPointStyle];
 
@@ -60,6 +61,9 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'MultiLineString':
       for (let j = 0; j < line.length; j += 1) {
         appendStyle(styles, line[j], feature, getLineStyle);
+      }
+      for (let j = 0; j < point.length; j += 1) {
+        appendStyle(styles, point[j], feature, getLinePointStyle);
       }
       for (let j = 0; j < text.length; j += 1) {
         styles.push(getTextStyle(text[j], feature));
