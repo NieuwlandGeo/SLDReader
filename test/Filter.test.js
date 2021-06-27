@@ -275,31 +275,28 @@ describe('filter rules', () => {
   });
 
   describe('Comparisons with strings', () => {
-    function testComparison(operator, filterText, featureText, matchcase) {
-      const feature = { properties: { text: featureText } };
+    it('propertyisequalto with matchCase: false', () => {
+      const feature = { properties: { text: 'test' } };
       const filter = {
         type: 'comparison',
-        operator,
+        operator: 'propertyisequalto',
         propertyname: 'text',
-        literal: filterText,
-        matchcase,
+        literal: 'TEST',
+        matchcase: false,
       };
-      return filterSelector(filter, feature);
-    }
-
-    it('propertyisequalto with matchCase: false', () => {
-      expect(testComparison('propertyisequalto', 'TEST', 'test', false)).to.be
-        .true;
-    });
-
-    it('propertyislessthan with matchCase: false', () => {
-      expect(testComparison('propertyislessthan', 'some', 'SOME', false)).to.be
-        .false;
+      expect(filterSelector(filter, feature)).to.be.true;
     });
 
     it('propertyisgreaterthan with matchCase: true', () => {
-      expect(testComparison('propertyisgreaterthan', 'monkey', 'Banana', true))
-        .to.be.false;
+      const feature = { properties: { text: 'monkey' } };
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisgreaterthan',
+        propertyname: 'text',
+        literal: 'Banana',
+        matchcase: false,
+      };
+      expect(filterSelector(filter, feature)).to.be.true;
     });
 
     describe('propertyisbetween for strings', () => {
