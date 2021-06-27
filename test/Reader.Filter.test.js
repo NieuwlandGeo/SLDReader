@@ -22,6 +22,7 @@ describe('Filter tests', () => {
     expect(filter.propertyname).to.equal('AREA');
     expect(filter.lowerboundary).to.equal('1064866676');
     expect(filter.upperboundary).to.equal('1065512599');
+    expect(filter.matchcase).to.be.true;
   });
 
   it('PropertyIsNull', () => {
@@ -53,6 +54,35 @@ describe('Filter tests', () => {
     expect(filter.escapechar).to.equal('\\');
     expect(filter.propertyname).to.equal('name');
     expect(filter.literal).to.equal('j?ns%');
+    expect(filter.matchcase).to.be.true;
+  });
+
+  it('Parse matchCase attribute', () => {
+    const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
+    <PropertyIsLike matchCase="false" wildCard="%" singleChar="?" escapeChar="\\">
+      <PropertyName>name</PropertyName>
+      <Literal>j?ns%</Literal>
+    </PropertyIsLike>
+  </Filter></StyledLayerDescriptor>`;
+
+    const { filter } = Reader(filterXml);
+    expect(filter.matchcase).to.be.false;
+  });
+
+  it('PropertyIsNotEqualTo', () => {
+    const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+      <PropertyIsNotEqualTo>
+        <PropertyName>PERIMETER</PropertyName>
+        <Literal>1071304933</Literal>
+      </PropertyIsNotEqualTo>
+    </Filter></StyledLayerDescriptor>`;
+
+    const { filter } = Reader(filterXml);
+    expect(filter.type).to.equal('comparison');
+    expect(filter.operator).to.equal('propertyisnotequalto');
+    expect(filter.propertyname).to.equal('PERIMETER');
+    expect(filter.literal).to.equal('1071304933');
+    expect(filter.matchcase).to.be.true;
   });
 
   it('NOT filter', () => {
@@ -99,6 +129,7 @@ describe('Filter tests', () => {
       expect(filter.operator).to.equal('propertyisequalto');
       expect(filter.propertyname).to.equal('name');
       expect(filter.literal).to.equal('My simple Polygon');
+      expect(filter.matchcase).to.be.true;
     });
     it('rules have filter for Hover Styler not_or', () => {
       const { filter } = result.layers['0'].styles['1'].featuretypestyles[
@@ -115,12 +146,14 @@ describe('Filter tests', () => {
       expect(orPredicate1.operator).to.equal('propertyisequalto');
       expect(orPredicate1.propertyname).to.equal('PERIMETER');
       expect(orPredicate1.literal).to.equal('1071304933');
+      expect(orPredicate1.matchcase).to.be.true;
 
       const orPredicate2 = predicate.predicates[1];
       expect(orPredicate2.type).to.equal('comparison');
       expect(orPredicate2.operator).to.equal('propertyislessthan');
       expect(orPredicate2.propertyname).to.equal('AREA');
       expect(orPredicate2.literal).to.equal('1065512599');
+      expect(orPredicate2.matchcase).to.be.true;
     });
   });
 });

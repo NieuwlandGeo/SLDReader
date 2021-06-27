@@ -170,6 +170,7 @@ describe('filter rules', () => {
         wildcard: '%',
         singlechar: '?',
         escapechar: '\\',
+        matchcase: true,
       };
 
       function testLike(pattern, value) {
@@ -204,6 +205,138 @@ describe('filter rules', () => {
 
       it('wildcard match without content true', () => {
         expect(testLike('%hoi%', 'hoi')).to.be.true;
+      });
+
+      it('Case insensitive match', () => {
+        const feature = { properties: { text: 'TEST' } };
+        const filter = {
+          type: 'comparison',
+          operator: 'propertyislike',
+          propertyname: 'text',
+          literal: 'TeSt',
+          wildcard: '%',
+          singlechar: '?',
+          escapechar: '\\',
+          matchcase: false,
+        };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+    });
+  });
+
+  describe('Comparisons with missing/null values', () => {
+    it('propertyislike should return false for missing/null values', () => {
+      const emptyFeature = { properties: { text: null } };
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyislike',
+        propertyname: 'text',
+        literal: 'something',
+        wildcard: '%',
+        singlechar: '?',
+        escapechar: '\\',
+      };
+      expect(filterSelector(filter, emptyFeature)).to.be.false;
+    });
+
+    it('propertyisbetween should return false for missing/null values', () => {
+      const emptyFeature = { properties: { age: null } };
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisbetween',
+        propertyname: 'age',
+        lowerboundary: '-100',
+        upperboundary: '100',
+      };
+      expect(filterSelector(filter, emptyFeature)).to.be.false;
+    });
+
+    const operators = [
+      'propertyisequalto',
+      'propertyisnotequalto',
+      'propertyislessthan',
+      'propertyislessthanorequalto',
+      'propertyisgreaterthan',
+      'propertyisgreaterthanorequalto',
+    ];
+
+    operators.forEach(operator => {
+      it(`Comparison should return false for missing/null value: ${operator}`, () => {
+        const emptyFeature = { properties: { TEMPERATURE: null } };
+        const filter = {
+          type: 'comparison',
+          operator,
+          propertyname: 'TEMPERATURE',
+          literal: '42',
+        };
+        expect(filterSelector(filter, emptyFeature)).to.be.false;
+      });
+    });
+  });
+
+  describe('Comparisons with strings', () => {
+    it('propertyisequalto with matchCase: false', () => {
+      const feature = { properties: { text: 'test' } };
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisequalto',
+        propertyname: 'text',
+        literal: 'TEST',
+        matchcase: false,
+      };
+      expect(filterSelector(filter, feature)).to.be.true;
+    });
+
+    it('propertyisgreaterthan with matchCase: true', () => {
+      const feature = { properties: { text: 'monkey' } };
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisgreaterthan',
+        propertyname: 'text',
+        literal: 'Banana',
+        matchcase: true,
+      };
+      expect(filterSelector(filter, feature)).to.be.true;
+    });
+
+    describe('propertyisbetween for strings', () => {
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisbetween',
+        propertyname: 'date',
+        lowerboundary: '1980-05-02',
+        upperboundary: '2021-06-27',
+        matchcase: true,
+      };
+
+      it('inside', () => {
+        const feature = { properties: { date: '1999-12-31' } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('at lower bound', () => {
+        const feature = { properties: { date: '1980-05-02' } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('below lower bound', () => {
+        const feature = { properties: { date: '1950-09-07' } };
+        expect(filterSelector(filter, feature)).to.be.false;
+      });
+
+      it('at upper bound', () => {
+        const feature = { properties: { date: '2021-06-27' } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('at upper bound, simple date', () => {
+        const feature = { properties: { date: '2021-06-27' } };
+        expect(filterSelector(filter, feature)).to.be.true;
+      });
+
+      it('above upper bound', () => {
+        const feature = { properties: { date: '2222-12-21' } };
+        expect(filterSelector(filter, feature)).to.be.false;
       });
     });
   });
@@ -311,7 +444,7 @@ describe('filter rules', () => {
       });
     });
 
-    describe('Nested logical filter', () => {
+    it('Nested logical filter', () => {
       const harry = { properties: { name: 'Harry', age: 64 } };
       const sjenkie = { properties: { name: 'Sjenkie', age: 8 } };
 
@@ -424,7 +557,7 @@ describe('Custom property extraction', () => {
         {
           type: 'comparison',
           operator: 'propertyisgreaterthan',
-          propertyname: 'Age',
+          propertyname: 'age',
           literal: '40',
         },
       ],

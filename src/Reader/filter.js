@@ -92,6 +92,8 @@ function createBinaryFilterComparison(element) {
     operator: element.localName.toLowerCase(),
     propertyname,
     literal,
+    // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
+    matchcase: element.getAttribute('matchCase') !== 'false',
   };
 }
 
@@ -105,6 +107,7 @@ function createBinaryFilterComparison(element) {
 function createIsLikeComparison(element) {
   const propertyname = getChildTextContent(element, 'PropertyName');
   const literal = getChildTextContent(element, 'Literal');
+
   return {
     type: TYPE_COMPARISON,
     operator: element.localName.toLowerCase(),
@@ -113,6 +116,8 @@ function createIsLikeComparison(element) {
     wildcard: element.getAttribute('wildCard'),
     singlechar: element.getAttribute('singleChar'),
     escapechar: element.getAttribute('escapeChar'),
+    // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
+    matchcase: element.getAttribute('matchCase') !== 'false',
   };
 }
 /**
@@ -148,6 +153,8 @@ function createIsBetweenComparison(element) {
     lowerboundary,
     upperboundary,
     propertyname,
+    // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
+    matchcase: element.getAttribute('matchCase') !== 'false',
   };
 }
 
