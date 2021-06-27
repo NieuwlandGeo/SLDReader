@@ -424,7 +424,7 @@ describe('Custom property extraction', () => {
         {
           type: 'comparison',
           operator: 'propertyisgreaterthan',
-          propertyname: 'Age',
+          propertyname: 'age',
           literal: '40',
         },
       ],
