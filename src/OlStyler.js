@@ -6,6 +6,8 @@ import getPointStyle from './styles/pointStyle';
 import getLineStyle from './styles/lineStyle';
 import getPolygonStyle from './styles/polygonStyle';
 import getTextStyle from './styles/textStyle';
+import getLinePointStyle from './styles/linePointStyle';
+import getPolygonPointStyle from './styles/polygonPointStyle';
 
 const defaultStyles = [defaultPointStyle];
 
@@ -61,6 +63,9 @@ export default function OlStyler(GeometryStyles, feature) {
       for (let j = 0; j < line.length; j += 1) {
         appendStyle(styles, line[j], feature, getLineStyle);
       }
+      for (let j = 0; j < point.length; j += 1) {
+        appendStyle(styles, point[j], feature, getLinePointStyle);
+      }
       for (let j = 0; j < text.length; j += 1) {
         styles.push(getTextStyle(text[j], feature));
       }
@@ -68,14 +73,17 @@ export default function OlStyler(GeometryStyles, feature) {
 
     case 'Polygon':
     case 'MultiPolygon':
-      for (let i = 0; i < polygon.length; i += 1) {
-        appendStyle(styles, polygon[i], feature, getPolygonStyle);
+      for (let j = 0; j < polygon.length; j += 1) {
+        appendStyle(styles, polygon[j], feature, getPolygonStyle);
       }
       for (let j = 0; j < line.length; j += 1) {
         appendStyle(styles, line[j], feature, getLineStyle);
       }
-      for (let k = 0; k < text.length; k += 1) {
-        styles.push(getTextStyle(text[k], feature));
+      for (let j = 0; j < point.length; j += 1) {
+        appendStyle(styles, point[j], feature, getPolygonPointStyle);
+      }
+      for (let j = 0; j < text.length; j += 1) {
+        styles.push(getTextStyle(text[j], feature));
       }
       break;
 
