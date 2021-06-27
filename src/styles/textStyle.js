@@ -58,6 +58,29 @@ function textStyle(textsymbolizer) {
   const offsetX = displacement.displacementx ? displacement.displacementx : 0;
   const offsetY = displacement.displacementy ? displacement.displacementy : 0;
 
+  // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
+  const anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};
+
+  let textAlign = 'center';
+  const anchorpointx = Number(
+    anchorpoint.anchorpointx === '' ? NaN : anchorpoint.anchorpointx
+  );
+  if (anchorpointx < 0.25) {
+    textAlign = 'left';
+  } else if (anchorpointx > 0.75) {
+    textAlign = 'right';
+  }
+
+  let textBaseline = 'middle';
+  const anchorpointy = Number(
+    anchorpoint.anchorpointy === '' ? NaN : anchorpoint.anchorpointy
+  );
+  if (anchorpointy < 0.25) {
+    textBaseline = 'bottom';
+  } else if (anchorpointy > 0.75) {
+    textBaseline = 'top';
+  }
+
   // Assemble text style options.
   const textStyleOptions = {
     text: labelText,
@@ -65,8 +88,8 @@ function textStyle(textsymbolizer) {
     offsetX: Number(offsetX),
     offsetY: Number(offsetY),
     rotation: (Math.PI * labelRotationDegrees) / 180.0,
-    textAlign: 'center',
-    textBaseline: 'middle',
+    textAlign,
+    textBaseline,
     fill: new Fill({
       color:
         fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'

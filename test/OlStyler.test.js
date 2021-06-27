@@ -605,6 +605,15 @@ describe('Text symbolizer', () => {
     expect(textStyle.getText().getText()).to.equal('TEST');
   });
 
+  it('Snaps text anchor point to the correct OpenLayers text alignment', () => {
+    const sldObject = Reader(textSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+    const textStyle = styleFunction(pointFeature)[0];
+    expect(textStyle.getText().getTextAlign()).to.equal('left');
+    expect(textStyle.getText().getTextBaseline()).to.equal('top');
+  });
+
   it('Text symbolizer with dynamic label containing a number', () => {
     const sldObject = Reader(textSymbolizerDynamicSld);
     const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
