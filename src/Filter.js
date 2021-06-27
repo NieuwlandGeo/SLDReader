@@ -30,14 +30,17 @@ function compare(a, b, matchcase) {
   // If a and/or b is non-numeric, compare both values as strings.
   const aString = a.toString();
   const bString = b.toString();
-  return aString.localeCompare(bString, undefined, {
-    sensitivity: matchcase ? 'case' : 'base',
-  });
 
-  // if (matchcase) {
-  //   return caseSensitiveCollator.compare(a, b);
-  // }
-  // return caseInsensitiveCollator.compare(a, b);
+  // Note: using locale compare with sensitivity option fails the CI test, while it works on my PC.
+  // So, case insensitive comparison is done in a more brute-force way by using lower case comparison.
+  // Original method:
+  // const caseSensitiveCollator = new Intl.Collator(undefined, { sensitivity: 'case' });
+  // caseSensitiveCollator.compare(string1, string2);
+  if (matchcase) {
+    return aString.localeCompare(bString);
+  }
+
+  return aString.toLowerCase().localeCompare(bString.toLowerCase());
 }
 
 function propertyIsLessThan(comparison, value) {
