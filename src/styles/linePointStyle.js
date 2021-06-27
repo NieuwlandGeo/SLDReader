@@ -5,7 +5,7 @@ import { splitLineString } from './geometryCalcs';
 
 /**
  * Get the point located at the middle along a line string.
- * @param {OLGeometry} geometry An OpenLayers geometry. Must be LineString or MultiLineString.
+ * @param {ol/geom/LineString} geometry An OpenLayers LineString geometry.
  * @returns {Array<number>} An [x, y] coordinate array.
  */
 function getLineMidpoint(geometry) {

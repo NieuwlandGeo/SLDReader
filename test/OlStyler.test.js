@@ -688,7 +688,7 @@ describe('PointSymbolizer inside line or polygon', () => {
     };
     const feature = fmtGeoJSON.readFeature(lineGeoJSON);
     const style = styleFunction(feature)[0];
-    // Style should have a custom geometry: the line's mid-point.
+    // Style should have a custom geometry: the line midpoint.
     const midPoint = style.getGeometry();
     expect(midPoint.getType()).to.equal('Point');
     expect(midPoint.getCoordinates()).to.deep.equal([1, 0.5]);
@@ -706,13 +706,57 @@ describe('PointSymbolizer inside line or polygon', () => {
     };
     const feature = fmtGeoJSON.readFeature(lineGeoJSON);
     const style = styleFunction(feature)[0];
-    // Style should have a custom geometry: the line's mid-point.
+    // Style should have a custom geometry: a multipoint of segment midpoints.
     const midPoint = style.getGeometry();
     expect(midPoint.getType()).to.equal('MultiPoint');
     expect(midPoint.getCoordinates()).to.deep.equal([
       [0.5, 0],
       [1.5, 1],
       [2.5, 2],
+    ]);
+  });
+
+  it('Places point in the centroid of a Polygon', () => {
+    const lineGeoJSON = {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        // prettier-ignore
+        coordinates: [[[0, 0], [1, 0], [1, 1], [0.5, 1.5], [0, 1], [0, 0]]],
+      },
+      properties: {},
+    };
+    const feature = fmtGeoJSON.readFeature(lineGeoJSON);
+    const style = styleFunction(feature)[0];
+    // Style should have a custom geometry: the polygon mid-point.
+    const midPoint = style.getGeometry();
+    expect(midPoint.getType()).to.equal('Point');
+    expect(midPoint.getCoordinates()).to.deep.equal([0.5, 0.75]);
+  });
+
+  it('Calculates centroids for each MultiPolygon part', () => {
+    const lineGeoJSON = {
+      type: 'Feature',
+      geometry: {
+        type: 'MultiPolygon',
+        // prettier-ignore
+        coordinates: [
+          [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+          [[[1, 1], [2, 1], [2, 2], [1, 2], [1, 1]]],
+          [[[2, 2], [3, 2], [3, 3], [2, 3], [2, 2]]],
+        ],
+      },
+      properties: {},
+    };
+    const feature = fmtGeoJSON.readFeature(lineGeoJSON);
+    const style = styleFunction(feature)[0];
+    // Style should have a custom geometry: a MultiPoint of one centroid per MultiPolygon part.
+    const midPoint = style.getGeometry();
+    expect(midPoint.getType()).to.equal('MultiPoint');
+    expect(midPoint.getCoordinates()).to.deep.equal([
+      [0.5, 0.5],
+      [1.5, 1.5],
+      [2.5, 2.5],
     ]);
   });
 });

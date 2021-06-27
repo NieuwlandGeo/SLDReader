@@ -2496,7 +2496,7 @@
 
   /**
    * Get the point located at the middle along a line string.
-   * @param {OLGeometry} geometry An OpenLayers geometry. Must be LineString or MultiLineString.
+   * @param {ol/geom/LineString} geometry An OpenLayers LineString geometry.
    * @returns {Array<number>} An [x, y] coordinate array.
    */
   function getLineMidpoint(geometry) {
@@ -2535,6 +2535,48 @@
     } else if (geomType === 'MultiLineString') {
       var lineStrings = geom$1.getLineStrings();
       var multiPointCoords = lineStrings.map(getLineMidpoint);
+      pointStyle = getPointStyle(symbolizer, feature);
+      pointStyle.setGeometry(new geom.MultiPoint(multiPointCoords));
+    }
+
+    return pointStyle;
+  }
+
+  /**
+   * Get the point located at the centroid of a polygon.
+   * @param {ol/geom/Polygon} geometry An OpenLayers Polygon geometry.
+   * @returns {Array<number>} An [x, y] coordinate array.
+   */
+  function getInteriorPoint(geometry) {
+    // Use OpenLayers getInteriorPoint method to get a 'good' interior point.
+    var ref = geometry.getInteriorPoint().getCoordinates();
+    var x = ref[0];
+    var y = ref[1];
+    return [x, y];
+  }
+
+  /**
+   * @private
+   * Get an OL point style instance for a line feature according to a symbolizer.
+   * The style will render a point on the middle of the line.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature} feature OpenLayers Feature.
+   * @returns {ol/Style} OpenLayers style instance.
+   */
+  function getPolygonPointStyle(symbolizer, feature) {
+    var geom$1 = feature.getGeometry();
+    if (!geom$1) {
+      return null;
+    }
+
+    var pointStyle = null;
+    var geomType = geom$1.getType();
+    if (geomType === 'Polygon') {
+      pointStyle = getPointStyle(symbolizer, feature);
+      pointStyle.setGeometry(new geom.Point(getInteriorPoint(geom$1)));
+    } else if (geomType === 'MultiPolygon') {
+      var polygons = geom$1.getPolygons();
+      var multiPointCoords = polygons.map(getInteriorPoint);
       pointStyle = getPointStyle(symbolizer, feature);
       pointStyle.setGeometry(new geom.MultiPoint(multiPointCoords));
     }
@@ -2609,14 +2651,17 @@
 
       case 'Polygon':
       case 'MultiPolygon':
-        for (var i = 0; i < polygon.length; i += 1) {
-          appendStyle(styles, polygon[i], feature, getPolygonStyle);
+        for (var j$5 = 0; j$5 < polygon.length; j$5 += 1) {
+          appendStyle(styles, polygon[j$5], feature, getPolygonStyle);
         }
-        for (var j$5 = 0; j$5 < line.length; j$5 += 1) {
-          appendStyle(styles, line[j$5], feature, getLineStyle);
+        for (var j$6 = 0; j$6 < line.length; j$6 += 1) {
+          appendStyle(styles, line[j$6], feature, getLineStyle);
         }
-        for (var k = 0; k < text.length; k += 1) {
-          styles.push(getTextStyle(text[k], feature));
+        for (var j$7 = 0; j$7 < point.length; j$7 += 1) {
+          appendStyle(styles, point[j$7], feature, getPolygonPointStyle);
+        }
+        for (var j$8 = 0; j$8 < text.length; j$8 += 1) {
+          styles.push(getTextStyle(text[j$8], feature));
         }
         break;
 
