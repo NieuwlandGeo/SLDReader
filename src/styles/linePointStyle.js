@@ -1,13 +1,12 @@
-import { Point } from 'ol/geom';
+import { MultiPoint, Point } from 'ol/geom';
 
 import getPointStyle from './pointStyle';
 import { splitLineString } from './geometryCalcs';
 
 /**
  * Get the point located at the middle along a line string.
- * In case of a multilinestring, a multipoint geometry is returned, one midpoint for each segment.
  * @param {OLGeometry} geometry An OpenLayers geometry. Must be LineString or MultiLineString.
- * @returns {OLGeometry} an OpenLayers Point or MultiPoint geometry.
+ * @returns {Array<number>} An [x, y] coordinate array.
  */
 function getLineMidpoint(geometry) {
   // Use the splitpoints routine to distribute points over the line with
@@ -18,7 +17,7 @@ function getLineMidpoint(geometry) {
     midPoints: false,
   });
   const [x, y] = splitPoints[1];
-  return new Point([x, y]);
+  return [x, y];
 }
 
 /**
@@ -39,7 +38,12 @@ function getLinePointStyle(symbolizer, feature) {
   const geomType = geom.getType();
   if (geomType === 'LineString') {
     pointStyle = getPointStyle(symbolizer, feature);
-    pointStyle.setGeometry(getLineMidpoint(geom));
+    pointStyle.setGeometry(new Point(getLineMidpoint(geom)));
+  } else if (geomType === 'MultiLineString') {
+    const lineStrings = geom.getLineStrings();
+    const multiPointCoords = lineStrings.map(getLineMidpoint);
+    pointStyle = getPointStyle(symbolizer, feature);
+    pointStyle.setGeometry(new MultiPoint(multiPointCoords));
   }
 
   return pointStyle;
