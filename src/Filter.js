@@ -1,4 +1,8 @@
 function propertyIsLessThan(comparison, value) {
+  if (propertyIsNull(comparison, value)) {
+    return false;
+  }
+
   return (
     // Todo: support string comparison as well
     typeof value !== 'undefined' && Number(value) < Number(comparison.literal)
@@ -6,6 +10,10 @@ function propertyIsLessThan(comparison, value) {
 }
 
 function propertyIsGreaterThan(comparison, value) {
+  if (propertyIsNull(comparison, value)) {
+    return false;
+  }
+
   return (
     // Todo: support string comparison as well
     typeof value !== 'undefined' && Number(value) > Number(comparison.literal)
@@ -13,6 +21,10 @@ function propertyIsGreaterThan(comparison, value) {
 }
 
 function propertyIsBetween(comparison, value) {
+  if (propertyIsNull(comparison, value)) {
+    return false;
+  }
+
   // Todo: support string comparison as well
   const lowerBoundary = Number(comparison.lowerboundary);
   const upperBoundary = Number(comparison.upperboundary);
@@ -21,9 +33,10 @@ function propertyIsBetween(comparison, value) {
 }
 
 function propertyIsEqualTo(comparison, value) {
-  if (typeof value === 'undefined') {
+  if (propertyIsNull(comparison, value)) {
     return false;
   }
+
   /* eslint-disable-next-line eqeqeq */
   return value == comparison.literal;
 }
@@ -35,6 +48,7 @@ function propertyIsNotEqualTo(comparison, value) {
   if (propertyIsNull(comparison, value)) {
     return false;
   }
+
   return !propertyIsEqualTo(comparison, value);
 }
 
@@ -54,7 +68,7 @@ function propertyIsNull(comparison, value) {
 function propertyIsLike(comparison, value) {
   const pattern = comparison.literal;
 
-  if (typeof value === 'undefined') {
+  if (propertyIsNull(comparison, value)) {
     return false;
   }
 

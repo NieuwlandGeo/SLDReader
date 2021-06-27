@@ -77,17 +77,6 @@ describe('filter rules', () => {
       expect(filterSelector(filter, featureuneq)).to.be.true;
     });
 
-    it('propertyisnotequalto should return false for null values', () => {
-      const featureeq = { properties: { PERIMETER: null } };
-      const filter = {
-        type: 'comparison',
-        operator: 'propertyisnotequalto',
-        propertyname: 'PERIMETER',
-        literal: 1071304933,
-      };
-      expect(filterSelector(filter, featureeq)).to.be.false;
-    });
-
     it('propertyisnull', () => {
       const featureeq = { properties: { PERIMETER: 1071304933 } };
       const filter = {
@@ -215,6 +204,56 @@ describe('filter rules', () => {
 
       it('wildcard match without content true', () => {
         expect(testLike('%hoi%', 'hoi')).to.be.true;
+      });
+    });
+  });
+
+  describe('Comparisons with missing/null values', () => {
+    it('propertyislike should return false for missing/null values', () => {
+      const emptyFeature = { properties: { text: null } };
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyislike',
+        propertyname: 'text',
+        literal: 'something',
+        wildcard: '%',
+        singlechar: '?',
+        escapechar: '\\',
+      };
+      expect(filterSelector(filter, emptyFeature)).to.be.false;
+    });
+
+    it('propertyisbetween should return false for missing/null values', () => {
+      const emptyFeature = { properties: { age: null } };
+      const filter = {
+        type: 'comparison',
+        operator: 'propertyisbetween',
+        propertyname: 'age',
+        lowerboundary: '-100',
+        upperboundary: '100',
+      };
+      expect(filterSelector(filter, emptyFeature)).to.be.false;
+    });
+
+    const operators = [
+      'propertyisequalto',
+      'propertyisnotequalto',
+      'propertyislessthan',
+      'propertyislessthanorequalto',
+      'propertyisgreaterthan',
+      'propertyisgreaterthanorequalto',
+    ];
+
+    operators.forEach(operator => {
+      it(`Comparison should return false for missing/null value: ${operator}`, () => {
+        const emptyFeature = { properties: { TEMPERATURE: null } };
+        const filter = {
+          type: 'comparison',
+          operator,
+          propertyname: 'TEMPERATURE',
+          literal: '42',
+        };
+        expect(filterSelector(filter, emptyFeature)).to.be.false;
       });
     });
   });
