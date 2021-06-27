@@ -69,6 +69,22 @@ describe('Filter tests', () => {
     expect(filter.matchcase).to.be.false;
   });
 
+  it('PropertyIsNotEqualTo', () => {
+    const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+      <PropertyIsNotEqualTo>
+        <PropertyName>PERIMETER</PropertyName>
+        <Literal>1071304933</Literal>
+      </PropertyIsNotEqualTo>
+    </Filter></StyledLayerDescriptor>`;
+
+    const { filter } = Reader(filterXml);
+    expect(filter.type).to.equal('comparison');
+    expect(filter.operator).to.equal('propertyisnotequalto');
+    expect(filter.propertyname).to.equal('PERIMETER');
+    expect(filter.literal).to.equal('1071304933');
+    expect(filter.matchcase).to.be.true;
+  });
+
   it('NOT filter', () => {
     const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
       <Not>

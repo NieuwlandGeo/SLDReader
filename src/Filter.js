@@ -28,6 +28,16 @@ function propertyIsEqualTo(comparison, value) {
   return value == comparison.literal;
 }
 
+// Watch out! Null-ish values should not pass propertyIsNotEqualTo,
+// just like in databases.
+// This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
+function propertyIsNotEqualTo(comparison, value) {
+  if (propertyIsNull(comparison, value)) {
+    return false;
+  }
+  return !propertyIsEqualTo(comparison, value);
+}
+
 function propertyIsNull(comparison, value) {
   /* eslint-disable-next-line eqeqeq */
   return value == null;
@@ -98,7 +108,7 @@ function doComparison(comparison, feature, getProperty) {
         propertyIsLessThan(comparison, value)
       );
     case 'propertyisnotequalto':
-      return !propertyIsEqualTo(comparison, value);
+      return propertyIsNotEqualTo(comparison, value);
     case 'propertyisgreaterthan':
       return propertyIsGreaterThan(comparison, value);
     case 'propertyisgreaterthanorequalto':
