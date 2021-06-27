@@ -311,7 +311,7 @@ describe('filter rules', () => {
       });
     });
 
-    describe('Nested logical filter', () => {
+    it('Nested logical filter', () => {
       const harry = { properties: { name: 'Harry', age: 64 } };
       const sjenkie = { properties: { name: 'Sjenkie', age: 8 } };
 
