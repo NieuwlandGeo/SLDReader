@@ -170,6 +170,7 @@ describe('filter rules', () => {
         wildcard: '%',
         singlechar: '?',
         escapechar: '\\',
+        matchcase: true,
       };
 
       function testLike(pattern, value) {
@@ -204,6 +205,21 @@ describe('filter rules', () => {
 
       it('wildcard match without content true', () => {
         expect(testLike('%hoi%', 'hoi')).to.be.true;
+      });
+
+      it('Case insensitive match with matchcase:false', () => {
+        const feature = { properties: { text: 'TEST' } };
+        const filter = {
+          type: 'comparison',
+          operator: 'propertyislike',
+          propertyname: 'text',
+          literal: 'TeSt',
+          wildcard: '%',
+          singlechar: '?',
+          escapechar: '\\',
+          matchcase: false,
+        };
+        expect(filterSelector(filter, feature)).to.be.true;
       });
     });
   });

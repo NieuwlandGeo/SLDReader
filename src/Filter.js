@@ -73,7 +73,7 @@ function propertyIsLike(comparison, value) {
   }
 
   // Create regex string from match pattern.
-  const { wildcard, singlechar, escapechar } = comparison;
+  const { wildcard, singlechar, escapechar, matchcase } = comparison;
 
   // Replace wildcard by '.*'
   let patternAsRegex = pattern.replace(new RegExp(`[${wildcard}]`, 'g'), '.*');
@@ -95,7 +95,9 @@ function propertyIsLike(comparison, value) {
   // Bookend the regular expression.
   patternAsRegex = `^${patternAsRegex}$`;
 
-  const rex = new RegExp(patternAsRegex);
+  const rex = matchcase === false
+    ? new RegExp(patternAsRegex, 'i')
+    : new RegExp(patternAsRegex);
   return rex.test(value);
 }
 
