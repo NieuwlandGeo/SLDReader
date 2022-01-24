@@ -1,3 +1,4 @@
+/* eslint-disable function-call-argument-newline */
 import { toContext } from 'ol/render';
 import { Style, Fill } from 'ol/style';
 import { Polygon, MultiPolygon } from 'ol/geom';
