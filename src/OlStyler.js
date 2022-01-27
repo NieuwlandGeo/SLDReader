@@ -127,6 +127,7 @@ function getOlFeatureProperty(feature, propertyName) {
  * When not given, the map resolution is used as-is.
  * @param {function} options.imageLoadedCallback Optional callback that will be called with the url of an externalGraphic when
  * an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
+ * @param {function} options.getProperty Optional custom property getter: (feature, propertyName) => property value.
  * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
  * @example
  * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
@@ -146,9 +147,14 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
         ? options.convertResolution(mapResolution)
         : mapResolution;
 
+    const getProperty =
+      typeof options.getProperty === 'function'
+        ? options.getProperty
+        : getOlFeatureProperty;
+
     // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
     const rules = getRules(featureTypeStyle, feature, resolution, {
-      getProperty: getOlFeatureProperty,
+      getProperty,
       getFeatureId: getOlFeatureId,
     });
 
@@ -166,7 +172,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
     const geometryStyles = getGeometryStyles(rules);
 
     // Determine style rule array.
-    const olStyles = OlStyler(geometryStyles, feature);
+    const olStyles = OlStyler(geometryStyles, feature, getProperty);
 
     return olStyles;
   };
