@@ -19,6 +19,8 @@ const geojson = {
 const fmtGeoJSON = new OLFormatGeoJSON();
 
 describe('OpenLayers expression evaluation', () => {
+  const getProperty = (feat, prop) => feat.get(prop);
+
   let feature;
   beforeEach(() => {
     feature = fmtGeoJSON.readFeature(geojson);
@@ -26,7 +28,7 @@ describe('OpenLayers expression evaluation', () => {
 
   it('Constant value', () => {
     const expression = 42;
-    expect(evaluate(expression, feature)).to.equal(42);
+    expect(evaluate(expression, feature, getProperty)).to.equal(42);
   });
 
   it('PropertyName', () => {
@@ -39,7 +41,7 @@ describe('OpenLayers expression evaluation', () => {
         },
       ],
     };
-    expect(evaluate(expression, feature)).to.equal(20);
+    expect(evaluate(expression, feature, getProperty)).to.equal(20);
   });
 
   it('Compound filter expression', () => {
@@ -56,6 +58,26 @@ describe('OpenLayers expression evaluation', () => {
         },
       ],
     };
-    expect(evaluate(expression, feature)).to.equal('-42');
+    expect(evaluate(expression, feature, getProperty)).to.equal('-42');
+  });
+
+  it('Custom property getter', () => {
+    const customGetProperty = (feat, prop) => {
+      if (prop === 'size') {
+        return 100;
+      }
+      return feat.get(prop);
+    };
+
+    const expression = {
+      type: 'expression',
+      children: [
+        {
+          type: 'propertyname',
+          value: 'size',
+        },
+      ],
+    };
+    expect(evaluate(expression, feature, customGetProperty)).to.equal(100);
   });
 });

@@ -2,7 +2,7 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style'), require('ol/render'), require('ol/geom'), require('ol/extent'), require('ol/has')) :
   typeof define === 'function' && define.amd ? define(['exports', 'ol/style', 'ol/render', 'ol/geom', 'ol/extent', 'ol/has'], factory) :
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SLDReader = {}, global.ol.style, global.ol.render, global.ol.geom, global.ol.extent, global.ol.has));
-}(this, (function (exports, style, render, geom, extent, has) { 'use strict';
+})(this, (function (exports, style, render, geom, extent, has) { 'use strict';
 
   /**
    * Factory methods for filterelements
@@ -1581,6 +1581,7 @@
   }
 
   /**
+   * @private
    * Calculate the center-to-center distance for graphics placed along a line within a GraphicSymbolizer.
    * @param {object} lineSymbolizer SLD line symbolizer object.
    * @param {number} graphicWidth Width of the symbolizer graphic in pixels. This size may be dependent on feature properties,
@@ -1755,8 +1756,10 @@
    * Evaluate the value of a sub-expression.
    * @param {object} childExpression SLD object expression child.
    * @param {ol/feature} feature OpenLayers feature instance.feature.
+   * @param {function} getProperty A function to get a specific property value from a feature.
+   * Signature (feature, propertyName) => property value.
    */
-  function evaluateChildExpression(childExpression, feature) {
+  function evaluateChildExpression(childExpression, feature, getProperty) {
     // For now, the only valid child types are 'propertyname' and 'literal'.
     // Todo: add,sub,mul,div. Maybe a few functions as well.
     if (childExpression.type === 'literal') {
@@ -1764,7 +1767,7 @@
     }
 
     if (childExpression.type === 'propertyname') {
-      return feature.get(childExpression.value);
+      return getProperty(feature, childExpression.value);
     }
 
     return null;
@@ -1776,8 +1779,10 @@
    * Constant expressions are returned as-is.
    * @param {object|string} expression SLD object expression.
    * @param {ol/feature} feature OpenLayers feature instance.
+   * @param {function} getProperty A function to get a specific property value from a feature.
+   * Signature (feature, propertyName) => property value.
    */
-  function evaluate(expression, feature) {
+  function evaluate(expression, feature, getProperty) {
     // The only compound expressions have type: 'expression'.
     // If it does not have this type, it's probably a plain string (or number).
     if (expression.type !== 'expression') {
@@ -1786,13 +1791,13 @@
 
     // Evaluate the child expression when there is only one child.
     if (expression.children.length === 1) {
-      return evaluateChildExpression(expression.children[0], feature);
+      return evaluateChildExpression(expression.children[0], feature, getProperty);
     }
 
     // In case of multiple child expressions, concatenate the evaluated child results.
     var childValues = [];
     for (var k = 0; k < expression.children.length; k += 1) {
-      childValues.push(evaluateChildExpression(expression.children[k], feature));
+      childValues.push(evaluateChildExpression(expression.children[k], feature, getProperty));
     }
     return childValues.join('');
   }
@@ -1960,9 +1965,10 @@
    * Get an OL point style instance for a feature according to a symbolizer.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature} feature OpenLayers Feature.
+   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getPointStyle(symbolizer, feature) {
+  function getPointStyle(symbolizer, feature, getProperty) {
     // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
     if (!(symbolizer && symbolizer.graphic)) {
       return emptyStyle;
@@ -1977,7 +1983,7 @@
     var graphic = symbolizer.graphic;
     var size = graphic.size;
     if (size && size.type === 'expression') {
-      var sizeValue = Number(evaluate(size, feature)) || DEFAULT_MARK_SIZE;
+      var sizeValue = Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
 
       if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
         var height = olImage.getSize()[1];
@@ -2002,7 +2008,7 @@
     // --- Update dynamic rotation ---
     var rotation = graphic.rotation;
     if (rotation && rotation.type === 'expression') {
-      var rotationDegrees = Number(evaluate(rotation, feature)) || 0.0;
+      var rotationDegrees = Number(evaluate(rotation, feature, getProperty)) || 0.0;
       // Note: OL angles are in radians.
       var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
       olImage.setRotation(rotationRadians);
@@ -2205,9 +2211,10 @@
    * to be used inside an OpenLayers Style.renderer function.
    * @private
    * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
    * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
    */
-  function getGraphicStrokeRenderer(linesymbolizer) {
+  function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
     if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
       throw new Error(
         'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
@@ -2235,7 +2242,11 @@
         defaultGraphicSize = DEFAULT_EXTERNALGRAPHIC_SIZE;
       }
 
-      var pointStyle = getPointStyle(graphicstroke, renderState.feature);
+      var pointStyle = getPointStyle(
+        graphicstroke,
+        renderState.feature,
+        getProperty
+      );
 
       // Calculate graphic spacing.
       // Graphic spacing equals the center-to-center distance of graphics along the line.
@@ -2244,7 +2255,7 @@
         (graphicstroke.graphic && graphicstroke.graphic.size) ||
         defaultGraphicSize;
       var graphicSize = Number(
-        evaluate(graphicSizeExpression, renderState.feature)
+        evaluate(graphicSizeExpression, renderState.feature, getProperty)
       );
 
       var graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
@@ -2263,9 +2274,10 @@
    * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
    * @private
    * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
    * @returns {ol/style/Style} An OpenLayers style instance.
    */
-  function getGraphicStrokeStyle(linesymbolizer) {
+  function getGraphicStrokeStyle(linesymbolizer, getProperty) {
     if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
       throw new Error(
         'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
@@ -2273,7 +2285,7 @@
     }
 
     return new style.Style({
-      renderer: getGraphicStrokeRenderer(linesymbolizer),
+      renderer: getGraphicStrokeRenderer(linesymbolizer, getProperty),
     });
   }
 
@@ -2303,6 +2315,8 @@
   function getLineStyle(symbolizer) {
     return cachedLineStyle(symbolizer);
   }
+
+  /* eslint-disable function-call-argument-newline */
 
   function createPattern(graphic) {
     var ref = getCachedImage(
@@ -2445,10 +2459,9 @@
       textsymbolizer.halo && textsymbolizer.halo.radius
         ? parseFloat(textsymbolizer.halo.radius)
         : 1;
-    var ref =
-      textsymbolizer.font && textsymbolizer.font.styling
-        ? textsymbolizer.font.styling
-        : {};
+    var ref = textsymbolizer.font && textsymbolizer.font.styling
+      ? textsymbolizer.font.styling
+      : {};
     var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
     var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
     var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
@@ -2541,9 +2554,10 @@
    * Get an OL text style instance for a feature according to a symbolizer.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature} feature OpenLayers Feature.
+   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getTextStyle(symbolizer, feature) {
+  function getTextStyle(symbolizer, feature, getProperty) {
     var olStyle = cachedTextStyle(symbolizer);
     var olText = olStyle.getText();
     if (!olText) {
@@ -2556,7 +2570,7 @@
 
     // Set text only if the label expression is dynamic.
     if (label && label.type === 'expression') {
-      var labelText = evaluate(label, feature);
+      var labelText = evaluate(label, feature, getProperty);
       // Important! OpenLayers expects the text property to always be a string.
       olText.setText(labelText.toString());
     }
@@ -2568,7 +2582,11 @@
           labelplacement.pointplacement.rotation) ||
         0.0;
       if (pointPlacementRotation.type === 'expression') {
-        var labelRotationDegrees = evaluate(pointPlacementRotation, feature);
+        var labelRotationDegrees = evaluate(
+          pointPlacementRotation,
+          feature,
+          getProperty
+        );
         olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
       }
     }
@@ -2592,6 +2610,7 @@
   }
 
   /**
+   * @private
    * Get the point located at the middle along a line string.
    * @param {ol/geom/LineString} geometry An OpenLayers LineString geometry.
    * @returns {Array<number>} An [x, y] coordinate array.
@@ -2640,6 +2659,7 @@
   }
 
   /**
+   * @private
    * Get the point located at the centroid of a polygon.
    * @param {ol/geom/Polygon} geometry An OpenLayers Polygon geometry.
    * @returns {Array<number>} An [x, y] coordinate array.
@@ -2691,14 +2711,15 @@
    * @param {object|Array<object>} symbolizers Feature symbolizer object, or array of feature symbolizers.
    * @param {ol/feature} feature OpenLayers feature.
    * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
+   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
    */
-  function appendStyle(styles, symbolizers, feature, styleFunction) {
+  function appendStyle(styles, symbolizers, feature, styleFunction, getProperty) {
     if (Array.isArray(symbolizers)) {
       for (var k = 0; k < symbolizers.length; k += 1) {
-        styles.push(styleFunction(symbolizers[k], feature));
+        styles.push(styleFunction(symbolizers[k], feature, getProperty));
       }
     } else {
-      styles.push(styleFunction(symbolizers, feature));
+      styles.push(styleFunction(symbolizers, feature, getProperty));
     }
   }
 
@@ -2708,9 +2729,10 @@
    * @param {GeometryStyles} GeometryStyles rulesconverter
    * @param {object|Feature} feature {@link http://geojson.org|geojson}
    *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
+   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
    * @return ol.style.Style or array of it
    */
-  function OlStyler(GeometryStyles, feature) {
+  function OlStyler(GeometryStyles, feature, getProperty) {
     var polygon = GeometryStyles.polygon;
     var line = GeometryStyles.line;
     var point = GeometryStyles.point;
@@ -2726,39 +2748,45 @@
       case 'Point':
       case 'MultiPoint':
         for (var j = 0; j < point.length; j += 1) {
-          appendStyle(styles, point[j], feature, getPointStyle);
+          appendStyle(styles, point[j], feature, getPointStyle, getProperty);
         }
         for (var j$1 = 0; j$1 < text.length; j$1 += 1) {
-          styles.push(getTextStyle(text[j$1], feature));
+          styles.push(getTextStyle(text[j$1], feature, getProperty));
         }
         break;
 
       case 'LineString':
       case 'MultiLineString':
         for (var j$2 = 0; j$2 < line.length; j$2 += 1) {
-          appendStyle(styles, line[j$2], feature, getLineStyle);
+          appendStyle(styles, line[j$2], feature, getLineStyle, getProperty);
         }
         for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
-          appendStyle(styles, point[j$3], feature, getLinePointStyle);
+          appendStyle(styles, point[j$3], feature, getLinePointStyle, getProperty);
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          styles.push(getTextStyle(text[j$4], feature));
+          styles.push(getTextStyle(text[j$4], feature, getProperty));
         }
         break;
 
       case 'Polygon':
       case 'MultiPolygon':
         for (var j$5 = 0; j$5 < polygon.length; j$5 += 1) {
-          appendStyle(styles, polygon[j$5], feature, getPolygonStyle);
+          appendStyle(styles, polygon[j$5], feature, getPolygonStyle, getProperty);
         }
         for (var j$6 = 0; j$6 < line.length; j$6 += 1) {
-          appendStyle(styles, line[j$6], feature, getLineStyle);
+          appendStyle(styles, line[j$6], feature, getLineStyle, getProperty);
         }
         for (var j$7 = 0; j$7 < point.length; j$7 += 1) {
-          appendStyle(styles, point[j$7], feature, getPolygonPointStyle);
+          appendStyle(
+            styles,
+            point[j$7],
+            feature,
+            getPolygonPointStyle,
+            getProperty
+          );
         }
         for (var j$8 = 0; j$8 < text.length; j$8 += 1) {
-          styles.push(getTextStyle(text[j$8], feature));
+          styles.push(getTextStyle(text[j$8], feature, getProperty));
         }
         break;
 
@@ -2802,6 +2830,7 @@
    * When not given, the map resolution is used as-is.
    * @param {function} options.imageLoadedCallback Optional callback that will be called with the url of an externalGraphic when
    * an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
+   * @param {function} options.getProperty Optional custom property getter: (feature, propertyName) => property value.
    * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
    * @example
    * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
@@ -2823,9 +2852,14 @@
           ? options.convertResolution(mapResolution)
           : mapResolution;
 
+      var getProperty =
+        typeof options.getProperty === 'function'
+          ? options.getProperty
+          : getOlFeatureProperty;
+
       // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
       var rules = getRules(featureTypeStyle, feature, resolution, {
-        getProperty: getOlFeatureProperty,
+        getProperty: getProperty,
         getFeatureId: getOlFeatureId,
       });
 
@@ -2843,7 +2877,7 @@
       var geometryStyles = getGeometryStyles(rules);
 
       // Determine style rule array.
-      var olStyles = OlStyler(geometryStyles, feature);
+      var olStyles = OlStyler(geometryStyles, feature, getProperty);
 
       return olStyles;
     };
@@ -2863,4 +2897,4 @@
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));

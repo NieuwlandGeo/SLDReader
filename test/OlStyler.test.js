@@ -146,6 +146,25 @@ describe('Create OL Style function from SLD feature type style', () => {
     expect(featureStyle.getStroke().getColor()).to.equal('#000000');
     expect(featureStyle.getStroke().getWidth()).to.equal(4);
   });
+
+  it('Override getProperty method for filter evaluation', () => {
+    // By overriding the property getter to always return the same value,
+    // the feature will be styled according to the 'default' style.
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojson);
+
+    const ownGetProperty = () => 'Polygondwanaland';
+    const styleFunction = createOlStyleFunction(featureTypeStyle, {
+      getProperty: ownGetProperty,
+    });
+
+    const featureStyle = styleFunction(olFeature, null)[0];
+
+    // color #CCCCCC, opacity 0.5 expected for default style.
+    expect(featureStyle.getFill().getColor()).to.equal(
+      'rgba(204, 204, 204, 0.5)'
+    );
+  });
 });
 
 describe('Create OL Style function from SLD feature type style 1', () => {
@@ -523,58 +542,109 @@ describe('SLD with stacked line symbolizer', () => {
 });
 
 describe('Dynamic style properties', () => {
-  const geojson = {
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [175135, 441200],
-    },
-    properties: {
-      size: 100,
-      angle: 42,
-      title: 'This is a test',
-    },
-  };
+  describe('Point styling', () => {
+    const pointGeoJSON = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        size: 100,
+        angle: 42,
+        title: 'This is a test',
+      },
+    };
 
-  let pointFeature;
-  let featureTypeStyle;
-  let styleFunction;
-  before(() => {
-    const fmtGeoJSON = new OLFormatGeoJSON();
-    pointFeature = fmtGeoJSON.readFeature(geojson);
+    let pointFeature;
+    let featureTypeStyle;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      pointFeature = fmtGeoJSON.readFeature(pointGeoJSON);
 
-    const sldObject = Reader(dynamicSld);
-    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
-    styleFunction = createOlStyleFunction(featureTypeStyle);
-  });
+      const sldObject = Reader(dynamicSld);
+      [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    });
 
-  it('Reads size from feature', () => {
-    const style = styleFunction(pointFeature)[0];
-    expect(style.getImage().getRadius()).to.equal(50); // Radius should equal half SLD size.
-  });
+    describe('Use default feature.get("property") for dynamic styling', () => {
+      let styleFunction;
+      before(() => {
+        styleFunction = createOlStyleFunction(featureTypeStyle);
+      });
 
-  it('Reads rotation from feature', () => {
-    const style = styleFunction(pointFeature)[0];
-    // OL rotation is in radians.
-    expect(style.getImage().getRotation()).to.equal((Math.PI * 42.0) / 180.0);
-  });
+      it('Reads size from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        expect(style.getImage().getRadius()).to.equal(50); // Radius should equal half SLD size.
+      });
 
-  it('Reads text for label from feature', () => {
-    const textStyle = styleFunction(pointFeature)[1];
-    expect(textStyle.getText().getText()).to.equal('This is a test');
-  });
+      it('Reads rotation from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        // OL rotation is in radians.
+        expect(style.getImage().getRotation()).to.equal(
+          (Math.PI * 42.0) / 180.0
+        );
+      });
 
-  it('Reads label rotation from feature', () => {
-    const textStyle = styleFunction(pointFeature)[1];
-    // OL rotation is in radians.
-    expect(textStyle.getText().getRotation()).to.equal(
-      (Math.PI * 42.0) / 180.0
-    );
-  });
+      it('Reads text for label from feature', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        expect(textStyle.getText().getText()).to.equal('This is a test');
+      });
 
-  it('Sets label placement according to feature geometry type', () => {
-    const textStyle = styleFunction(pointFeature)[1];
-    expect(textStyle.getText().getPlacement()).to.equal('point');
+      it('Reads label rotation from feature', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        // OL rotation is in radians.
+        expect(textStyle.getText().getRotation()).to.equal(
+          (Math.PI * 42.0) / 180.0
+        );
+      });
+
+      it('Sets label placement according to feature geometry type', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        expect(textStyle.getText().getPlacement()).to.equal('point');
+      });
+    });
+
+    describe('Use custom getProperty method for dynamic styling', () => {
+      let styleFunction;
+      before(() => {
+        styleFunction = createOlStyleFunction(featureTypeStyle, {
+          getProperty: (feature, propertyName) => {
+            const customProps = {
+              size: 10,
+              angle: 60,
+              title: 'Overridden title',
+            };
+            return customProps[propertyName];
+          },
+        });
+      });
+
+      it('Reads size from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        expect(style.getImage().getRadius()).to.equal(5); // Radius should equal half SLD size.
+      });
+
+      it('Reads rotation from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        // OL rotation is in radians.
+        expect(style.getImage().getRotation()).to.equal(
+          (Math.PI * 60.0) / 180.0
+        );
+      });
+
+      it('Reads text for label from feature', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        expect(textStyle.getText().getText()).to.equal('Overridden title');
+      });
+
+      it('Reads label rotation from feature', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        // OL rotation is in radians.
+        expect(textStyle.getText().getRotation()).to.equal(
+          (Math.PI * 60.0) / 180.0
+        );
+      });
+    });
   });
 });
 

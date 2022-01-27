@@ -98,9 +98,10 @@ const cachedPointStyle = memoizeStyleFunction(pointStyle);
  * Get an OL point style instance for a feature according to a symbolizer.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature} feature OpenLayers Feature.
+ * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getPointStyle(symbolizer, feature) {
+function getPointStyle(symbolizer, feature, getProperty) {
   // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
   if (!(symbolizer && symbolizer.graphic)) {
     return emptyStyle;
@@ -115,7 +116,7 @@ function getPointStyle(symbolizer, feature) {
   const { graphic } = symbolizer;
   const { size } = graphic;
   if (size && size.type === 'expression') {
-    const sizeValue = Number(evaluate(size, feature)) || DEFAULT_MARK_SIZE;
+    const sizeValue = Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
 
     if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
       const height = olImage.getSize()[1];
@@ -140,7 +141,7 @@ function getPointStyle(symbolizer, feature) {
   // --- Update dynamic rotation ---
   const { rotation } = graphic;
   if (rotation && rotation.type === 'expression') {
-    const rotationDegrees = Number(evaluate(rotation, feature)) || 0.0;
+    const rotationDegrees = Number(evaluate(rotation, feature, getProperty)) || 0.0;
     // Note: OL angles are in radians.
     const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
     olImage.setRotation(rotationRadians);
