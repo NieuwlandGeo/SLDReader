@@ -4,6 +4,7 @@
   xmlns:xlink="http://www.w3.org/1999/xlink"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd">
   <NamedLayer>
+    <!-- Images of flags courtesy of https://flagpedia.net -->
     <Name>flags_benelux</Name>
     <UserStyle>
       <Name>flags_benelux</Name>
@@ -20,7 +21,7 @@
           <PointSymbolizer>
             <Graphic>
               <ExternalGraphic>
-                <OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/nl/shiny/48.png"/>
+                <OnlineResource xlink:type="simple" xlink:href="assets/img/flag-nl.png"/>
                 <Format>image/png</Format>
               </ExternalGraphic>
               <Size>
@@ -44,7 +45,7 @@
           <PointSymbolizer>
             <Graphic>
               <ExternalGraphic>
-                <OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/be/shiny/48.png"/>
+                <OnlineResource xlink:type="simple" xlink:href="assets/img/flag-be.png"/>
                 <Format>image/png</Format>
               </ExternalGraphic>
               <Size>
@@ -68,7 +69,7 @@
           <PointSymbolizer>
             <Graphic>
               <ExternalGraphic>
-                <OnlineResource xlink:type="simple" xlink:href="https://www.countryflags.io/lu/shiny/48.png"/>
+                <OnlineResource xlink:type="simple" xlink:href="assets/img/flag-lu.png"/>
                 <Format>image/png</Format>
               </ExternalGraphic>
               <Size>
