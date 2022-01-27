@@ -37,6 +37,12 @@ module.exports = function kc(config) {
         name: 'SLDReader', // Required for 'iife' format.
         sourcemap: 'inline', // Sensible for testing.
       },
+      onwarn: function (warning) {
+        if (warning.code === 'THIS_IS_UNDEFINED') {
+          return;
+        }
+        console.warn(warning.message);
+      },
     },
 
     // test results reporter to use
