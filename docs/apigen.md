@@ -124,11 +124,7 @@ Get styling from rules per geometry type
 <a name="createOlStyleFunction"></a>
 
 ## createOlStyleFunction(featureTypeStyle, options) ⇒ <code>function</code>
-Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
-
-**Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
-inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
-image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
+Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.**Important!** When using externalGraphics for point styling, make sure to call .changed() on the layerinside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, theimage icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
 
 **Kind**: global function  
 **Returns**: <code>function</code> - A function that can be set as style function on an OpenLayers vector style layer.  
@@ -139,12 +135,11 @@ image icon will only become visible the next time OpenLayers draws the layer (af
 | options | <code>object</code> | Options |
 | options.convertResolution | <code>function</code> | An optional function to convert the resolution in map units/pixel to resolution in meters/pixel. When not given, the map resolution is used as-is. |
 | options.imageLoadedCallback | <code>function</code> | Optional callback that will be called with the url of an externalGraphic when an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image. |
+| options.getProperty | <code>function</code> | Optional custom property getter: (feature, propertyName) => property value. |
 
 **Example**  
 ```js
-myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
-  imageLoadedCallback: () => { myOlVectorLayer.changed(); }
-}));
+myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {  imageLoadedCallback: () => { myOlVectorLayer.changed(); }}));
 ```
 <a name="getLayerNames"></a>
 
@@ -186,8 +181,7 @@ getStyleNames, notice name is not required for userstyle, you might get undefine
 <a name="getStyle"></a>
 
 ## getStyle(layer, [name]) ⇒ <code>object</code>
-get style from array layer.styles, if name is undefined it returns default style.
-null is no style found
+get style from array layer.styles, if name is undefined it returns default style.null is no style found
 
 **Kind**: global function  
 **Returns**: <code>object</code> - the style from layer.styles matching the name  
@@ -214,14 +208,12 @@ get rules for specific feature after applying filters
 
 **Example**  
 ```js
-const style = getStyle(sldLayer, stylename);
-getRules(style.featuretypestyles['0'], geojson, resolution);
+const style = getStyle(sldLayer, stylename);getRules(style.featuretypestyles['0'], geojson, resolution);
 ```
 <a name="getRuleSymbolizers"></a>
 
 ## getRuleSymbolizers(rule) ⇒ <code>Array.&lt;object&gt;</code>
-Get all symbolizers inside a given rule.
-Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
+Get all symbolizers inside a given rule.Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
 
 **Kind**: global function  
 **Returns**: <code>Array.&lt;object&gt;</code> - Array of all symbolizers in a rule.  
@@ -247,8 +239,7 @@ contains for each geometry type the symbolizer from an array of rules
 <a name="Filter"></a>
 
 ## Filter
-[filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
-[geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+[filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also[geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
 
 **Kind**: global typedef  
 **Properties**

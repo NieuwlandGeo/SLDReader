@@ -4,6 +4,7 @@ import getPointStyle from './pointStyle';
 import { splitLineString } from './geometryCalcs';
 
 /**
+ * @private
  * Get the point located at the middle along a line string.
  * @param {ol/geom/LineString} geometry An OpenLayers LineString geometry.
  * @returns {Array<number>} An [x, y] coordinate array.

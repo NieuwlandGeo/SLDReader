@@ -3,6 +3,7 @@ import { MultiPoint, Point } from 'ol/geom';
 import getPointStyle from './pointStyle';
 
 /**
+ * @private
  * Get the point located at the centroid of a polygon.
  * @param {ol/geom/Polygon} geometry An OpenLayers Polygon geometry.
  * @returns {Array<number>} An [x, y] coordinate array.

@@ -43,6 +43,7 @@ export function hexToRGB(hex, alpha) {
 }
 
 /**
+ * @private
  * Calculate the center-to-center distance for graphics placed along a line within a GraphicSymbolizer.
  * @param {object} lineSymbolizer SLD line symbolizer object.
  * @param {number} graphicWidth Width of the symbolizer graphic in pixels. This size may be dependent on feature properties,
