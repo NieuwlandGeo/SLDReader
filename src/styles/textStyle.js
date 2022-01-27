@@ -33,10 +33,9 @@ function textStyle(textsymbolizer) {
     fontSize = 10,
     fontStyle = '',
     fontWeight = '',
-  } =
-    textsymbolizer.font && textsymbolizer.font.styling
-      ? textsymbolizer.font.styling
-      : {};
+  } = textsymbolizer.font && textsymbolizer.font.styling
+    ? textsymbolizer.font.styling
+    : {};
 
   const pointplacement =
     textsymbolizer &&
@@ -125,9 +124,10 @@ const cachedTextStyle = memoizeStyleFunction(textStyle);
  * Get an OL text style instance for a feature according to a symbolizer.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature} feature OpenLayers Feature.
+ * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getTextStyle(symbolizer, feature) {
+function getTextStyle(symbolizer, feature, getProperty) {
   const olStyle = cachedTextStyle(symbolizer);
   const olText = olStyle.getText();
   if (!olText) {
@@ -139,7 +139,7 @@ function getTextStyle(symbolizer, feature) {
 
   // Set text only if the label expression is dynamic.
   if (label && label.type === 'expression') {
-    const labelText = evaluate(label, feature);
+    const labelText = evaluate(label, feature, getProperty);
     // Important! OpenLayers expects the text property to always be a string.
     olText.setText(labelText.toString());
   }
@@ -151,7 +151,11 @@ function getTextStyle(symbolizer, feature) {
         labelplacement.pointplacement.rotation) ||
       0.0;
     if (pointPlacementRotation.type === 'expression') {
-      const labelRotationDegrees = evaluate(pointPlacementRotation, feature);
+      const labelRotationDegrees = evaluate(
+        pointPlacementRotation,
+        feature,
+        getProperty
+      );
       olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
     }
   }

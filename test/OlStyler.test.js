@@ -542,62 +542,108 @@ describe('SLD with stacked line symbolizer', () => {
 });
 
 describe('Dynamic style properties', () => {
-  const geojson = {
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [175135, 441200],
-    },
-    properties: {
-      size: 100,
-      angle: 42,
-      title: 'This is a test',
-    },
-  };
+  describe('Point styling', () => {
+    const pointGeoJSON = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [175135, 441200],
+      },
+      properties: {
+        size: 100,
+        angle: 42,
+        title: 'This is a test',
+      },
+    };
 
-  let pointFeature;
-  let featureTypeStyle;
-  before(() => {
-    const fmtGeoJSON = new OLFormatGeoJSON();
-    pointFeature = fmtGeoJSON.readFeature(geojson);
-
-    const sldObject = Reader(dynamicSld);
-    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
-  });
-
-  describe('Use default feature.get("property") for dynamic styling', () => {
-    let styleFunction;
+    let pointFeature;
+    let featureTypeStyle;
     before(() => {
-      styleFunction = createOlStyleFunction(featureTypeStyle);
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      pointFeature = fmtGeoJSON.readFeature(pointGeoJSON);
+
+      const sldObject = Reader(dynamicSld);
+      [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
     });
 
-    it('Reads size from feature', () => {
-      const style = styleFunction(pointFeature)[0];
-      expect(style.getImage().getRadius()).to.equal(50); // Radius should equal half SLD size.
+    describe('Use default feature.get("property") for dynamic styling', () => {
+      let styleFunction;
+      before(() => {
+        styleFunction = createOlStyleFunction(featureTypeStyle);
+      });
+
+      it('Reads size from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        expect(style.getImage().getRadius()).to.equal(50); // Radius should equal half SLD size.
+      });
+
+      it('Reads rotation from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        // OL rotation is in radians.
+        expect(style.getImage().getRotation()).to.equal(
+          (Math.PI * 42.0) / 180.0
+        );
+      });
+
+      it('Reads text for label from feature', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        expect(textStyle.getText().getText()).to.equal('This is a test');
+      });
+
+      it('Reads label rotation from feature', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        // OL rotation is in radians.
+        expect(textStyle.getText().getRotation()).to.equal(
+          (Math.PI * 42.0) / 180.0
+        );
+      });
+
+      it('Sets label placement according to feature geometry type', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        expect(textStyle.getText().getPlacement()).to.equal('point');
+      });
     });
 
-    it('Reads rotation from feature', () => {
-      const style = styleFunction(pointFeature)[0];
-      // OL rotation is in radians.
-      expect(style.getImage().getRotation()).to.equal((Math.PI * 42.0) / 180.0);
-    });
+    describe('Use custom getProperty method for dynamic styling', () => {
+      let styleFunction;
+      before(() => {
+        styleFunction = createOlStyleFunction(featureTypeStyle, {
+          getProperty: (feature, propertyName) => {
+            const customProps = {
+              size: 10,
+              angle: 60,
+              title: 'Overridden title',
+            };
+            return customProps[propertyName];
+          },
+        });
+      });
 
-    it('Reads text for label from feature', () => {
-      const textStyle = styleFunction(pointFeature)[1];
-      expect(textStyle.getText().getText()).to.equal('This is a test');
-    });
+      it('Reads size from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        expect(style.getImage().getRadius()).to.equal(5); // Radius should equal half SLD size.
+      });
 
-    it('Reads label rotation from feature', () => {
-      const textStyle = styleFunction(pointFeature)[1];
-      // OL rotation is in radians.
-      expect(textStyle.getText().getRotation()).to.equal(
-        (Math.PI * 42.0) / 180.0
-      );
-    });
+      it('Reads rotation from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        // OL rotation is in radians.
+        expect(style.getImage().getRotation()).to.equal(
+          (Math.PI * 60.0) / 180.0
+        );
+      });
 
-    it('Sets label placement according to feature geometry type', () => {
-      const textStyle = styleFunction(pointFeature)[1];
-      expect(textStyle.getText().getPlacement()).to.equal('point');
+      it('Reads text for label from feature', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        expect(textStyle.getText().getText()).to.equal('Overridden title');
+      });
+
+      it('Reads label rotation from feature', () => {
+        const textStyle = styleFunction(pointFeature)[1];
+        // OL rotation is in radians.
+        expect(textStyle.getText().getRotation()).to.equal(
+          (Math.PI * 60.0) / 180.0
+        );
+      });
     });
   });
 });

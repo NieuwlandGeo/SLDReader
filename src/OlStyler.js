@@ -19,14 +19,15 @@ const defaultStyles = [defaultPointStyle];
  * @param {object|Array<object>} symbolizers Feature symbolizer object, or array of feature symbolizers.
  * @param {ol/feature} feature OpenLayers feature.
  * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
+ * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  */
-function appendStyle(styles, symbolizers, feature, styleFunction) {
+function appendStyle(styles, symbolizers, feature, styleFunction, getProperty) {
   if (Array.isArray(symbolizers)) {
     for (let k = 0; k < symbolizers.length; k += 1) {
-      styles.push(styleFunction(symbolizers[k], feature));
+      styles.push(styleFunction(symbolizers[k], feature, getProperty));
     }
   } else {
-    styles.push(styleFunction(symbolizers, feature));
+    styles.push(styleFunction(symbolizers, feature, getProperty));
   }
 }
 
@@ -36,9 +37,10 @@ function appendStyle(styles, symbolizers, feature, styleFunction) {
  * @param {GeometryStyles} GeometryStyles rulesconverter
  * @param {object|Feature} feature {@link http://geojson.org|geojson}
  *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
+ * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @return ol.style.Style or array of it
  */
-export default function OlStyler(GeometryStyles, feature) {
+export default function OlStyler(GeometryStyles, feature, getProperty) {
   const { polygon, line, point, text } = GeometryStyles;
 
   const geometry = feature.getGeometry
@@ -51,39 +53,45 @@ export default function OlStyler(GeometryStyles, feature) {
     case 'Point':
     case 'MultiPoint':
       for (let j = 0; j < point.length; j += 1) {
-        appendStyle(styles, point[j], feature, getPointStyle);
+        appendStyle(styles, point[j], feature, getPointStyle, getProperty);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature));
+        styles.push(getTextStyle(text[j], feature, getProperty));
       }
       break;
 
     case 'LineString':
     case 'MultiLineString':
       for (let j = 0; j < line.length; j += 1) {
-        appendStyle(styles, line[j], feature, getLineStyle);
+        appendStyle(styles, line[j], feature, getLineStyle, getProperty);
       }
       for (let j = 0; j < point.length; j += 1) {
-        appendStyle(styles, point[j], feature, getLinePointStyle);
+        appendStyle(styles, point[j], feature, getLinePointStyle, getProperty);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature));
+        styles.push(getTextStyle(text[j], feature, getProperty));
       }
       break;
 
     case 'Polygon':
     case 'MultiPolygon':
       for (let j = 0; j < polygon.length; j += 1) {
-        appendStyle(styles, polygon[j], feature, getPolygonStyle);
+        appendStyle(styles, polygon[j], feature, getPolygonStyle, getProperty);
       }
       for (let j = 0; j < line.length; j += 1) {
-        appendStyle(styles, line[j], feature, getLineStyle);
+        appendStyle(styles, line[j], feature, getLineStyle, getProperty);
       }
       for (let j = 0; j < point.length; j += 1) {
-        appendStyle(styles, point[j], feature, getPolygonPointStyle);
+        appendStyle(
+          styles,
+          point[j],
+          feature,
+          getPolygonPointStyle,
+          getProperty
+        );
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature));
+        styles.push(getTextStyle(text[j], feature, getProperty));
       }
       break;
 

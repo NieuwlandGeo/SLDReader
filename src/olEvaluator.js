@@ -6,8 +6,10 @@
  * Evaluate the value of a sub-expression.
  * @param {object} childExpression SLD object expression child.
  * @param {ol/feature} feature OpenLayers feature instance.feature.
+ * @param {function} getProperty A function to get a specific property value from a feature.
+ * Signature (feature, propertyName) => property value.
  */
-function evaluateChildExpression(childExpression, feature) {
+function evaluateChildExpression(childExpression, feature, getProperty) {
   // For now, the only valid child types are 'propertyname' and 'literal'.
   // Todo: add,sub,mul,div. Maybe a few functions as well.
   if (childExpression.type === 'literal') {
@@ -15,7 +17,7 @@ function evaluateChildExpression(childExpression, feature) {
   }
 
   if (childExpression.type === 'propertyname') {
-    return feature.get(childExpression.value);
+    return getProperty(feature, childExpression.value);
   }
 
   return null;
@@ -27,8 +29,10 @@ function evaluateChildExpression(childExpression, feature) {
  * Constant expressions are returned as-is.
  * @param {object|string} expression SLD object expression.
  * @param {ol/feature} feature OpenLayers feature instance.
+ * @param {function} getProperty A function to get a specific property value from a feature.
+ * Signature (feature, propertyName) => property value.
  */
-export default function evaluate(expression, feature) {
+export default function evaluate(expression, feature, getProperty) {
   // The only compound expressions have type: 'expression'.
   // If it does not have this type, it's probably a plain string (or number).
   if (expression.type !== 'expression') {
@@ -37,13 +41,13 @@ export default function evaluate(expression, feature) {
 
   // Evaluate the child expression when there is only one child.
   if (expression.children.length === 1) {
-    return evaluateChildExpression(expression.children[0], feature);
+    return evaluateChildExpression(expression.children[0], feature, getProperty);
   }
 
   // In case of multiple child expressions, concatenate the evaluated child results.
   const childValues = [];
   for (let k = 0; k < expression.children.length; k += 1) {
-    childValues.push(evaluateChildExpression(expression.children[k], feature));
+    childValues.push(evaluateChildExpression(expression.children[k], feature, getProperty));
   }
   return childValues.join('');
 }

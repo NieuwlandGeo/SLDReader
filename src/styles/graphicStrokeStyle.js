@@ -102,9 +102,10 @@ function renderStrokeMarks(
  * to be used inside an OpenLayers Style.renderer function.
  * @private
  * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+ * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
  */
-export function getGraphicStrokeRenderer(linesymbolizer) {
+export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
   if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
     throw new Error(
       'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
@@ -131,7 +132,11 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
       defaultGraphicSize = DEFAULT_EXTERNALGRAPHIC_SIZE;
     }
 
-    const pointStyle = getPointStyle(graphicstroke, renderState.feature);
+    const pointStyle = getPointStyle(
+      graphicstroke,
+      renderState.feature,
+      getProperty
+    );
 
     // Calculate graphic spacing.
     // Graphic spacing equals the center-to-center distance of graphics along the line.
@@ -140,7 +145,7 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
       (graphicstroke.graphic && graphicstroke.graphic.size) ||
       defaultGraphicSize;
     const graphicSize = Number(
-      evaluate(graphicSizeExpression, renderState.feature)
+      evaluate(graphicSizeExpression, renderState.feature, getProperty)
     );
 
     const graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
@@ -159,9 +164,10 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
  * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
  * @private
  * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
+ * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @returns {ol/style/Style} An OpenLayers style instance.
  */
-function getGraphicStrokeStyle(linesymbolizer) {
+function getGraphicStrokeStyle(linesymbolizer, getProperty) {
   if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
     throw new Error(
       'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
@@ -169,7 +175,7 @@ function getGraphicStrokeStyle(linesymbolizer) {
   }
 
   return new Style({
-    renderer: getGraphicStrokeRenderer(linesymbolizer),
+    renderer: getGraphicStrokeRenderer(linesymbolizer, getProperty),
   });
 }
 
