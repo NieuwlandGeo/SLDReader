@@ -33,7 +33,7 @@ export function splitLineString(geometry, graphicSpacing, options) {
   function calculateAngle(p1, p2, invertY) {
     const dX = p2[0] - p1[0];
     const dY = p2[1] - p1[1];
-    let angle = -Math.atan2(invertY ? -dY : dY, dX);
+    const angle = -Math.atan2(invertY ? -dY : dY, dX);
     return angle;
   }
 

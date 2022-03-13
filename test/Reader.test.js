@@ -1,4 +1,4 @@
-/* global describe it expect before */
+/* global describe it expect before beforeEach */
 import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
@@ -324,8 +324,8 @@ describe('SLD v1.1.0 GraphicStroke properties', () => {
 describe('Parse vendor options', () => {
   let style;
   beforeEach(() => {
-    const sld = Reader(graphicStrokeVendorOption);
-    style = sld.layers[0].styles[0].featuretypestyles[0];
+    const parsedSld = Reader(graphicStrokeVendorOption);
+    [style] = parsedSld.layers[0].styles[0].featuretypestyles;
   });
 
   it('Sections without vendor options have no .vendoroption prop', () => {
