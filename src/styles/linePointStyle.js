@@ -14,7 +14,6 @@ function getLineMidpoint(geometry) {
   // a point-to-point distance along the line equal to half line length.
   // This results in three points. Take the middle point.
   const splitPoints = splitLineString(geometry, geometry.getLength() / 2, {
-    alwaysUp: true,
     midPoints: false,
   });
   const [x, y] = splitPoints[1];

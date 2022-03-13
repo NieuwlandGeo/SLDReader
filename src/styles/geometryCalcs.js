@@ -1,5 +1,7 @@
 import { containsCoordinate } from 'ol/extent';
 
+import { PLACEMENT_FIRSTPOINT, PLACEMENT_LASTPOINT } from '../constants';
+
 // eslint-disable-next-line import/prefer-default-export
 export function splitLineString(geometry, graphicSpacing, options) {
   function calculatePointsDistance(coord1, coord2) {
@@ -20,28 +22,43 @@ export function splitLineString(geometry, graphicSpacing, options) {
     return [x, y];
   }
 
-  function calculateAngle(startNode, nextNode, alwaysUp) {
-    const x = startNode[0] - nextNode[0];
-    const y = startNode[1] - nextNode[1];
-    let angle = Math.atan(x / y);
-    if (!alwaysUp) {
-      if (y > 0) {
-        angle += Math.PI;
-      } else if (x < 0) {
-        angle += Math.PI * 2;
-      }
-      // angle = y > 0 ? angle + Math.PI : x < 0 ? angle + Math.PI * 2 : angle;
-    }
+  /**
+   * Calculate the angle of a vector in radians clockwise from the positive x-axis.
+   * Example: (0,0) -> (1,1) --> -pi/4 radians.
+   * @param {Array<number>} p1 Start of the line segment as [x,y].
+   * @param {Array<number>} p2 End of the line segment as [x,y].
+   * @param {boolean} invertY If true, calculate with Y-axis pointing downwards.
+   * @returns {number} Angle in radians, clockwise from the positive x-axis.
+   */
+  function calculateAngle(p1, p2, invertY) {
+    const dX = p2[0] - p1[0];
+    const dY = p2[1] - p1[1];
+    const angle = -Math.atan2(invertY ? -dY : dY, dX);
     return angle;
   }
 
-  const splitPoints = [];
   const coords = geometry.getCoordinates();
 
+  // Handle first point placement case.
+  if (options.placement === PLACEMENT_FIRSTPOINT) {
+    const p1 = coords[0];
+    const p2 = coords[1];
+    return [[p1[0], p1[1], calculateAngle(p1, p2, options.invertY)]];
+  }
+
+  // Handle last point placement case.
+  if (options.placement === PLACEMENT_LASTPOINT) {
+    const p1 = coords[coords.length - 2];
+    const p2 = coords[coords.length - 1];
+    return [[p2[0], p2[1], calculateAngle(p1, p2, options.invertY)]];
+  }
+
+  // Without placement vendor options, draw regularly spaced GraphicStroke markers.
+  const splitPoints = [];
   let coordIndex = 0;
   let startPoint = coords[coordIndex];
   let nextPoint = coords[coordIndex + 1];
-  let angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
+  let angle = calculateAngle(startPoint, nextPoint, options.invertY);
 
   const n = Math.ceil(geometry.getLength() / graphicSpacing);
   const segmentLength = geometry.getLength() / n;
@@ -61,7 +78,7 @@ export function splitLineString(geometry, graphicSpacing, options) {
       if (coordIndex < coords.length - 1) {
         startPoint = coords[coordIndex];
         nextPoint = coords[coordIndex + 1];
-        angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
+        angle = calculateAngle(startPoint, nextPoint, options.invertY);
         i -= 1;
         // continue;
       } else {

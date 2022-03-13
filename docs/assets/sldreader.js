@@ -1221,6 +1221,11 @@
   // like SVG without dimensions, should be 16 pixels.
   var DEFAULT_EXTERNALGRAPHIC_SIZE = 16; // pixels
 
+  // QGIS Graphic stroke placement options
+  var PLACEMENT_DEFAULT = 'PLACEMENT_DEFAULT';
+  var PLACEMENT_FIRSTPOINT = 'PLACEMENT_FIRSTPOINT';
+  var PLACEMENT_LASTPOINT = 'PLACEMENT_LASTPOINT';
+
   /* eslint-disable no-continue */
 
   // These are possible locations for an external graphic inside a symbolizer.
@@ -2037,28 +2042,43 @@
       return [x, y];
     }
 
-    function calculateAngle(startNode, nextNode, alwaysUp) {
-      var x = startNode[0] - nextNode[0];
-      var y = startNode[1] - nextNode[1];
-      var angle = Math.atan(x / y);
-      if (!alwaysUp) {
-        if (y > 0) {
-          angle += Math.PI;
-        } else if (x < 0) {
-          angle += Math.PI * 2;
-        }
-        // angle = y > 0 ? angle + Math.PI : x < 0 ? angle + Math.PI * 2 : angle;
-      }
+    /**
+     * Calculate the angle of a vector in radians clockwise from the positive x-axis.
+     * Example: (0,0) -> (1,1) --> -pi/4 radians.
+     * @param {Array<number>} p1 Start of the line segment as [x,y].
+     * @param {Array<number>} p2 End of the line segment as [x,y].
+     * @param {boolean} invertY If true, calculate with Y-axis pointing downwards.
+     * @returns {number} Angle in radians, clockwise from the positive x-axis.
+     */
+    function calculateAngle(p1, p2, invertY) {
+      var dX = p2[0] - p1[0];
+      var dY = p2[1] - p1[1];
+      var angle = -Math.atan2(invertY ? -dY : dY, dX);
       return angle;
     }
 
-    var splitPoints = [];
     var coords = geometry.getCoordinates();
 
+    // Handle first point placement case.
+    if (options.placement === PLACEMENT_FIRSTPOINT) {
+      var p1 = coords[0];
+      var p2 = coords[1];
+      return [[p1[0], p1[1], calculateAngle(p1, p2, options.invertY)]];
+    }
+
+    // Handle last point placement case.
+    if (options.placement === PLACEMENT_LASTPOINT) {
+      var p1$1 = coords[coords.length - 2];
+      var p2$1 = coords[coords.length - 1];
+      return [[p2$1[0], p2$1[1], calculateAngle(p1$1, p2$1, options.invertY)]];
+    }
+
+    // Without placement vendor options, draw regularly spaced GraphicStroke markers.
+    var splitPoints = [];
     var coordIndex = 0;
     var startPoint = coords[coordIndex];
     var nextPoint = coords[coordIndex + 1];
-    var angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
+    var angle = calculateAngle(startPoint, nextPoint, options.invertY);
 
     var n = Math.ceil(geometry.getLength() / graphicSpacing);
     var segmentLength = geometry.getLength() / n;
@@ -2078,7 +2098,7 @@
         if (coordIndex < coords.length - 1) {
           startPoint = coords[coordIndex];
           nextPoint = coords[coordIndex + 1];
-          angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
+          angle = calculateAngle(startPoint, nextPoint, options.invertY);
           i -= 1;
           // continue;
         } else {
@@ -2160,7 +2180,8 @@
     pixelCoords,
     graphicSpacing,
     pointStyle,
-    pixelRatio
+    pixelRatio,
+    options
   ) {
     if (!pixelCoords) {
       return;
@@ -2196,11 +2217,16 @@
     var splitPoints = splitLineString(
       new geom.LineString(pixelCoords),
       graphicSpacing * pixelRatio,
-      { alwaysUp: true, midPoints: false, extent: render.extent_ }
+      {
+        invertY: true, // Pixel y-coordinates increase downwards in screen space.
+        midPoints: false,
+        extent: render.extent_,
+        placement: options.placement,
+      }
     );
 
     splitPoints.forEach(function (point) {
-      var splitPointAngle = image.getRotation() - point[2];
+      var splitPointAngle = image.getRotation() + point[2];
       render.setImageStyle2(image, splitPointAngle);
       render.drawPoint(new geom.Point([point[0] / pixelRatio, point[1] / pixelRatio]));
     });
@@ -2223,6 +2249,19 @@
 
     var ref = linesymbolizer.stroke;
     var graphicstroke = ref.graphicstroke;
+
+    var options = {
+      placement: PLACEMENT_DEFAULT,
+    };
+
+    // QGIS vendor options to override graphicstroke symbol placement.
+    if (linesymbolizer.vendoroption) {
+      if (linesymbolizer.vendoroption.placement === 'firstPoint') {
+        options.placement = PLACEMENT_FIRSTPOINT;
+      } else if (linesymbolizer.vendoroption.placement === 'lastPoint') {
+        options.placement = PLACEMENT_LASTPOINT;
+      }
+    }
 
     return function (pixelCoords, renderState) {
       // Abort when feature geometry is (Multi)Point.
@@ -2265,7 +2304,8 @@
         pixelCoords,
         graphicSpacing,
         pointStyle,
-        pixelRatio
+        pixelRatio,
+        options
       );
     };
   }
@@ -2620,7 +2660,6 @@
     // a point-to-point distance along the line equal to half line length.
     // This results in three points. Take the middle point.
     var splitPoints = splitLineString(geometry, geometry.getLength() / 2, {
-      alwaysUp: true,
       midPoints: false,
     });
     var ref = splitPoints[1];

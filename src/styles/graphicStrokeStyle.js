@@ -2,7 +2,13 @@ import { Style } from 'ol/style';
 import { toContext } from 'ol/render';
 import { Point, LineString } from 'ol/geom';
 
-import { DEFAULT_MARK_SIZE, DEFAULT_EXTERNALGRAPHIC_SIZE } from '../constants';
+import {
+  DEFAULT_MARK_SIZE,
+  DEFAULT_EXTERNALGRAPHIC_SIZE,
+  PLACEMENT_DEFAULT,
+  PLACEMENT_FIRSTPOINT,
+  PLACEMENT_LASTPOINT,
+} from '../constants';
 import evaluate from '../olEvaluator';
 import getPointStyle from './pointStyle';
 import { calculateGraphicSpacing } from './styleUtils';
@@ -51,7 +57,8 @@ function renderStrokeMarks(
   pixelCoords,
   graphicSpacing,
   pointStyle,
-  pixelRatio
+  pixelRatio,
+  options
 ) {
   if (!pixelCoords) {
     return;
@@ -87,11 +94,16 @@ function renderStrokeMarks(
   const splitPoints = splitLineString(
     new LineString(pixelCoords),
     graphicSpacing * pixelRatio,
-    { alwaysUp: true, midPoints: false, extent: render.extent_ }
+    {
+      invertY: true, // Pixel y-coordinates increase downwards in screen space.
+      midPoints: false,
+      extent: render.extent_,
+      placement: options.placement,
+    }
   );
 
   splitPoints.forEach(point => {
-    const splitPointAngle = image.getRotation() - point[2];
+    const splitPointAngle = image.getRotation() + point[2];
     render.setImageStyle2(image, splitPointAngle);
     render.drawPoint(new Point([point[0] / pixelRatio, point[1] / pixelRatio]));
   });
@@ -113,6 +125,19 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
   }
 
   const { graphicstroke } = linesymbolizer.stroke;
+
+  const options = {
+    placement: PLACEMENT_DEFAULT,
+  };
+
+  // QGIS vendor options to override graphicstroke symbol placement.
+  if (linesymbolizer.vendoroption) {
+    if (linesymbolizer.vendoroption.placement === 'firstPoint') {
+      options.placement = PLACEMENT_FIRSTPOINT;
+    } else if (linesymbolizer.vendoroption.placement === 'lastPoint') {
+      options.placement = PLACEMENT_LASTPOINT;
+    }
+  }
 
   return (pixelCoords, renderState) => {
     // Abort when feature geometry is (Multi)Point.
@@ -155,7 +180,8 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
       pixelCoords,
       graphicSpacing,
       pointStyle,
-      pixelRatio
+      pixelRatio,
+      options
     );
   };
 }

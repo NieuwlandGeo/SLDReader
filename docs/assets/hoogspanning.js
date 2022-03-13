@@ -66,12 +66,26 @@ function applySLD(vectorLayer, text) {
 }
 
 function loadSld(mode) {
-  const sldUrl = mode === 'DEMO_MARK'
-    ? 'assets/sld-hoogspanning.xml'
-    : 'assets/sld-external-graphic-mark.xml';
-  fetch(sldUrl)
-    .then(response => response.text())
-    .then(text => editor.setValue(text));
+  let sldUrl = null;
+  
+  switch (mode) {
+    case 'DEMO_MARK':
+      sldUrl = 'assets/sld-hoogspanning.xml';
+      break;
+    case 'DEMO_EXTERNALGRAPHIC':
+      sldUrl = 'assets/sld-external-graphic-mark.xml';
+      break;
+    case 'DEMO_POINTPLACEMENT':
+      sldUrl = 'assets/sld-graphic-mark-placement.xml';
+      break;
+
+  }
+
+  if (sldUrl) {
+    fetch(sldUrl)
+      .then(response => response.text())
+      .then(text => editor.setValue(text));
+  }
 }
 
 loadSld('DEMO_MARK');
@@ -86,6 +100,7 @@ editor.on('change', cm => {
 // SLD switch handlers.
 const optionMark = document.querySelector('#option-mark').parentElement;
 const optionExternalGraphic = document.querySelector('#option-exgraphic').parentElement;
+const optionPointPlacement = document.querySelector('#option-pointplacement').parentElement;
 
 document.querySelectorAll('.option-input input').forEach(inputNode => {
   inputNode.addEventListener('change', evt => {
@@ -93,10 +108,17 @@ document.querySelectorAll('.option-input input').forEach(inputNode => {
       loadSld('DEMO_MARK');
       optionMark.classList.add('option-checked');
       optionExternalGraphic.classList.remove('option-checked');
-    } else {
+      optionPointPlacement.classList.remove('option-checked');
+    } else if (evt.target.value === 'DEMO_EXTERNALGRAPHIC') {
       loadSld('DEMO_EXTERNALGRAPHIC');
       optionMark.classList.remove('option-checked');
       optionExternalGraphic.classList.add('option-checked');
+      optionPointPlacement.classList.remove('option-checked');
+    } else if (evt.target.value === 'DEMO_POINTPLACEMENT') {
+      loadSld('DEMO_POINTPLACEMENT');
+      optionMark.classList.remove('option-checked');
+      optionExternalGraphic.classList.remove('option-checked');
+      optionPointPlacement.classList.add('option-checked');
     }
   });
 });
