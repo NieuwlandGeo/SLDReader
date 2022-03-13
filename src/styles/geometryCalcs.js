@@ -1,5 +1,7 @@
 import { containsCoordinate } from 'ol/extent';
 
+import { PLACEMENT_FIRSTPOINT, PLACEMENT_LASTPOINT } from '../constants';
+
 // eslint-disable-next-line import/prefer-default-export
 export function splitLineString(geometry, graphicSpacing, options) {
   function calculatePointsDistance(coord1, coord2) {
@@ -37,6 +39,21 @@ export function splitLineString(geometry, graphicSpacing, options) {
 
   const coords = geometry.getCoordinates();
 
+  // Handle first point placement case.
+  if (options.placement === PLACEMENT_FIRSTPOINT) {
+    const p1 = coords[0];
+    const p2 = coords[1];
+    return [[p1[0], p1[1], calculateAngle(p1, p2, options.invertY)]];
+  }
+
+  // Handle last point placement case.
+  if (options.placement === PLACEMENT_LASTPOINT) {
+    const p1 = coords[coords.length - 2];
+    const p2 = coords[coords.length - 1];
+    return [[p2[0], p2[1], calculateAngle(p1, p2, options.invertY)]];
+  }
+
+  // Without placement vendor options, draw regularly spaced GraphicStroke markers.
   const splitPoints = [];
   let coordIndex = 0;
   let startPoint = coords[coordIndex];
