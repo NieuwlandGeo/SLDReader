@@ -5,6 +5,7 @@ import { sld11 } from './data/test11.sld';
 import { dynamicSld } from './data/dynamic.sld';
 import { graphicstrokeSymbolizerSld } from './data/graphicstrokeSymbolizer.sld';
 import { graphicStrokeWithGap } from './data/graphicstroke-with-gap.sld';
+import graphicStrokeVendorOption from './data/graphicstroke-vendoroption.sld';
 
 let result;
 
@@ -224,9 +225,9 @@ describe('Graphicstroke symbolizer', () => {
     expect(linesymbolizer2.stroke.styling.strokeDasharray).to.equal('2 6');
   });
   it('rule linesymbolizer has graphicstroke', () => {
-    const { stroke } = result.layers['0'].styles['0'].featuretypestyles[
-      '0'
-    ].rules['0'].linesymbolizer['1'];
+    const { stroke } =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0']
+        .linesymbolizer['1'];
     expect(stroke.graphicstroke).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.have.property('mark');
@@ -317,5 +318,25 @@ describe('SLD v1.1.0 GraphicStroke properties', () => {
 
   it('Has intialgap', () => {
     expect(graphicStroke.initialgap).to.equal(6);
+  });
+});
+
+describe('Parse vendor options', () => {
+  let style;
+  beforeEach(() => {
+    const sld = Reader(graphicStrokeVendorOption);
+    style = sld.layers[0].styles[0].featuretypestyles[0];
+  });
+
+  it('Sections without vendor options have no .vendoroption prop', () => {
+    const symbolizer = style.rules[0].linesymbolizer[0];
+    expect(symbolizer.vendoroption).to.be.undefined;
+  });
+
+  it('Parse vendor options into a .vendoroption prop', () => {
+    const symbolizer = style.rules[0].linesymbolizer[1];
+    expect(symbolizer.vendoroption).to.deep.equal({
+      placement: 'lastPoint',
+    });
   });
 });
