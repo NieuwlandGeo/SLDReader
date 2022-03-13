@@ -26,6 +26,9 @@
                     <Format>image/png</Format>
                   </ExternalGraphic>
                   <Size>24</Size>
+                  <Rotation>
+                    <ogc:Literal>90</ogc:Literal>
+                  </Rotation>
                 </Graphic>
               </GraphicStroke>
               <CssParameter name="stroke-dasharray">24 12</CssParameter>

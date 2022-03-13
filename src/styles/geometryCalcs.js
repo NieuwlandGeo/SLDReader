@@ -23,17 +23,17 @@ export function splitLineString(geometry, graphicSpacing, options) {
   }
 
   /**
-   * Calculate the angle of a vector in radians clockwise from the north.
-   * Example, north-pointing vector: (0,0) -> (0,1) --> 0 radians.
+   * Calculate the angle of a vector in radians clockwise from the positive x-axis.
+   * Example: (0,0) -> (1,1) --> -pi/4 radians.
    * @param {Array<number>} p1 Start of the line segment as [x,y].
    * @param {Array<number>} p2 End of the line segment as [x,y].
    * @param {boolean} invertY If true, calculate with Y-axis pointing downwards.
-   * @returns {number} Angle in radians, clockwise from the north.
+   * @returns {number} Angle in radians, clockwise from the positive x-axis.
    */
   function calculateAngle(p1, p2, invertY) {
     const dX = p2[0] - p1[0];
     const dY = p2[1] - p1[1];
-    let angle = Math.PI / 2 - Math.atan2(invertY ? -dY : dY, dX);
+    let angle = -Math.atan2(invertY ? -dY : dY, dX);
     return angle;
   }
 
