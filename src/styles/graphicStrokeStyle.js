@@ -87,11 +87,15 @@ function renderStrokeMarks(
   const splitPoints = splitLineString(
     new LineString(pixelCoords),
     graphicSpacing * pixelRatio,
-    { alwaysUp: true, midPoints: false, extent: render.extent_ }
+    {
+      invertY: true, // Pixel y-coordinates increase downwards in screen space.
+      midPoints: false,
+      extent: render.extent_,
+    }
   );
 
   splitPoints.forEach(point => {
-    const splitPointAngle = image.getRotation() - point[2];
+    const splitPointAngle = image.getRotation() + point[2];
     render.setImageStyle2(image, splitPointAngle);
     render.drawPoint(new Point([point[0] / pixelRatio, point[1] / pixelRatio]));
   });

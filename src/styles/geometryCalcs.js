@@ -20,28 +20,28 @@ export function splitLineString(geometry, graphicSpacing, options) {
     return [x, y];
   }
 
-  function calculateAngle(startNode, nextNode, alwaysUp) {
-    const x = startNode[0] - nextNode[0];
-    const y = startNode[1] - nextNode[1];
-    let angle = Math.atan(x / y);
-    if (!alwaysUp) {
-      if (y > 0) {
-        angle += Math.PI;
-      } else if (x < 0) {
-        angle += Math.PI * 2;
-      }
-      // angle = y > 0 ? angle + Math.PI : x < 0 ? angle + Math.PI * 2 : angle;
-    }
+  /**
+   * Calculate the angle of a vector in radians clockwise from the north.
+   * Example, north-pointing vector: (0,0) -> (0,1) --> 0 radians.
+   * @param {Array<number>} p1 Start of the line segment as [x,y].
+   * @param {Array<number>} p2 End of the line segment as [x,y].
+   * @param {boolean} invertY If true, calculate with Y-axis pointing downwards.
+   * @returns {number} Angle in radians, clockwise from the north.
+   */
+  function calculateAngle(p1, p2, invertY) {
+    const dX = p2[0] - p1[0];
+    const dY = p2[1] - p1[1];
+    let angle = Math.PI / 2 - Math.atan2(invertY ? -dY : dY, dX);
     return angle;
   }
 
-  const splitPoints = [];
   const coords = geometry.getCoordinates();
 
+  const splitPoints = [];
   let coordIndex = 0;
   let startPoint = coords[coordIndex];
   let nextPoint = coords[coordIndex + 1];
-  let angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
+  let angle = calculateAngle(startPoint, nextPoint, options.invertY);
 
   const n = Math.ceil(geometry.getLength() / graphicSpacing);
   const segmentLength = geometry.getLength() / n;
@@ -61,7 +61,7 @@ export function splitLineString(geometry, graphicSpacing, options) {
       if (coordIndex < coords.length - 1) {
         startPoint = coords[coordIndex];
         nextPoint = coords[coordIndex + 1];
-        angle = calculateAngle(startPoint, nextPoint, options.alwaysUp);
+        angle = calculateAngle(startPoint, nextPoint, options.invertY);
         i -= 1;
         // continue;
       } else {
