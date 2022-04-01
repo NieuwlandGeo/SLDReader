@@ -74,7 +74,8 @@ function renderStrokeMarks(
         pixelCoordsChildArray,
         graphicSpacing,
         pointStyle,
-        pixelRatio
+        pixelRatio,
+        options
       );
     });
     return;

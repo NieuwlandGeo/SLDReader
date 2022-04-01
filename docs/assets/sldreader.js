@@ -2197,7 +2197,8 @@
           pixelCoordsChildArray,
           graphicSpacing,
           pointStyle,
-          pixelRatio
+          pixelRatio,
+          options
         );
       });
       return;
