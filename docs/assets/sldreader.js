@@ -535,6 +535,7 @@
       obj.styles.push(style);
     },
     FeatureTypeStyle: function (element, obj) {
+      obj.featuretypestyle = obj.featuretypestyle || [];
       var featuretypestyle = {
         rules: [],
       };

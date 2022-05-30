@@ -269,6 +269,7 @@ const parsers = {
     obj.styles.push(style);
   },
   FeatureTypeStyle: (element, obj) => {
+    obj.featuretypestyle = obj.featuretypestyle || [];
     const featuretypestyle = {
       rules: [],
     };
