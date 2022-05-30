@@ -281,6 +281,7 @@ const parsers = {
     obj.rules.push(rule);
   },
   Name: addPropWithTextContent,
+  Title: addPropWithTextContent,
   MaxScaleDenominator: addPropWithTextContent,
   MinScaleDenominator: addPropWithTextContent,
   ...FilterParsers,

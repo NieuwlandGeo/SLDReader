@@ -87,6 +87,20 @@ describe('Reads xml', () => {
     expect(pointSymbolizers[0].graphic.mark).to.have.property('wellknownname');
     expect(pointSymbolizers[0].graphic.mark.wellknownname).to.equal('hexagon');
   });
+
+  it('Parses title elements', () => {
+    const layer = result.layers[0];
+    expect(layer.title).to.be.undefined;
+
+    const userStyle = layer.styles[0];
+    expect(userStyle.title).to.equal('Default Styler (zoom in to see more objects)');
+
+    const featureTypeStyle = userStyle.featuretypestyles[0];
+    expect(featureTypeStyle.title).to.equal('Test style');
+
+    const rule = featureTypeStyle.rules[0];
+    expect(rule.title).to.equal('title');
+  });
 });
 
 describe('Reads xml sld 11', () => {
