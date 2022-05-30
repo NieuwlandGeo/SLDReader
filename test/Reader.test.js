@@ -88,7 +88,7 @@ describe('Reads xml', () => {
     expect(pointSymbolizers[0].graphic.mark.wellknownname).to.equal('hexagon');
   });
 
-  it('Parses title elements', () => {
+  it('Parses Title elements', () => {
     const layer = result.layers[0];
     expect(layer.title).to.be.undefined;
 
@@ -100,6 +100,20 @@ describe('Reads xml', () => {
 
     const rule = featureTypeStyle.rules[0];
     expect(rule.title).to.equal('title');
+  });
+
+  it('Parses Abstract elements', () => {
+    const layer = result.layers[0];
+    expect(layer.abstract).to.be.undefined;
+
+    const userStyle = layer.styles[0];
+    expect(userStyle.abstract).to.equal('');
+
+    const featureTypeStyle = userStyle.featuretypestyles[0];
+    expect(featureTypeStyle.abstract).to.equal('abstract');
+
+    const rule = featureTypeStyle.rules[0];
+    expect(rule.abstract).to.equal('Abstract');
   });
 });
 

@@ -283,6 +283,7 @@ const parsers = {
   },
   Name: addPropWithTextContent,
   Title: addPropWithTextContent,
+  Abstract: addPropWithTextContent,
   MaxScaleDenominator: addPropWithTextContent,
   MinScaleDenominator: addPropWithTextContent,
   ...FilterParsers,
