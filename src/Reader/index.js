@@ -269,6 +269,7 @@ const parsers = {
     obj.styles.push(style);
   },
   FeatureTypeStyle: (element, obj) => {
+    obj.featuretypestyle = obj.featuretypestyle || [];
     const featuretypestyle = {
       rules: [],
     };
@@ -281,6 +282,8 @@ const parsers = {
     obj.rules.push(rule);
   },
   Name: addPropWithTextContent,
+  Title: addPropWithTextContent,
+  Abstract: addPropWithTextContent,
   MaxScaleDenominator: addPropWithTextContent,
   MinScaleDenominator: addPropWithTextContent,
   ...FilterParsers,

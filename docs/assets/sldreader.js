@@ -535,6 +535,7 @@
       obj.styles.push(style);
     },
     FeatureTypeStyle: function (element, obj) {
+      obj.featuretypestyle = obj.featuretypestyle || [];
       var featuretypestyle = {
         rules: [],
       };
@@ -547,6 +548,8 @@
       obj.rules.push(rule);
     },
     Name: addPropWithTextContent,
+    Title: addPropWithTextContent,
+    Abstract: addPropWithTextContent,
     MaxScaleDenominator: addPropWithTextContent,
     MinScaleDenominator: addPropWithTextContent},
     FilterParsers,

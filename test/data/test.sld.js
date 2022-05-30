@@ -15,7 +15,7 @@ export const sld = `<?xml version="1.0" encoding="UTF-8"?>
       <sld:IsDefault>1</sld:IsDefault>
       <sld:FeatureTypeStyle>
         <sld:Name>testStyleName</sld:Name>
-        <sld:Title>title</sld:Title>
+        <sld:Title>Test style</sld:Title>
         <sld:Abstract>abstract</sld:Abstract>
         <sld:FeatureTypeName>Feature</sld:FeatureTypeName>
         <sld:SemanticTypeIdentifier>generic:geometry</sld:SemanticTypeIdentifier>
