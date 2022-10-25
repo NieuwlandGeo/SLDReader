@@ -108,6 +108,10 @@ function getPointStyle(symbolizer, feature, getProperty) {
   }
 
   const olStyle = cachedPointStyle(symbolizer);
+
+  // Reset previous calculated point geometry left by evaluating point style for a line or polygon feature.
+  olStyle.setGeometry(null);
+
   let olImage = olStyle.getImage();
 
   // Apply dynamic values to the cached OL style instance before returning it.
@@ -116,7 +120,8 @@ function getPointStyle(symbolizer, feature, getProperty) {
   const { graphic } = symbolizer;
   const { size } = graphic;
   if (size && size.type === 'expression') {
-    const sizeValue = Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
+    const sizeValue =
+      Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
 
     if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
       const height = olImage.getSize()[1];
@@ -141,7 +146,8 @@ function getPointStyle(symbolizer, feature, getProperty) {
   // --- Update dynamic rotation ---
   const { rotation } = graphic;
   if (rotation && rotation.type === 'expression') {
-    const rotationDegrees = Number(evaluate(rotation, feature, getProperty)) || 0.0;
+    const rotationDegrees =
+      Number(evaluate(rotation, feature, getProperty)) || 0.0;
     // Note: OL angles are in radians.
     const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
     olImage.setRotation(rotationRadians);

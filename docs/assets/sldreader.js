@@ -1983,6 +1983,10 @@
     }
 
     var olStyle = cachedPointStyle(symbolizer);
+
+    // Reset previous calculated point geometry left by evaluating point style for a line or polygon feature.
+    olStyle.setGeometry(null);
+
     var olImage = olStyle.getImage();
 
     // Apply dynamic values to the cached OL style instance before returning it.
@@ -1991,7 +1995,8 @@
     var graphic = symbolizer.graphic;
     var size = graphic.size;
     if (size && size.type === 'expression') {
-      var sizeValue = Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
+      var sizeValue =
+        Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
 
       if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
         var height = olImage.getSize()[1];
@@ -2016,7 +2021,8 @@
     // --- Update dynamic rotation ---
     var rotation = graphic.rotation;
     if (rotation && rotation.type === 'expression') {
-      var rotationDegrees = Number(evaluate(rotation, feature, getProperty)) || 0.0;
+      var rotationDegrees =
+        Number(evaluate(rotation, feature, getProperty)) || 0.0;
       // Note: OL angles are in radians.
       var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
       olImage.setRotation(rotationRadians);
