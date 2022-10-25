@@ -830,3 +830,43 @@ describe('PointSymbolizer inside line or polygon', () => {
     ]);
   });
 });
+
+describe('PointSymbolizer and mixed geometries', () => {
+  let styleFunction;
+  let fmtGeoJSON;
+  beforeEach(() => {
+    const sldObject = Reader(simplePointSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    styleFunction = createOlStyleFunction(featureTypeStyle);
+    fmtGeoJSON = new OLFormatGeoJSON();
+  });
+
+  it('Does not re-use cached geometry of previous feature', () => {
+    const lineGeoJSON = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        // prettier-ignore
+        coordinates: [[0, 0], [1, 0], [1, 1], [0, 1]],
+      },
+      properties: {},
+    };
+    const lineFeature = fmtGeoJSON.readFeature(lineGeoJSON);
+
+    const pointGeoJSON = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [0.5, 0.5],
+      },
+      properties: {},
+    };
+    const pointFeature = fmtGeoJSON.readFeature(pointGeoJSON);
+
+    // After rendering a point symbolizer for a non-point feature,
+    // the style returned for rendering a point feature should not re-use the previous calculated geometry.
+    let style = styleFunction(lineFeature)[0];
+    style = styleFunction(pointFeature)[0];
+    expect(style.getGeometry()).to.be.null;
+  });
+});
