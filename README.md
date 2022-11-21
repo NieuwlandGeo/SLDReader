@@ -79,8 +79,9 @@ See the demo page for an example.
 
 #### PolygonSymbolizer
 
-Polygons with static fill and stroke style parameters are supported. See LineSymbolizer above for supported stroke css-parameters. GraphicFill is also supported.
-GraphicStroke with Mark or ExternalGraphic is supported.
+Polygons with static fill and stroke style parameters are supported. See LineSymbolizer above for supported properties for the polygon outline.
+
+For filling a polygon with an image, only ExternalGraphic fills are supported. Filling a polygon with a regular Mark graphic will result in a solid black fill.
 
 #### TextSymbolizer
 
