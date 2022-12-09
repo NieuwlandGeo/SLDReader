@@ -20,6 +20,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
     expect(layernames).to.have.length(3);
     expect(layernames).to.deep.equal(['WaterBodies', 'Roads', 'Cities']);
   });
+
   it('get layer by name', () => {
     const sld = {
       layers: [
@@ -39,6 +40,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
     expect(layer.styles).to.have.length(1);
     expect(layer.name).to.equal('WaterBodies');
   });
+
   it('get style names', () => {
     const layer = {
       styles: [
@@ -51,6 +53,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
     expect(stylenames).to.have.length(1);
     expect(stylenames).to.deep.equal(['Default Styler']);
   });
+
   it('get style', () => {
     const layer = {
       styles: [
@@ -64,6 +67,37 @@ describe('reads info from StyledLayerDescriptor object', () => {
     };
     const style = Utils.getStyle(layer, 'Hover Styler');
     expect(style.name).to.equal('Hover Styler');
+  });
+
+  it('get default style in layer when name is not given', () => {
+    const layer = {
+      styles: [
+        {
+          name: 'Default Styler',
+        },
+        {
+          name: 'Hover Styler',
+          default: true,
+        },
+      ],
+    };
+    const style = Utils.getStyle(layer);
+    expect(style.name).to.equal('Hover Styler');
+  });
+
+  it('get first style in layer when name is not given and there is no default style', () => {
+    const layer = {
+      styles: [
+        {
+          name: 'Default Styler',
+        },
+        {
+          name: 'Hover Styler',
+        },
+      ],
+    };
+    const style = Utils.getStyle(layer);
+    expect(style.name).to.equal('Default Styler');
   });
 
   describe('Evaluating rule filters: ElseFilters and ScaleDenominators', () => {

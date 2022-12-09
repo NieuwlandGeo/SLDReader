@@ -47,7 +47,7 @@ function applySLD(vectorLayer, text) {
   const sldObject = SLDReader.Reader(text);
   window.sldObject = sldObject;
   const sldLayer = SLDReader.getLayer(sldObject);
-  const style = SLDReader.getStyle(sldLayer, 'bestuurlijkegrenzen:provincies');
+  const style = SLDReader.getStyle(sldLayer);
   const featureTypeStyle = style.featuretypestyles[0];
 
   const viewProjection = map.getView().getProjection();

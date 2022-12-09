@@ -48,7 +48,7 @@ function applySLD(vectorLayer, text) {
   const sldObject = SLDReader.Reader(text);
   window.sldObject = sldObject;
   const sldLayer = SLDReader.getLayer(sldObject);
-  const style = SLDReader.getStyle(sldLayer, 'Hoogspanning');
+  const style = SLDReader.getStyle(sldLayer);
   const featureTypeStyle = style.featuretypestyles[0];
 
   const viewProjection = map.getView().getProjection();
@@ -67,7 +67,7 @@ function applySLD(vectorLayer, text) {
 
 function loadSld(mode) {
   let sldUrl = null;
-  
+
   switch (mode) {
     case 'DEMO_MARK':
       sldUrl = 'assets/sld-hoogspanning.xml';
@@ -78,7 +78,9 @@ function loadSld(mode) {
     case 'DEMO_POINTPLACEMENT':
       sldUrl = 'assets/sld-graphic-mark-placement.xml';
       break;
-
+    default:
+      console.error('Unimplemented demo --> ', mode);
+      break;
   }
 
   if (sldUrl) {

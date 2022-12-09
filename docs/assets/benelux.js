@@ -51,7 +51,7 @@ function applySLD(vectorLayer, text) {
   // for debugging
   window.sldObject = sldObject;
   const sldLayer = SLDReader.getLayer(sldObject);
-  const style = SLDReader.getStyle(sldLayer, 'flags_benelux');
+  const style = SLDReader.getStyle(sldLayer);
   const featureTypeStyle = style.featuretypestyles[0];
 
   vectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {

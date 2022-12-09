@@ -35,14 +35,21 @@ export function getStyleNames(layer) {
  * get style from array layer.styles, if name is undefined it returns default style.
  * null is no style found
  * @param  {Layer} layer [description]
- * @param {string} [name] of style
+ * @param {string} [name] of style. If not given, the style marked as default will be returned.
+ * If there is no default style, the first one will be returned.
  * @return {object} the style from layer.styles matching the name
  */
 export function getStyle(layer, name) {
   if (name) {
     return layer.styles.find(s => s.name === name);
   }
-  return layer.styles.find(s => s.default);
+
+  const defaultStyle = layer.styles.find(s => s.default);
+  if (defaultStyle) {
+    return defaultStyle;
+  }
+
+  return layer.styles[0];
 }
 
 /**
