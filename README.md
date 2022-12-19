@@ -81,7 +81,7 @@ See the demo page for an example.
 
 Polygons with static fill and stroke style parameters are supported. See LineSymbolizer above for supported properties for the polygon outline.
 
-For filling a polygon with an image, only ExternalGraphic fills are supported. Filling a polygon with a regular Mark graphic will result in a solid black fill.
+For polygon graphic fills, both ExternalGraphic and Mark graphic fills are supported. The Marks supported here are the same as for a point symbolizer, with the additional restriction that feature-dependent value cannot be used.
 
 #### TextSymbolizer
 
