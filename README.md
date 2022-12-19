@@ -41,6 +41,8 @@ The SLDReader library can read both SLD v1.0 and SLD v1.1 documents, but not eve
 
 Marks with well known symbol names are supported: circle, square, triangle, star, cross, x, hexagon, octagon. ExternalGraphic icons are supported.
 
+Two custom marks are also supported: `horline` for a horizontal line through the center and `backslash` for a line from the top left to the bottom right. Use backslash instead of horline if you want to have diagonal hashing as a polygon graphic fill.
+
 Wellknown names that reference a symbol library, like `ttf://CustomFont#42` are not supported. The Size and Rotation elements may be dynamic by using the PropertyName element.
 
 Only one Graphic per PointSymbolizer is supported. Each Graphic can only have one Mark or one ExternalGraphic.
