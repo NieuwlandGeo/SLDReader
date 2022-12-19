@@ -1,15 +1,21 @@
 /* eslint-disable function-call-argument-newline */
 import { toContext } from 'ol/render';
 import { Style, Fill } from 'ol/style';
-import { Polygon, MultiPolygon } from 'ol/geom';
+import { Point, Polygon, MultiPolygon } from 'ol/geom';
 import { DEVICE_PIXEL_RATIO } from 'ol/has';
 
-import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from '../constants';
+import {
+  IMAGE_LOADING,
+  IMAGE_LOADED,
+  IMAGE_ERROR,
+  DEFAULT_MARK_SIZE,
+} from '../constants';
 import { memoizeStyleFunction } from './styleUtils';
 import { getCachedImage, getImageLoadingState } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
 import { getSimpleStroke, getSimpleFill } from './simpleStyles';
 import { getGraphicStrokeRenderer } from './graphicStrokeStyle';
+import getPointStyle from './pointStyle';
 
 function createPattern(graphic) {
   const { image, width, height } = getCachedImage(
@@ -64,6 +70,45 @@ function getExternalGraphicFill(symbolizer) {
   }
 }
 
+function getMarkGraphicFill(symbolizer) {
+  const { graphicfill } = symbolizer.fill;
+  const { graphic } = graphicfill;
+  const graphicSize = graphic.size || DEFAULT_MARK_SIZE;
+  const canvasSize = graphicSize * DEVICE_PIXEL_RATIO;
+  let fill = null;
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    const context = canvas.getContext('2d');
+
+    // Point symbolizer function expects an object with a .graphic property.
+    // The point symbolizer is stored as graphicfill in the polygon symbolizer.
+    const pointStyle = getPointStyle(graphicfill);
+
+    // Let OpenLayers draw a point with the given point style on the temp canvas.
+    // Note: OL rendering context size params are always in css pixels, while the temp canvas may
+    // be larger depending on the device pixel ratio.
+    const olContext = toContext(context, { size: [graphicSize, graphicSize] });
+    olContext.setStyle(pointStyle);
+    olContext.drawGeometry(new Point([graphicSize / 2, graphicSize / 2]));
+
+    // Turn the generated image into a repeating pattern, just like a regular image fill.
+    const pattern = context.createPattern(canvas, 'repeat');
+    fill = new Fill({
+      color: pattern,
+    });
+  } catch (e) {
+    // Default black fill as backup plan.
+    fill = new Fill({
+      color: 'black',
+    });
+  }
+
+  return fill;
+}
+
 function polygonStyle(symbolizer) {
   const fillImageUrl =
     symbolizer.fill &&
@@ -72,9 +117,20 @@ function polygonStyle(symbolizer) {
     symbolizer.fill.graphicfill.graphic.externalgraphic &&
     symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
 
-  const polygonFill = fillImageUrl
-    ? getExternalGraphicFill(symbolizer)
-    : getSimpleFill(symbolizer.fill);
+  const fillMark =
+    symbolizer.fill &&
+    symbolizer.fill.graphicfill &&
+    symbolizer.fill.graphicfill.graphic &&
+    symbolizer.fill.graphicfill.graphic.mark;
+
+  let polygonFill = null;
+  if (fillImageUrl) {
+    polygonFill = getExternalGraphicFill(symbolizer);
+  } else if (fillMark) {
+    polygonFill = getMarkGraphicFill(symbolizer);
+  } else {
+    polygonFill = getSimpleFill(symbolizer.fill);
+  }
 
   // When a polygon has a GraphicStroke, use a custom renderer to combine
   // GraphicStroke with fill. This is needed because a custom renderer
