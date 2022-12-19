@@ -1749,6 +1749,26 @@
           rotation: rotationRadians,
         });
 
+      case 'horline':
+        return new style.RegularShape({
+          fill: fill,
+          points: 2,
+          radius: radius,
+          angle: Math.PI / 2,
+          stroke: stroke,
+          rotation: rotationRadians,
+        });
+
+      case 'backslash':
+        return new style.RegularShape({
+          fill: fill,
+          points: 2,
+          radius: radius * Math.sqrt(2),
+          angle: -Math.PI / 4,
+          stroke: stroke,
+          rotation: rotationRadians,
+        });
+
       default:
         // Default is `square`
         return new style.RegularShape({

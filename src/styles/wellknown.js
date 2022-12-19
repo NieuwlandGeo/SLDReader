@@ -122,6 +122,26 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'horline':
+      return new RegularShape({
+        fill,
+        points: 2,
+        radius,
+        angle: Math.PI / 2,
+        stroke,
+        rotation: rotationRadians,
+      });
+
+    case 'backslash':
+      return new RegularShape({
+        fill,
+        points: 2,
+        radius: radius * Math.sqrt(2),
+        angle: -Math.PI / 4,
+        stroke,
+        rotation: rotationRadians,
+      });
+
     default:
       // Default is `square`
       return new RegularShape({
