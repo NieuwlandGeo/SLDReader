@@ -2432,6 +2432,46 @@
     }
   }
 
+  function getMarkGraphicFill(symbolizer) {
+    var ref = symbolizer.fill;
+    var graphicfill = ref.graphicfill;
+    var graphic = graphicfill.graphic;
+    var graphicSize = graphic.size || DEFAULT_MARK_SIZE;
+    var canvasSize = graphicSize * has.DEVICE_PIXEL_RATIO;
+    var fill = null;
+
+    try {
+      var canvas = document.createElement('canvas');
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+      var context = canvas.getContext('2d');
+
+      // Point symbolizer function expects an object with a .graphic property.
+      // The point symbolizer is stored as graphicfill in the polygon symbolizer.
+      var pointStyle = getPointStyle(graphicfill);
+
+      // Let OpenLayers draw a point with the given point style on the temp canvas.
+      // Note: OL rendering context size params are always in css pixels, while the temp canvas may
+      // be larger depending on the device pixel ratio.
+      var olContext = render.toContext(context, { size: [graphicSize, graphicSize] });
+      olContext.setStyle(pointStyle);
+      olContext.drawGeometry(new geom.Point([graphicSize / 2, graphicSize / 2]));
+
+      // Turn the generated image into a repeating pattern, just like a regular image fill.
+      var pattern = context.createPattern(canvas, 'repeat');
+      fill = new style.Fill({
+        color: pattern,
+      });
+    } catch (e) {
+      // Default black fill as backup plan.
+      fill = new style.Fill({
+        color: 'black',
+      });
+    }
+
+    return fill;
+  }
+
   function polygonStyle(symbolizer) {
     var fillImageUrl =
       symbolizer.fill &&
@@ -2440,9 +2480,20 @@
       symbolizer.fill.graphicfill.graphic.externalgraphic &&
       symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
 
-    var polygonFill = fillImageUrl
-      ? getExternalGraphicFill(symbolizer)
-      : getSimpleFill(symbolizer.fill);
+    var fillMark =
+      symbolizer.fill &&
+      symbolizer.fill.graphicfill &&
+      symbolizer.fill.graphicfill.graphic &&
+      symbolizer.fill.graphicfill.graphic.mark;
+
+    var polygonFill = null;
+    if (fillImageUrl) {
+      polygonFill = getExternalGraphicFill(symbolizer);
+    } else if (fillMark) {
+      polygonFill = getMarkGraphicFill(symbolizer);
+    } else {
+      polygonFill = getSimpleFill(symbolizer.fill);
+    }
 
     // When a polygon has a GraphicStroke, use a custom renderer to combine
     // GraphicStroke with fill. This is needed because a custom renderer
