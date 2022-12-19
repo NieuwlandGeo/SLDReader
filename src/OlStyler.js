@@ -99,6 +99,9 @@ export default function OlStyler(GeometryStyles, feature, getProperty) {
       styles = defaultStyles;
   }
 
+  // Set z-index of styles explicitly to fix a bug where GraphicStroke is always rendered above a line symbolizer.
+  styles.forEach((style, index) => style.setZIndex(index));
+
   return styles;
 }
 

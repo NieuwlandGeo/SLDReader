@@ -2901,6 +2901,9 @@
         styles = defaultStyles;
     }
 
+    // Set z-index of styles explicitly to fix a bug where GraphicStroke is always rendered above a line symbolizer.
+    styles.forEach(function (style, index) { return style.setZIndex(index); });
+
     return styles;
   }
 

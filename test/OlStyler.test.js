@@ -16,6 +16,7 @@ import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { polyGraphicFillAndStrokeSld } from './data/poly-graphic-fill-and-stroke';
 import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
 import { simplePointSymbolizerSld } from './data/simple-point-symbolizer.sld';
+import { doubleLineSld } from './data/double-line.sld';
 
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
@@ -164,6 +165,37 @@ describe('Create OL Style function from SLD feature type style', () => {
     expect(featureStyle.getFill().getColor()).to.equal(
       'rgba(204, 204, 204, 0.5)'
     );
+  });
+});
+
+describe('Style stacking', () => {
+  let sldObject;
+  let featureTypeStyle;
+  before(() => {
+    sldObject = Reader(doubleLineSld);
+    [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+  });
+
+  it('Stacked styles have z-indexes', () => {
+    const geojsonLine = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [0, 0],
+          [1, 0],
+        ],
+      },
+    };
+
+    const fmtGeoJSON = new OLFormatGeoJSON();
+    const olFeature = fmtGeoJSON.readFeature(geojsonLine);
+
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+
+    const featureStyles = styleFunction(olFeature, null);
+    expect(featureStyles[0].getZIndex()).to.equal(0);
+    expect(featureStyles[1].getZIndex()).to.equal(1);
   });
 });
 
