@@ -97,7 +97,6 @@ function renderStrokeMarks(
     graphicSpacing * pixelRatio,
     {
       invertY: true, // Pixel y-coordinates increase downwards in screen space.
-      midPoints: false,
       extent: render.extent_,
       placement: options.placement,
     }
