@@ -69,3 +69,14 @@ export function calculateGraphicSpacing(lineSymbolizer, graphicWidth) {
   }
   return multiplier * graphicWidth;
 }
+
+/**
+ * @private
+ * Get initial gap size from line symbolizer.
+ * @param {object} lineSymbolizer SLD line symbolizer object.
+ * @returns {number} Inital gap size. Defaults to 0 if not present.
+ */
+export function getInitialGapSize(lineSymbolizer) {
+  const { graphicstroke } = lineSymbolizer.stroke;
+  return graphicstroke.initialgap || 0.0;
+}
