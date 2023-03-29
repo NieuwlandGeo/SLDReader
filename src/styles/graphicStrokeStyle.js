@@ -11,7 +11,7 @@ import {
 } from '../constants';
 import evaluate from '../olEvaluator';
 import getPointStyle from './pointStyle';
-import { calculateGraphicSpacing } from './styleUtils';
+import { calculateGraphicSpacing, getInitialGapSize } from './styleUtils';
 import { splitLineString } from './geometryCalcs';
 
 // A flag to prevent multiple renderer patches.
@@ -99,6 +99,7 @@ function renderStrokeMarks(
       invertY: true, // Pixel y-coordinates increase downwards in screen space.
       extent: render.extent_,
       placement: options.placement,
+      initialGap: options.initialGap,
     }
   );
 
@@ -174,6 +175,7 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
     );
 
     const graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
+    options.initialGap = getInitialGapSize(linesymbolizer);
 
     renderStrokeMarks(
       render,

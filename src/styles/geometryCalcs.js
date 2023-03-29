@@ -83,6 +83,10 @@ export function splitLineString(geometry, graphicSpacing, options = {}) {
     );
     if (cumulativeMeasure + currentSegmentLength < nextPointMeasure) {
       // If the current segment is too short to reach the next point, go to the next segment.
+      if (pointIndex === coords.length - 2) {
+        // Stop if there is no next segment to process.
+        break;
+      }
       currentSegmentStart[0] = currentSegmentEnd[0];
       currentSegmentStart[1] = currentSegmentEnd[1];
       currentSegmentEnd[0] = coords[pointIndex + 2][0];

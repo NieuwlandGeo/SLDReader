@@ -1627,6 +1627,18 @@
 
   /**
    * @private
+   * Get initial gap size from line symbolizer.
+   * @param {object} lineSymbolizer SLD line symbolizer object.
+   * @returns {number} Inital gap size. Defaults to 0 if not present.
+   */
+  function getInitialGapSize(lineSymbolizer) {
+    var ref = lineSymbolizer.stroke;
+    var graphicstroke = ref.graphicstroke;
+    return graphicstroke.initialgap || 0.0;
+  }
+
+  /**
+   * @private
    * Create an OL point style corresponding to a well known symbol identifier.
    * @param {string} wellKnownName SLD Well Known Name for symbolizer.
    * Can be 'circle', 'square', 'triangle', 'star', 'cross', 'x', 'hexagon', 'octagon'.
@@ -2141,6 +2153,10 @@
       );
       if (cumulativeMeasure + currentSegmentLength < nextPointMeasure) {
         // If the current segment is too short to reach the next point, go to the next segment.
+        if (pointIndex === coords.length - 2) {
+          // Stop if there is no next segment to process.
+          break;
+        }
         currentSegmentStart[0] = currentSegmentEnd[0];
         currentSegmentStart[1] = currentSegmentEnd[1];
         currentSegmentEnd[0] = coords[pointIndex + 2][0];
@@ -2260,6 +2276,7 @@
         invertY: true, // Pixel y-coordinates increase downwards in screen space.
         extent: render.extent_,
         placement: options.placement,
+        initialGap: options.initialGap,
       }
     );
 
@@ -2336,6 +2353,7 @@
       );
 
       var graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
+      options.initialGap = getInitialGapSize(linesymbolizer);
 
       renderStrokeMarks(
         render$1,
