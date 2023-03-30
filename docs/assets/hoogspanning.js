@@ -78,6 +78,9 @@ function loadSld(mode) {
     case 'DEMO_POINTPLACEMENT':
       sldUrl = 'assets/sld-graphic-mark-placement.xml';
       break;
+    case 'DEMO_ALTERNATING_GRAPHICSTROKE':
+      sldUrl = 'assets/sld-alternating-graphicstroke.xml';
+      break;
     default:
       console.error('Unimplemented demo --> ', mode);
       break;
@@ -103,6 +106,7 @@ editor.on('change', cm => {
 const optionMark = document.querySelector('#option-mark').parentElement;
 const optionExternalGraphic = document.querySelector('#option-exgraphic').parentElement;
 const optionPointPlacement = document.querySelector('#option-pointplacement').parentElement;
+const optionAlternatingGraphicStroke = document.querySelector('#option-alternating-graphicstroke').parentElement;
 
 document.querySelectorAll('.option-input input').forEach(inputNode => {
   inputNode.addEventListener('change', evt => {
@@ -111,16 +115,25 @@ document.querySelectorAll('.option-input input').forEach(inputNode => {
       optionMark.classList.add('option-checked');
       optionExternalGraphic.classList.remove('option-checked');
       optionPointPlacement.classList.remove('option-checked');
+      optionAlternatingGraphicStroke.classList.remove('option-checked');
     } else if (evt.target.value === 'DEMO_EXTERNALGRAPHIC') {
       loadSld('DEMO_EXTERNALGRAPHIC');
       optionMark.classList.remove('option-checked');
       optionExternalGraphic.classList.add('option-checked');
       optionPointPlacement.classList.remove('option-checked');
+      optionAlternatingGraphicStroke.classList.remove('option-checked');
     } else if (evt.target.value === 'DEMO_POINTPLACEMENT') {
       loadSld('DEMO_POINTPLACEMENT');
       optionMark.classList.remove('option-checked');
       optionExternalGraphic.classList.remove('option-checked');
       optionPointPlacement.classList.add('option-checked');
+      optionAlternatingGraphicStroke.classList.remove('option-checked');
+    } else if (evt.target.value === 'DEMO_ALTERNATING_GRAPHICSTROKE') {
+      loadSld('DEMO_ALTERNATING_GRAPHICSTROKE');
+      optionMark.classList.remove('option-checked');
+      optionExternalGraphic.classList.remove('option-checked');
+      optionPointPlacement.classList.remove('option-checked');
+      optionAlternatingGraphicStroke.classList.add('option-checked');
     }
   });
 });
