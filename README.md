@@ -2,6 +2,8 @@
 
 [![npm version](https://badge.fury.io/js/%40nieuwlandgeo%2Fsldreader.svg)](https://badge.fury.io/js/%40nieuwlandgeo%2Fsldreader)
 
+[Live demos](https://nieuwlandgeo.github.io/SLDReader)
+
 A javascript package that aims to bring styling from a [sld document](http://www.opengeospatial.org/standards/sld) to popular mapping
 tools. The project consists of two parts:
 
@@ -18,8 +20,6 @@ More information about the standards:
 - [SLD](http://www.opengeospatial.org/standards/sld)
 
 ## Examples
-
-[Live example](https://nieuwlandgeo.github.io/SLDReader)
 
 See docs/examples folder, to serve them locally
 
@@ -137,7 +137,7 @@ The SLDReader library supports the following operators inside Filter elements:
 
 ## Supported OpenLayers version
 
-The SLDReader has a peer dependency on OpenLayers version 5.3.0. Because there are no backwards incompatible changes between v6+ and v5.3, it is possible to use this library in a project that uses a later (v6+) version of OpenLayers.
+The SLDReader has a peer dependency on OpenLayers version 5.3.0. Because there are no backwards incompatible changes between v7+ and v5.3, it is possible to use this library in a project that uses a later (v7+) version of OpenLayers.
 
 This may change in the future if the newest version of OpenLayers stops being backwards compatible with this library, or when a juicy new must-have feature is introduced. When that happens, SLDReader will be based on that OpenLayers version.
 
@@ -153,7 +153,7 @@ Please include an example sld and if possible an example feature as GeoJSON.
 
 ### Development dependencies
 
-- node & npm
+- node (v14.18+) & npm
 - git
 - docker (optional, for running the live examples yourself)
 
