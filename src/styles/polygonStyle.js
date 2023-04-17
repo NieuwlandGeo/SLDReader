@@ -91,8 +91,26 @@ function getMarkGraphicFill(symbolizer) {
     // Note: OL rendering context size params are always in css pixels, while the temp canvas may
     // be larger depending on the device pixel ratio.
     const olContext = toContext(context, { size: [graphicSize, graphicSize] });
+
+    // Disable image smoothing to ensure crisp graphic fill pattern.
+    context.imageSmoothingEnabled = false;
+
+    // Let OpenLayers draw the symbol to the canvas directly.
+    // Draw extra copies to the sides to ensure complete tiling coverage when used as a pattern.
+    // S = symbol, C = copy.
+    //     +---+
+    //     | C |
+    // +---+---+---+
+    // | C | S | C |
+    // +---+---+---+
+    //     | C |
+    //     +---+
     olContext.setStyle(pointStyle);
     olContext.drawGeometry(new Point([graphicSize / 2, graphicSize / 2]));
+    olContext.drawGeometry(new Point([-(graphicSize / 2), graphicSize / 2]));
+    olContext.drawGeometry(new Point([3 * (graphicSize / 2), graphicSize / 2]));
+    olContext.drawGeometry(new Point([graphicSize / 2, -(graphicSize / 2)]));
+    olContext.drawGeometry(new Point([graphicSize / 2, 3 * (graphicSize / 2)]));
 
     // Turn the generated image into a repeating pattern, just like a regular image fill.
     const pattern = context.createPattern(canvas, 'repeat');
