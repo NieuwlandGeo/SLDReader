@@ -1741,7 +1741,7 @@
           angle: Math.PI / 4,
           fill: fill,
           points: 4,
-          radius1: radius,
+          radius1: Math.sqrt(2.0) * radius,
           radius2: 0,
           stroke:
             stroke ||
