@@ -2495,7 +2495,7 @@
     var ref = symbolizer.fill;
     var graphicfill = ref.graphicfill;
     var graphic = graphicfill.graphic;
-    var graphicSize = graphic.size || DEFAULT_MARK_SIZE;
+    var graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
     var canvasSize = graphicSize * has.DEVICE_PIXEL_RATIO;
     var fill = null;
 
@@ -2518,7 +2518,13 @@
       context.imageSmoothingEnabled = false;
 
       // Let OpenLayers draw the symbol to the canvas directly.
-      // Draw extra copies to the sides to ensure complete tiling coverage when used as a pattern.
+      olContext.setStyle(pointStyle);
+
+      var centerX = graphicSize / 2;
+      var centerY = graphicSize / 2;
+      olContext.drawGeometry(new geom.Point([centerX, centerY]));
+
+      // For (back)slash marks, draw extra copies to the sides to ensure complete tiling coverage when used as a pattern.
       // S = symbol, C = copy.
       //     +---+
       //     | C |
@@ -2527,12 +2533,15 @@
       // +---+---+---+
       //     | C |
       //     +---+
-      olContext.setStyle(pointStyle);
-      olContext.drawGeometry(new geom.Point([graphicSize / 2, graphicSize / 2]));
-      olContext.drawGeometry(new geom.Point([-(graphicSize / 2), graphicSize / 2]));
-      olContext.drawGeometry(new geom.Point([3 * (graphicSize / 2), graphicSize / 2]));
-      olContext.drawGeometry(new geom.Point([graphicSize / 2, -(graphicSize / 2)]));
-      olContext.drawGeometry(new geom.Point([graphicSize / 2, 3 * (graphicSize / 2)]));
+      var mark = graphic.mark;
+      var ref$1 = mark || {};
+      var wellknownname = ref$1.wellknownname;
+      if (wellknownname && wellknownname.indexOf('slash') > -1) {
+        olContext.drawGeometry(new geom.Point([centerX - graphicSize, centerY]));
+        olContext.drawGeometry(new geom.Point([centerX + graphicSize, centerY]));
+        olContext.drawGeometry(new geom.Point([centerX, centerY - graphicSize]));
+        olContext.drawGeometry(new geom.Point([centerX, centerY + graphicSize]));
+      }
 
       // Turn the generated image into a repeating pattern, just like a regular image fill.
       var pattern = context.createPattern(canvas, 'repeat');

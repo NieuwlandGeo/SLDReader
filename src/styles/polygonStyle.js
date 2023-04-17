@@ -73,7 +73,7 @@ function getExternalGraphicFill(symbolizer) {
 function getMarkGraphicFill(symbolizer) {
   const { graphicfill } = symbolizer.fill;
   const { graphic } = graphicfill;
-  const graphicSize = graphic.size || DEFAULT_MARK_SIZE;
+  const graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
   const canvasSize = graphicSize * DEVICE_PIXEL_RATIO;
   let fill = null;
 
@@ -96,7 +96,13 @@ function getMarkGraphicFill(symbolizer) {
     context.imageSmoothingEnabled = false;
 
     // Let OpenLayers draw the symbol to the canvas directly.
-    // Draw extra copies to the sides to ensure complete tiling coverage when used as a pattern.
+    olContext.setStyle(pointStyle);
+
+    const centerX = graphicSize / 2;
+    const centerY = graphicSize / 2;
+    olContext.drawGeometry(new Point([centerX, centerY]));
+
+    // For (back)slash marks, draw extra copies to the sides to ensure complete tiling coverage when used as a pattern.
     // S = symbol, C = copy.
     //     +---+
     //     | C |
@@ -105,12 +111,14 @@ function getMarkGraphicFill(symbolizer) {
     // +---+---+---+
     //     | C |
     //     +---+
-    olContext.setStyle(pointStyle);
-    olContext.drawGeometry(new Point([graphicSize / 2, graphicSize / 2]));
-    olContext.drawGeometry(new Point([-(graphicSize / 2), graphicSize / 2]));
-    olContext.drawGeometry(new Point([3 * (graphicSize / 2), graphicSize / 2]));
-    olContext.drawGeometry(new Point([graphicSize / 2, -(graphicSize / 2)]));
-    olContext.drawGeometry(new Point([graphicSize / 2, 3 * (graphicSize / 2)]));
+    const { mark } = graphic;
+    const { wellknownname } = mark || {};
+    if (wellknownname && wellknownname.indexOf('slash') > -1) {
+      olContext.drawGeometry(new Point([centerX - graphicSize, centerY]));
+      olContext.drawGeometry(new Point([centerX + graphicSize, centerY]));
+      olContext.drawGeometry(new Point([centerX, centerY - graphicSize]));
+      olContext.drawGeometry(new Point([centerX, centerY + graphicSize]));
+    }
 
     // Turn the generated image into a repeating pattern, just like a regular image fill.
     const pattern = context.createPattern(canvas, 'repeat');
