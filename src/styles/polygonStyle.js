@@ -181,19 +181,19 @@ function getMarkGraphicFill(symbolizer) {
 
     // Downscale the drawn mark back to original graphic size.
     const patternCanvas = document.createElement('canvas');
-    patternCanvas.width = graphicSize;
-    patternCanvas.height = graphicSize;
+    patternCanvas.width = canvasSize;
+    patternCanvas.height = canvasSize;
     const patternContext = patternCanvas.getContext('2d');
     patternContext.drawImage(
       scaledCanvas,
       0,
       0,
-      graphicSize * scaleFactor,
-      graphicSize * scaleFactor,
+      canvasSize * scaleFactor,
+      canvasSize * scaleFactor,
       0,
       0,
-      graphicSize,
-      graphicSize
+      canvasSize,
+      canvasSize
     );
 
     // Turn the generated image into a repeating pattern, just like a regular image fill.
