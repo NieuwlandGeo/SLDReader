@@ -70,6 +70,50 @@ function getExternalGraphicFill(symbolizer) {
   }
 }
 
+/**
+ * Scale mark graphic fill symbol with given scale factor to improve mark fill rendering.
+ * Scale factor will be applied to stroke width depending on the original value for visual fidelity.
+ * @param {object} graphicfill GraphicFill symbolizer object.
+ * @param {number} scaleFactor Scale factor.
+ * @returns {object} A new GraphifFill symbolizer object with scale factor applied.
+ */
+function scaleMarkGraphicFill(graphicfill, scaleFactor) {
+  if (!graphicfill.graphic) {
+    return graphicfill;
+  }
+
+  // Create a deep clone of the original symbolizer.
+  const newFill = JSON.parse(JSON.stringify(graphicfill));
+  const { graphic } = newFill;
+  const oriSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
+  graphic.size = scaleFactor * oriSize;
+  const { mark } = graphic;
+  if (mark && mark.stroke) {
+    // Apply SLD defaults to stroke parameters.
+    // Todo: do this at the SLDReader parsing stage already.
+    if (!mark.stroke.styling) {
+      mark.stroke.styling = {
+        stroke: 'black',
+        strokeWidth: 1.0,
+      };
+    }
+
+    if (!mark.stroke.styling.strokeWidth) {
+      mark.stroke.styling.strokeWidth =
+        Number(mark.stroke.styling.strokeWidth) || 1;
+    }
+
+    // If original stroke width is 1 or less, do not scale it.
+    // This gives better visual results than using a stroke width of 2 and downsizing.
+    const oriStrokeWidth = mark.stroke.styling.strokeWidth;
+    if (oriStrokeWidth > 1) {
+      mark.stroke.styling.strokeWidth = scaleFactor * oriStrokeWidth;
+    }
+  }
+
+  return newFill;
+}
+
 function getMarkGraphicFill(symbolizer) {
   const { graphicfill } = symbolizer.fill;
   const { graphic } = graphicfill;
@@ -77,20 +121,27 @@ function getMarkGraphicFill(symbolizer) {
   const canvasSize = graphicSize * DEVICE_PIXEL_RATIO;
   let fill = null;
 
+  // The graphic symbol will be rendered at a larger size and then scaled back to the graphic size.
+  // This is done to mitigate visual artifacts that occur when drawing between pixels.
+  const scaleFactor = 2.0;
+
   try {
-    const canvas = document.createElement('canvas');
-    canvas.width = canvasSize;
-    canvas.height = canvasSize;
-    const context = canvas.getContext('2d');
+    const scaledCanvas = document.createElement('canvas');
+    scaledCanvas.width = canvasSize * scaleFactor;
+    scaledCanvas.height = canvasSize * scaleFactor;
+    const context = scaledCanvas.getContext('2d');
 
     // Point symbolizer function expects an object with a .graphic property.
     // The point symbolizer is stored as graphicfill in the polygon symbolizer.
-    const pointStyle = getPointStyle(graphicfill);
+    const scaledGraphicFill = scaleMarkGraphicFill(graphicfill, scaleFactor);
+    const pointStyle = getPointStyle(scaledGraphicFill);
 
     // Let OpenLayers draw a point with the given point style on the temp canvas.
     // Note: OL rendering context size params are always in css pixels, while the temp canvas may
     // be larger depending on the device pixel ratio.
-    const olContext = toContext(context, { size: [graphicSize, graphicSize] });
+    const olContext = toContext(context, {
+      size: [graphicSize * scaleFactor, graphicSize * scaleFactor],
+    });
 
     // Disable image smoothing to ensure crisp graphic fill pattern.
     context.imageSmoothingEnabled = false;
@@ -98,8 +149,8 @@ function getMarkGraphicFill(symbolizer) {
     // Let OpenLayers draw the symbol to the canvas directly.
     olContext.setStyle(pointStyle);
 
-    const centerX = graphicSize / 2;
-    const centerY = graphicSize / 2;
+    const centerX = scaleFactor * (graphicSize / 2);
+    const centerY = scaleFactor * (graphicSize / 2);
     olContext.drawGeometry(new Point([centerX, centerY]));
 
     // For (back)slash marks, draw extra copies to the sides to ensure complete tiling coverage when used as a pattern.
@@ -114,14 +165,39 @@ function getMarkGraphicFill(symbolizer) {
     const { mark } = graphic;
     const { wellknownname } = mark || {};
     if (wellknownname && wellknownname.indexOf('slash') > -1) {
-      olContext.drawGeometry(new Point([centerX - graphicSize, centerY]));
-      olContext.drawGeometry(new Point([centerX + graphicSize, centerY]));
-      olContext.drawGeometry(new Point([centerX, centerY - graphicSize]));
-      olContext.drawGeometry(new Point([centerX, centerY + graphicSize]));
+      olContext.drawGeometry(
+        new Point([centerX - scaleFactor * graphicSize, centerY])
+      );
+      olContext.drawGeometry(
+        new Point([centerX + scaleFactor * graphicSize, centerY])
+      );
+      olContext.drawGeometry(
+        new Point([centerX, centerY - scaleFactor * graphicSize])
+      );
+      olContext.drawGeometry(
+        new Point([centerX, centerY + scaleFactor * graphicSize])
+      );
     }
 
+    // Downscale the drawn mark back to original graphic size.
+    const patternCanvas = document.createElement('canvas');
+    patternCanvas.width = graphicSize;
+    patternCanvas.height = graphicSize;
+    const patternContext = patternCanvas.getContext('2d');
+    patternContext.drawImage(
+      scaledCanvas,
+      0,
+      0,
+      graphicSize * scaleFactor,
+      graphicSize * scaleFactor,
+      0,
+      0,
+      graphicSize,
+      graphicSize
+    );
+
     // Turn the generated image into a repeating pattern, just like a regular image fill.
-    const pattern = context.createPattern(canvas, 'repeat');
+    const pattern = patternContext.createPattern(patternCanvas, 'repeat');
     fill = new Fill({
       color: pattern,
     });
