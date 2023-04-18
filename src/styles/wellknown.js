@@ -102,7 +102,7 @@ function getWellKnownSymbol(
         angle: Math.PI / 4,
         fill,
         points: 4,
-        radius1: radius,
+        radius1: Math.sqrt(2.0) * radius,
         radius2: 0,
         stroke:
           stroke ||
@@ -132,12 +132,32 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'line':
+      return new RegularShape({
+        fill,
+        points: 2,
+        radius,
+        angle: 0,
+        stroke,
+        rotation: rotationRadians,
+      });
+
     case 'backslash':
       return new RegularShape({
         fill,
         points: 2,
         radius: radius * Math.sqrt(2),
         angle: -Math.PI / 4,
+        stroke,
+        rotation: rotationRadians,
+      });
+
+    case 'slash':
+      return new RegularShape({
+        fill,
+        points: 2,
+        radius: radius * Math.sqrt(2),
+        angle: Math.PI / 4,
         stroke,
         rotation: rotationRadians,
       });
