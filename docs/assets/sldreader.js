@@ -3056,6 +3056,10 @@
    * @returns {ol/Style} OpenLayers style instance.
    */
   function getLinePointStyle(symbolizer, feature) {
+    if (typeof feature.getGeometry !== 'function') {
+      return null;
+    }
+
     var geom$1 = feature.getGeometry();
     if (!geom$1) {
       return null;
@@ -3099,6 +3103,10 @@
    * @returns {ol/Style} OpenLayers style instance.
    */
   function getPolygonPointStyle(symbolizer, feature) {
+    if (typeof feature.getGeometry !== 'function') {
+      return null;
+    }
+
     var geom$1 = feature.getGeometry();
     if (!geom$1) {
       return null;
@@ -3134,10 +3142,16 @@
   function appendStyle(styles, symbolizers, feature, styleFunction, getProperty) {
     if (Array.isArray(symbolizers)) {
       for (var k = 0; k < symbolizers.length; k += 1) {
-        styles.push(styleFunction(symbolizers[k], feature, getProperty));
+        var olStyle = styleFunction(symbolizers[k], feature, getProperty);
+        if (olStyle) {
+          styles.push(olStyle);
+        }
       }
     } else {
-      styles.push(styleFunction(symbolizers, feature, getProperty));
+      var olStyle$1 = styleFunction(symbolizers, feature, getProperty);
+      if (olStyle$1) {
+        styles.push(olStyle$1);
+      }
     }
   }
 
@@ -3304,8 +3318,32 @@
     };
   }
 
+  /**
+   * Create an array of OpenLayers style instances for features with the chosen geometry type from a style rule.
+   * Since this function creates a static OpenLayers style and not a style function,
+   * usage of this function is only suitable for simple symbolizers that do not depend on feature properties
+   * and do not contain external graphics. External graphic marks will be shown as a grey circle instead.
+   * @param {StyleRule} styleRule Feature Type Style Rule object.
+   * @param {string} geometryType One of 'Point', 'LineString' or 'Polygon'
+   * @returns {Array<ol.Style>} An array of OpenLayers style instances.
+   * @example
+   * myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
+   */
+  function createOlStyle(styleRule, geometryType) {
+    var geometryStyles = getGeometryStyles([styleRule]);
+
+    var olStyles = OlStyler(
+      geometryStyles,
+      { geometry: { type: geometryType } },
+      function () { return null; }
+    );
+
+    return olStyles.filter(function (style) { return style !== null; });
+  }
+
   exports.OlStyler = OlStyler;
   exports.Reader = Reader;
+  exports.createOlStyle = createOlStyle;
   exports.createOlStyleFunction = createOlStyleFunction;
   exports.getByPath = getByPath;
   exports.getGeometryStyles = getGeometryStyles;

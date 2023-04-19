@@ -6,6 +6,7 @@ nav_order: 4
 
 # Basic usage
 
+### Applying an SLD to a layer as a style function
 ```javascript
   /**
    * @param {object} vector layer
@@ -25,9 +26,9 @@ nav_order: 4
         const viewCenter = map.getView().getCenter();
         return ol.proj.getPointResolution(viewProjection, viewResolution, viewCenter);
       },
-      // If you use point icons with an ExternalGraphic, you have to use imageLoadCallback to
+      // If you use point icons with an ExternalGraphic, you have to use imageLoadCallback
       // to update the vector layer when an image finishes loading.
-      // If you do not do this, the image will only become visible after the next pan/zoom of the layer.
+      // If you do not do this, the image will only be visible after next layer pan/zoom.
       imageLoadedCallback: () => {
         vectorLayer.changed();
       },
@@ -51,6 +52,21 @@ nav_order: 4
   });
 
   applySLD(vectorLayer, mySLDString);
+```
+
+### Extracting static OpenLayers styles for a specific geometry type from an SLD rule
+```javascript
+const sldObject = SLDReader.Reader(sldXml);
+const sldLayer = SLDReader.getLayer(sldObject);
+const style = SLDReader.getStyle(sldLayer);
+const featureTypeStyle = style.featuretypestyles[0];
+
+// There can be more than one symbolizer of a given type inside a style rule,
+// therefore getOlStyle always returns an array of OpenLayers style instances.
+// Valid geometry types are 'Point', 'LineString', and 'Polygon'.
+const lineStyles = SLDReader.createOlStyle(featureTypeStyle.rules[0], 'LineString');
+
+vectorLayer.setStyle(lineStyles);
 ```
 
 {% include_relative apigen.md %}

@@ -23,6 +23,10 @@ function getInteriorPoint(geometry) {
  * @returns {ol/Style} OpenLayers style instance.
  */
 function getPolygonPointStyle(symbolizer, feature) {
+  if (typeof feature.getGeometry !== 'function') {
+    return null;
+  }
+
   const geom = feature.getGeometry();
   if (!geom) {
     return null;

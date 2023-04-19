@@ -24,10 +24,16 @@ const defaultStyles = [defaultPointStyle];
 function appendStyle(styles, symbolizers, feature, styleFunction, getProperty) {
   if (Array.isArray(symbolizers)) {
     for (let k = 0; k < symbolizers.length; k += 1) {
-      styles.push(styleFunction(symbolizers[k], feature, getProperty));
+      const olStyle = styleFunction(symbolizers[k], feature, getProperty);
+      if (olStyle) {
+        styles.push(olStyle);
+      }
     }
   } else {
-    styles.push(styleFunction(symbolizers, feature, getProperty));
+    const olStyle = styleFunction(symbolizers, feature, getProperty);
+    if (olStyle) {
+      styles.push(olStyle);
+    }
   }
 }
 
@@ -187,4 +193,27 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
 
     return olStyles;
   };
+}
+
+/**
+ * Create an array of OpenLayers style instances for features with the chosen geometry type from a style rule.
+ * Since this function creates a static OpenLayers style and not a style function,
+ * usage of this function is only suitable for simple symbolizers that do not depend on feature properties
+ * and do not contain external graphics. External graphic marks will be shown as a grey circle instead.
+ * @param {StyleRule} styleRule Feature Type Style Rule object.
+ * @param {string} geometryType One of 'Point', 'LineString' or 'Polygon'
+ * @returns {Array<ol.Style>} An array of OpenLayers style instances.
+ * @example
+ * myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
+ */
+export function createOlStyle(styleRule, geometryType) {
+  const geometryStyles = getGeometryStyles([styleRule]);
+
+  const olStyles = OlStyler(
+    geometryStyles,
+    { geometry: { type: geometryType } },
+    () => null
+  );
+
+  return olStyles.filter(style => style !== null);
 }
