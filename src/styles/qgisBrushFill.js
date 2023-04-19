@@ -1,3 +1,4 @@
+import { DEVICE_PIXEL_RATIO } from 'ol/has';
 import { Fill } from 'ol/style';
 
 const dense1Pixels = [[1, 1]];
@@ -30,6 +31,35 @@ function clearPixels(context, xyCoords) {
   });
 }
 
+function createCanvasPattern(canvas) {
+  const context = canvas.getContext('2d');
+
+  // Scale pixel pattern according to device pixel ratio if necessary.
+  if (DEVICE_PIXEL_RATIO === 1) {
+    return context.createPattern(canvas, 'repeat');
+  }
+
+  const scaledCanvas = document.createElement('canvas');
+  scaledCanvas.width = canvas.width * DEVICE_PIXEL_RATIO;
+  scaledCanvas.height = canvas.height * DEVICE_PIXEL_RATIO;
+
+  const scaledContext = scaledCanvas.getContext('2d');
+  scaledContext.imageSmoothingEnabled = false;
+  scaledContext.drawImage(
+    canvas,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+    0,
+    0,
+    scaledCanvas.width,
+    scaledCanvas.height
+  );
+
+  return scaledContext.createPattern(scaledCanvas, 'repeat');
+}
+
 function createPixelPattern(size, color, pixels) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -39,8 +69,7 @@ function createPixelPattern(size, color, pixels) {
   context.fillStyle = color;
   fillPixels(context, pixels);
 
-  const pattern = context.createPattern(canvas, 'repeat');
-  return pattern;
+  return createCanvasPattern(canvas);
 }
 
 function createInversePixelPattern(size, color, pixels) {
@@ -53,8 +82,7 @@ function createInversePixelPattern(size, color, pixels) {
   context.fillRect(0, 0, size, size);
   clearPixels(context, pixels);
 
-  const pattern = context.createPattern(canvas, 'repeat');
-  return pattern;
+  return createCanvasPattern(canvas);
 }
 
 export default function getQGISBrushFill(brushName, fillColor) {

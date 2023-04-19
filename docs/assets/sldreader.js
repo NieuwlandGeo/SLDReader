@@ -2465,6 +2465,35 @@
     });
   }
 
+  function createCanvasPattern(canvas) {
+    var context = canvas.getContext('2d');
+
+    // Scale pixel pattern according to device pixel ratio if necessary.
+    if (has.DEVICE_PIXEL_RATIO === 1) {
+      return context.createPattern(canvas, 'repeat');
+    }
+
+    var scaledCanvas = document.createElement('canvas');
+    scaledCanvas.width = canvas.width * has.DEVICE_PIXEL_RATIO;
+    scaledCanvas.height = canvas.height * has.DEVICE_PIXEL_RATIO;
+
+    var scaledContext = scaledCanvas.getContext('2d');
+    scaledContext.imageSmoothingEnabled = false;
+    scaledContext.drawImage(
+      canvas,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+      0,
+      0,
+      scaledCanvas.width,
+      scaledCanvas.height
+    );
+
+    return scaledContext.createPattern(scaledCanvas, 'repeat');
+  }
+
   function createPixelPattern(size, color, pixels) {
     var canvas = document.createElement('canvas');
     canvas.width = size;
@@ -2474,8 +2503,7 @@
     context.fillStyle = color;
     fillPixels(context, pixels);
 
-    var pattern = context.createPattern(canvas, 'repeat');
-    return pattern;
+    return createCanvasPattern(canvas);
   }
 
   function createInversePixelPattern(size, color, pixels) {
@@ -2488,8 +2516,7 @@
     context.fillRect(0, 0, size, size);
     clearPixels(context, pixels);
 
-    var pattern = context.createPattern(canvas, 'repeat');
-    return pattern;
+    return createCanvasPattern(canvas);
   }
 
   function getQGISBrushFill(brushName, fillColor) {
