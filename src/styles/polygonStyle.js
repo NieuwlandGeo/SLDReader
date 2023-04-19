@@ -16,6 +16,7 @@ import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
 import { getSimpleStroke, getSimpleFill } from './simpleStyles';
 import { getGraphicStrokeRenderer } from './graphicStrokeStyle';
 import getPointStyle from './pointStyle';
+import getQGISBrushFill from './qgisBrushFill';
 
 function createPattern(graphic) {
   const { image, width, height } = getCachedImage(
@@ -117,6 +118,19 @@ function scaleMarkGraphicFill(graphicfill, scaleFactor) {
 function getMarkGraphicFill(symbolizer) {
   const { graphicfill } = symbolizer.fill;
   const { graphic } = graphicfill;
+  const { mark } = graphic;
+  const { wellknownname } = mark || {};
+
+  // If it's a QGIS brush fill, use direct pixel manipulation to create the fill.
+  if (wellknownname && wellknownname.indexOf('brush://') === 0) {
+    let brushFillColor = 'black';
+    if (mark.fill && mark.fill.styling && mark.fill.styling.fill) {
+      brushFillColor = mark.fill.styling.fill;
+    }
+    return getQGISBrushFill(wellknownname, brushFillColor);
+  }
+
+  // Create mark graphic fill by drawing a single mark on a square canvas.
   const graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
   const canvasSize = graphicSize * DEVICE_PIXEL_RATIO;
   let fill = null;
@@ -162,8 +176,6 @@ function getMarkGraphicFill(symbolizer) {
     // +---+---+---+
     //     | C |
     //     +---+
-    const { mark } = graphic;
-    const { wellknownname } = mark || {};
     if (wellknownname && wellknownname.indexOf('slash') > -1) {
       olContext.drawGeometry(
         new Point([centerX - scaleFactor * graphicSize, centerY])

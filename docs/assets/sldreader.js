@@ -2432,6 +2432,15 @@
     return cachedLineStyle(symbolizer);
   }
 
+  function getQGISBrushFill(brushName, fillColor) {
+    console.log('BRUSH ME --> ', brushName, ' --> ', fillColor);
+
+    switch (brushName) {
+      default:
+        return new style.Fill({ color: fillColor });
+    }
+  }
+
   /* eslint-disable function-call-argument-newline */
 
   function createPattern(graphic) {
@@ -2539,6 +2548,20 @@
     var ref = symbolizer.fill;
     var graphicfill = ref.graphicfill;
     var graphic = graphicfill.graphic;
+    var mark = graphic.mark;
+    var ref$1 = mark || {};
+    var wellknownname = ref$1.wellknownname;
+
+    // If it's a QGIS brush fill, use direct pixel manipulation to create the fill.
+    if (wellknownname && wellknownname.indexOf('brush://') === 0) {
+      var brushFillColor = 'black';
+      if (mark.fill && mark.fill.styling && mark.fill.styling.fill) {
+        brushFillColor = mark.fill.styling.fill;
+      }
+      return getQGISBrushFill(wellknownname, brushFillColor);
+    }
+
+    // Create mark graphic fill by drawing a single mark on a square canvas.
     var graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
     var canvasSize = graphicSize * has.DEVICE_PIXEL_RATIO;
     var fill = null;
@@ -2584,9 +2607,6 @@
       // +---+---+---+
       //     | C |
       //     +---+
-      var mark = graphic.mark;
-      var ref$1 = mark || {};
-      var wellknownname = ref$1.wellknownname;
       if (wellknownname && wellknownname.indexOf('slash') > -1) {
         olContext.drawGeometry(
           new geom.Point([centerX - scaleFactor * graphicSize, centerY])
