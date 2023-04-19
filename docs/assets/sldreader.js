@@ -2432,6 +2432,146 @@
     return cachedLineStyle(symbolizer);
   }
 
+  var dense1Pixels = [[1, 1]];
+  var dense2Pixels = [
+    [0, 0],
+    [2, 2] ];
+  var dense3Pixels = [
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+    [2, 0],
+    [0, 2] ];
+  var dense4Pixels = [
+    [0, 0],
+    [1, 1] ];
+
+  function fillPixels(context, xyCoords) {
+    xyCoords.forEach(function (ref) {
+      var x = ref[0];
+      var y = ref[1];
+
+      context.fillRect(x, y, 1, 1);
+    });
+  }
+
+  function clearPixels(context, xyCoords) {
+    xyCoords.forEach(function (ref) {
+      var x = ref[0];
+      var y = ref[1];
+
+      context.clearRect(x, y, 1, 1);
+    });
+  }
+
+  function createCanvasPattern(canvas) {
+    var context = canvas.getContext('2d');
+
+    // Scale pixel pattern according to device pixel ratio if necessary.
+    if (has.DEVICE_PIXEL_RATIO === 1) {
+      return context.createPattern(canvas, 'repeat');
+    }
+
+    var scaledCanvas = document.createElement('canvas');
+    scaledCanvas.width = canvas.width * has.DEVICE_PIXEL_RATIO;
+    scaledCanvas.height = canvas.height * has.DEVICE_PIXEL_RATIO;
+
+    var scaledContext = scaledCanvas.getContext('2d');
+    scaledContext.imageSmoothingEnabled = false;
+    scaledContext.drawImage(
+      canvas,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+      0,
+      0,
+      scaledCanvas.width,
+      scaledCanvas.height
+    );
+
+    return scaledContext.createPattern(scaledCanvas, 'repeat');
+  }
+
+  function createPixelPattern(size, color, pixels) {
+    var canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    var context = canvas.getContext('2d');
+
+    context.fillStyle = color;
+    fillPixels(context, pixels);
+
+    return createCanvasPattern(canvas);
+  }
+
+  function createInversePixelPattern(size, color, pixels) {
+    var canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    var context = canvas.getContext('2d');
+
+    context.fillStyle = color;
+    context.fillRect(0, 0, size, size);
+    clearPixels(context, pixels);
+
+    return createCanvasPattern(canvas);
+  }
+
+  function getQGISBrushFill(brushName, fillColor) {
+    var fill = null;
+    switch (brushName) {
+      case 'brush://dense1':
+        fill = new style.Fill({
+          color: createInversePixelPattern(4, fillColor, dense1Pixels),
+        });
+        break;
+
+      case 'brush://dense2':
+        fill = new style.Fill({
+          color: createInversePixelPattern(4, fillColor, dense2Pixels),
+        });
+        break;
+
+      case 'brush://dense3':
+        fill = new style.Fill({
+          color: createInversePixelPattern(4, fillColor, dense3Pixels),
+        });
+        break;
+
+      case 'brush://dense4':
+        fill = new style.Fill({
+          color: createPixelPattern(2, fillColor, dense4Pixels),
+        });
+        break;
+
+      case 'brush://dense5':
+        fill = new style.Fill({
+          color: createPixelPattern(4, fillColor, dense3Pixels),
+        });
+        break;
+
+      case 'brush://dense6':
+        fill = new style.Fill({
+          color: createPixelPattern(4, fillColor, dense2Pixels),
+        });
+        break;
+
+      case 'brush://dense7':
+        fill = new style.Fill({
+          color: createPixelPattern(4, fillColor, dense1Pixels),
+        });
+        break;
+
+      default:
+        fill = new style.Fill({ color: fillColor });
+        break;
+    }
+
+    return fill;
+  }
+
   /* eslint-disable function-call-argument-newline */
 
   function createPattern(graphic) {
@@ -2539,6 +2679,20 @@
     var ref = symbolizer.fill;
     var graphicfill = ref.graphicfill;
     var graphic = graphicfill.graphic;
+    var mark = graphic.mark;
+    var ref$1 = mark || {};
+    var wellknownname = ref$1.wellknownname;
+
+    // If it's a QGIS brush fill, use direct pixel manipulation to create the fill.
+    if (wellknownname && wellknownname.indexOf('brush://') === 0) {
+      var brushFillColor = 'black';
+      if (mark.fill && mark.fill.styling && mark.fill.styling.fill) {
+        brushFillColor = mark.fill.styling.fill;
+      }
+      return getQGISBrushFill(wellknownname, brushFillColor);
+    }
+
+    // Create mark graphic fill by drawing a single mark on a square canvas.
     var graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
     var canvasSize = graphicSize * has.DEVICE_PIXEL_RATIO;
     var fill = null;
@@ -2584,9 +2738,6 @@
       // +---+---+---+
       //     | C |
       //     +---+
-      var mark = graphic.mark;
-      var ref$1 = mark || {};
-      var wellknownname = ref$1.wellknownname;
       if (wellknownname && wellknownname.indexOf('slash') > -1) {
         olContext.drawGeometry(
           new geom.Point([centerX - scaleFactor * graphicSize, centerY])
