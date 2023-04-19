@@ -2432,13 +2432,117 @@
     return cachedLineStyle(symbolizer);
   }
 
-  function getQGISBrushFill(brushName, fillColor) {
-    console.log('BRUSH ME --> ', brushName, ' --> ', fillColor);
+  var dense1Pixels = [[1, 1]];
+  var dense2Pixels = [
+    [0, 0],
+    [2, 2] ];
+  var dense3Pixels = [
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+    [2, 0],
+    [0, 2] ];
+  var dense4Pixels = [
+    [0, 0],
+    [1, 1] ];
 
+  function fillPixels(context, xyCoords) {
+    xyCoords.forEach(function (ref) {
+      var x = ref[0];
+      var y = ref[1];
+
+      context.fillRect(x, y, 1, 1);
+    });
+  }
+
+  function clearPixels(context, xyCoords) {
+    xyCoords.forEach(function (ref) {
+      var x = ref[0];
+      var y = ref[1];
+
+      context.clearRect(x, y, 1, 1);
+    });
+  }
+
+  function createPixelPattern(size, color, pixels) {
+    var canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    var context = canvas.getContext('2d');
+
+    context.fillStyle = color;
+    fillPixels(context, pixels);
+
+    var pattern = context.createPattern(canvas, 'repeat');
+    return pattern;
+  }
+
+  function createInversePixelPattern(size, color, pixels) {
+    var canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    var context = canvas.getContext('2d');
+
+    context.fillStyle = color;
+    context.fillRect(0, 0, size, size);
+    clearPixels(context, pixels);
+
+    var pattern = context.createPattern(canvas, 'repeat');
+    return pattern;
+  }
+
+  function getQGISBrushFill(brushName, fillColor) {
+    var fill = null;
     switch (brushName) {
+      case 'brush://dense1':
+        fill = new style.Fill({
+          color: createInversePixelPattern(4, fillColor, dense1Pixels),
+        });
+        break;
+
+      case 'brush://dense2':
+        fill = new style.Fill({
+          color: createInversePixelPattern(4, fillColor, dense2Pixels),
+        });
+        break;
+
+      case 'brush://dense3':
+        fill = new style.Fill({
+          color: createInversePixelPattern(4, fillColor, dense3Pixels),
+        });
+        break;
+
+      case 'brush://dense4':
+        fill = new style.Fill({
+          color: createPixelPattern(2, fillColor, dense4Pixels),
+        });
+        break;
+
+      case 'brush://dense5':
+        fill = new style.Fill({
+          color: createPixelPattern(4, fillColor, dense3Pixels),
+        });
+        break;
+
+      case 'brush://dense6':
+        fill = new style.Fill({
+          color: createPixelPattern(4, fillColor, dense2Pixels),
+        });
+        break;
+
+      case 'brush://dense7':
+        fill = new style.Fill({
+          color: createPixelPattern(4, fillColor, dense1Pixels),
+        });
+        break;
+
       default:
-        return new style.Fill({ color: fillColor });
+        fill = new style.Fill({ color: fillColor });
+        break;
     }
+
+    return fill;
   }
 
   /* eslint-disable function-call-argument-newline */
