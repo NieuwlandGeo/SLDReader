@@ -937,4 +937,11 @@ describe('Static style extraction with getOlStyle', () => {
     const olStyles = createOlStyle(featureTypeStyle.rules[0], 'Polygon');
     expect(olStyles.length).to.equal(0);
   });
+
+  it('Returns empty styles array when geometry type is not provided', () => {
+    const sldObject = Reader(simpleLineSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const olStyles = createOlStyle(featureTypeStyle.rules[0]);
+    expect(olStyles.length).to.equal(0);
+  });
 });

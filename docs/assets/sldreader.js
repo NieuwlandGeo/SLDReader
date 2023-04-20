@@ -3163,8 +3163,9 @@
    *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
    * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
    * @param {object} [options] Optional options object.
-   * @param {boolean} [options.strictGeometryMatch] When true, only apply symbolizers to the corresponding geometry type.
+   * @param {boolean} [options.strictGeometryMatch] Default false. When true, only apply symbolizers to the corresponding geometry type.
    * E.g. point symbolizers will not be applied to lines and polygons. Default false (according to SLD spec).
+   * @param {boolean} [options.useFallbackStyles] Default true. When true, provides default OL styles as fallback for unknown geometry types.
    * @return ol.style.Style or array of it
    */
   function OlStyler(
@@ -3182,6 +3183,7 @@
 
     var defaultOptions = {
       strictGeometryMatch: false,
+      useFallbackStyles: true,
     };
 
     var styleOptions = Object.assign({}, defaultOptions, options);
@@ -3210,7 +3212,13 @@
         }
         for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
           if (!styleOptions.strictGeometryMatch) {
-            appendStyle(styles, point[j$3], feature, getLinePointStyle, getProperty);
+            appendStyle(
+              styles,
+              point[j$3],
+              feature,
+              getLinePointStyle,
+              getProperty
+            );
           }
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
@@ -3243,7 +3251,9 @@
         break;
 
       default:
-        styles = defaultStyles;
+        if (styleOptions.useFallbackStyles) {
+          styles = defaultStyles;
+        }
     }
 
     // Set z-index of styles explicitly to fix a bug where GraphicStroke is always rendered above a line symbolizer.
@@ -3356,7 +3366,7 @@
       geometryStyles,
       { geometry: { type: geometryType } },
       function () { return null; },
-      { strictGeometryMatch: true }
+      { strictGeometryMatch: true, useFallbackStyles: false }
     );
 
     return olStyles.filter(function (style) { return style !== null; });
