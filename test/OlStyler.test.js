@@ -3,7 +3,10 @@ import { Style, Circle } from 'ol/style';
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
 import Reader from '../src/Reader';
-import OlStyler, { createOlStyleFunction } from '../src/OlStyler';
+import OlStyler, {
+  createOlStyle,
+  createOlStyleFunction,
+} from '../src/OlStyler';
 
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
@@ -900,5 +903,38 @@ describe('PointSymbolizer and mixed geometries', () => {
     let style = styleFunction(lineFeature)[0];
     style = styleFunction(pointFeature)[0];
     expect(style.getGeometry()).to.be.null;
+  });
+});
+
+describe('Static style extraction with getOlStyle', () => {
+  it('Extract line symbolizer style from SLD rule', () => {
+    const sldObject = Reader(simpleLineSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const olStyles = createOlStyle(featureTypeStyle.rules[0], 'LineString');
+    expect(olStyles.length).to.equal(1);
+    const [lineStyle] = olStyles;
+    expect(lineStyle.getStroke().getColor()).to.equal('#FF0000');
+    expect(lineStyle.getStroke().getWidth()).to.equal(1);
+  });
+
+  it('Does not extract a line style from a point symbolizer', () => {
+    const sldObject = Reader(simplePointSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const olStyles = createOlStyle(featureTypeStyle.rules[0], 'LineString');
+    expect(olStyles.length).to.equal(0);
+  });
+
+  it('Does not extract a polygon style from a point symbolizer', () => {
+    const sldObject = Reader(simplePointSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const olStyles = createOlStyle(featureTypeStyle.rules[0], 'Polygon');
+    expect(olStyles.length).to.equal(0);
+  });
+
+  it('Does not extract a polygon style from a line symbolizer', () => {
+    const sldObject = Reader(simpleLineSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const olStyles = createOlStyle(featureTypeStyle.rules[0], 'Polygon');
+    expect(olStyles.length).to.equal(0);
   });
 });
