@@ -3162,13 +3162,29 @@
    * @param {object|Feature} feature {@link http://geojson.org|geojson}
    *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
    * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+   * @param {object} [options] Optional options object.
+   * @param {boolean} [options.strictGeometryMatch] When true, only apply symbolizers to the corresponding geometry type.
+   * E.g. point symbolizers will not be applied to lines and polygons. Default false (according to SLD spec).
    * @return ol.style.Style or array of it
    */
-  function OlStyler(GeometryStyles, feature, getProperty) {
+  function OlStyler(
+    GeometryStyles,
+    feature,
+    getProperty,
+    options
+  ) {
+    if ( options === void 0 ) options = {};
+
     var polygon = GeometryStyles.polygon;
     var line = GeometryStyles.line;
     var point = GeometryStyles.point;
     var text = GeometryStyles.text;
+
+    var defaultOptions = {
+      strictGeometryMatch: false,
+    };
+
+    var styleOptions = Object.assign({}, defaultOptions, options);
 
     var geometry = feature.getGeometry
       ? feature.getGeometry()
@@ -3193,7 +3209,9 @@
           appendStyle(styles, line[j$2], feature, getLineStyle, getProperty);
         }
         for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
-          appendStyle(styles, point[j$3], feature, getLinePointStyle, getProperty);
+          if (!styleOptions.strictGeometryMatch) {
+            appendStyle(styles, point[j$3], feature, getLinePointStyle, getProperty);
+          }
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
           styles.push(getTextStyle(text[j$4], feature, getProperty));
@@ -3206,7 +3224,9 @@
           appendStyle(styles, polygon[j$5], feature, getPolygonStyle, getProperty);
         }
         for (var j$6 = 0; j$6 < line.length; j$6 += 1) {
-          appendStyle(styles, line[j$6], feature, getLineStyle, getProperty);
+          if (!styleOptions.strictGeometryMatch) {
+            appendStyle(styles, line[j$6], feature, getLineStyle, getProperty);
+          }
         }
         for (var j$7 = 0; j$7 < point.length; j$7 += 1) {
           appendStyle(
@@ -3335,7 +3355,8 @@
     var olStyles = OlStyler(
       geometryStyles,
       { geometry: { type: geometryType } },
-      function () { return null; }
+      function () { return null; },
+      { strictGeometryMatch: true }
     );
 
     return olStyles.filter(function (style) { return style !== null; });

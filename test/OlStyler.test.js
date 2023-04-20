@@ -917,15 +917,22 @@ describe('Static style extraction with getOlStyle', () => {
     expect(lineStyle.getStroke().getWidth()).to.equal(1);
   });
 
-  it('Does not crash when trying to extract a line style from a point symbolizer SLD', () => {
+  it('Does not extract a line style from a point symbolizer', () => {
     const sldObject = Reader(simplePointSymbolizerSld);
     const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
     const olStyles = createOlStyle(featureTypeStyle.rules[0], 'LineString');
     expect(olStyles.length).to.equal(0);
   });
 
-  it('Does not crash when trying to extract a polygon style from a point symbolizer SLD', () => {
+  it('Does not extract a polygon style from a point symbolizer', () => {
     const sldObject = Reader(simplePointSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const olStyles = createOlStyle(featureTypeStyle.rules[0], 'Polygon');
+    expect(olStyles.length).to.equal(0);
+  });
+
+  it('Does not extract a polygon style from a line symbolizer', () => {
+    const sldObject = Reader(simpleLineSymbolizerSld);
     const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
     const olStyles = createOlStyle(featureTypeStyle.rules[0], 'Polygon');
     expect(olStyles.length).to.equal(0);
