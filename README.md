@@ -84,6 +84,15 @@ Polygons with static fill and stroke style parameters are supported. See LineSym
 
 For polygon graphic fills, both ExternalGraphic and Mark graphic fills are supported. The Marks supported here are the same as for a point symbolizer, with the additional restriction that feature-dependent value cannot be used.
 
+The following WellKnownNames used by QGIS simple fills can be used as well:
+* x
+* cross
+* line
+* horline
+* slash
+* backslash
+* brush://dense1 (till dense7)
+
 #### TextSymbolizer
 
 Dynamic Labels (with PropertyName elements), Font and Halo are supported. No vendor-specific options are supported. LabelPlacement or PointPlacement are supported. Graphic elements to display behind the label text are not supported.
