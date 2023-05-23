@@ -39,27 +39,24 @@ const getMockOLFeature = geometryType => ({
 describe('create ol style object from styledescription', () => {
   const styleDescription = {
     polygon: [
-      [
-        {
-          fill: {
-            styling: {
-              fill: 'blue',
-            },
+      {
+        fill: {
+          styling: {
+            fill: 'blue',
           },
         },
-      ],
+      },
     ],
     line: [
-      [
-        {
-          stroke: {
-            styling: {
-              stroke: 'red',
-            },
+      {
+        stroke: {
+          styling: {
+            stroke: 'red',
           },
         },
-      ],
+      },
     ],
+
     point: [],
     text: [],
   };
@@ -92,20 +89,18 @@ describe('creates point style', () => {
     line: [],
     text: [],
     point: [
-      [
-        {
-          graphic: {
-            mark: {
-              wellknownname: 'circle',
-              fill: {},
-              stroke: {},
-            },
-            opactity: 20,
-            size: 10,
-            rotation: 0,
+      {
+        graphic: {
+          mark: {
+            wellknownname: 'circle',
+            fill: {},
+            stroke: {},
           },
+          opactity: 20,
+          size: 10,
+          rotation: 0,
         },
-      ],
+      },
     ],
   };
   it('returns array', () => {

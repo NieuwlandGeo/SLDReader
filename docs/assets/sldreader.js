@@ -1173,20 +1173,16 @@
     };
     for (var i = 0; i < rules.length; i += 1) {
       if (rules[i].polygonsymbolizer) {
-        result.polygon.push(rules[i].polygonsymbolizer);
+        result.polygon = ( result.polygon ).concat( rules[i].polygonsymbolizer);
       }
-      if (rules[i].linesymbolizer && rules[i].linesymbolizer) {
-        result.line.push(rules[i].linesymbolizer);
+      if (rules[i].linesymbolizer) {
+        result.line = ( result.line ).concat( rules[i].linesymbolizer);
       }
       if (rules[i].pointsymbolizer) {
-        var ref = rules[i];
-        var pointsymbolizer = ref.pointsymbolizer;
-        result.point.push(pointsymbolizer);
+        result.point = ( result.point ).concat( rules[i].pointsymbolizer);
       }
       if (rules[i].textsymbolizer) {
-        var ref$1 = rules[i];
-        var textsymbolizer = ref$1.textsymbolizer;
-        result.text.push(textsymbolizer);
+        result.text = ( result.text ).concat( rules[i].textsymbolizer);
       }
     }
     return result;
@@ -3176,57 +3172,27 @@
     switch (geometryType) {
       case 'Point':
       case 'MultiPoint':
-        for (var j = 0; j < point.length; j += 1) {
-          appendStyles(styles, point[j], feature, getPointStyle, getProperty);
-        }
-        for (var j$1 = 0; j$1 < text.length; j$1 += 1) {
-          appendStyles(styles, text[j$1], feature, getTextStyle, getProperty);
-        }
+        appendStyles(styles, point, feature, getPointStyle, getProperty);
+        appendStyles(styles, text, feature, getTextStyle, getProperty);
         break;
 
       case 'LineString':
       case 'MultiLineString':
-        for (var j$2 = 0; j$2 < line.length; j$2 += 1) {
-          appendStyles(styles, line[j$2], feature, getLineStyle, getProperty);
+        appendStyles(styles, line, feature, getLineStyle, getProperty);
+        if (!styleOptions.strictGeometryMatch) {
+          appendStyles(styles, point, feature, getLinePointStyle, getProperty);
         }
-        for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
-          if (!styleOptions.strictGeometryMatch) {
-            appendStyles(
-              styles,
-              point[j$3],
-              feature,
-              getLinePointStyle,
-              getProperty
-            );
-          }
-        }
-        for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          appendStyles(styles, text[j$4], feature, getTextStyle, getProperty);
-        }
+        appendStyles(styles, text, feature, getTextStyle, getProperty);
         break;
 
       case 'Polygon':
       case 'MultiPolygon':
-        for (var j$5 = 0; j$5 < polygon.length; j$5 += 1) {
-          appendStyles(styles, polygon[j$5], feature, getPolygonStyle, getProperty);
+        appendStyles(styles, polygon, feature, getPolygonStyle, getProperty);
+        if (!styleOptions.strictGeometryMatch) {
+          appendStyles(styles, line, feature, getLineStyle, getProperty);
         }
-        for (var j$6 = 0; j$6 < line.length; j$6 += 1) {
-          if (!styleOptions.strictGeometryMatch) {
-            appendStyles(styles, line[j$6], feature, getLineStyle, getProperty);
-          }
-        }
-        for (var j$7 = 0; j$7 < point.length; j$7 += 1) {
-          appendStyles(
-            styles,
-            point[j$7],
-            feature,
-            getPolygonPointStyle,
-            getProperty
-          );
-        }
-        for (var j$8 = 0; j$8 < text.length; j$8 += 1) {
-          appendStyles(styles, text[j$8], feature, getTextStyle, getProperty);
-        }
+        appendStyles(styles, point, feature, getPolygonPointStyle, getProperty);
+        appendStyles(styles, text, feature, getTextStyle, getProperty);
         break;
 
       default:

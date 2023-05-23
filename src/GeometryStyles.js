@@ -12,18 +12,16 @@ function getGeometryStyles(rules) {
   };
   for (let i = 0; i < rules.length; i += 1) {
     if (rules[i].polygonsymbolizer) {
-      result.polygon.push(rules[i].polygonsymbolizer);
+      result.polygon = [...result.polygon, ...rules[i].polygonsymbolizer];
     }
-    if (rules[i].linesymbolizer && rules[i].linesymbolizer) {
-      result.line.push(rules[i].linesymbolizer);
+    if (rules[i].linesymbolizer) {
+      result.line = [...result.line, ...rules[i].linesymbolizer];
     }
     if (rules[i].pointsymbolizer) {
-      const { pointsymbolizer } = rules[i];
-      result.point.push(pointsymbolizer);
+      result.point = [...result.point, ...rules[i].pointsymbolizer];
     }
     if (rules[i].textsymbolizer) {
-      const { textsymbolizer } = rules[i];
-      result.text.push(textsymbolizer);
+      result.text = [...result.text, ...rules[i].textsymbolizer];
     }
   }
   return result;

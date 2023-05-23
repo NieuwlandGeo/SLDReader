@@ -73,57 +73,27 @@ export default function OlStyler(
   switch (geometryType) {
     case 'Point':
     case 'MultiPoint':
-      for (let j = 0; j < point.length; j += 1) {
-        appendStyles(styles, point[j], feature, getPointStyle, getProperty);
-      }
-      for (let j = 0; j < text.length; j += 1) {
-        appendStyles(styles, text[j], feature, getTextStyle, getProperty);
-      }
+      appendStyles(styles, point, feature, getPointStyle, getProperty);
+      appendStyles(styles, text, feature, getTextStyle, getProperty);
       break;
 
     case 'LineString':
     case 'MultiLineString':
-      for (let j = 0; j < line.length; j += 1) {
-        appendStyles(styles, line[j], feature, getLineStyle, getProperty);
+      appendStyles(styles, line, feature, getLineStyle, getProperty);
+      if (!styleOptions.strictGeometryMatch) {
+        appendStyles(styles, point, feature, getLinePointStyle, getProperty);
       }
-      for (let j = 0; j < point.length; j += 1) {
-        if (!styleOptions.strictGeometryMatch) {
-          appendStyles(
-            styles,
-            point[j],
-            feature,
-            getLinePointStyle,
-            getProperty
-          );
-        }
-      }
-      for (let j = 0; j < text.length; j += 1) {
-        appendStyles(styles, text[j], feature, getTextStyle, getProperty);
-      }
+      appendStyles(styles, text, feature, getTextStyle, getProperty);
       break;
 
     case 'Polygon':
     case 'MultiPolygon':
-      for (let j = 0; j < polygon.length; j += 1) {
-        appendStyles(styles, polygon[j], feature, getPolygonStyle, getProperty);
+      appendStyles(styles, polygon, feature, getPolygonStyle, getProperty);
+      if (!styleOptions.strictGeometryMatch) {
+        appendStyles(styles, line, feature, getLineStyle, getProperty);
       }
-      for (let j = 0; j < line.length; j += 1) {
-        if (!styleOptions.strictGeometryMatch) {
-          appendStyles(styles, line[j], feature, getLineStyle, getProperty);
-        }
-      }
-      for (let j = 0; j < point.length; j += 1) {
-        appendStyles(
-          styles,
-          point[j],
-          feature,
-          getPolygonPointStyle,
-          getProperty
-        );
-      }
-      for (let j = 0; j < text.length; j += 1) {
-        appendStyles(styles, text[j], feature, getTextStyle, getProperty);
-      }
+      appendStyles(styles, point, feature, getPolygonPointStyle, getProperty);
+      appendStyles(styles, text, feature, getTextStyle, getProperty);
       break;
 
     default:
