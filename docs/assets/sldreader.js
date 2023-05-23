@@ -3111,28 +3111,27 @@
 
   /**
    * @private
-   * Convert symbolizers together with the feature to OL style objects and append them to the styles array.
-   * @example appendStyle(styles, point[j], feature, getPointStyle);
+   * Convert symbolizers together with the feature to OL style objects and append them to the OL styles array.
+   * @example appendStyles(styles, point[j], feature, getPointStyle);
    * @param {Array<ol/style>} styles Array of OL styles.
-   * @param {object|Array<object>} symbolizers Feature symbolizer object, or array of feature symbolizers.
+   * @param {Array<object>} symbolizers Array of feature symbolizers.
    * @param {ol/feature} feature OpenLayers feature.
    * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
    * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
    */
-  function appendStyle(styles, symbolizers, feature, styleFunction, getProperty) {
-    if (Array.isArray(symbolizers)) {
-      for (var k = 0; k < symbolizers.length; k += 1) {
-        var olStyle = styleFunction(symbolizers[k], feature, getProperty);
-        if (olStyle) {
-          styles.push(olStyle);
-        }
+  function appendStyles(
+    styles,
+    symbolizers,
+    feature,
+    styleFunction,
+    getProperty
+  ) {
+    (symbolizers || []).forEach(function (symbolizer) {
+      var olStyle = styleFunction(symbolizer, feature, getProperty);
+      if (olStyle) {
+        styles.push(olStyle);
       }
-    } else {
-      var olStyle$1 = styleFunction(symbolizers, feature, getProperty);
-      if (olStyle$1) {
-        styles.push(olStyle$1);
-      }
-    }
+    });
   }
 
   /**
@@ -3178,21 +3177,21 @@
       case 'Point':
       case 'MultiPoint':
         for (var j = 0; j < point.length; j += 1) {
-          appendStyle(styles, point[j], feature, getPointStyle, getProperty);
+          appendStyles(styles, point[j], feature, getPointStyle, getProperty);
         }
         for (var j$1 = 0; j$1 < text.length; j$1 += 1) {
-          appendStyle(styles, text[j$1], feature, getTextStyle, getProperty);
+          appendStyles(styles, text[j$1], feature, getTextStyle, getProperty);
         }
         break;
 
       case 'LineString':
       case 'MultiLineString':
         for (var j$2 = 0; j$2 < line.length; j$2 += 1) {
-          appendStyle(styles, line[j$2], feature, getLineStyle, getProperty);
+          appendStyles(styles, line[j$2], feature, getLineStyle, getProperty);
         }
         for (var j$3 = 0; j$3 < point.length; j$3 += 1) {
           if (!styleOptions.strictGeometryMatch) {
-            appendStyle(
+            appendStyles(
               styles,
               point[j$3],
               feature,
@@ -3202,22 +3201,22 @@
           }
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          appendStyle(styles, text[j$4], feature, getTextStyle, getProperty);
+          appendStyles(styles, text[j$4], feature, getTextStyle, getProperty);
         }
         break;
 
       case 'Polygon':
       case 'MultiPolygon':
         for (var j$5 = 0; j$5 < polygon.length; j$5 += 1) {
-          appendStyle(styles, polygon[j$5], feature, getPolygonStyle, getProperty);
+          appendStyles(styles, polygon[j$5], feature, getPolygonStyle, getProperty);
         }
         for (var j$6 = 0; j$6 < line.length; j$6 += 1) {
           if (!styleOptions.strictGeometryMatch) {
-            appendStyle(styles, line[j$6], feature, getLineStyle, getProperty);
+            appendStyles(styles, line[j$6], feature, getLineStyle, getProperty);
           }
         }
         for (var j$7 = 0; j$7 < point.length; j$7 += 1) {
-          appendStyle(
+          appendStyles(
             styles,
             point[j$7],
             feature,
@@ -3226,7 +3225,7 @@
           );
         }
         for (var j$8 = 0; j$8 < text.length; j$8 += 1) {
-          appendStyle(styles, text[j$8], feature, getTextStyle, getProperty);
+          appendStyles(styles, text[j$8], feature, getTextStyle, getProperty);
         }
         break;
 

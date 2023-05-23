@@ -13,28 +13,27 @@ const defaultStyles = [defaultPointStyle];
 
 /**
  * @private
- * Convert symbolizers together with the feature to OL style objects and append them to the styles array.
- * @example appendStyle(styles, point[j], feature, getPointStyle);
+ * Convert symbolizers together with the feature to OL style objects and append them to the OL styles array.
+ * @example appendStyles(styles, point[j], feature, getPointStyle);
  * @param {Array<ol/style>} styles Array of OL styles.
- * @param {object|Array<object>} symbolizers Feature symbolizer object, or array of feature symbolizers.
+ * @param {Array<object>} symbolizers Array of feature symbolizers.
  * @param {ol/feature} feature OpenLayers feature.
  * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
  * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  */
-function appendStyle(styles, symbolizers, feature, styleFunction, getProperty) {
-  if (Array.isArray(symbolizers)) {
-    for (let k = 0; k < symbolizers.length; k += 1) {
-      const olStyle = styleFunction(symbolizers[k], feature, getProperty);
-      if (olStyle) {
-        styles.push(olStyle);
-      }
-    }
-  } else {
-    const olStyle = styleFunction(symbolizers, feature, getProperty);
+function appendStyles(
+  styles,
+  symbolizers,
+  feature,
+  styleFunction,
+  getProperty
+) {
+  (symbolizers || []).forEach(symbolizer => {
+    const olStyle = styleFunction(symbolizer, feature, getProperty);
     if (olStyle) {
       styles.push(olStyle);
     }
-  }
+  });
 }
 
 /**
@@ -75,21 +74,21 @@ export default function OlStyler(
     case 'Point':
     case 'MultiPoint':
       for (let j = 0; j < point.length; j += 1) {
-        appendStyle(styles, point[j], feature, getPointStyle, getProperty);
+        appendStyles(styles, point[j], feature, getPointStyle, getProperty);
       }
       for (let j = 0; j < text.length; j += 1) {
-        appendStyle(styles, text[j], feature, getTextStyle, getProperty);
+        appendStyles(styles, text[j], feature, getTextStyle, getProperty);
       }
       break;
 
     case 'LineString':
     case 'MultiLineString':
       for (let j = 0; j < line.length; j += 1) {
-        appendStyle(styles, line[j], feature, getLineStyle, getProperty);
+        appendStyles(styles, line[j], feature, getLineStyle, getProperty);
       }
       for (let j = 0; j < point.length; j += 1) {
         if (!styleOptions.strictGeometryMatch) {
-          appendStyle(
+          appendStyles(
             styles,
             point[j],
             feature,
@@ -99,22 +98,22 @@ export default function OlStyler(
         }
       }
       for (let j = 0; j < text.length; j += 1) {
-        appendStyle(styles, text[j], feature, getTextStyle, getProperty);
+        appendStyles(styles, text[j], feature, getTextStyle, getProperty);
       }
       break;
 
     case 'Polygon':
     case 'MultiPolygon':
       for (let j = 0; j < polygon.length; j += 1) {
-        appendStyle(styles, polygon[j], feature, getPolygonStyle, getProperty);
+        appendStyles(styles, polygon[j], feature, getPolygonStyle, getProperty);
       }
       for (let j = 0; j < line.length; j += 1) {
         if (!styleOptions.strictGeometryMatch) {
-          appendStyle(styles, line[j], feature, getLineStyle, getProperty);
+          appendStyles(styles, line[j], feature, getLineStyle, getProperty);
         }
       }
       for (let j = 0; j < point.length; j += 1) {
-        appendStyle(
+        appendStyles(
           styles,
           point[j],
           feature,
@@ -123,7 +122,7 @@ export default function OlStyler(
         );
       }
       for (let j = 0; j < text.length; j += 1) {
-        appendStyle(styles, text[j], feature, getTextStyle, getProperty);
+        appendStyles(styles, text[j], feature, getTextStyle, getProperty);
       }
       break;
 
