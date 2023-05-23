@@ -1162,39 +1162,42 @@
   /**
    * Get styling from rules per geometry type
    * @param  {Rule[]} rules [description]
-   * @return {GeometryStyles}
+   * @return {CategorizedSymbolizers}
    */
-  function getGeometryStyles(rules) {
+  function categorizeSymbolizers(rules) {
     var result = {
-      polygon: [],
-      line: [],
-      point: [],
-      text: [],
+      polygonSymbolizers: [],
+      lineSymbolizers: [],
+      pointSymbolizers: [],
+      textSymbolizers: [],
     };
-    for (var i = 0; i < rules.length; i += 1) {
-      if (rules[i].polygonsymbolizer) {
-        result.polygon = ( result.polygon ).concat( rules[i].polygonsymbolizer);
+
+    (rules || []).forEach(function (rule) {
+      if (rule.polygonsymbolizer) {
+        result.polygonSymbolizers = ( result.polygonSymbolizers ).concat( rule.polygonsymbolizer );
       }
-      if (rules[i].linesymbolizer) {
-        result.line = ( result.line ).concat( rules[i].linesymbolizer);
+      if (rule.linesymbolizer) {
+        result.lineSymbolizers = ( result.lineSymbolizers ).concat( rule.linesymbolizer );
       }
-      if (rules[i].pointsymbolizer) {
-        result.point = ( result.point ).concat( rules[i].pointsymbolizer);
+      if (rule.pointsymbolizer) {
+        result.pointSymbolizers = ( result.pointSymbolizers ).concat( rule.pointsymbolizer );
       }
-      if (rules[i].textsymbolizer) {
-        result.text = ( result.text ).concat( rules[i].textsymbolizer);
+      if (rule.textsymbolizer) {
+        result.textSymbolizers = ( result.textSymbolizers ).concat( rule.textsymbolizer );
       }
-    }
+    });
+
     return result;
   }
 
   /**
-   * @typedef GeometryStyles
-   * @name GeometryStyles
+   * @typedef CategorizedSymbolizers
+   * @name CategorizedSymbolizers
    * @description contains for each geometry type the symbolizer from an array of rules
-   * @property {PolygonSymbolizer[]} polygon polygonsymbolizers
-   * @property {LineSymbolizer[]} line linesymbolizers
-   * @property {PointSymbolizer[]} point pointsymbolizers, same as graphic prop from PointSymbolizer
+   * @property {PolygonSymbolizer[]} polygonSymbolizers polygonsymbolizers
+   * @property {LineSymbolizer[]} lineSymbolizers  linesymbolizers
+   * @property {PointSymbolizer[]} pointSymbolizers  pointsymbolizers, same as graphic prop from PointSymbolizer
+   * @property {TextSymbolizer[]} textSymbolizers  textsymbolizers
    */
 
   var IMAGE_LOADING = 'IMAGE_LOADING';
@@ -3133,7 +3136,7 @@
   /**
    * Create openlayers style
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
-   * @param {GeometryStyles} GeometryStyles rulesconverter
+   * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
    * @param {object|Feature} feature {@link http://geojson.org|geojson}
    *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
    * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
@@ -3144,17 +3147,17 @@
    * @return ol.style.Style or array of it
    */
   function OlStyler(
-    GeometryStyles,
+    categorizedSymbolizers,
     feature,
     getProperty,
     options
   ) {
     if ( options === void 0 ) options = {};
 
-    var polygon = GeometryStyles.polygon;
-    var line = GeometryStyles.line;
-    var point = GeometryStyles.point;
-    var text = GeometryStyles.text;
+    var polygonSymbolizers = categorizedSymbolizers.polygonSymbolizers;
+    var lineSymbolizers = categorizedSymbolizers.lineSymbolizers;
+    var pointSymbolizers = categorizedSymbolizers.pointSymbolizers;
+    var textSymbolizers = categorizedSymbolizers.textSymbolizers;
 
     var defaultOptions = {
       strictGeometryMatch: false,
@@ -3172,27 +3175,57 @@
     switch (geometryType) {
       case 'Point':
       case 'MultiPoint':
-        appendStyles(styles, point, feature, getPointStyle, getProperty);
-        appendStyles(styles, text, feature, getTextStyle, getProperty);
+        appendStyles(
+          styles,
+          pointSymbolizers,
+          feature,
+          getPointStyle,
+          getProperty
+        );
+        appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
         break;
 
       case 'LineString':
       case 'MultiLineString':
-        appendStyles(styles, line, feature, getLineStyle, getProperty);
+        appendStyles(styles, lineSymbolizers, feature, getLineStyle, getProperty);
         if (!styleOptions.strictGeometryMatch) {
-          appendStyles(styles, point, feature, getLinePointStyle, getProperty);
+          appendStyles(
+            styles,
+            pointSymbolizers,
+            feature,
+            getLinePointStyle,
+            getProperty
+          );
         }
-        appendStyles(styles, text, feature, getTextStyle, getProperty);
+        appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
         break;
 
       case 'Polygon':
       case 'MultiPolygon':
-        appendStyles(styles, polygon, feature, getPolygonStyle, getProperty);
+        appendStyles(
+          styles,
+          polygonSymbolizers,
+          feature,
+          getPolygonStyle,
+          getProperty
+        );
         if (!styleOptions.strictGeometryMatch) {
-          appendStyles(styles, line, feature, getLineStyle, getProperty);
+          appendStyles(
+            styles,
+            lineSymbolizers,
+            feature,
+            getLineStyle,
+            getProperty
+          );
         }
-        appendStyles(styles, point, feature, getPolygonPointStyle, getProperty);
-        appendStyles(styles, text, feature, getTextStyle, getProperty);
+        appendStyles(
+          styles,
+          pointSymbolizers,
+          feature,
+          getPolygonPointStyle,
+          getProperty
+        );
+        appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
         break;
 
       default:
@@ -3284,10 +3317,10 @@
       );
 
       // Convert style rules to style rule lookup categorized by geometry type.
-      var geometryStyles = getGeometryStyles(rules);
+      var categorizedSymbolizers = categorizeSymbolizers(rules);
 
       // Determine style rule array.
-      var olStyles = OlStyler(geometryStyles, feature, getProperty);
+      var olStyles = OlStyler(categorizedSymbolizers, feature, getProperty);
 
       return olStyles;
     };
@@ -3305,10 +3338,10 @@
    * myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
    */
   function createOlStyle(styleRule, geometryType) {
-    var geometryStyles = getGeometryStyles([styleRule]);
+    var categorizedSymbolizers = categorizeSymbolizers([styleRule]);
 
     var olStyles = OlStyler(
-      geometryStyles,
+      categorizedSymbolizers,
       { geometry: { type: geometryType } },
       function () { return null; },
       { strictGeometryMatch: true, useFallbackStyles: false }
@@ -3319,10 +3352,10 @@
 
   exports.OlStyler = OlStyler;
   exports.Reader = Reader;
+  exports.categorizeSymbolizers = categorizeSymbolizers;
   exports.createOlStyle = createOlStyle;
   exports.createOlStyleFunction = createOlStyleFunction;
   exports.getByPath = getByPath;
-  exports.getGeometryStyles = getGeometryStyles;
   exports.getLayer = getLayer;
   exports.getLayerNames = getLayerNames;
   exports.getRuleSymbolizers = getRuleSymbolizers;

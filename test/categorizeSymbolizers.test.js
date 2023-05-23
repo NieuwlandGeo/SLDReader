@@ -1,5 +1,5 @@
 /* global describe  it expect */
-import GeometryStyles from '../src/GeometryStyles';
+import categorizeSymbolizers from '../src/categorizeSymbolizers';
 
 describe('create geometrystyles from rules array', () => {
   const rules = [
@@ -33,15 +33,16 @@ describe('create geometrystyles from rules array', () => {
   ];
 
   it('creates props for symbolizers', () => {
-    const description = GeometryStyles(rules);
-    expect(description).to.have.property('polygon');
-    expect(description).to.have.property('line');
-    expect(description).to.have.property('point');
+    const symbolizers = categorizeSymbolizers(rules);
+    expect(symbolizers).to.have.property('polygonSymbolizers');
+    expect(symbolizers).to.have.property('lineSymbolizers');
+    expect(symbolizers).to.have.property('pointSymbolizers');
+    expect(symbolizers).to.have.property('textSymbolizers');
   });
 
   it('polygon prop has css params', () => {
-    const description = GeometryStyles(rules);
-    const polygon = description.polygon['0'];
+    const symbolizers = categorizeSymbolizers(rules);
+    const polygon = symbolizers.polygonSymbolizers[0];
     expect(polygon).to.have.property('fill');
     expect(polygon).to.have.property('stroke');
     expect(polygon.fill.styling).to.have.property('fill');
@@ -55,8 +56,8 @@ describe('create geometrystyles from rules array', () => {
   });
 
   it('point prop receives graphic ', () => {
-    const description = GeometryStyles(rules);
-    const point = description.point['0'];
+    const symbolizers = categorizeSymbolizers(rules);
+    const point = symbolizers.pointSymbolizers[0];
     expect(point).to.have.property('graphic');
     expect(point.graphic).to.have.property('externalgraphic');
     expect(point.graphic.externalgraphic).to.have.property('onlineresource');

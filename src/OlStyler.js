@@ -1,5 +1,5 @@
 import { getRules } from './Utils';
-import getGeometryStyles from './GeometryStyles';
+import categorizeSymbolizers from './categorizeSymbolizers';
 import { processExternalGraphicSymbolizers } from './imageCache';
 import { defaultPointStyle } from './styles/static';
 import getPointStyle from './styles/pointStyle';
@@ -39,7 +39,7 @@ function appendStyles(
 /**
  * Create openlayers style
  * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
- * @param {GeometryStyles} GeometryStyles rulesconverter
+ * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
  * @param {object|Feature} feature {@link http://geojson.org|geojson}
  *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
  * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
@@ -50,12 +50,17 @@ function appendStyles(
  * @return ol.style.Style or array of it
  */
 export default function OlStyler(
-  GeometryStyles,
+  categorizedSymbolizers,
   feature,
   getProperty,
   options = {}
 ) {
-  const { polygon, line, point, text } = GeometryStyles;
+  const {
+    polygonSymbolizers,
+    lineSymbolizers,
+    pointSymbolizers,
+    textSymbolizers,
+  } = categorizedSymbolizers;
 
   const defaultOptions = {
     strictGeometryMatch: false,
@@ -73,27 +78,57 @@ export default function OlStyler(
   switch (geometryType) {
     case 'Point':
     case 'MultiPoint':
-      appendStyles(styles, point, feature, getPointStyle, getProperty);
-      appendStyles(styles, text, feature, getTextStyle, getProperty);
+      appendStyles(
+        styles,
+        pointSymbolizers,
+        feature,
+        getPointStyle,
+        getProperty
+      );
+      appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
       break;
 
     case 'LineString':
     case 'MultiLineString':
-      appendStyles(styles, line, feature, getLineStyle, getProperty);
+      appendStyles(styles, lineSymbolizers, feature, getLineStyle, getProperty);
       if (!styleOptions.strictGeometryMatch) {
-        appendStyles(styles, point, feature, getLinePointStyle, getProperty);
+        appendStyles(
+          styles,
+          pointSymbolizers,
+          feature,
+          getLinePointStyle,
+          getProperty
+        );
       }
-      appendStyles(styles, text, feature, getTextStyle, getProperty);
+      appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
       break;
 
     case 'Polygon':
     case 'MultiPolygon':
-      appendStyles(styles, polygon, feature, getPolygonStyle, getProperty);
+      appendStyles(
+        styles,
+        polygonSymbolizers,
+        feature,
+        getPolygonStyle,
+        getProperty
+      );
       if (!styleOptions.strictGeometryMatch) {
-        appendStyles(styles, line, feature, getLineStyle, getProperty);
+        appendStyles(
+          styles,
+          lineSymbolizers,
+          feature,
+          getLineStyle,
+          getProperty
+        );
       }
-      appendStyles(styles, point, feature, getPolygonPointStyle, getProperty);
-      appendStyles(styles, text, feature, getTextStyle, getProperty);
+      appendStyles(
+        styles,
+        pointSymbolizers,
+        feature,
+        getPolygonPointStyle,
+        getProperty
+      );
+      appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
       break;
 
     default:
@@ -183,10 +218,10 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
     );
 
     // Convert style rules to style rule lookup categorized by geometry type.
-    const geometryStyles = getGeometryStyles(rules);
+    const categorizedSymbolizers = categorizeSymbolizers(rules);
 
     // Determine style rule array.
-    const olStyles = OlStyler(geometryStyles, feature, getProperty);
+    const olStyles = OlStyler(categorizedSymbolizers, feature, getProperty);
 
     return olStyles;
   };
@@ -204,10 +239,10 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
  * myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
  */
 export function createOlStyle(styleRule, geometryType) {
-  const geometryStyles = getGeometryStyles([styleRule]);
+  const categorizedSymbolizers = categorizeSymbolizers([styleRule]);
 
   const olStyles = OlStyler(
-    geometryStyles,
+    categorizedSymbolizers,
     { geometry: { type: geometryType } },
     () => null,
     { strictGeometryMatch: true, useFallbackStyles: false }

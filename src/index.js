@@ -1,11 +1,11 @@
 import Reader from './Reader';
 import OlStyler, { createOlStyleFunction, createOlStyle } from './OlStyler';
-import getGeometryStyles from './GeometryStyles';
+import categorizeSymbolizers from './categorizeSymbolizers';
 
 export * from './Utils';
 export {
   Reader,
-  getGeometryStyles,
+  categorizeSymbolizers,
   OlStyler,
   createOlStyleFunction,
   createOlStyle,
