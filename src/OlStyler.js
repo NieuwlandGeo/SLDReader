@@ -78,7 +78,7 @@ export default function OlStyler(
         appendStyle(styles, point[j], feature, getPointStyle, getProperty);
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature, getProperty));
+        appendStyle(styles, text[j], feature, getTextStyle, getProperty);
       }
       break;
 
@@ -99,7 +99,7 @@ export default function OlStyler(
         }
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature, getProperty));
+        appendStyle(styles, text[j], feature, getTextStyle, getProperty);
       }
       break;
 
@@ -123,7 +123,7 @@ export default function OlStyler(
         );
       }
       for (let j = 0; j < text.length; j += 1) {
-        styles.push(getTextStyle(text[j], feature, getProperty));
+        appendStyle(styles, text[j], feature, getTextStyle, getProperty);
       }
       break;
 
@@ -180,7 +180,7 @@ function getOlFeatureProperty(feature, propertyName) {
  * }));
  */
 export function createOlStyleFunction(featureTypeStyle, options = {}) {
-  console.log("FTS --> ", featureTypeStyle);
+  console.log('FTS --> ', featureTypeStyle);
 
   const imageLoadedCallback = options.imageLoadedCallback || (() => {});
 

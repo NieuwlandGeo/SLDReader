@@ -3181,7 +3181,7 @@
           appendStyle(styles, point[j], feature, getPointStyle, getProperty);
         }
         for (var j$1 = 0; j$1 < text.length; j$1 += 1) {
-          styles.push(getTextStyle(text[j$1], feature, getProperty));
+          appendStyle(styles, text[j$1], feature, getTextStyle, getProperty);
         }
         break;
 
@@ -3202,7 +3202,7 @@
           }
         }
         for (var j$4 = 0; j$4 < text.length; j$4 += 1) {
-          styles.push(getTextStyle(text[j$4], feature, getProperty));
+          appendStyle(styles, text[j$4], feature, getTextStyle, getProperty);
         }
         break;
 
@@ -3226,7 +3226,7 @@
           );
         }
         for (var j$8 = 0; j$8 < text.length; j$8 += 1) {
-          styles.push(getTextStyle(text[j$8], feature, getProperty));
+          appendStyle(styles, text[j$8], feature, getTextStyle, getProperty);
         }
         break;
 
@@ -3285,7 +3285,7 @@
   function createOlStyleFunction(featureTypeStyle, options) {
     if ( options === void 0 ) options = {};
 
-    console.log("FTS --> ", featureTypeStyle);
+    console.log('FTS --> ', featureTypeStyle);
 
     var imageLoadedCallback = options.imageLoadedCallback || (function () {});
 
