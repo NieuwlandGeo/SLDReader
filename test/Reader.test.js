@@ -44,36 +44,39 @@ describe('Reads xml', () => {
   it('rules have props', () => {
     const rule =
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    const [symbolizer] = rule.polygonsymbolizer;
     expect(rule.maxscaledenominator).to.equal('3000000');
-    expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.styling).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.styling.fill).to.equal('blue');
-    expect(rule.polygonsymbolizer.fill.styling.fillOpacity).to.equal('1.0');
-    expect(rule.polygonsymbolizer.stroke.styling.stroke).to.equal('#C0C0C0');
+    expect(symbolizer).to.be.an.instanceof(Object);
+    expect(symbolizer.fill).to.be.an.instanceof(Object);
+    expect(symbolizer.fill.styling).to.be.an.instanceof(Object);
+    expect(symbolizer.fill.styling.fill).to.equal('blue');
+    expect(symbolizer.fill.styling.fillOpacity).to.equal('1.0');
+    expect(symbolizer.stroke.styling.stroke).to.equal('#C0C0C0');
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
     const rule =
       result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
+    const [symbolizer] = rule.pointsymbolizer;
     expect(rule).to.have.property('pointsymbolizer');
-    expect(rule.pointsymbolizer).to.have.property('graphic');
-    expect(rule.pointsymbolizer.graphic).to.have.property('externalgraphic');
-    expect(rule.pointsymbolizer.graphic.externalgraphic).to.have.property(
+    expect(symbolizer).to.have.property('graphic');
+    expect(symbolizer.graphic).to.have.property('externalgraphic');
+    expect(symbolizer.graphic.externalgraphic).to.have.property(
       'onlineresource'
     );
-    expect(
-      rule.pointsymbolizer.graphic.externalgraphic.onlineresource
-    ).to.equal('../img/marker.png');
+    expect(symbolizer.graphic.externalgraphic.onlineresource).to.equal(
+      '../img/marker.png'
+    );
   });
   it('cities layer has pointsymbolizer with graphic mark', () => {
     const rule =
       result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
     expect(rule).to.have.property('pointsymbolizer');
-    expect(rule.pointsymbolizer).to.have.property('graphic');
-    expect(rule.pointsymbolizer.graphic).to.have.property('mark');
-    expect(rule.pointsymbolizer.graphic).to.have.property('size');
-    expect(rule.pointsymbolizer.graphic.mark).to.have.property('wellknownname');
-    expect(rule.pointsymbolizer.graphic.mark.wellknownname).to.equal('cross');
+    const [symbolizer] = rule.pointsymbolizer;
+    expect(symbolizer).to.have.property('graphic');
+    expect(symbolizer.graphic).to.have.property('mark');
+    expect(symbolizer.graphic).to.have.property('size');
+    expect(symbolizer.graphic.mark).to.have.property('wellknownname');
+    expect(symbolizer.graphic.mark.wellknownname).to.equal('cross');
   });
   it('reads multiple pointsymbolizers', () => {
     const rule =
@@ -151,19 +154,21 @@ describe('Reads xml sld 11', () => {
   it('rule polygonsymbolizer has props from svg', () => {
     const rule =
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
-    expect(rule.polygonsymbolizer).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.styling).to.be.an.instanceof(Object);
-    expect(rule.polygonsymbolizer.fill.styling.fill).to.equal('#CCCCCC');
+    const [symbolizer] = rule.polygonsymbolizer;
+    expect(symbolizer).to.be.an.instanceof(Object);
+    expect(symbolizer.fill).to.be.an.instanceof(Object);
+    expect(symbolizer.fill.styling).to.be.an.instanceof(Object);
+    expect(symbolizer.fill.styling.fill).to.equal('#CCCCCC');
   });
   it('rule textsymbolizer label', () => {
     const rule =
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
-    expect(rule.textsymbolizer).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.label).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.label.type).to.equal('expression');
+    const [symbolizer] = rule.textsymbolizer;
+    expect(symbolizer).to.be.an.instanceof(Object);
+    expect(symbolizer.label).to.be.an.instanceof(Object);
+    expect(symbolizer.label.type).to.equal('expression');
     expect(
-      rule.textsymbolizer.label.children.some(
+      symbolizer.label.children.some(
         l => l.type === 'propertyname' && l.value === 'provincienaam'
       )
     ).to.be.true;
@@ -171,16 +176,18 @@ describe('Reads xml sld 11', () => {
   it('rule textsymbolizer has font', () => {
     const rule =
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
-    expect(rule.textsymbolizer).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.font).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.font.styling).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.font.styling.fontFamily).to.equal('Noto Sans');
+    const [symbolizer] = rule.textsymbolizer;
+    expect(symbolizer).to.be.an.instanceof(Object);
+    expect(symbolizer.font).to.be.an.instanceof(Object);
+    expect(symbolizer.font.styling).to.be.an.instanceof(Object);
+    expect(symbolizer.font.styling.fontFamily).to.equal('Noto Sans');
   });
   it('rule textsymbolizer has fill', () => {
     const rule =
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
-    expect(rule.textsymbolizer).to.be.an.instanceof(Object);
-    expect(rule.textsymbolizer.fill).to.be.an.instanceof(Object);
+    const [symbolizer] = rule.textsymbolizer;
+    expect(symbolizer).to.be.an.instanceof(Object);
+    expect(symbolizer.fill).to.be.an.instanceof(Object);
   });
 });
 
@@ -193,7 +200,7 @@ describe('Dynamic filter expressions', () => {
 
   it('Has propertyname expression for size', () => {
     const rule = featureTypeStyle.rules[0];
-    expect(rule.pointsymbolizer.graphic.size).to.deep.equal({
+    expect(rule.pointsymbolizer[0].graphic.size).to.deep.equal({
       type: 'expression',
       children: [
         {
@@ -317,7 +324,7 @@ describe('SLD v1.1.0 GraphicStroke properties', () => {
 
   function getGraphicStroke(sldObject) {
     const rule = sldObject.layers[0].styles[0].featuretypestyles[0].rules[0];
-    const { graphicstroke } = rule.linesymbolizer.stroke;
+    const { graphicstroke } = rule.linesymbolizer[0].stroke;
     return graphicstroke;
   }
 
