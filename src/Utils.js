@@ -107,24 +107,12 @@ export function getRules(featureTypeStyle, feature, resolution, options = {}) {
  * @returns {Array<object>} Array of all symbolizers in a rule.
  */
 export function getRuleSymbolizers(rule) {
-  // Helper for adding a symbolizer to a list when the symbolizer can be an array of symbolizers.
-  // Todo: refactor style reader, so symbolizer is always an array.
-  function addSymbolizer(list, symbolizer) {
-    if (!symbolizer) {
-      return;
-    }
-    if (Array.isArray(symbolizer)) {
-      Array.prototype.push.apply(list, symbolizer);
-      return;
-    }
-    list.push(symbolizer);
-  }
-
-  const allSymbolizers = [];
-  addSymbolizer(allSymbolizers, rule.pointsymbolizer);
-  addSymbolizer(allSymbolizers, rule.linesymbolizer);
-  addSymbolizer(allSymbolizers, rule.polygonsymbolizer);
-  addSymbolizer(allSymbolizers, rule.textsymbolizer);
+  const allSymbolizers = [
+    ...(rule.polygonsymbolizer || []),
+    ...(rule.linesymbolizer || []),
+    ...(rule.pointsymbolizer || []),
+    ...(rule.textsymbolizer || []),
+  ];
 
   return allSymbolizers;
 }
