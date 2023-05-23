@@ -3284,8 +3284,6 @@
   function createOlStyleFunction(featureTypeStyle, options) {
     if ( options === void 0 ) options = {};
 
-    console.log('FTS --> ', featureTypeStyle);
-
     var imageLoadedCallback = options.imageLoadedCallback || (function () {});
 
     // Keep track of whether a callback has been registered per image url.
