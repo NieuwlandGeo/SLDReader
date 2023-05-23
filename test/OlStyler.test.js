@@ -38,7 +38,7 @@ const getMockOLFeature = geometryType => ({
 
 describe('create ol style object from styledescription', () => {
   const styleDescription = {
-    polygon: [
+    polygonSymbolizers: [
       {
         fill: {
           styling: {
@@ -47,7 +47,7 @@ describe('create ol style object from styledescription', () => {
         },
       },
     ],
-    line: [
+    lineSymbolizers: [
       {
         stroke: {
           styling: {
@@ -56,8 +56,8 @@ describe('create ol style object from styledescription', () => {
         },
       },
     ],
-    point: [],
-    text: [],
+    pointSymbolizers: [],
+    textSymbolizers: [],
   };
 
   it('returns array', () => {
@@ -84,10 +84,10 @@ describe('create ol style object from styledescription', () => {
 
 describe('creates point style', () => {
   const styleDescription = {
-    polygon: [],
-    line: [],
-    text: [],
-    point: [
+    polygonSymbolizers: [],
+    lineSymbolizers: [],
+    textSymbolizers: [],
+    pointSymbolizers: [
       {
         graphic: {
           mark: {
@@ -270,7 +270,7 @@ describe('SLD with external graphics', () => {
     // Requesting feature style for a feature with type 2 should only update the loading state for the corresponding image.
     expect(
       getImageLoadingState(
-        featureTypeStyle.rules[1].pointsymbolizer.graphic.externalgraphic
+        featureTypeStyle.rules[1].pointsymbolizer[0].graphic.externalgraphic
           .onlineresource
       )
     ).to.equal(IMAGE_LOADING);
@@ -278,19 +278,19 @@ describe('SLD with external graphics', () => {
     // But other symbolizers should be left alone.
     expect(
       getImageLoadingState(
-        featureTypeStyle.rules[0].pointsymbolizer.graphic.externalgraphic
+        featureTypeStyle.rules[0].pointsymbolizer[0].graphic.externalgraphic
           .onlineresource
       )
     ).to.be.undefined;
     expect(
       getImageLoadingState(
-        featureTypeStyle.rules[2].pointsymbolizer.graphic.externalgraphic
+        featureTypeStyle.rules[2].pointsymbolizer[0].graphic.externalgraphic
           .onlineresource
       )
     ).to.be.undefined;
     expect(
       getImageLoadingState(
-        featureTypeStyle.rules[3].pointsymbolizer.graphic.externalgraphic
+        featureTypeStyle.rules[3].pointsymbolizer[0].graphic.externalgraphic
           .onlineresource
       )
     ).to.be.undefined;
@@ -317,7 +317,7 @@ describe('SLD with external graphics', () => {
     const styleFunction = createOlStyleFunction(featureTypeStyle, {
       imageLoadedCallback: () => {
         // When this function is called, the loading state should be either loaded or error.
-        const symbolizer = featureTypeStyle.rules[1].pointsymbolizer;
+        const [symbolizer] = featureTypeStyle.rules[1].pointsymbolizer;
         const imageUrl = symbolizer.graphic.externalgraphic.onlineresource;
         expect(getImageLoadingState(imageUrl)).to.equal(IMAGE_LOADED);
         done();
@@ -474,12 +474,12 @@ describe('SLD with external graphics', () => {
     const styleFunction1 = createOlStyleFunction(featureTypeStyle);
     const styleFunction2 = createOlStyleFunction(featureTypeStyle2, {
       imageLoadedCallback: () => {
-        expect(featureTypeStyle.rules[1].pointsymbolizer.__invalidated).to.be
+        expect(featureTypeStyle.rules[1].pointsymbolizer[0].__invalidated).to.be
           .true;
         // The pointsymbolizer of the second style object should also be properly invalidated,
         // even if it uses the same image for which the first style function triggered the loading.
-        expect(featureTypeStyle2.rules[0].pointsymbolizer.__invalidated).to.be
-          .true;
+        expect(featureTypeStyle2.rules[0].pointsymbolizer[0].__invalidated).to
+          .be.true;
         done();
       },
     });
