@@ -5,6 +5,7 @@ import { sld11 } from './data/test11.sld';
 import { dynamicSld } from './data/dynamic.sld';
 import { graphicstrokeSymbolizerSld } from './data/graphicstrokeSymbolizer.sld';
 import { graphicStrokeWithGap } from './data/graphicstroke-with-gap.sld';
+import { multipleSymbolizersSld } from './data/multiple-symbolizers.sld';
 import graphicStrokeVendorOption from './data/graphicstroke-vendoroption.sld';
 
 let result;
@@ -93,7 +94,9 @@ describe('Reads xml', () => {
     expect(layer.title).to.be.undefined;
 
     const userStyle = layer.styles[0];
-    expect(userStyle.title).to.equal('Default Styler (zoom in to see more objects)');
+    expect(userStyle.title).to.equal(
+      'Default Styler (zoom in to see more objects)'
+    );
 
     const featureTypeStyle = userStyle.featuretypestyles[0];
     expect(featureTypeStyle.title).to.equal('Test style');
@@ -366,5 +369,45 @@ describe('Parse vendor options', () => {
     expect(symbolizer.vendoroption).to.deep.equal({
       placement: 'lastPoint',
     });
+  });
+});
+
+describe('Symbolizers are always an array', () => {
+  let style = null;
+  beforeEach(() => {
+    const parsedSld = Reader(multipleSymbolizersSld);
+    [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+  });
+
+  it('Single Point symbolizer --> array', () => {
+    expect(Array.isArray(style.rules[0].pointsymbolizer)).to.be.true;
+  });
+
+  it('Multiple Point symbolizers --> array', () => {
+    expect(Array.isArray(style.rules[1].pointsymbolizer)).to.be.true;
+  });
+
+  it('Single Text symbolizer --> array', () => {
+    expect(Array.isArray(style.rules[2].textsymbolizer)).to.be.true;
+  });
+
+  it('Multiple Text symbolizers --> array', () => {
+    expect(Array.isArray(style.rules[3].textsymbolizer)).to.be.true;
+  });
+
+  it('Single Line symbolizer --> array', () => {
+    expect(Array.isArray(style.rules[4].linesymbolizer)).to.be.true;
+  });
+
+  it('Multiple Line symbolizers --> array', () => {
+    expect(Array.isArray(style.rules[5].linesymbolizer)).to.be.true;
+  });
+
+  it('Single Polygon symbolizer --> array', () => {
+    expect(Array.isArray(style.rules[6].polygonsymbolizer)).to.be.true;
+  });
+
+  it('Multiple Polygon symbolizers --> array', () => {
+    expect(Array.isArray(style.rules[7].polygonsymbolizer)).to.be.true;
   });
 });
