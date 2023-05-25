@@ -184,6 +184,8 @@ function getOlFeatureProperty(feature, propertyName) {
  * }));
  */
 export function createOlStyleFunction(featureTypeStyle, options = {}) {
+  console.log('FTS --> ', featureTypeStyle);
+
   const imageLoadedCallback = options.imageLoadedCallback || (() => {});
 
   // Keep track of whether a callback has been registered per image url.

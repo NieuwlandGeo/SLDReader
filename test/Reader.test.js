@@ -366,14 +366,14 @@ describe('Parse vendor options', () => {
     [style] = parsedSld.layers[0].styles[0].featuretypestyles;
   });
 
-  it('Sections without vendor options have no .vendoroption prop', () => {
+  it('Sections without vendor options have no .vendoroptions prop', () => {
     const symbolizer = style.rules[0].linesymbolizer[0];
-    expect(symbolizer.vendoroption).to.be.undefined;
+    expect(symbolizer.vendoroptions).to.be.undefined;
   });
 
-  it('Parse vendor options into a .vendoroption prop', () => {
+  it('Parse vendor options into a .vendoroptions prop', () => {
     const symbolizer = style.rules[0].linesymbolizer[1];
-    expect(symbolizer.vendoroption).to.deep.equal({
+    expect(symbolizer.vendoroptions).to.deep.equal({
       placement: 'lastPoint',
     });
   });

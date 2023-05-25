@@ -163,19 +163,13 @@ function getBool(element, tagName) {
  * @param  {object} obj
  * @param  {String} prop
  */
-function parameters(element, obj, prop) {
-  const propnames = {
-    CssParameter: 'styling',
-    SvgParameter: 'styling',
-    VendorOption: 'vendoroption',
-  };
-  const propname = propnames[prop] || 'styling';
-  obj[propname] = obj[propname] || {};
+function addParameterValue(element, obj, prop, parameterGroup) {
+  obj[parameterGroup] = obj[parameterGroup] || {};
   const name = element
     .getAttribute('name')
     .toLowerCase()
     .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
-  obj[propname][name] = element.textContent.trim();
+  obj[parameterGroup][name] = element.textContent.trim();
 }
 
 const FilterParsers = {
@@ -219,12 +213,15 @@ const SymbParsers = {
   DisplacementY: addPropWithTextContent,
   Size: addFilterExpressionProp,
   WellKnownName: addPropWithTextContent,
-  VendorOption: parameters,
+  VendorOption: (element, obj, prop) =>
+    addParameterValue(element, obj, prop, 'vendoroptions'),
   OnlineResource: (element, obj) => {
     obj.onlineresource = element.getAttribute('xlink:href');
   },
-  CssParameter: parameters,
-  SvgParameter: parameters,
+  CssParameter: (element, obj, prop) =>
+    addParameterValue(element, obj, prop, 'styling'),
+  SvgParameter: (element, obj, prop) =>
+    addParameterValue(element, obj, prop, 'styling'),
 };
 
 /**

@@ -430,19 +430,13 @@
    * @param  {object} obj
    * @param  {String} prop
    */
-  function parameters(element, obj, prop) {
-    var propnames = {
-      CssParameter: 'styling',
-      SvgParameter: 'styling',
-      VendorOption: 'vendoroption',
-    };
-    var propname = propnames[prop] || 'styling';
-    obj[propname] = obj[propname] || {};
+  function addParameterValue(element, obj, prop, parameterGroup) {
+    obj[parameterGroup] = obj[parameterGroup] || {};
     var name = element
       .getAttribute('name')
       .toLowerCase()
       .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
-    obj[propname][name] = element.textContent.trim();
+    obj[parameterGroup][name] = element.textContent.trim();
   }
 
   var FilterParsers = {
@@ -486,12 +480,12 @@
     DisplacementY: addPropWithTextContent,
     Size: addFilterExpressionProp,
     WellKnownName: addPropWithTextContent,
-    VendorOption: parameters,
+    VendorOption: function (element, obj, prop) { return addParameterValue(element, obj, prop, 'vendoroptions'); },
     OnlineResource: function (element, obj) {
       obj.onlineresource = element.getAttribute('xlink:href');
     },
-    CssParameter: parameters,
-    SvgParameter: parameters,
+    CssParameter: function (element, obj, prop) { return addParameterValue(element, obj, prop, 'styling'); },
+    SvgParameter: function (element, obj, prop) { return addParameterValue(element, obj, prop, 'styling'); },
   };
 
   /**
@@ -2294,10 +2288,10 @@
     };
 
     // QGIS vendor options to override graphicstroke symbol placement.
-    if (linesymbolizer.vendoroption) {
-      if (linesymbolizer.vendoroption.placement === 'firstPoint') {
+    if (linesymbolizer.vendoroptions) {
+      if (linesymbolizer.vendoroptions.placement === 'firstPoint') {
         options.placement = PLACEMENT_FIRSTPOINT;
-      } else if (linesymbolizer.vendoroption.placement === 'lastPoint') {
+      } else if (linesymbolizer.vendoroptions.placement === 'lastPoint') {
         options.placement = PLACEMENT_LASTPOINT;
       }
     }
@@ -3267,6 +3261,8 @@
    */
   function createOlStyleFunction(featureTypeStyle, options) {
     if ( options === void 0 ) options = {};
+
+    console.log('FTS --> ', featureTypeStyle);
 
     var imageLoadedCallback = options.imageLoadedCallback || (function () {});
 
