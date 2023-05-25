@@ -350,10 +350,20 @@
    * @param {Element} node XML Node.
    * @param {object} obj Object to add XML node contents to.
    * @param {string} prop Property name on obj that will hold the parsed node contents.
-   * @param {bool} [skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
+   * @param {object} [options] Parse options.
+   * @param {object} [options.skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
+   * @param {object} [options.forceLowerCase] Default true. If true, convert prop name to lower case before adding it to obj.
    */
-  function addFilterExpressionProp(node, obj, prop, skipEmptyNodes) {
-    if ( skipEmptyNodes === void 0 ) skipEmptyNodes = true;
+  function addFilterExpressionProp(node, obj, prop, options) {
+    if ( options === void 0 ) options = {};
+
+    var defaultParseOptions = {
+      skipEmptyNodes: true,
+      forceLowerCase: true,
+    };
+
+    var parseOptions = Object.assign({}, defaultParseOptions,
+      options);
 
     var childExpressions = [];
 
@@ -377,7 +387,7 @@
         childExpression.value = childNode.textContent.trim();
       }
 
-      if (childExpression.type === 'literal' && skipEmptyNodes) {
+      if (childExpression.type === 'literal' && parseOptions.skipEmptyNodes) {
         if (childExpression.value.trim()) {
           childExpressions.push(childExpression);
         }
@@ -386,7 +396,7 @@
       }
     }
 
-    var property = prop.toLowerCase();
+    var propertyName = parseOptions.forceLowerCase ? prop.toLowerCase() : prop;
 
     // If expression children are all literals, concatenate them into a string.
     var allLiteral = childExpressions.every(
@@ -394,11 +404,11 @@
     );
 
     if (allLiteral) {
-      obj[property] = childExpressions
+      obj[propertyName] = childExpressions
         .map(function (expression) { return expression.value; })
         .join('');
     } else {
-      obj[property] = {
+      obj[propertyName] = {
         type: 'expression',
         children: childExpressions,
       };
@@ -428,7 +438,8 @@
    * @private
    * @param  {Element} element
    * @param  {object} obj
-   * @param  {String} prop
+   * @param  {string} prop
+   * @param  {string} parameterGroup Name of parameter group.
    */
   function addParameterValue(element, obj, prop, parameterGroup) {
     obj[parameterGroup] = obj[parameterGroup] || {};
@@ -436,7 +447,10 @@
       .getAttribute('name')
       .toLowerCase()
       .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
-    obj[parameterGroup][name] = element.textContent.trim();
+    addFilterExpressionProp(element, obj[parameterGroup], name, {
+      skipEmptyNodes: true,
+      forceLowerCase: false,
+    });
   }
 
   var FilterParsers = {
@@ -462,7 +476,7 @@
     Gap: addNumericProp,
     InitialGap: addNumericProp,
     Mark: addProp,
-    Label: function (node, obj, prop) { return addFilterExpressionProp(node, obj, prop, false); },
+    Label: function (node, obj, prop) { return addFilterExpressionProp(node, obj, prop, { skipEmptyNodes: false }); },
     Halo: addProp,
     Font: addProp,
     Radius: addPropWithTextContent,

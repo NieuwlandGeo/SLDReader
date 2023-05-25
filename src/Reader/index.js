@@ -85,9 +85,21 @@ function addNumericProp(node, obj, prop) {
  * @param {Element} node XML Node.
  * @param {object} obj Object to add XML node contents to.
  * @param {string} prop Property name on obj that will hold the parsed node contents.
- * @param {bool} [skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
+ * @param {object} [options] Parse options.
+ * @param {object} [options.skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
+ * @param {object} [options.forceLowerCase] Default true. If true, convert prop name to lower case before adding it to obj.
  */
-function addFilterExpressionProp(node, obj, prop, skipEmptyNodes = true) {
+function addFilterExpressionProp(node, obj, prop, options = {}) {
+  const defaultParseOptions = {
+    skipEmptyNodes: true,
+    forceLowerCase: true,
+  };
+
+  const parseOptions = {
+    ...defaultParseOptions,
+    ...options,
+  };
+
   const childExpressions = [];
 
   for (let k = 0; k < node.childNodes.length; k += 1) {
@@ -110,7 +122,7 @@ function addFilterExpressionProp(node, obj, prop, skipEmptyNodes = true) {
       childExpression.value = childNode.textContent.trim();
     }
 
-    if (childExpression.type === 'literal' && skipEmptyNodes) {
+    if (childExpression.type === 'literal' && parseOptions.skipEmptyNodes) {
       if (childExpression.value.trim()) {
         childExpressions.push(childExpression);
       }
@@ -119,7 +131,7 @@ function addFilterExpressionProp(node, obj, prop, skipEmptyNodes = true) {
     }
   }
 
-  const property = prop.toLowerCase();
+  const propertyName = parseOptions.forceLowerCase ? prop.toLowerCase() : prop;
 
   // If expression children are all literals, concatenate them into a string.
   const allLiteral = childExpressions.every(
@@ -127,11 +139,11 @@ function addFilterExpressionProp(node, obj, prop, skipEmptyNodes = true) {
   );
 
   if (allLiteral) {
-    obj[property] = childExpressions
+    obj[propertyName] = childExpressions
       .map(expression => expression.value)
       .join('');
   } else {
-    obj[property] = {
+    obj[propertyName] = {
       type: 'expression',
       children: childExpressions,
     };
@@ -161,7 +173,8 @@ function getBool(element, tagName) {
  * @private
  * @param  {Element} element
  * @param  {object} obj
- * @param  {String} prop
+ * @param  {string} prop
+ * @param  {string} parameterGroup Name of parameter group.
  */
 function addParameterValue(element, obj, prop, parameterGroup) {
   obj[parameterGroup] = obj[parameterGroup] || {};
@@ -169,7 +182,10 @@ function addParameterValue(element, obj, prop, parameterGroup) {
     .getAttribute('name')
     .toLowerCase()
     .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
-  obj[parameterGroup][name] = element.textContent.trim();
+  addFilterExpressionProp(element, obj[parameterGroup], name, {
+    skipEmptyNodes: true,
+    forceLowerCase: false,
+  });
 }
 
 const FilterParsers = {
@@ -195,7 +211,8 @@ const SymbParsers = {
   Gap: addNumericProp,
   InitialGap: addNumericProp,
   Mark: addProp,
-  Label: (node, obj, prop) => addFilterExpressionProp(node, obj, prop, false),
+  Label: (node, obj, prop) =>
+    addFilterExpressionProp(node, obj, prop, { skipEmptyNodes: false }),
   Halo: addProp,
   Font: addProp,
   Radius: addPropWithTextContent,
