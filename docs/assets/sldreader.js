@@ -538,8 +538,8 @@
     Name: addPropWithTextContent,
     Title: addPropWithTextContent,
     Abstract: addPropWithTextContent,
-    MaxScaleDenominator: addPropWithTextContent,
-    MinScaleDenominator: addPropWithTextContent},
+    MaxScaleDenominator: addNumericProp,
+    MinScaleDenominator: addNumericProp},
     FilterParsers,
     SymbParsers);
 

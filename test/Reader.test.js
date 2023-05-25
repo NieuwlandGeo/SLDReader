@@ -45,13 +45,18 @@ describe('Reads xml', () => {
     const rule =
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     const [symbolizer] = rule.polygonsymbolizer;
-    expect(rule.maxscaledenominator).to.equal('3000000');
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
     expect(symbolizer.fill.styling).to.be.an.instanceof(Object);
     expect(symbolizer.fill.styling.fill).to.equal('blue');
     expect(symbolizer.fill.styling.fillOpacity).to.equal('1.0');
     expect(symbolizer.stroke.styling.stroke).to.equal('#C0C0C0');
+  });
+  it('Scale denominators are numeric', () => {
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    expect(rule.maxscaledenominator).to.equal(3000000);
+    expect(rule.minscaledenominator).to.equal(1000);
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
     const rule =

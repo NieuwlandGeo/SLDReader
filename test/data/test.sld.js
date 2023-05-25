@@ -28,6 +28,7 @@ export const sld = `<?xml version="1.0" encoding="UTF-8"?>
             <ogc:FeatureId fid="tasmania_water_bodies.3" />
           </ogc:Filter>
           <sld:MaxScaleDenominator>3000000</sld:MaxScaleDenominator>
+          <sld:MinScaleDenominator>1000</sld:MinScaleDenominator>
           <sld:PolygonSymbolizer>
             <sld:Fill>
               <sld:CssParameter name="fill">blue</sld:CssParameter>
