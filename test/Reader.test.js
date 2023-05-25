@@ -170,13 +170,11 @@ describe('Reads xml sld 11', () => {
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
     const [symbolizer] = rule.textsymbolizer;
     expect(symbolizer).to.be.an.instanceof(Object);
-    expect(symbolizer.label).to.be.an.instanceof(Object);
-    expect(symbolizer.label.type).to.equal('expression');
-    expect(
-      symbolizer.label.children.some(
-        l => l.type === 'propertyname' && l.value === 'provincienaam'
-      )
-    ).to.be.true;
+    expect(symbolizer.label).to.deep.equal({
+      type: 'propertyname',
+      typeHint: 'string',
+      value: 'provincienaam',
+    });
   });
   it('rule textsymbolizer has font', () => {
     const rule =

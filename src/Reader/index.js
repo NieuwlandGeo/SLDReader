@@ -79,12 +79,14 @@ function simplifyChildExpressions(expressions, typeHint) {
   }
 
   // Replace each literal expression with its value.
-  const simplifiedExpressions = expressions.map(expression => {
-    if (expression.type === 'literal') {
-      return expression.value;
-    }
-    return expression;
-  });
+  const simplifiedExpressions = expressions
+    .map(expression => {
+      if (expression.type === 'literal') {
+        return expression.value;
+      }
+      return expression;
+    })
+    .filter(expression => expression !== '');
 
   // If expression children are all literals, concatenate them into a string.
   const allLiteral = simplifiedExpressions.every(

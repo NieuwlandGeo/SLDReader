@@ -344,12 +344,14 @@
     }
 
     // Replace each literal expression with its value.
-    var simplifiedExpressions = expressions.map(function (expression) {
-      if (expression.type === 'literal') {
-        return expression.value;
-      }
-      return expression;
-    });
+    var simplifiedExpressions = expressions
+      .map(function (expression) {
+        if (expression.type === 'literal') {
+          return expression.value;
+        }
+        return expression;
+      })
+      .filter(function (expression) { return expression !== ''; });
 
     // If expression children are all literals, concatenate them into a string.
     var allLiteral = simplifiedExpressions.every(
