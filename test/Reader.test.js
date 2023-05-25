@@ -206,14 +206,9 @@ describe('Dynamic filter expressions', () => {
   it('Has propertyname expression for size', () => {
     const rule = featureTypeStyle.rules[0];
     expect(rule.pointsymbolizer[0].graphic.size).to.deep.equal({
-      type: 'expression',
+      type: 'propertyname',
       typeHint: 'number',
-      children: [
-        {
-          type: 'propertyname',
-          value: 'size',
-        },
-      ],
+      value: 'size',
     });
   });
 });

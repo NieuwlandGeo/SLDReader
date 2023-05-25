@@ -1,6 +1,9 @@
 import { Style, Fill, Stroke, Text } from 'ol/style';
 import { hexToRGB, memoizeStyleFunction } from './styleUtils';
-import evaluate, { expressionOrDefault } from '../olEvaluator';
+import evaluate, {
+  expressionOrDefault,
+  isDynamicExpression,
+} from '../olEvaluator';
 import { emptyStyle } from './static';
 
 /**
@@ -138,7 +141,7 @@ function getTextStyle(symbolizer, feature, getProperty) {
   const { label, labelplacement } = symbolizer;
 
   // Set text only if the label expression is dynamic.
-  if (label && label.type === 'expression') {
+  if (isDynamicExpression(label)) {
     const labelText = evaluate(label, feature, getProperty);
     // Important! OpenLayers expects the text property to always be a string.
     olText.setText(labelText.toString());
@@ -150,7 +153,7 @@ function getTextStyle(symbolizer, feature, getProperty) {
       (labelplacement.pointplacement &&
         labelplacement.pointplacement.rotation) ||
       0.0;
-    if (pointPlacementRotation.type === 'expression') {
+    if (isDynamicExpression(pointPlacementRotation)) {
       const labelRotationDegrees = evaluate(
         pointPlacementRotation,
         feature,

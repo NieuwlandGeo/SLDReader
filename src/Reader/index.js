@@ -66,6 +66,47 @@ function addNumericProp(node, obj, prop) {
 }
 
 /**
+ * Simplifies array of ogc:Expressions. If all expressions are literals, they will be concatenated into a string.
+ * If the array contains only one expression, it will be returned.
+ * If it's not an array, return unmodified.
+ * @param {Array<OGCExpression>} expressions An array of ogc:Expression objects.
+ * @param {string} typeHint Expression type. Choose 'string' or 'number'.
+ * @return {Array<OGCExpression>|OGCExpression|string} Simplified version of the expression array.
+ */
+function simplifyChildExpressions(expressions, typeHint) {
+  if (!Array.isArray(expressions)) {
+    return expressions;
+  }
+
+  // Replace each literal expression with its value.
+  const simplifiedExpressions = expressions.map(expression => {
+    if (expression.type === 'literal') {
+      return expression.value;
+    }
+    return expression;
+  });
+
+  // If expression children are all literals, concatenate them into a string.
+  const allLiteral = simplifiedExpressions.every(
+    expr => typeof expr !== 'object' || expr === null
+  );
+  if (allLiteral) {
+    return simplifiedExpressions.join('');
+  }
+
+  // If expression only has one child, return child instead.
+  if (simplifiedExpressions.length === 1) {
+    return simplifiedExpressions[0];
+  }
+
+  return {
+    type: 'expression',
+    typeHint,
+    children: simplifiedExpressions,
+  };
+}
+
+/**
  * This function parses SLD XML nodes that can contain an SLD filter expression.
  * If the SLD node contains only text elements, the result will be concatenated into a string.
  * If the SLD node contains one or more non-literal nodes (for now, only PropertyName), the result
@@ -113,14 +154,17 @@ function addParameterValueProp(node, obj, prop, options = {}) {
     ) {
       // Add ogc:PropertyName elements as type:propertyname.
       childExpression.type = 'propertyname';
+      childExpression.typeHint = parseOptions.typeHint;
       childExpression.value = childNode.textContent.trim();
     } else if (childNode.nodeName === '#cdata-section') {
       // Add CDATA section text content untrimmed.
       childExpression.type = 'literal';
+      childExpression.typeHint = parseOptions.typeHint;
       childExpression.value = childNode.textContent;
     } else {
       // Add ogc:Literal elements and plain text nodes as type:literal.
       childExpression.type = 'literal';
+      childExpression.typeHint = parseOptions.typeHint;
       childExpression.value = childNode.textContent.trim();
     }
 
@@ -135,25 +179,22 @@ function addParameterValueProp(node, obj, prop, options = {}) {
 
   const propertyName = parseOptions.forceLowerCase ? prop.toLowerCase() : prop;
 
-  // If expression children are all literals, concatenate them into a string.
-  const allLiteral = childExpressions.every(
-    childExpression => childExpression.type === 'literal'
+  // Simplify child expressions.
+  // For example: if they are all literals --> concatenate into string.
+  let simplifiedValue = simplifyChildExpressions(
+    childExpressions,
+    parseOptions.typeHint
   );
 
-  if (allLiteral) {
-    obj[propertyName] = childExpressions
-      .map(expression => expression.value)
-      .join('');
-    if (parseOptions.typeHint === 'number') {
-      obj[propertyName] = parseFloat(obj[propertyName]);
-    }
-  } else {
-    obj[propertyName] = {
-      type: 'expression',
-      typeHint: parseOptions.typeHint,
-      children: childExpressions,
-    };
+  // Convert simple string value to number if type hint is number.
+  if (
+    typeof simplifiedValue === 'string' &&
+    parseOptions.typeHint === 'number'
+  ) {
+    simplifiedValue = parseFloat(simplifiedValue);
   }
+
+  obj[propertyName] = simplifiedValue;
 }
 
 function addNumericParameterValueProp(node, obj, prop, options = {}) {

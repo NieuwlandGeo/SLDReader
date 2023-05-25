@@ -14,7 +14,7 @@ import {
 } from './static';
 import { createCachedImageStyle, getImageLoadingState } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
-import evaluate, { expressionOrDefault } from '../olEvaluator';
+import evaluate, { expressionOrDefault, isDynamicExpression } from '../olEvaluator';
 import { getSimpleFill, getSimpleStroke } from './simpleStyles';
 
 const defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
@@ -119,7 +119,7 @@ function getPointStyle(symbolizer, feature, getProperty) {
   // --- Update dynamic size ---
   const { graphic } = symbolizer;
   const { size } = graphic;
-  if (size && size.type === 'expression') {
+  if (isDynamicExpression(size)) {
     const sizeValue =
       Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
 
@@ -145,7 +145,7 @@ function getPointStyle(symbolizer, feature, getProperty) {
 
   // --- Update dynamic rotation ---
   const { rotation } = graphic;
-  if (rotation && rotation.type === 'expression') {
+  if (isDynamicExpression(rotation)) {
     const rotationDegrees =
       Number(evaluate(rotation, feature, getProperty)) || 0.0;
     // Note: OL angles are in radians.

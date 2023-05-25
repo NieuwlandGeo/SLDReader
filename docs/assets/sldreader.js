@@ -331,6 +331,47 @@
   }
 
   /**
+   * Simplifies array of ogc:Expressions. If all expressions are literals, they will be concatenated into a string.
+   * If the array contains only one expression, it will be returned.
+   * If it's not an array, return unmodified.
+   * @param {Array<OGCExpression>} expressions An array of ogc:Expression objects.
+   * @param {string} typeHint Expression type. Choose 'string' or 'number'.
+   * @return {Array<OGCExpression>|OGCExpression|string} Simplified version of the expression array.
+   */
+  function simplifyChildExpressions(expressions, typeHint) {
+    if (!Array.isArray(expressions)) {
+      return expressions;
+    }
+
+    // Replace each literal expression with its value.
+    var simplifiedExpressions = expressions.map(function (expression) {
+      if (expression.type === 'literal') {
+        return expression.value;
+      }
+      return expression;
+    });
+
+    // If expression children are all literals, concatenate them into a string.
+    var allLiteral = simplifiedExpressions.every(
+      function (expr) { return typeof expr !== 'object' || expr === null; }
+    );
+    if (allLiteral) {
+      return simplifiedExpressions.join('');
+    }
+
+    // If expression only has one child, return child instead.
+    if (simplifiedExpressions.length === 1) {
+      return simplifiedExpressions[0];
+    }
+
+    return {
+      type: 'expression',
+      typeHint: typeHint,
+      children: simplifiedExpressions,
+    };
+  }
+
+  /**
    * This function parses SLD XML nodes that can contain an SLD filter expression.
    * If the SLD node contains only text elements, the result will be concatenated into a string.
    * If the SLD node contains one or more non-literal nodes (for now, only PropertyName), the result
@@ -378,14 +419,17 @@
       ) {
         // Add ogc:PropertyName elements as type:propertyname.
         childExpression.type = 'propertyname';
+        childExpression.typeHint = parseOptions.typeHint;
         childExpression.value = childNode.textContent.trim();
       } else if (childNode.nodeName === '#cdata-section') {
         // Add CDATA section text content untrimmed.
         childExpression.type = 'literal';
+        childExpression.typeHint = parseOptions.typeHint;
         childExpression.value = childNode.textContent;
       } else {
         // Add ogc:Literal elements and plain text nodes as type:literal.
         childExpression.type = 'literal';
+        childExpression.typeHint = parseOptions.typeHint;
         childExpression.value = childNode.textContent.trim();
       }
 
@@ -400,25 +444,22 @@
 
     var propertyName = parseOptions.forceLowerCase ? prop.toLowerCase() : prop;
 
-    // If expression children are all literals, concatenate them into a string.
-    var allLiteral = childExpressions.every(
-      function (childExpression) { return childExpression.type === 'literal'; }
+    // Simplify child expressions.
+    // For example: if they are all literals --> concatenate into string.
+    var simplifiedValue = simplifyChildExpressions(
+      childExpressions,
+      parseOptions.typeHint
     );
 
-    if (allLiteral) {
-      obj[propertyName] = childExpressions
-        .map(function (expression) { return expression.value; })
-        .join('');
-      if (parseOptions.typeHint === 'number') {
-        obj[propertyName] = parseFloat(obj[propertyName]);
-      }
-    } else {
-      obj[propertyName] = {
-        type: 'expression',
-        typeHint: parseOptions.typeHint,
-        children: childExpressions,
-      };
+    // Convert simple string value to number if type hint is number.
+    if (
+      typeof simplifiedValue === 'string' &&
+      parseOptions.typeHint === 'number'
+    ) {
+      simplifiedValue = parseFloat(simplifiedValue);
     }
+
+    obj[propertyName] = simplifiedValue;
   }
 
   function addNumericParameterValueProp(node, obj, prop, options) {
@@ -1804,25 +1845,25 @@
   // Constant expressions are returned as-is.
 
   /**
-   * @private
-   * Evaluate the value of a sub-expression.
-   * @param {object} childExpression SLD object expression child.
-   * @param {ol/feature} feature OpenLayers feature instance.feature.
-   * @param {function} getProperty A function to get a specific property value from a feature.
-   * Signature (feature, propertyName) => property value.
+   * Check if an expression depends on feature properties.
+   * @param {object} expression OGC expression object.
+   * @returns {bool} Returns true if the expression depends on feature properties.
    */
-  function evaluateChildExpression(childExpression, feature, getProperty) {
-    // For now, the only valid child types are 'propertyname' and 'literal'.
-    // Todo: add,sub,mul,div. Maybe a few functions as well.
-    if (childExpression.type === 'literal') {
-      return childExpression.value;
+  function isDynamicExpression(expression) {
+    switch ((expression || {}).type) {
+      case 'expression':
+        // Expressions with all static values are already concatenated into a static string,
+        // so any expression that survives that process has at least one dynamic component.
+        return true;
+      case 'literal':
+        return false;
+      case 'propertyname':
+        return true;
+      case 'function':
+        return true;
+      default:
+        return false;
     }
-
-    if (childExpression.type === 'propertyname') {
-      return getProperty(feature, childExpression.value);
-    }
-
-    return null;
   }
 
   /**
@@ -1835,23 +1876,60 @@
    * Signature (feature, propertyName) => property value.
    */
   function evaluate(expression, feature, getProperty) {
-    // The only compound expressions have type: 'expression'.
-    // If it does not have this type, it's probably a plain string (or number).
-    if (expression.type !== 'expression') {
+    // If it's a number or a string (or null), return value as-is.
+    var jsType = typeof expression;
+    if (
+      jsType === 'string' ||
+      jsType === 'number' ||
+      jsType === 'undefined' ||
+      expression === null
+    ) {
       return expression;
     }
 
-    // Evaluate the child expression when there is only one child.
-    if (expression.children.length === 1) {
-      return evaluateChildExpression(expression.children[0], feature, getProperty);
+    if (expression.type === 'literal') {
+      if (expression.typeHint === 'number') {
+        return parseFloat(expression.value);
+      }
+      return expression.value;
     }
 
-    // In case of multiple child expressions, concatenate the evaluated child results.
-    var childValues = [];
-    for (var k = 0; k < expression.children.length; k += 1) {
-      childValues.push(evaluateChildExpression(expression.children[k], feature, getProperty));
+    if (expression.type === 'propertyname') {
+      var propertyValue = getProperty(feature, expression.value);
+      if (expression.typeHint === 'number') {
+        return parseFloat(propertyValue);
+      }
+      return propertyValue;
     }
-    return childValues.join('');
+
+    if (expression.type === 'function') {
+      // Todo: implement function expression evaluation.
+      return null;
+    }
+
+    if (expression.type === 'expression') {
+      var result;
+      if (expression.children.length === 1) {
+        result = evaluate(expression.children[0], feature, getProperty);
+      } else {
+        // In case of multiple child expressions, concatenate the evaluated child results.
+        var childValues = [];
+        for (var k = 0; k < expression.children.length; k += 1) {
+          childValues.push(
+            evaluate(expression.children[k], feature, getProperty)
+          );
+        }
+        result = childValues.join('');
+      }
+
+      if (expression.typeHint === 'number') {
+        return parseFloat(result);
+      }
+
+      return result;
+    }
+
+    return expression;
   }
 
   /**
@@ -1865,12 +1943,16 @@
    * @returns {any} The value of a static expression or default value if the expression is dynamic.
    */
   function expressionOrDefault(expression, defaultValue) {
-    if (!expression) {
+    if (!expression && expression !== 0) {
       return defaultValue;
     }
 
-    if (expression.type === 'expression') {
+    if (isDynamicExpression(expression)) {
       return defaultValue;
+    }
+
+    if (expression && expression.type === 'literal') {
+      return expression.value;
     }
 
     return expression;
@@ -2038,7 +2120,7 @@
     // --- Update dynamic size ---
     var graphic = symbolizer.graphic;
     var size = graphic.size;
-    if (size && size.type === 'expression') {
+    if (isDynamicExpression(size)) {
       var sizeValue =
         Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
 
@@ -2064,7 +2146,7 @@
 
     // --- Update dynamic rotation ---
     var rotation = graphic.rotation;
-    if (rotation && rotation.type === 'expression') {
+    if (isDynamicExpression(rotation)) {
       var rotationDegrees =
         Number(evaluate(rotation, feature, getProperty)) || 0.0;
       // Note: OL angles are in radians.
@@ -2975,7 +3057,7 @@
     var labelplacement = symbolizer.labelplacement;
 
     // Set text only if the label expression is dynamic.
-    if (label && label.type === 'expression') {
+    if (isDynamicExpression(label)) {
       var labelText = evaluate(label, feature, getProperty);
       // Important! OpenLayers expects the text property to always be a string.
       olText.setText(labelText.toString());
@@ -2987,7 +3069,7 @@
         (labelplacement.pointplacement &&
           labelplacement.pointplacement.rotation) ||
         0.0;
-      if (pointPlacementRotation.type === 'expression') {
+      if (isDynamicExpression(pointPlacementRotation)) {
         var labelRotationDegrees = evaluate(
           pointPlacementRotation,
           feature,
