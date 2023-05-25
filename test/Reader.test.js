@@ -207,6 +207,7 @@ describe('Dynamic filter expressions', () => {
     const rule = featureTypeStyle.rules[0];
     expect(rule.pointsymbolizer[0].graphic.size).to.deep.equal({
       type: 'expression',
+      typeHint: 'number',
       children: [
         {
           type: 'propertyname',
@@ -275,9 +276,9 @@ describe('Graphicstroke symbolizer', () => {
     expect(stroke.graphicstroke.graphic).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.have.property('mark');
     expect(stroke.graphicstroke.graphic).to.have.property('size');
-    expect(stroke.graphicstroke.graphic.size).to.equal('4');
+    expect(stroke.graphicstroke.graphic.size).to.equal(4);
     expect(stroke.graphicstroke.graphic).to.have.property('rotation');
-    expect(stroke.graphicstroke.graphic.rotation).to.equal('45');
+    expect(stroke.graphicstroke.graphic.rotation).to.equal(45);
     expect(stroke.graphicstroke.graphic.mark).to.have.property('wellknownname');
     expect(stroke.graphicstroke.graphic.mark.wellknownname).to.equal('square');
     expect(stroke.graphicstroke.graphic.mark).to.have.property('fill');

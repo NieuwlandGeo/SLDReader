@@ -353,13 +353,15 @@
    * @param {object} [options] Parse options.
    * @param {object} [options.skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
    * @param {object} [options.forceLowerCase] Default true. If true, convert prop name to lower case before adding it to obj.
+   * @param {object} [options.typeHint] Default 'string'. When set to 'number', a simple literal value will be converted to a number.
    */
-  function addFilterExpressionProp(node, obj, prop, options) {
+  function addParameterValueProp(node, obj, prop, options) {
     if ( options === void 0 ) options = {};
 
     var defaultParseOptions = {
       skipEmptyNodes: true,
       forceLowerCase: true,
+      typeHint: 'string',
     };
 
     var parseOptions = Object.assign({}, defaultParseOptions,
@@ -407,12 +409,22 @@
       obj[propertyName] = childExpressions
         .map(function (expression) { return expression.value; })
         .join('');
+      if (parseOptions.typeHint === 'number') {
+        obj[propertyName] = parseFloat(obj[propertyName]);
+      }
     } else {
       obj[propertyName] = {
         type: 'expression',
+        typeHint: parseOptions.typeHint,
         children: childExpressions,
       };
     }
+  }
+
+  function addNumericParameterValueProp(node, obj, prop, options) {
+    if ( options === void 0 ) options = {};
+
+    addParameterValueProp(node, obj, prop, Object.assign({}, options, {typeHint: 'number'}));
   }
 
   /**
@@ -447,7 +459,7 @@
       .getAttribute('name')
       .toLowerCase()
       .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
-    addFilterExpressionProp(element, obj[parameterGroup], name, {
+    addParameterValueProp(element, obj[parameterGroup], name, {
       skipEmptyNodes: true,
       forceLowerCase: false,
     });
@@ -473,27 +485,28 @@
     GraphicFill: addProp,
     Graphic: addProp,
     ExternalGraphic: addProp,
-    Gap: addNumericProp,
-    InitialGap: addNumericProp,
+    Gap: addNumericParameterValueProp,
+    InitialGap: addNumericParameterValueProp,
     Mark: addProp,
-    Label: function (node, obj, prop) { return addFilterExpressionProp(node, obj, prop, { skipEmptyNodes: false }); },
+    Label: function (node, obj, prop) { return addParameterValueProp(node, obj, prop, { skipEmptyNodes: false }); },
     Halo: addProp,
     Font: addProp,
-    Radius: addPropWithTextContent,
+    Radius: addNumericParameterValueProp,
     LabelPlacement: addProp,
     PointPlacement: addProp,
     LinePlacement: addProp,
-    PerpendicularOffset: addPropWithTextContent,
+    PerpendicularOffset: addNumericParameterValueProp,
     AnchorPoint: addProp,
-    AnchorPointX: addPropWithTextContent,
-    AnchorPointY: addPropWithTextContent,
-    Opacity: addFilterExpressionProp,
-    Rotation: addFilterExpressionProp,
+    AnchorPointX: addNumericParameterValueProp,
+    AnchorPointY: addNumericParameterValueProp,
+    Opacity: addNumericParameterValueProp,
+    Rotation: addNumericParameterValueProp,
     Displacement: addProp,
-    DisplacementX: addPropWithTextContent,
-    DisplacementY: addPropWithTextContent,
-    Size: addFilterExpressionProp,
+    DisplacementX: addNumericParameterValueProp,
+    DisplacementY: addNumericParameterValueProp,
+    Size: addNumericParameterValueProp,
     WellKnownName: addPropWithTextContent,
+    MarkIndex: addNumericProp,
     VendorOption: function (element, obj, prop) { return addParameterValue(element, obj, prop, 'vendoroptions'); },
     OnlineResource: function (element, obj) {
       obj.onlineresource = element.getAttribute('xlink:href');

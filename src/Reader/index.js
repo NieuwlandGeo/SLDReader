@@ -88,11 +88,13 @@ function addNumericProp(node, obj, prop) {
  * @param {object} [options] Parse options.
  * @param {object} [options.skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
  * @param {object} [options.forceLowerCase] Default true. If true, convert prop name to lower case before adding it to obj.
+ * @param {object} [options.typeHint] Default 'string'. When set to 'number', a simple literal value will be converted to a number.
  */
-function addFilterExpressionProp(node, obj, prop, options = {}) {
+function addParameterValueProp(node, obj, prop, options = {}) {
   const defaultParseOptions = {
     skipEmptyNodes: true,
     forceLowerCase: true,
+    typeHint: 'string',
   };
 
   const parseOptions = {
@@ -142,12 +144,20 @@ function addFilterExpressionProp(node, obj, prop, options = {}) {
     obj[propertyName] = childExpressions
       .map(expression => expression.value)
       .join('');
+    if (parseOptions.typeHint === 'number') {
+      obj[propertyName] = parseFloat(obj[propertyName]);
+    }
   } else {
     obj[propertyName] = {
       type: 'expression',
+      typeHint: parseOptions.typeHint,
       children: childExpressions,
     };
   }
+}
+
+function addNumericParameterValueProp(node, obj, prop, options = {}) {
+  addParameterValueProp(node, obj, prop, { ...options, typeHint: 'number' });
 }
 
 /**
@@ -182,7 +192,7 @@ function addParameterValue(element, obj, prop, parameterGroup) {
     .getAttribute('name')
     .toLowerCase()
     .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
-  addFilterExpressionProp(element, obj[parameterGroup], name, {
+  addParameterValueProp(element, obj[parameterGroup], name, {
     skipEmptyNodes: true,
     forceLowerCase: false,
   });
@@ -208,28 +218,29 @@ const SymbParsers = {
   GraphicFill: addProp,
   Graphic: addProp,
   ExternalGraphic: addProp,
-  Gap: addNumericProp,
-  InitialGap: addNumericProp,
+  Gap: addNumericParameterValueProp,
+  InitialGap: addNumericParameterValueProp,
   Mark: addProp,
   Label: (node, obj, prop) =>
-    addFilterExpressionProp(node, obj, prop, { skipEmptyNodes: false }),
+    addParameterValueProp(node, obj, prop, { skipEmptyNodes: false }),
   Halo: addProp,
   Font: addProp,
-  Radius: addPropWithTextContent,
+  Radius: addNumericParameterValueProp,
   LabelPlacement: addProp,
   PointPlacement: addProp,
   LinePlacement: addProp,
-  PerpendicularOffset: addPropWithTextContent,
+  PerpendicularOffset: addNumericParameterValueProp,
   AnchorPoint: addProp,
-  AnchorPointX: addPropWithTextContent,
-  AnchorPointY: addPropWithTextContent,
-  Opacity: addFilterExpressionProp,
-  Rotation: addFilterExpressionProp,
+  AnchorPointX: addNumericParameterValueProp,
+  AnchorPointY: addNumericParameterValueProp,
+  Opacity: addNumericParameterValueProp,
+  Rotation: addNumericParameterValueProp,
   Displacement: addProp,
-  DisplacementX: addPropWithTextContent,
-  DisplacementY: addPropWithTextContent,
-  Size: addFilterExpressionProp,
+  DisplacementX: addNumericParameterValueProp,
+  DisplacementY: addNumericParameterValueProp,
+  Size: addNumericParameterValueProp,
   WellKnownName: addPropWithTextContent,
+  MarkIndex: addNumericProp,
   VendorOption: (element, obj, prop) =>
     addParameterValue(element, obj, prop, 'vendoroptions'),
   OnlineResource: (element, obj) => {
