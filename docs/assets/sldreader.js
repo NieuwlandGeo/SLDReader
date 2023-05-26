@@ -1891,18 +1891,25 @@
    * @param {object|string} expression SLD object expression.
    * @param {ol/feature} feature OpenLayers feature instance.
    * @param {function} getProperty A function to get a specific property value from a feature.
+   * @param {any} defaultValue Optional default value to use when feature is null.
    * Signature (feature, propertyName) => property value.
    */
-  function evaluate(expression, feature, getProperty) {
+  function evaluate(
+    expression,
+    feature,
+    getProperty,
+    defaultValue
+  ) {
+    if ( defaultValue === void 0 ) defaultValue = null;
+
     // If it's a number or a string (or null), return value as-is.
     var jsType = typeof expression;
-    if (
-      jsType === 'string' ||
-      jsType === 'number' ||
-      jsType === 'undefined' ||
-      expression === null
-    ) {
+    if (jsType === 'string' || jsType === 'number') {
       return expression;
+    }
+
+    if (jsType === 'undefined' || expression === null) {
+      return defaultValue;
     }
 
     if (expression.type === 'literal') {
@@ -1913,8 +1920,16 @@
     }
 
     if (expression.type === 'propertyname') {
-      var propertyValue = getProperty(feature, expression.value);
+      var propertyValue =
+        feature === null ? defaultValue : getProperty(feature, expression.value);
+      if (typeof propertyValue === 'undefined' || propertyValue === null) {
+        propertyValue = defaultValue;
+      }
       if (expression.typeHint === 'number') {
+        // When typeHint is number, treat an empty string as missing value and return default value.
+        if (propertyValue === '') {
+          return defaultValue;
+        }
         return parseFloat(propertyValue);
       }
       return propertyValue;
@@ -1945,32 +1960,6 @@
       }
 
       return result;
-    }
-
-    return expression;
-  }
-
-  /**
-   * @private
-   * Utility function for evaluating dynamic expressions without a feature.
-   * If the expression is static, the expression value will be returned.
-   * If the expression is dynamic, defaultValue will be returned.
-   * If the expression is falsy, defaultValue will be returned.
-   * @param {object|string} expression SLD object expression (or string).
-   * @param {any} defaultValue Default value.
-   * @returns {any} The value of a static expression or default value if the expression is dynamic.
-   */
-  function expressionOrDefault(expression, defaultValue) {
-    if (!expression && expression !== 0) {
-      return defaultValue;
-    }
-
-    if (isDynamicExpression(expression)) {
-      return defaultValue;
-    }
-
-    if (expression && expression.type === 'literal') {
-      return expression.value;
     }
 
     return expression;
@@ -2047,10 +2036,10 @@
     var style$1 = pointsymbolizer.graphic;
 
     // If the point size is a dynamic expression, use the default point size and update in-place later.
-    var pointSizeValue = expressionOrDefault(style$1.size, DEFAULT_MARK_SIZE);
+    var pointSizeValue = evaluate(style$1.size, null, null, DEFAULT_MARK_SIZE);
 
     // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
-    var rotationDegrees = expressionOrDefault(style$1.rotation, 0.0);
+    var rotationDegrees = evaluate(style$1.rotation, null, null, 0.0);
 
     if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
       // For external graphics: the default size is the native image size.
@@ -2954,7 +2943,7 @@
 
     // If the label is dynamic, set text to empty string.
     // In that case, text will be set at runtime.
-    var labelText = expressionOrDefault(textsymbolizer.label, '');
+    var labelText = evaluate(textsymbolizer.label, null, null, '');
 
     var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
     var halo =
@@ -2981,8 +2970,10 @@
         : {};
 
     // If rotation is dynamic, default to 0. Rotation will be set at runtime.
-    var labelRotationDegrees = expressionOrDefault(
+    var labelRotationDegrees = evaluate(
       pointplacement.rotation,
+      null,
+      null,
       0.0
     );
 

@@ -14,7 +14,7 @@ import {
 } from './static';
 import { createCachedImageStyle, getImageLoadingState } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
-import evaluate, { expressionOrDefault, isDynamicExpression } from '../olEvaluator';
+import evaluate, { isDynamicExpression } from '../olEvaluator';
 import { getSimpleFill, getSimpleStroke } from './simpleStyles';
 
 const defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
@@ -29,10 +29,10 @@ function pointStyle(pointsymbolizer) {
   const { graphic: style } = pointsymbolizer;
 
   // If the point size is a dynamic expression, use the default point size and update in-place later.
-  let pointSizeValue = expressionOrDefault(style.size, DEFAULT_MARK_SIZE);
+  let pointSizeValue = evaluate(style.size, null, null, DEFAULT_MARK_SIZE);
 
   // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
-  const rotationDegrees = expressionOrDefault(style.rotation, 0.0);
+  const rotationDegrees = evaluate(style.rotation, null, null, 0.0);
 
   if (style.externalgraphic && style.externalgraphic.onlineresource) {
     // For external graphics: the default size is the native image size.
