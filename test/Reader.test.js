@@ -6,7 +6,9 @@ import { dynamicSld } from './data/dynamic.sld';
 import { graphicstrokeSymbolizerSld } from './data/graphicstrokeSymbolizer.sld';
 import { graphicStrokeWithGap } from './data/graphicstroke-with-gap.sld';
 import { multipleSymbolizersSld } from './data/multiple-symbolizers.sld';
-import graphicStrokeVendorOption from './data/graphicstroke-vendoroption.sld';
+import { staticPolygonSymbolizerSld } from './data/static-polygon-symbolizer.sld';
+import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
+import { graphicStrokeVendorOption } from './data/graphicstroke-vendoroption.sld';
 
 let result;
 
@@ -45,13 +47,18 @@ describe('Reads xml', () => {
     const rule =
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
     const [symbolizer] = rule.polygonsymbolizer;
-    expect(rule.maxscaledenominator).to.equal('3000000');
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
     expect(symbolizer.fill.styling).to.be.an.instanceof(Object);
     expect(symbolizer.fill.styling.fill).to.equal('blue');
-    expect(symbolizer.fill.styling.fillOpacity).to.equal('1.0');
+    expect(symbolizer.fill.styling.fillOpacity).to.equal(1.0);
     expect(symbolizer.stroke.styling.stroke).to.equal('#C0C0C0');
+  });
+  it('Scale denominators are numeric', () => {
+    const rule =
+      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+    expect(rule.maxscaledenominator).to.equal(3000000);
+    expect(rule.minscaledenominator).to.equal(1000);
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
     const rule =
@@ -165,13 +172,11 @@ describe('Reads xml sld 11', () => {
       result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
     const [symbolizer] = rule.textsymbolizer;
     expect(symbolizer).to.be.an.instanceof(Object);
-    expect(symbolizer.label).to.be.an.instanceof(Object);
-    expect(symbolizer.label.type).to.equal('expression');
-    expect(
-      symbolizer.label.children.some(
-        l => l.type === 'propertyname' && l.value === 'provincienaam'
-      )
-    ).to.be.true;
+    expect(symbolizer.label).to.deep.equal({
+      type: 'propertyname',
+      typeHint: 'string',
+      value: 'provincienaam',
+    });
   });
   it('rule textsymbolizer has font', () => {
     const rule =
@@ -201,13 +206,9 @@ describe('Dynamic filter expressions', () => {
   it('Has propertyname expression for size', () => {
     const rule = featureTypeStyle.rules[0];
     expect(rule.pointsymbolizer[0].graphic.size).to.deep.equal({
-      type: 'expression',
-      children: [
-        {
-          type: 'propertyname',
-          value: 'size',
-        },
-      ],
+      type: 'propertyname',
+      typeHint: 'number',
+      value: 'size',
     });
   });
 });
@@ -252,7 +253,7 @@ describe('Graphicstroke symbolizer', () => {
     expect(linesymbolizer1.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling.stroke).to.equal('#FF0000');
-    expect(linesymbolizer1.stroke.styling.strokeWidth).to.equal('1');
+    expect(linesymbolizer1.stroke.styling.strokeWidth).to.equal(1);
   });
   it('rule linesymbolizer has props from svg 2', () => {
     const linesymbolizer2 =
@@ -270,9 +271,9 @@ describe('Graphicstroke symbolizer', () => {
     expect(stroke.graphicstroke.graphic).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.have.property('mark');
     expect(stroke.graphicstroke.graphic).to.have.property('size');
-    expect(stroke.graphicstroke.graphic.size).to.equal('4');
+    expect(stroke.graphicstroke.graphic.size).to.equal(4);
     expect(stroke.graphicstroke.graphic).to.have.property('rotation');
-    expect(stroke.graphicstroke.graphic.rotation).to.equal('45');
+    expect(stroke.graphicstroke.graphic.rotation).to.equal(45);
     expect(stroke.graphicstroke.graphic.mark).to.have.property('wellknownname');
     expect(stroke.graphicstroke.graphic.mark.wellknownname).to.equal('square');
     expect(stroke.graphicstroke.graphic.mark).to.have.property('fill');
@@ -287,7 +288,7 @@ describe('Graphicstroke symbolizer', () => {
       'fillOpacity'
     );
     expect(stroke.graphicstroke.graphic.mark.fill.styling.fillOpacity).to.equal(
-      '1'
+      1.0
     );
     expect(stroke.graphicstroke.graphic.mark).to.have.property('stroke');
     expect(stroke.graphicstroke.graphic.mark.stroke).to.have.property(
@@ -304,13 +305,13 @@ describe('Graphicstroke symbolizer', () => {
     );
     expect(
       stroke.graphicstroke.graphic.mark.stroke.styling.strokeWidth
-    ).to.equal('1');
+    ).to.equal(1);
     expect(stroke.graphicstroke.graphic.mark.stroke.styling).to.have.property(
       'strokeOpacity'
     );
     expect(
       stroke.graphicstroke.graphic.mark.stroke.styling.strokeOpacity
-    ).to.equal('1');
+    ).to.equal(1.0);
   });
 });
 
@@ -341,7 +342,7 @@ describe('SLD v1.1.0 GraphicStroke properties', () => {
     const { stroke } = graphicStroke.graphic.mark;
     expect(stroke.styling).to.deep.equal({
       stroke: '#232323',
-      strokeWidth: '0.5',
+      strokeWidth: 0.5,
     });
   });
 
@@ -366,14 +367,14 @@ describe('Parse vendor options', () => {
     [style] = parsedSld.layers[0].styles[0].featuretypestyles;
   });
 
-  it('Sections without vendor options have no .vendoroption prop', () => {
+  it('Sections without vendor options have no .vendoroptions prop', () => {
     const symbolizer = style.rules[0].linesymbolizer[0];
-    expect(symbolizer.vendoroption).to.be.undefined;
+    expect(symbolizer.vendoroptions).to.be.undefined;
   });
 
-  it('Parse vendor options into a .vendoroption prop', () => {
+  it('Parse vendor options into a .vendoroptions prop', () => {
     const symbolizer = style.rules[0].linesymbolizer[1];
-    expect(symbolizer.vendoroption).to.deep.equal({
+    expect(symbolizer.vendoroptions).to.deep.equal({
       placement: 'lastPoint',
     });
   });
@@ -416,5 +417,77 @@ describe('Symbolizers are always an array', () => {
 
   it('Multiple Polygon symbolizers --> array', () => {
     expect(Array.isArray(style.rules[7].polygonsymbolizer)).to.be.true;
+  });
+});
+
+describe('SVG style parameters', () => {
+  describe('Static SVG parameters', () => {
+    let style;
+    let fillStyle;
+    let strokeStyle;
+    beforeEach(() => {
+      const parsedSld = Reader(staticPolygonSymbolizerSld);
+      [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      const stroke = style.rules[0].polygonsymbolizer[0].stroke;
+      strokeStyle = stroke.styling;
+      const fill = style.rules[0].polygonsymbolizer[0].fill;
+      fillStyle = fill.styling;
+    });
+
+    it('Fill color should be string', () => {
+      expect(fillStyle.fill).to.equal('#FF0000');
+    });
+    it('Fill opacity should be number', () => {
+      expect(fillStyle.fillOpacity).to.equal(0.5);
+    });
+    it('Stroke color should be string', () => {
+      expect(strokeStyle.stroke).to.equal('#00FF00');
+    });
+    it('Stroke opacity should be number', () => {
+      expect(strokeStyle.strokeOpacity).to.equal(1.0);
+    });
+    it('Stroke width should be number', () => {
+      expect(strokeStyle.strokeWidth).to.equal(4);
+    });
+  });
+
+  describe('Dynamic SVG parameters', () => {
+    let style;
+    let fillStyle;
+    let strokeStyle;
+    beforeEach(() => {
+      const parsedSld = Reader(dynamicPolygonSymbolizerSld);
+      [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      const stroke = style.rules[0].polygonsymbolizer[0].stroke;
+      strokeStyle = stroke.styling;
+      const fill = style.rules[0].polygonsymbolizer[0].fill;
+      fillStyle = fill.styling;
+    });
+
+    // Check stroke width dynamic style value.
+    it('Dynamic style property should be a propertyname expression', () => {
+      expect(strokeStyle.strokeWidth).to.deep.equal({
+        type: 'propertyname',
+        value: 'myStrokeWidth',
+        typeHint: 'number',
+      });
+    });
+
+    // Check types of possible SVG parameters.
+    it('Fill color should be string', () => {
+      expect(fillStyle.fill.typeHint).to.equal('string');
+    });
+    it('Fill opacity should be number', () => {
+      expect(fillStyle.fillOpacity.typeHint).to.equal('number');
+    });
+    it('Stroke color should be string', () => {
+      expect(strokeStyle.stroke.typeHint).to.equal('string');
+    });
+    it('Stroke opacity should be number', () => {
+      expect(strokeStyle.strokeOpacity.typeHint).to.equal('number');
+    });
+    it('Stroke width should be number', () => {
+      expect(strokeStyle.strokeWidth.typeHint).to.equal('number');
+    });
   });
 });

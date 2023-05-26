@@ -132,10 +132,10 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
   };
 
   // QGIS vendor options to override graphicstroke symbol placement.
-  if (linesymbolizer.vendoroption) {
-    if (linesymbolizer.vendoroption.placement === 'firstPoint') {
+  if (linesymbolizer.vendoroptions) {
+    if (linesymbolizer.vendoroptions.placement === 'firstPoint') {
       options.placement = PLACEMENT_FIRSTPOINT;
-    } else if (linesymbolizer.vendoroption.placement === 'lastPoint') {
+    } else if (linesymbolizer.vendoroptions.placement === 'lastPoint') {
       options.placement = PLACEMENT_LASTPOINT;
     }
   }

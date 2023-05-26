@@ -2,25 +2,25 @@
 // Constant expressions are returned as-is.
 
 /**
- * @private
- * Evaluate the value of a sub-expression.
- * @param {object} childExpression SLD object expression child.
- * @param {ol/feature} feature OpenLayers feature instance.feature.
- * @param {function} getProperty A function to get a specific property value from a feature.
- * Signature (feature, propertyName) => property value.
+ * Check if an expression depends on feature properties.
+ * @param {object} expression OGC expression object.
+ * @returns {bool} Returns true if the expression depends on feature properties.
  */
-function evaluateChildExpression(childExpression, feature, getProperty) {
-  // For now, the only valid child types are 'propertyname' and 'literal'.
-  // Todo: add,sub,mul,div. Maybe a few functions as well.
-  if (childExpression.type === 'literal') {
-    return childExpression.value;
+export function isDynamicExpression(expression) {
+  switch ((expression || {}).type) {
+    case 'expression':
+      // Expressions with all static values are already concatenated into a static string,
+      // so any expression that survives that process has at least one dynamic component.
+      return true;
+    case 'literal':
+      return false;
+    case 'propertyname':
+      return true;
+    case 'function':
+      return true;
+    default:
+      return false;
   }
-
-  if (childExpression.type === 'propertyname') {
-    return getProperty(feature, childExpression.value);
-  }
-
-  return null;
 }
 
 /**
@@ -33,23 +33,60 @@ function evaluateChildExpression(childExpression, feature, getProperty) {
  * Signature (feature, propertyName) => property value.
  */
 export default function evaluate(expression, feature, getProperty) {
-  // The only compound expressions have type: 'expression'.
-  // If it does not have this type, it's probably a plain string (or number).
-  if (expression.type !== 'expression') {
+  // If it's a number or a string (or null), return value as-is.
+  const jsType = typeof expression;
+  if (
+    jsType === 'string' ||
+    jsType === 'number' ||
+    jsType === 'undefined' ||
+    expression === null
+  ) {
     return expression;
   }
 
-  // Evaluate the child expression when there is only one child.
-  if (expression.children.length === 1) {
-    return evaluateChildExpression(expression.children[0], feature, getProperty);
+  if (expression.type === 'literal') {
+    if (expression.typeHint === 'number') {
+      return parseFloat(expression.value);
+    }
+    return expression.value;
   }
 
-  // In case of multiple child expressions, concatenate the evaluated child results.
-  const childValues = [];
-  for (let k = 0; k < expression.children.length; k += 1) {
-    childValues.push(evaluateChildExpression(expression.children[k], feature, getProperty));
+  if (expression.type === 'propertyname') {
+    const propertyValue = getProperty(feature, expression.value);
+    if (expression.typeHint === 'number') {
+      return parseFloat(propertyValue);
+    }
+    return propertyValue;
   }
-  return childValues.join('');
+
+  if (expression.type === 'function') {
+    // Todo: implement function expression evaluation.
+    return null;
+  }
+
+  if (expression.type === 'expression') {
+    let result;
+    if (expression.children.length === 1) {
+      result = evaluate(expression.children[0], feature, getProperty);
+    } else {
+      // In case of multiple child expressions, concatenate the evaluated child results.
+      const childValues = [];
+      for (let k = 0; k < expression.children.length; k += 1) {
+        childValues.push(
+          evaluate(expression.children[k], feature, getProperty)
+        );
+      }
+      result = childValues.join('');
+    }
+
+    if (expression.typeHint === 'number') {
+      return parseFloat(result);
+    }
+
+    return result;
+  }
+
+  return expression;
 }
 
 /**
@@ -63,12 +100,16 @@ export default function evaluate(expression, feature, getProperty) {
  * @returns {any} The value of a static expression or default value if the expression is dynamic.
  */
 export function expressionOrDefault(expression, defaultValue) {
-  if (!expression) {
+  if (!expression && expression !== 0) {
     return defaultValue;
   }
 
-  if (expression.type === 'expression') {
+  if (isDynamicExpression(expression)) {
     return defaultValue;
+  }
+
+  if (expression && expression.type === 'literal') {
+    return expression.value;
   }
 
   return expression;
