@@ -267,6 +267,12 @@
    * @module
    */
 
+  var numericSvgProps = new Set([
+    'strokeWidth',
+    'strokeOpacity',
+    'strokeDashOffset',
+    'fillOpacity' ]);
+
   /**
    * Generic parser for elements with maxOccurs > 1
    * it pushes result of readNode(node) to array on obj[prop]
@@ -502,9 +508,19 @@
       .getAttribute('name')
       .toLowerCase()
       .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
+
+    // Flag certain SVG parameters as numeric.
+    var typeHint = 'string';
+    if (parameterGroup === 'styling') {
+      if (numericSvgProps.has(name)) {
+        typeHint = 'number';
+      }
+    }
+
     addParameterValueProp(element, obj[parameterGroup], name, {
       skipEmptyNodes: true,
       forceLowerCase: false,
+      typeHint: typeHint,
     });
   }
 

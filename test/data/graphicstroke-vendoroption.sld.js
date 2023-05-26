@@ -1,4 +1,4 @@
-const graphicStrokeVendorOption = `<?xml version="1.0" encoding="UTF-8"?>
+export const graphicStrokeVendorOption = `<?xml version="1.0" encoding="UTF-8"?>
 <StyledLayerDescriptor xmlns="http://www.opengis.net/sld"
   xmlns:ogc="http://www.opengis.net/ogc"
   xmlns:xlink="http://www.w3.org/1999/xlink"

@@ -4,6 +4,13 @@ import createFilter from './filter';
  * @module
  */
 
+const numericSvgProps = new Set([
+  'strokeWidth',
+  'strokeOpacity',
+  'strokeDashOffset',
+  'fillOpacity',
+]);
+
 /**
  * Generic parser for elements with maxOccurs > 1
  * it pushes result of readNode(node) to array on obj[prop]
@@ -235,9 +242,19 @@ function addParameterValue(element, obj, prop, parameterGroup) {
     .getAttribute('name')
     .toLowerCase()
     .replace(/-(.)/g, (match, group1) => group1.toUpperCase());
+
+  // Flag certain SVG parameters as numeric.
+  let typeHint = 'string';
+  if (parameterGroup === 'styling') {
+    if (numericSvgProps.has(name)) {
+      typeHint = 'number';
+    }
+  }
+
   addParameterValueProp(element, obj[parameterGroup], name, {
     skipEmptyNodes: true,
     forceLowerCase: false,
+    typeHint,
   });
 }
 
