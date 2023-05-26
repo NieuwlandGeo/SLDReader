@@ -30,18 +30,23 @@ export function isDynamicExpression(expression) {
  * @param {object|string} expression SLD object expression.
  * @param {ol/feature} feature OpenLayers feature instance.
  * @param {function} getProperty A function to get a specific property value from a feature.
+ * @param {any} defaultValue Optional default value to use when feature is null.
  * Signature (feature, propertyName) => property value.
  */
-export default function evaluate(expression, feature, getProperty) {
+export default function evaluate(
+  expression,
+  feature,
+  getProperty,
+  defaultValue = null
+) {
   // If it's a number or a string (or null), return value as-is.
   const jsType = typeof expression;
-  if (
-    jsType === 'string' ||
-    jsType === 'number' ||
-    jsType === 'undefined' ||
-    expression === null
-  ) {
+  if (jsType === 'string' || jsType === 'number') {
     return expression;
+  }
+
+  if (jsType === 'undefined' || expression === null) {
+    return defaultValue;
   }
 
   if (expression.type === 'literal') {
@@ -52,8 +57,16 @@ export default function evaluate(expression, feature, getProperty) {
   }
 
   if (expression.type === 'propertyname') {
-    const propertyValue = getProperty(feature, expression.value);
+    let propertyValue =
+      feature === null ? defaultValue : getProperty(feature, expression.value);
+    if (typeof propertyValue === 'undefined' || propertyValue === null) {
+      propertyValue = defaultValue;
+    }
     if (expression.typeHint === 'number') {
+      // When typeHint is number, treat an empty string as missing value and return default value.
+      if (propertyValue === '') {
+        return defaultValue;
+      }
       return parseFloat(propertyValue);
     }
     return propertyValue;
@@ -84,32 +97,6 @@ export default function evaluate(expression, feature, getProperty) {
     }
 
     return result;
-  }
-
-  return expression;
-}
-
-/**
- * @private
- * Utility function for evaluating dynamic expressions without a feature.
- * If the expression is static, the expression value will be returned.
- * If the expression is dynamic, defaultValue will be returned.
- * If the expression is falsy, defaultValue will be returned.
- * @param {object|string} expression SLD object expression (or string).
- * @param {any} defaultValue Default value.
- * @returns {any} The value of a static expression or default value if the expression is dynamic.
- */
-export function expressionOrDefault(expression, defaultValue) {
-  if (!expression && expression !== 0) {
-    return defaultValue;
-  }
-
-  if (isDynamicExpression(expression)) {
-    return defaultValue;
-  }
-
-  if (expression && expression.type === 'literal') {
-    return expression.value;
   }
 
   return expression;
