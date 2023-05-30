@@ -20,14 +20,6 @@ function textStyle(textsymbolizer) {
   const labelText = evaluate(textsymbolizer.label, null, null, '');
 
   const fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
-  const halo =
-    textsymbolizer.halo && textsymbolizer.halo.fill
-      ? textsymbolizer.halo.fill.styling
-      : {};
-  const haloRadius =
-    textsymbolizer.halo && textsymbolizer.halo.radius
-      ? parseFloat(textsymbolizer.halo.radius)
-      : 1;
   const {
     fontFamily = 'sans-serif',
     fontSize = 10,
@@ -99,11 +91,15 @@ function textStyle(textsymbolizer) {
     }),
   };
 
-  const haloFillColor = evaluate(halo.fill, null, null, '#FFFFFF');
-  const haloFillOpacity = evaluate(halo.fillOpacity, null, null, 1.0);
-
   // Convert SLD halo to text symbol stroke.
   if (textsymbolizer.halo) {
+    const haloStyling =
+      textsymbolizer.halo && textsymbolizer.halo.fill
+        ? textsymbolizer.halo.fill.styling
+        : {};
+    const haloFillColor = evaluate(haloStyling.fill, null, null, '#FFFFFF');
+    const haloFillOpacity = evaluate(haloStyling.fillOpacity, null, null, 1.0);
+    const haloRadius = evaluate(textsymbolizer.halo.radius, null, null, 1.0);
     textStyleOptions.stroke = new Stroke({
       color: getOLColorString(haloFillColor, haloFillOpacity),
       // wrong position width radius equal to 2 or 4
