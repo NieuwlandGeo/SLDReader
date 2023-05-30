@@ -32,7 +32,7 @@ export function memoizeStyleFunction(styleFunction) {
  * @param  {Number} alpha eg 0.5
  * @return {string}       rgba(0,0,0,0)
  */
-export function hexToRGB(hex, alpha) {
+function hexToRGB(hex, alpha) {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
@@ -40,6 +40,19 @@ export function hexToRGB(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
   return `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
+ * Get color string for OpenLayers. Encodes opacity into color string if it's a number less than 1.
+ * @param {string} color Color string, encoded as #AABBCC.
+ * @param {number} opacity Opacity. Non-numeric values will be treated as 1.
+ * @returns {string} OpenLayers color string.
+ */
+export function getOLColorString(color, opacity) {
+  if (opacity !== null && opacity < 1.0 && color.startsWith('#')) {
+    return hexToRGB(color, opacity);
+  }
+  return color;
 }
 
 /**

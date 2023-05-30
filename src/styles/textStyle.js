@@ -1,5 +1,5 @@
 import { Style, Fill, Stroke, Text } from 'ol/style';
-import { hexToRGB, memoizeStyleFunction } from './styleUtils';
+import { getOLColorString, memoizeStyleFunction } from './styleUtils';
 import evaluate, { isDynamicExpression } from '../olEvaluator';
 import { emptyStyle } from './static';
 
@@ -82,6 +82,9 @@ function textStyle(textsymbolizer) {
     textBaseline = 'top';
   }
 
+  const textFillColor = evaluate(fill.fill, null, null, '#000000');
+  const textFillOpacity = evaluate(fill.fillOpacity, null, null, 1.0);
+
   // Assemble text style options.
   const textStyleOptions = {
     text: labelText,
@@ -92,20 +95,17 @@ function textStyle(textsymbolizer) {
     textAlign,
     textBaseline,
     fill: new Fill({
-      color:
-        fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-          ? hexToRGB(fill.fill, fill.fillOpacity)
-          : fill.fill,
+      color: getOLColorString(textFillColor, textFillOpacity),
     }),
   };
+
+  const haloFillColor = evaluate(halo.fill, null, null, '#FFFFFF');
+  const haloFillOpacity = evaluate(halo.fillOpacity, null, null, 1.0);
 
   // Convert SLD halo to text symbol stroke.
   if (textsymbolizer.halo) {
     textStyleOptions.stroke = new Stroke({
-      color:
-        halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-          ? hexToRGB(halo.fill, halo.fillOpacity)
-          : halo.fill,
+      color: getOLColorString(haloFillColor, haloFillOpacity),
       // wrong position width radius equal to 2 or 4
       width:
         (haloRadius === 2 || haloRadius === 4

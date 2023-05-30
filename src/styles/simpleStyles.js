@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { Stroke, Fill } from 'ol/style';
 
-import { hexToRGB } from './styleUtils';
+import { getOLColorString } from './styleUtils';
 import evaluate from '../olEvaluator';
 
 /**
@@ -21,11 +21,9 @@ export function getSimpleStroke(stroke) {
   const styleParams = stroke.styling || {};
 
   // Options that have a default value.
-  let strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
+  const strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
+
   const strokeOpacity = evaluate(styleParams.strokeOpacity, null, null);
-  if (strokeOpacity !== null && strokeColor.startsWith('#')) {
-    strokeColor = hexToRGB(strokeColor, strokeOpacity);
-  }
 
   const strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
 
@@ -37,7 +35,7 @@ export function getSimpleStroke(stroke) {
   );
 
   const strokeOptions = {
-    color: strokeColor,
+    color: getOLColorString(strokeColor, strokeOpacity),
     width: strokeWidth,
     lineDashOffset: strokeLineDashOffset,
   };
@@ -77,11 +75,9 @@ export function getSimpleFill(fill) {
 
   const styleParams = fill.styling || {};
 
-  let fillColor = evaluate(styleParams.fill, null, null, '#808080');
-  const fillOpacity = evaluate(styleParams.fillOpacity, null, null);
-  if (fillOpacity !== null && fillColor.startsWith('#')) {
-    fillColor = hexToRGB(fillColor, fillOpacity);
-  }
+  const fillColor = evaluate(styleParams.fill, null, null, '#808080');
 
-  return new Fill({ color: fillColor });
+  const fillOpacity = evaluate(styleParams.fillOpacity, null, null);
+
+  return new Fill({ color: getOLColorString(fillColor, fillOpacity) });
 }

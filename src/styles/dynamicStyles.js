@@ -1,5 +1,5 @@
 import evaluate, { isDynamicExpression } from '../olEvaluator';
-import { hexToRGB } from './styleUtils';
+import { getOLColorString } from './styleUtils';
 
 /**
  * Change OL Style fill properties for dynamic symbolizer style parameters.
@@ -29,21 +29,14 @@ export function applyDynamicFillStyling(
     isDynamicExpression(styling.fill) ||
     isDynamicExpression(styling.fillOpacity)
   ) {
-    let fillColor = evaluate(styling.fill, feature, getProperty, '#808080');
+    const fillColor = evaluate(styling.fill, feature, getProperty, '#808080');
     const fillOpacity = evaluate(
       styling.fillOpacity,
       feature,
       getProperty,
       1.0
     );
-    if (
-      fillOpacity !== null &&
-      fillOpacity < 1.0 &&
-      fillColor.startsWith('#')
-    ) {
-      fillColor = hexToRGB(fillColor, fillOpacity);
-    }
-    olFill.setColor(fillColor);
+    olFill.setColor(getOLColorString(fillColor, fillOpacity));
   }
 }
 
@@ -86,20 +79,18 @@ export function applyDynamicStrokeStyling(
     isDynamicExpression(styling.stroke) ||
     isDynamicExpression(styling.strokeOpacity)
   ) {
-    let strokeColor = evaluate(styling.stroke, feature, getProperty, '#000000');
+    const strokeColor = evaluate(
+      styling.stroke,
+      feature,
+      getProperty,
+      '#000000'
+    );
     const strokeOpacity = evaluate(
       styling.strokeOpacity,
       feature,
       getProperty,
       1.0
     );
-    if (
-      strokeOpacity !== null &&
-      strokeOpacity < 1.0 &&
-      strokeColor.startsWith('#')
-    ) {
-      strokeColor = hexToRGB(strokeColor, strokeOpacity);
-    }
-    olStroke.setColor(strokeColor);
+    olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
   }
 }
