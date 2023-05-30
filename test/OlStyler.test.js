@@ -21,6 +21,8 @@ import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
 import { simplePointSymbolizerSld } from './data/simple-point-symbolizer.sld';
 import { emptyPolygonSymbolizerSld } from './data/empty-polygon-symbolizer.sld';
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
+import { dynamicLineSymbolizerSld } from './data/dynamic-line-symbolizer.sld';
+import { dynamicPointSymbolizerSld } from './data/dynamic-point-symbolizer.sld';
 import { doubleLineSld } from './data/double-line.sld';
 
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
@@ -965,6 +967,35 @@ describe('Styling with dynamic SVG Parameters', () => {
     },
   };
 
+  const lineGeoJSON = {
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      // prettier-ignore
+      coordinates: [[0, 0], [0, 100], [100, 100], [100, 0], [0, 0]],
+    },
+    properties: {
+      myStrokeWidth: 3,
+      myStrokeColor: '#646464',
+      myStrokeOpacity: 0.4,
+    },
+  };
+
+  const pointGeoJSON = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [0, 0],
+    },
+    properties: {
+      myStrokeWidth: 3,
+      myStrokeColor: '#223344',
+      myStrokeOpacity: 1.0,
+      myFillColor: '#646464', // [100, 100, 100]
+      myFillOpacity: 0.4,
+    },
+  };
+
   describe('Default values for SVG style params', () => {
     let olStroke;
     let olFill;
@@ -1031,6 +1062,54 @@ describe('Styling with dynamic SVG Parameters', () => {
 
     it('Dynamic partially transparent fill color (transparency encoded in color string))', () => {
       expect(olStyle.getFill().getColor()).to.equal('rgba(100, 100, 100, 0.4)');
+    });
+  });
+
+  describe('Dynamic line styling', () => {
+    let olStyle;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(lineGeoJSON);
+      const sldObject = Reader(dynamicLineSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      olStyle = styleFunction(polygonFeature)[0];
+    });
+
+    it('Dynamic stroke width', () => {
+      expect(olStyle.getStroke().getWidth()).to.equal(3);
+    });
+
+    it('Dynamic stroke color (transparency encoded in color string)', () => {
+      expect(olStyle.getStroke().getColor()).to.equal(
+        'rgba(100, 100, 100, 0.4)'
+      );
+    });
+  });
+
+  describe('Dynamic point graphic mark styling', () => {
+    let olStyle;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const pointFeature = fmtGeoJSON.readFeature(pointGeoJSON);
+      const sldObject = Reader(dynamicPointSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      olStyle = styleFunction(pointFeature)[0];
+    });
+
+    it('Dynamic stroke width', () => {
+      expect(olStyle.getImage().getStroke().getWidth()).to.equal(3);
+    });
+
+    it('Dynamic stroke color (opacity 1 --> hex string)', () => {
+      expect(olStyle.getImage().getStroke().getColor()).to.equal('#223344');
+    });
+
+    it('Dynamic partially transparent fill color (transparency encoded in color string))', () => {
+      expect(olStyle.getImage().getFill().getColor()).to.equal('rgba(100, 100, 100, 0.4)');
     });
   });
 });

@@ -270,7 +270,7 @@
   var numericSvgProps = new Set([
     'strokeWidth',
     'strokeOpacity',
-    'strokeDashOffset',
+    'strokeDashoffset',
     'fillOpacity' ]);
 
   /**
@@ -1640,6 +1640,19 @@
   }
 
   /**
+   * Get color string for OpenLayers. Encodes opacity into color string if it's a number less than 1.
+   * @param {string} color Color string, encoded as #AABBCC.
+   * @param {number} opacity Opacity. Non-numeric values will be treated as 1.
+   * @returns {string} OpenLayers color string.
+   */
+  function getOLColorString(color, opacity) {
+    if (opacity !== null && opacity < 1.0 && color.startsWith('#')) {
+      return hexToRGB(color, opacity);
+    }
+    return color;
+  }
+
+  /**
    * @private
    * Calculate the center-to-center distance for graphics placed along a line within a GraphicSymbolizer.
    * @param {object} lineSymbolizer SLD line symbolizer object.
@@ -1982,20 +1995,44 @@
     }
 
     var styleParams = stroke.styling || {};
-    return new style.Stroke({
-      color:
-        styleParams.strokeOpacity &&
-        styleParams.stroke &&
-        styleParams.stroke.slice(0, 1) === '#'
-          ? hexToRGB(styleParams.stroke, styleParams.strokeOpacity)
-          : styleParams.stroke || 'black',
-      width: parseFloat(styleParams.strokeWidth) || 1,
-      lineCap: styleParams.strokeLinecap,
-      lineDash:
-        styleParams.strokeDasharray && styleParams.strokeDasharray.split(' '),
-      lineDashOffset: parseFloat(styleParams.strokeDashoffset),
-      lineJoin: styleParams.strokeLinejoin,
-    });
+
+    // Options that have a default value.
+    var strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
+
+    var strokeOpacity = evaluate(styleParams.strokeOpacity, null, null);
+
+    var strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
+
+    var strokeLineDashOffset = evaluate(
+      styleParams.strokeDashoffset,
+      null,
+      null,
+      0.0
+    );
+
+    var strokeOptions = {
+      color: getOLColorString(strokeColor, strokeOpacity),
+      width: strokeWidth,
+      lineDashOffset: strokeLineDashOffset,
+    };
+
+    // Optional parameters that will be added to stroke options when present in SLD.
+    var strokeLineJoin = evaluate(styleParams.strokeLinejoin, null, null);
+    if (strokeLineJoin !== null) {
+      strokeOptions.lineJoin = strokeLineJoin;
+    }
+
+    var strokeLineCap = evaluate(styleParams.strokeLinecap, null, null);
+    if (strokeLineCap !== null) {
+      strokeOptions.lineCap = strokeLineCap;
+    }
+
+    var strokeDashArray = evaluate(styleParams.strokeDasharray, null, null);
+    if (strokeDashArray !== null) {
+      strokeOptions.lineDash = strokeDashArray.split(' ');
+    }
+
+    return new style.Stroke(strokeOptions);
   }
 
   /**
@@ -2014,14 +2051,105 @@
 
     var styleParams = fill.styling || {};
 
-    return new style.Fill({
-      color:
-        styleParams.fillOpacity &&
-        styleParams.fill &&
-        styleParams.fill.slice(0, 1) === '#'
-          ? hexToRGB(styleParams.fill, styleParams.fillOpacity)
-          : styleParams.fill || 'black',
-    });
+    var fillColor = evaluate(styleParams.fill, null, null, '#808080');
+
+    var fillOpacity = evaluate(styleParams.fillOpacity, null, null);
+
+    return new style.Fill({ color: getOLColorString(fillColor, fillOpacity) });
+  }
+
+  /**
+   * Change OL Style fill properties for dynamic symbolizer style parameters.
+   * Modification happens in-place on the given style instance.
+   * @param {ol/style/Style} olStyle OL Style instance.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
+   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @returns {void} The input style instance (adjustments are made in-place).
+   */
+  function applyDynamicFillStyling(
+    olStyle,
+    symbolizer,
+    feature,
+    getProperty
+  ) {
+    var olFill = olStyle.getFill();
+    if (!olFill) {
+      return;
+    }
+
+    var stroke = symbolizer.fill || {};
+    var styling = stroke.styling || {};
+
+    // Change fill color if either color or opacity is property based.
+    if (
+      isDynamicExpression(styling.fill) ||
+      isDynamicExpression(styling.fillOpacity)
+    ) {
+      var fillColor = evaluate(styling.fill, feature, getProperty, '#808080');
+      var fillOpacity = evaluate(
+        styling.fillOpacity,
+        feature,
+        getProperty,
+        1.0
+      );
+      olFill.setColor(getOLColorString(fillColor, fillOpacity));
+    }
+  }
+
+  /**
+   * Change OL Style stroke properties for dynamic symbolizer style parameters.
+   * Modification happens in-place on the given style instance.
+   * @param {ol/style/Style} olStyle OL Style instance.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
+   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @returns {void}
+   */
+  function applyDynamicStrokeStyling(
+    olStyle,
+    symbolizer,
+    feature,
+    getProperty
+  ) {
+    var olStroke = olStyle.getStroke();
+    if (!olStroke) {
+      return;
+    }
+
+    var stroke = symbolizer.stroke || {};
+    var styling = stroke.styling || {};
+
+    // Change stroke width if it's property based.
+    if (isDynamicExpression(styling.strokeWidth)) {
+      var strokeWidth = evaluate(
+        styling.strokeWidth,
+        feature,
+        getProperty,
+        1.0
+      );
+      olStroke.setWidth(strokeWidth);
+    }
+
+    // Change stroke color if either color or opacity is property based.
+    if (
+      isDynamicExpression(styling.stroke) ||
+      isDynamicExpression(styling.strokeOpacity)
+    ) {
+      var strokeColor = evaluate(
+        styling.stroke,
+        feature,
+        getProperty,
+        '#000000'
+      );
+      var strokeOpacity = evaluate(
+        styling.strokeOpacity,
+        feature,
+        getProperty,
+        1.0
+      );
+      olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
+    }
   }
 
   var defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
@@ -2159,6 +2287,12 @@
       // Note: OL angles are in radians.
       var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
       olImage.setRotation(rotationRadians);
+    }
+
+    // --- Update stroke and fill ---
+    if (graphic.mark) {
+      applyDynamicStrokeStyling(olImage, graphic.mark, feature, getProperty);
+      applyDynamicFillStyling(olImage, graphic.mark, feature, getProperty);
     }
 
     return olStyle;
@@ -2502,8 +2636,13 @@
    * @param {object} symbolizer SLD symbolizer object.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getLineStyle(symbolizer) {
-    return cachedLineStyle(symbolizer);
+  function getLineStyle(symbolizer, feature, getProperty) {
+    var olStyle = cachedLineStyle(symbolizer);
+
+    // Apply dynamic properties.
+    applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+
+    return olStyle;
   }
 
   var dense1Pixels = [[1, 1]];
@@ -2925,8 +3064,14 @@
    * @param {object} symbolizer SLD symbolizer object.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getPolygonStyle(symbolizer) {
-    return cachedPolygonStyle(symbolizer);
+  function getPolygonStyle(symbolizer, feature, getProperty) {
+    var olStyle = cachedPolygonStyle(symbolizer);
+
+    // Apply dynamic properties.
+    applyDynamicFillStyling(olStyle, symbolizer, feature, getProperty);
+    applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+
+    return olStyle;
   }
 
   /**
@@ -2946,14 +3091,6 @@
     var labelText = evaluate(textsymbolizer.label, null, null, '');
 
     var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
-    var halo =
-      textsymbolizer.halo && textsymbolizer.halo.fill
-        ? textsymbolizer.halo.fill.styling
-        : {};
-    var haloRadius =
-      textsymbolizer.halo && textsymbolizer.halo.radius
-        ? parseFloat(textsymbolizer.halo.radius)
-        : 1;
     var ref = textsymbolizer.font && textsymbolizer.font.styling
       ? textsymbolizer.font.styling
       : {};
@@ -3007,6 +3144,9 @@
       textBaseline = 'top';
     }
 
+    var textFillColor = evaluate(fill.fill, null, null, '#000000');
+    var textFillOpacity = evaluate(fill.fillOpacity, null, null, 1.0);
+
     // Assemble text style options.
     var textStyleOptions = {
       text: labelText,
@@ -3017,20 +3157,21 @@
       textAlign: textAlign,
       textBaseline: textBaseline,
       fill: new style.Fill({
-        color:
-          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-            ? hexToRGB(fill.fill, fill.fillOpacity)
-            : fill.fill,
+        color: getOLColorString(textFillColor, textFillOpacity),
       }),
     };
 
     // Convert SLD halo to text symbol stroke.
     if (textsymbolizer.halo) {
+      var haloStyling =
+        textsymbolizer.halo && textsymbolizer.halo.fill
+          ? textsymbolizer.halo.fill.styling
+          : {};
+      var haloFillColor = evaluate(haloStyling.fill, null, null, '#FFFFFF');
+      var haloFillOpacity = evaluate(haloStyling.fillOpacity, null, null, 1.0);
+      var haloRadius = evaluate(textsymbolizer.halo.radius, null, null, 1.0);
       textStyleOptions.stroke = new style.Stroke({
-        color:
-          halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-            ? hexToRGB(halo.fill, halo.fillOpacity)
-            : halo.fill,
+        color: getOLColorString(haloFillColor, haloFillOpacity),
         // wrong position width radius equal to 2 or 4
         width:
           (haloRadius === 2 || haloRadius === 4
