@@ -449,6 +449,18 @@ describe('SVG style parameters', () => {
     it('Stroke width should be number', () => {
       expect(strokeStyle.strokeWidth).to.equal(4);
     });
+    it('Stroke linejoin should be string', () => {
+      expect(strokeStyle.strokeLinejoin).to.equal('bevel');
+    });
+    it('Stroke linecap should be string', () => {
+      expect(strokeStyle.strokeLinecap).to.equal('square');
+    });
+    it('Stroke dasharray should be string', () => {
+      expect(strokeStyle.strokeDasharray).to.equal('6 10');
+    });
+    it('Stroke dashoffset should be number', () => {
+      expect(strokeStyle.strokeDashoffset).to.equal(4);
+    });
   });
 
   describe('Dynamic SVG parameters', () => {
