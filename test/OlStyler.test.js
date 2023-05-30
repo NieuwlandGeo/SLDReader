@@ -20,6 +20,7 @@ import { polyGraphicFillAndStrokeSld } from './data/poly-graphic-fill-and-stroke
 import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
 import { simplePointSymbolizerSld } from './data/simple-point-symbolizer.sld';
 import { emptyPolygonSymbolizerSld } from './data/empty-polygon-symbolizer.sld';
+import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
 import { doubleLineSld } from './data/double-line.sld';
 
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
@@ -948,7 +949,7 @@ describe('Static style extraction with getOlStyle', () => {
 });
 
 describe('Styling with dynamic SVG Parameters', () => {
-  const geojson = {
+  const polygonGeoJSON = {
     type: 'Feature',
     geometry: {
       type: 'Polygon',
@@ -958,8 +959,8 @@ describe('Styling with dynamic SVG Parameters', () => {
     properties: {
       myStrokeWidth: 3,
       myStrokeColor: '#223344',
-      myStrokeOpacity: 0.8,
-      myFillColor: 'hotpink',
+      myStrokeOpacity: 1.0,
+      myFillColor: '#646464', // [100, 100, 100]
       myFillOpacity: 0.4,
     },
   };
@@ -969,7 +970,7 @@ describe('Styling with dynamic SVG Parameters', () => {
     let olFill;
     before(() => {
       const fmtGeoJSON = new OLFormatGeoJSON();
-      const polygonFeature = fmtGeoJSON.readFeature(geojson);
+      const polygonFeature = fmtGeoJSON.readFeature(polygonGeoJSON);
       const sldObject = Reader(emptyPolygonSymbolizerSld);
       const [featureTypeStyle] =
         sldObject.layers[0].styles[0].featuretypestyles;
@@ -987,15 +988,15 @@ describe('Styling with dynamic SVG Parameters', () => {
       expect(olStroke.getWidth()).to.equal(1);
     });
 
-    it('Default stroke color should be black', () => {
-      expect(olStroke.getColor()).to.equal('black');
+    it('Default stroke color should be #000000', () => {
+      expect(olStroke.getColor()).to.equal('#000000');
     });
 
     it('Default stroke line dash offset should be 0', () => {
       expect(olStroke.getLineDashOffset()).to.equal(0);
     });
 
-    it('Default stroke line dash shoule be null', () => {
+    it('Default stroke line dash should be null', () => {
       expect(olStroke.getLineDash()).to.be.null;
     });
 
@@ -1005,6 +1006,31 @@ describe('Styling with dynamic SVG Parameters', () => {
 
     it('Default stroke line join should be undefined', () => {
       expect(olStroke.getLineJoin()).to.be.undefined;
+    });
+  });
+
+  describe('Dynamic polygon styling', () => {
+    let olStyle;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(polygonGeoJSON);
+      const sldObject = Reader(dynamicPolygonSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      olStyle = styleFunction(polygonFeature)[0];
+    });
+
+    it('Dynamic stroke width', () => {
+      expect(olStyle.getStroke().getWidth()).to.equal(3);
+    });
+
+    it('Dynamic stroke color (opacity 1 --> hex string)', () => {
+      expect(olStyle.getStroke().getColor()).to.equal('#223344');
+    });
+
+    it('Dynamic partially transparent fill color (transparency encoded in color string))', () => {
+      expect(olStyle.getFill().getColor()).to.equal('rgba(100, 100, 100, 0.4)');
     });
   });
 });

@@ -14,6 +14,7 @@ import { memoizeStyleFunction } from './styleUtils';
 import { getCachedImage, getImageLoadingState } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
 import { getSimpleStroke, getSimpleFill } from './simpleStyles';
+import { applyDynamicFillStyling, applyDynamicStrokeStyling } from './dynamicStyles';
 import { getGraphicStrokeRenderer } from './graphicStrokeStyle';
 import getPointStyle from './pointStyle';
 import getQGISBrushFill from './qgisBrushFill';
@@ -288,8 +289,14 @@ const cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
  * @param {object} symbolizer SLD symbolizer object.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getPolygonStyle(symbolizer) {
-  return cachedPolygonStyle(symbolizer);
+function getPolygonStyle(symbolizer, feature, getProperty) {
+  const olStyle = cachedPolygonStyle(symbolizer);
+
+  // Apply dynamic properties.
+  applyDynamicFillStyling(olStyle, symbolizer, feature, getProperty);
+  applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+
+  return olStyle;
 }
 
 export default getPolygonStyle;
