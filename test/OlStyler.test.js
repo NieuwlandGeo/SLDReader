@@ -19,6 +19,7 @@ import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { polyGraphicFillAndStrokeSld } from './data/poly-graphic-fill-and-stroke';
 import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
 import { simplePointSymbolizerSld } from './data/simple-point-symbolizer.sld';
+import { emptyPolygonSymbolizerSld } from './data/empty-polygon-symbolizer.sld';
 import { doubleLineSld } from './data/double-line.sld';
 
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
@@ -943,5 +944,67 @@ describe('Static style extraction with getOlStyle', () => {
     const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
     const olStyles = createOlStyle(featureTypeStyle.rules[0]);
     expect(olStyles.length).to.equal(0);
+  });
+});
+
+describe('Styling with dynamic SVG Parameters', () => {
+  const geojson = {
+    type: 'Feature',
+    geometry: {
+      type: 'Polygon',
+      // prettier-ignore
+      coordinates: [[[0, 0], [0, 100], [100, 100], [100, 0], [0, 0]]],
+    },
+    properties: {
+      myStrokeWidth: 3,
+      myStrokeColor: '#223344',
+      myStrokeOpacity: 0.8,
+      myFillColor: 'hotpink',
+      myFillOpacity: 0.4,
+    },
+  };
+
+  describe('Default values for SVG style params', () => {
+    let olStroke;
+    let olFill;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(geojson);
+      const sldObject = Reader(emptyPolygonSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      const olStyle = styleFunction(polygonFeature)[0];
+      olStroke = olStyle.getStroke();
+      olFill = olStyle.getFill();
+    });
+
+    it('Default fill color should be gray with opacity 1', () => {
+      expect(olFill.getColor()).to.equal('#808080');
+    });
+
+    it('Default stroke width should be 1', () => {
+      expect(olStroke.getWidth()).to.equal(1);
+    });
+
+    it('Default stroke color should be black', () => {
+      expect(olStroke.getColor()).to.equal('black');
+    });
+
+    it('Default stroke line dash offset should be 0', () => {
+      expect(olStroke.getLineDashOffset()).to.equal(0);
+    });
+
+    it('Default stroke line dash shoule be null', () => {
+      expect(olStroke.getLineDash()).to.be.null;
+    });
+
+    it('Default stroke line cap should be undefined', () => {
+      expect(olStroke.getLineCap()).to.be.undefined;
+    });
+
+    it('Default stroke line join should be undefined', () => {
+      expect(olStroke.getLineJoin()).to.be.undefined;
+    });
   });
 });

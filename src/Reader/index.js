@@ -7,7 +7,7 @@ import createFilter from './filter';
 const numericSvgProps = new Set([
   'strokeWidth',
   'strokeOpacity',
-  'strokeDashOffset',
+  'strokeDashoffset',
   'fillOpacity',
 ]);
 
