@@ -17,7 +17,7 @@
           <se:PointSymbolizer>
             <se:Graphic>
               <se:Mark>
-                <se:WellKnownName>circle</se:WellKnownName>
+                <se:WellKnownName>triangle</se:WellKnownName>
                 <se:Fill>
                   <se:SvgParameter name="fill">
                     <ogc:PropertyName>myFillColor</ogc:PropertyName>
@@ -38,9 +38,61 @@
                   </se:SvgParameter>
                 </se:Stroke>
               </se:Mark>
-              <se:Size>10</se:Size>
+              <se:Size>
+                <ogc:PropertyName>mySize</ogc:PropertyName>
+              </se:Size>
             </se:Graphic>
           </se:PointSymbolizer>
+        </se:Rule>
+        <se:Rule>
+          <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
+            <ogc:PropertyIsEqualTo>
+              <ogc:PropertyName>geometryType</ogc:PropertyName>
+              <ogc:Literal>LineString</ogc:Literal>
+            </ogc:PropertyIsEqualTo>
+          </ogc:Filter>
+          <se:LineSymbolizer>
+            <se:Stroke>
+              <se:SvgParameter name="stroke">
+                <ogc:PropertyName>myStrokeColor</ogc:PropertyName>
+              </se:SvgParameter>
+              <se:SvgParameter name="stroke-opacity">
+                <ogc:PropertyName>myStrokeOpacity</ogc:PropertyName>
+              </se:SvgParameter>
+              <se:SvgParameter name="stroke-width">
+                <ogc:PropertyName>myStrokeWidth</ogc:PropertyName>
+              </se:SvgParameter>
+            </se:Stroke>
+          </se:LineSymbolizer>
+        </se:Rule>
+        <se:Rule>
+          <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
+            <ogc:PropertyIsEqualTo>
+              <ogc:PropertyName>geometryType</ogc:PropertyName>
+              <ogc:Literal>Polygon</ogc:Literal>
+            </ogc:PropertyIsEqualTo>
+          </ogc:Filter>
+          <se:PolygonSymbolizer>
+            <se:Fill>
+              <se:SvgParameter name="fill">
+                <ogc:PropertyName>myFillColor</ogc:PropertyName>
+              </se:SvgParameter>
+              <se:SvgParameter name="fill-opacity">
+                <ogc:PropertyName>myFillOpacity</ogc:PropertyName>
+              </se:SvgParameter>
+            </se:Fill>
+            <se:Stroke>
+              <se:SvgParameter name="stroke">
+                <ogc:PropertyName>myStrokeColor</ogc:PropertyName>
+              </se:SvgParameter>
+              <se:SvgParameter name="stroke-opacity">
+                <ogc:PropertyName>myStrokeOpacity</ogc:PropertyName>
+              </se:SvgParameter>
+              <se:SvgParameter name="stroke-width">
+                <ogc:PropertyName>myStrokeWidth</ogc:PropertyName>
+              </se:SvgParameter>
+            </se:Stroke>
+          </se:PolygonSymbolizer>
         </se:Rule>
       </se:FeatureTypeStyle>
     </UserStyle>

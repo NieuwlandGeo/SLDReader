@@ -22,24 +22,88 @@ const weightedRandomColor = (r, g, b) => {
   return `#${colorInt.toString(16)}`;
 };
 
-const numFeatures = 10;
+const numFeatures = 15;
 for (let k = 0; k < numFeatures; k += 1) {
-  const randomPointFeature = {
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [1.4e6 * (Math.random() - 0.5), 7e5 * (Math.random() - 0.5)],
-    },
-    properties: {
-      geometryType: 'Point',
-      myFillColor: weightedRandomColor(255, 0, 0),
-      myFillOpacity: 0.5 + 0.5 * Math.random(),
-      myStrokeColor: weightedRandomColor(128, 0, 0),
-      myStrokeWidth: 2 + 2 * Math.random(),
-      myStrokeOpacity: 0.8 + 0.2 * Math.random(),
-    },
-  };
-  randomGeoJSON.features.push(randomPointFeature);
+  const centerX = 1.4e6 * (Math.random() - 0.5);
+  const centerY = 7e5 * (Math.random() - 0.5);
+
+  const rx = Math.random();
+
+  if (rx < 0.333333) {
+    // Create random point feature.
+    const randomPointFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [centerX, centerY],
+      },
+      properties: {
+        geometryType: 'Point',
+        mySize: 10 * (1 + Math.random()),
+        myFillColor: weightedRandomColor(255, 0, 0),
+        myFillOpacity: 0.5 + 0.5 * Math.random(),
+        myStrokeColor: weightedRandomColor(128, 0, 0),
+        myStrokeWidth: 1 + 3 * Math.random(),
+        myStrokeOpacity: 0.8 + 0.2 * Math.random(),
+      },
+    };
+    randomGeoJSON.features.push(randomPointFeature);
+  } else if (rx < 0.666667) {
+    // Create random line string
+    let [px, py] = [centerX, centerY];
+    const linePoints = [[px, py]];
+    const numSegments = 15 + Math.floor(Math.random() * 5);
+    let alpha = 2 * Math.PI * Math.random();
+    for (let i = 0; i < numSegments; i += 1) {
+      const segLen = 2e4 * (1.0 + Math.random());
+      px += segLen * Math.cos(alpha);
+      py += segLen * Math.sin(alpha);
+      alpha += 2 * (Math.random() - 0.5);
+      linePoints.push([px, py]);
+    }
+    const randomLineStringFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: linePoints,
+      },
+      properties: {
+        geometryType: 'LineString',
+        myStrokeColor: weightedRandomColor(0, 255, 0),
+        myStrokeWidth: 1 + 3 * Math.random(),
+        myStrokeOpacity: 0.8 + 0.2 * Math.random(),
+      },
+    };
+    randomGeoJSON.features.push(randomLineStringFeature);
+  } else {
+    // Create random rectangle
+    const halfWidth = 5e4 * (1 + Math.random());
+    const halfHeight = 5e4 * (1 + Math.random());
+    const randomPolygonFeature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [centerX - halfWidth, centerY - halfHeight],
+            [centerX - halfWidth, centerY + halfHeight],
+            [centerX + halfWidth, centerY + halfHeight],
+            [centerX + halfWidth, centerY - halfHeight],
+            [centerX - halfWidth, centerY - halfHeight],
+          ],
+        ],
+      },
+      properties: {
+        geometryType: 'Polygon',
+        myFillColor: weightedRandomColor(0, 0, 255),
+        myFillOpacity: 0.5 + 0.5 * Math.random(),
+        myStrokeColor: weightedRandomColor(0, 0, 128),
+        myStrokeWidth: 1 + 3 * Math.random(),
+        myStrokeOpacity: 0.8 + 0.2 * Math.random(),
+      },
+    };
+    randomGeoJSON.features.push(randomPolygonFeature);
+  }
 }
 
 const randomFeatures = fmtGeoJSON.readFeatures(randomGeoJSON);
@@ -60,7 +124,7 @@ const map = new ol.Map({
   view: new ol.View({
     center: [0, 0],
     maxZoom: 19,
-    zoom: 6,
+    zoom: 5,
   }),
 });
 map.addControl(new ol.control.MousePosition());
