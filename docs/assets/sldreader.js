@@ -1713,7 +1713,7 @@
   ) {
     if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
 
-    var radius = 0.5 * parseFloat(size);
+    var radius = size / 2;
     var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
 
     var fillColor;
@@ -1915,67 +1915,80 @@
   ) {
     if ( defaultValue === void 0 ) defaultValue = null;
 
-    // If it's a number or a string (or null), return value as-is.
+    // Determine the value of the expression.
+    var value = null;
+
     var jsType = typeof expression;
-    if (jsType === 'string' || jsType === 'number') {
-      return expression;
-    }
-
-    if (jsType === 'undefined' || expression === null) {
-      return defaultValue;
-    }
-
-    if (expression.type === 'literal') {
-      if (expression.typeHint === 'number') {
-        return parseFloat(expression.value);
+    if (
+      jsType === 'string' ||
+      jsType === 'number' ||
+      jsType === 'undefined' ||
+      expression === null
+    ) {
+      // Expression value equals the expression itself if it's a native javascript type.
+      value = expression;
+    } else if (expression.type === 'literal') {
+      // Take expression value directly from literal type expression.
+      value = expression.value;
+    } else if (expression.type === 'propertyname') {
+      // Expression value is taken from input feature.
+      // If feature is null/undefined, use default value instead.
+      if (feature) {
+        value = getProperty(feature, expression.value);
+      } else {
+        value = defaultValue;
       }
-      return expression.value;
-    }
-
-    if (expression.type === 'propertyname') {
-      var propertyValue =
-        feature === null ? defaultValue : getProperty(feature, expression.value);
-      if (typeof propertyValue === 'undefined' || propertyValue === null) {
-        propertyValue = defaultValue;
-      }
-      if (expression.typeHint === 'number') {
-        // When typeHint is number, treat an empty string as missing value and return default value.
-        if (propertyValue === '') {
-          return defaultValue;
-        }
-        return parseFloat(propertyValue);
-      }
-      return propertyValue;
-    }
-
-    if (expression.type === 'function') {
-      // Todo: implement function expression evaluation.
-      return null;
-    }
-
-    if (expression.type === 'expression') {
-      var result;
+    } else if (expression.type === 'expression') {
+      // Expression value is the concatenation of all child expession values.
       if (expression.children.length === 1) {
-        result = evaluate(expression.children[0], feature, getProperty);
+        value = evaluate(
+          expression.children[0],
+          feature,
+          getProperty,
+          defaultValue
+        );
       } else {
         // In case of multiple child expressions, concatenate the evaluated child results.
         var childValues = [];
         for (var k = 0; k < expression.children.length; k += 1) {
           childValues.push(
-            evaluate(expression.children[k], feature, getProperty)
+            // Do not use default values when evaluating children. Only apply default is
+            // the concatenated result is empty.
+            evaluate(expression.children[k], feature, getProperty, null)
           );
         }
-        result = childValues.join('');
+        value = childValues.join('');
       }
-
-      if (expression.typeHint === 'number') {
-        return parseFloat(result);
-      }
-
-      return result;
+    } else if (expression.type === 'function') {
+      // Todo: evaluate function expression.
+      // For now, return null.
+      value = null;
     }
 
-    return expression;
+    // Do not substitute default value if the value is numeric zero.
+    if (value === 0) {
+      return value;
+    }
+
+    // Check if value is empty/null. If so, return default value.
+    if (
+      value === null ||
+      typeof value === 'undefined' ||
+      value === '' ||
+      Number.isNaN(value)
+    ) {
+      return defaultValue;
+    }
+
+    // Convert value to number if expression is flagged as numeric.
+    if (expression && expression.typeHint === 'number') {
+      value = Number(value);
+      if (Number.isNaN(value)) {
+        return defaultValue;
+      }
+    }
+
+    return value;
   }
 
   /* eslint-disable import/prefer-default-export */
@@ -1999,7 +2012,7 @@
     // Options that have a default value.
     var strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
 
-    var strokeOpacity = evaluate(styleParams.strokeOpacity, null, null);
+    var strokeOpacity = evaluate(styleParams.strokeOpacity, null, null, 1.0);
 
     var strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
 
@@ -2053,7 +2066,7 @@
 
     var fillColor = evaluate(styleParams.fill, null, null, '#808080');
 
-    var fillOpacity = evaluate(styleParams.fillOpacity, null, null);
+    var fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
 
     return new style.Fill({ color: getOLColorString(fillColor, fillOpacity) });
   }
@@ -2577,7 +2590,12 @@
         (graphicstroke.graphic && graphicstroke.graphic.size) ||
         defaultGraphicSize;
       var graphicSize = Number(
-        evaluate(graphicSizeExpression, renderState.feature, getProperty)
+        evaluate(
+          graphicSizeExpression,
+          renderState.feature,
+          getProperty,
+          defaultGraphicSize
+        )
       );
 
       var graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
@@ -3208,7 +3226,7 @@
 
     // Set text only if the label expression is dynamic.
     if (isDynamicExpression(label)) {
-      var labelText = evaluate(label, feature, getProperty);
+      var labelText = evaluate(label, feature, getProperty, '');
       // Important! OpenLayers expects the text property to always be a string.
       olText.setText(labelText.toString());
     }
@@ -3223,7 +3241,8 @@
         var labelRotationDegrees = evaluate(
           pointPlacementRotation,
           feature,
-          getProperty
+          getProperty,
+          0.0
         );
         olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
       }

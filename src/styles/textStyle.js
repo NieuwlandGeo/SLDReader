@@ -137,7 +137,7 @@ function getTextStyle(symbolizer, feature, getProperty) {
 
   // Set text only if the label expression is dynamic.
   if (isDynamicExpression(label)) {
-    const labelText = evaluate(label, feature, getProperty);
+    const labelText = evaluate(label, feature, getProperty, '');
     // Important! OpenLayers expects the text property to always be a string.
     olText.setText(labelText.toString());
   }
@@ -152,7 +152,8 @@ function getTextStyle(symbolizer, feature, getProperty) {
       const labelRotationDegrees = evaluate(
         pointPlacementRotation,
         feature,
-        getProperty
+        getProperty,
+        0.0
       );
       olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
     }

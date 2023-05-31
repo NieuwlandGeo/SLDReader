@@ -23,7 +23,7 @@ export function getSimpleStroke(stroke) {
   // Options that have a default value.
   const strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
 
-  const strokeOpacity = evaluate(styleParams.strokeOpacity, null, null);
+  const strokeOpacity = evaluate(styleParams.strokeOpacity, null, null, 1.0);
 
   const strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
 
@@ -77,7 +77,7 @@ export function getSimpleFill(fill) {
 
   const fillColor = evaluate(styleParams.fill, null, null, '#808080');
 
-  const fillOpacity = evaluate(styleParams.fillOpacity, null, null);
+  const fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
 
   return new Fill({ color: getOLColorString(fillColor, fillOpacity) });
 }

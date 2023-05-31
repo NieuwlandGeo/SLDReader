@@ -20,6 +20,7 @@ import { polyGraphicFillAndStrokeSld } from './data/poly-graphic-fill-and-stroke
 import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
 import { simplePointSymbolizerSld } from './data/simple-point-symbolizer.sld';
 import { emptyPolygonSymbolizerSld } from './data/empty-polygon-symbolizer.sld';
+import { emptySvgParametersSld } from './data/empty-svg-parameters.sld';
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
 import { dynamicLineSymbolizerSld } from './data/dynamic-line-symbolizer.sld';
 import { dynamicPointSymbolizerSld } from './data/dynamic-point-symbolizer.sld';
@@ -629,6 +630,36 @@ describe('Dynamic style properties', () => {
         expect(textStyle.getText().getText()).to.equal('This is a test');
       });
 
+      it('Text label is empty string when feature property is missing', () => {
+        const fmtGeoJSON = new OLFormatGeoJSON();
+        const pointFeature2 = fmtGeoJSON.readFeature({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [175135, 441200],
+          },
+          properties: {},
+        });
+        const textStyle = styleFunction(pointFeature2)[1];
+        expect(textStyle.getText().getText()).to.equal('');
+      });
+
+      it('Text label is always string when feature property is numeric', () => {
+        const fmtGeoJSON = new OLFormatGeoJSON();
+        const pointFeature2 = fmtGeoJSON.readFeature({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [175135, 441200],
+          },
+          properties: {
+            title: 42,
+          },
+        });
+        const textStyle = styleFunction(pointFeature2)[1];
+        expect(textStyle.getText().getText()).to.equal('42');
+      });
+
       it('Reads label rotation from feature', () => {
         const textStyle = styleFunction(pointFeature)[1];
         // OL rotation is in radians.
@@ -996,13 +1027,57 @@ describe('Styling with dynamic SVG Parameters', () => {
     },
   };
 
-  describe('Default values for SVG style params', () => {
+  describe('Default values for missing SVG style params', () => {
     let olStroke;
     let olFill;
     before(() => {
       const fmtGeoJSON = new OLFormatGeoJSON();
       const polygonFeature = fmtGeoJSON.readFeature(polygonGeoJSON);
       const sldObject = Reader(emptyPolygonSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      const olStyle = styleFunction(polygonFeature)[0];
+      olStroke = olStyle.getStroke();
+      olFill = olStyle.getFill();
+    });
+
+    it('Default fill color should be gray with opacity 1', () => {
+      expect(olFill.getColor()).to.equal('#808080');
+    });
+
+    it('Default stroke width should be 1', () => {
+      expect(olStroke.getWidth()).to.equal(1);
+    });
+
+    it('Default stroke color should be #000000', () => {
+      expect(olStroke.getColor()).to.equal('#000000');
+    });
+
+    it('Default stroke line dash offset should be 0', () => {
+      expect(olStroke.getLineDashOffset()).to.equal(0);
+    });
+
+    it('Default stroke line dash should be null', () => {
+      expect(olStroke.getLineDash()).to.be.null;
+    });
+
+    it('Default stroke line cap should be undefined', () => {
+      expect(olStroke.getLineCap()).to.be.undefined;
+    });
+
+    it('Default stroke line join should be undefined', () => {
+      expect(olStroke.getLineJoin()).to.be.undefined;
+    });
+  });
+
+  describe('Default values for empty SVG style params', () => {
+    let olStroke;
+    let olFill;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(polygonGeoJSON);
+      const sldObject = Reader(emptySvgParametersSld);
       const [featureTypeStyle] =
         sldObject.layers[0].styles[0].featuretypestyles;
       const styleFunction = createOlStyleFunction(featureTypeStyle);
@@ -1109,7 +1184,9 @@ describe('Styling with dynamic SVG Parameters', () => {
     });
 
     it('Dynamic partially transparent fill color (transparency encoded in color string))', () => {
-      expect(olStyle.getImage().getFill().getColor()).to.equal('rgba(100, 100, 100, 0.4)');
+      expect(olStyle.getImage().getFill().getColor()).to.equal(
+        'rgba(100, 100, 100, 0.4)'
+      );
     });
   });
 });

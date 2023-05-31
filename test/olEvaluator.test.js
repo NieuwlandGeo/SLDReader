@@ -47,6 +47,7 @@ describe('Expression evaluation', () => {
   it('Compound filter expression', () => {
     const expression = {
       type: 'expression',
+      typeHint: 'number',
       children: [
         {
           type: 'literal',
@@ -58,7 +59,7 @@ describe('Expression evaluation', () => {
         },
       ],
     };
-    expect(evaluate(expression, feature, getProperty)).to.equal('-42');
+    expect(evaluate(expression, feature, getProperty)).to.equal(-42);
   });
 
   it('Custom property getter', () => {
@@ -95,8 +96,8 @@ describe('Expression evaluation', () => {
         expect(evaluate(0, null, null, 42)).to.equal(0);
       });
 
-      it('Do not use default value when expression is empty string', () => {
-        expect(evaluate('', null, null, 42)).to.equal('');
+      it('Use default value when expression is empty string', () => {
+        expect(evaluate('', null, null, '42')).to.equal('42');
       });
     });
 
@@ -111,6 +112,10 @@ describe('Expression evaluation', () => {
         };
         return evaluate(testExpression, testFeature, testGetter, defaultValue);
       }
+
+      it('Use default value when feature is null', () => {
+        expect(readValueProperty(null, 42, 'number')).to.equal(42);
+      });
 
       it('Use default value when feature property equals null', () => {
         expect(
@@ -164,7 +169,20 @@ describe('Expression evaluation', () => {
         ).to.equal(42);
       });
 
-      it('When typeHint is string, do not use default when feature property is an empty string', () => {
+      it('When typeHint is number, use default value when feature property is an invalid numeric string', () => {
+        expect(
+          readValueProperty(
+            {
+              type: 'Feature',
+              properties: { value: '3,50€' },
+            },
+            42,
+            'number'
+          )
+        ).to.equal(42);
+      });
+
+      it('When typeHint is string, use default value when feature property is an empty string', () => {
         expect(
           readValueProperty(
             {
@@ -174,7 +192,7 @@ describe('Expression evaluation', () => {
             'DEFAULT',
             'string'
           )
-        ).to.equal('');
+        ).to.equal('DEFAULT');
       });
     });
   });
