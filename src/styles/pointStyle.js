@@ -159,8 +159,32 @@ function getPointStyle(symbolizer, feature, getProperty) {
 
   // --- Update stroke and fill ---
   if (graphic.mark) {
-    applyDynamicStrokeStyling(olImage, graphic.mark, feature, getProperty);
-    applyDynamicFillStyling(olImage, graphic.mark, feature, getProperty);
+    const strokeChanged = applyDynamicStrokeStyling(
+      olImage,
+      graphic.mark,
+      feature,
+      getProperty
+    );
+
+    const fillChanged = applyDynamicFillStyling(
+      olImage,
+      graphic.mark,
+      feature,
+      getProperty
+    );
+
+    if (strokeChanged || fillChanged) {
+      // Create a new olImage in order to force a re-render to see the style changes.
+      const sizeValue =
+        Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
+      olImage = getWellKnownSymbol(
+        (graphic.mark && graphic.mark.wellknownname) || 'square',
+        sizeValue,
+        olImage.getStroke(),
+        olImage.getFill()
+      );
+      olStyle.setImage(olImage);
+    }
   }
 
   return olStyle;

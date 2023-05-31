@@ -2078,7 +2078,7 @@
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
    * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
-   * @returns {void} The input style instance (adjustments are made in-place).
+   * @returns {bool} Returns true if any property-dependent fill style changes have been made.
    */
   function applyDynamicFillStyling(
     olStyle,
@@ -2088,11 +2088,13 @@
   ) {
     var olFill = olStyle.getFill();
     if (!olFill) {
-      return;
+      return false;
     }
 
-    var stroke = symbolizer.fill || {};
-    var styling = stroke.styling || {};
+    var somethingChanged = false;
+
+    var fill = symbolizer.fill || {};
+    var styling = fill.styling || {};
 
     // Change fill color if either color or opacity is property based.
     if (
@@ -2107,7 +2109,10 @@
         1.0
       );
       olFill.setColor(getOLColorString(fillColor, fillOpacity));
+      somethingChanged = true;
     }
+
+    return somethingChanged;
   }
 
   /**
@@ -2117,7 +2122,7 @@
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
    * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
-   * @returns {void}
+   * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
    */
   function applyDynamicStrokeStyling(
     olStyle,
@@ -2127,8 +2132,10 @@
   ) {
     var olStroke = olStyle.getStroke();
     if (!olStroke) {
-      return;
+      return false;
     }
+
+    var somethingChanged = false;
 
     var stroke = symbolizer.stroke || {};
     var styling = stroke.styling || {};
@@ -2142,6 +2149,7 @@
         1.0
       );
       olStroke.setWidth(strokeWidth);
+      somethingChanged = true;
     }
 
     // Change stroke color if either color or opacity is property based.
@@ -2162,7 +2170,10 @@
         1.0
       );
       olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
+      somethingChanged = true;
     }
+
+    return somethingChanged;
   }
 
   var defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
@@ -2304,8 +2315,32 @@
 
     // --- Update stroke and fill ---
     if (graphic.mark) {
-      applyDynamicStrokeStyling(olImage, graphic.mark, feature, getProperty);
-      applyDynamicFillStyling(olImage, graphic.mark, feature, getProperty);
+      var strokeChanged = applyDynamicStrokeStyling(
+        olImage,
+        graphic.mark,
+        feature,
+        getProperty
+      );
+
+      var fillChanged = applyDynamicFillStyling(
+        olImage,
+        graphic.mark,
+        feature,
+        getProperty
+      );
+
+      if (strokeChanged || fillChanged) {
+        // Create a new olImage in order to force a re-render to see the style changes.
+        var sizeValue$1 =
+          Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
+        olImage = getWellKnownSymbol(
+          (graphic.mark && graphic.mark.wellknownname) || 'square',
+          sizeValue$1,
+          olImage.getStroke(),
+          olImage.getFill()
+        );
+        olStyle.setImage(olImage);
+      }
     }
 
     return olStyle;

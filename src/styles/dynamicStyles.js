@@ -8,7 +8,7 @@ import { getOLColorString } from './styleUtils';
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
  * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
- * @returns {void} The input style instance (adjustments are made in-place).
+ * @returns {bool} Returns true if any property-dependent fill style changes have been made.
  */
 export function applyDynamicFillStyling(
   olStyle,
@@ -18,11 +18,13 @@ export function applyDynamicFillStyling(
 ) {
   const olFill = olStyle.getFill();
   if (!olFill) {
-    return;
+    return false;
   }
 
-  const stroke = symbolizer.fill || {};
-  const styling = stroke.styling || {};
+  let somethingChanged = false;
+
+  const fill = symbolizer.fill || {};
+  const styling = fill.styling || {};
 
   // Change fill color if either color or opacity is property based.
   if (
@@ -37,7 +39,10 @@ export function applyDynamicFillStyling(
       1.0
     );
     olFill.setColor(getOLColorString(fillColor, fillOpacity));
+    somethingChanged = true;
   }
+
+  return somethingChanged;
 }
 
 /**
@@ -47,7 +52,7 @@ export function applyDynamicFillStyling(
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
  * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
- * @returns {void}
+ * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
  */
 export function applyDynamicStrokeStyling(
   olStyle,
@@ -57,8 +62,10 @@ export function applyDynamicStrokeStyling(
 ) {
   const olStroke = olStyle.getStroke();
   if (!olStroke) {
-    return;
+    return false;
   }
+
+  let somethingChanged = false;
 
   const stroke = symbolizer.stroke || {};
   const styling = stroke.styling || {};
@@ -72,6 +79,7 @@ export function applyDynamicStrokeStyling(
       1.0
     );
     olStroke.setWidth(strokeWidth);
+    somethingChanged = true;
   }
 
   // Change stroke color if either color or opacity is property based.
@@ -92,5 +100,8 @@ export function applyDynamicStrokeStyling(
       1.0
     );
     olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
+    somethingChanged = true;
   }
+
+  return somethingChanged;
 }
