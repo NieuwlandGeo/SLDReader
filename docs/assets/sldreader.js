@@ -2091,6 +2091,10 @@
       return false;
     }
 
+    if (typeof getProperty !== 'function') {
+      return false;
+    }
+
     var somethingChanged = false;
 
     var fill = symbolizer.fill || {};
@@ -2132,6 +2136,10 @@
   ) {
     var olStroke = olStyle.getStroke();
     if (!olStroke) {
+      return false;
+    }
+
+    if (typeof getProperty !== 'function') {
       return false;
     }
 

@@ -21,6 +21,10 @@ export function applyDynamicFillStyling(
     return false;
   }
 
+  if (typeof getProperty !== 'function') {
+    return false;
+  }
+
   let somethingChanged = false;
 
   const fill = symbolizer.fill || {};
@@ -62,6 +66,10 @@ export function applyDynamicStrokeStyling(
 ) {
   const olStroke = olStyle.getStroke();
   if (!olStroke) {
+    return false;
+  }
+
+  if (typeof getProperty !== 'function') {
     return false;
   }
 
