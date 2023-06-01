@@ -49,7 +49,7 @@ Only one Graphic per PointSymbolizer is supported. Each Graphic can only have on
 
 #### LineSymbolizer
 
-Only these static css-parameters are supported:
+Only these svg-parameters are supported:
 
 - stroke
 - stroke-width
@@ -60,6 +60,7 @@ Only these static css-parameters are supported:
 - stroke-dashoffset
 
 GraphicStroke with Mark or ExternalGraphic is mostly supported.
+
 GraphicFill and PerpendicularOffset are not supported.
 
 #### Note about GraphicStroke
@@ -74,7 +75,7 @@ ExternalGraphic is mostly supported with these caveats:
 The following QGIS vendor options are supported on line symbolizers with a graphic stroke:
 
 - `<VendorOption name="placement">firstPoint</VendorOption>`
-- `<VendorOption name="placement">lastPointPoint</VendorOption>`
+- `<VendorOption name="placement">lastPoint</VendorOption>`
 
 See the demo page for an example.
 
@@ -85,13 +86,14 @@ Polygons with static fill and stroke style parameters are supported. See LineSym
 For polygon graphic fills, both ExternalGraphic and Mark graphic fills are supported. The Marks supported here are the same as for a point symbolizer, with the additional restriction that feature-dependent value cannot be used.
 
 The following WellKnownNames used by QGIS simple fills can be used as well:
-* x
-* cross
-* line
-* horline
-* slash
-* backslash
-* brush://dense1 (till dense7)
+
+- x
+- cross
+- line
+- horline
+- slash
+- backslash
+- brush://dense1 (till dense7)
 
 #### TextSymbolizer
 
@@ -106,13 +108,29 @@ Dynamic Labels (with PropertyName elements), Font and Halo are supported. No ven
 
 ### Dynamic parameter values
 
-According to the SLD spec, most values can be mixed type (a combination ofplain text and [Filter expressions](https://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html#sld-filter-expression)). This means that most values can depend on a feature's properties. The SLDReader only supports dynamic values with PropertyName elements in these cases:
+According to the SLD spec, most values can be mixed type (a combination of plain text and [Filter expressions](https://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html#sld-filter-expression)). This means that most values can depend on feature properties.
+
+SLDReader supports dynamic values in these cases:
 
 - PointSymbolizer Size
 - PointSymbolizer Rotation
 - TextSymbolizer Label
+- SvgParameters used for styling:
+  - `stroke`
+  - `stroke-opacity`
+  - `stroke-width`
+  - `fill`
+  - `fill-opacity`
+  - `font-family`
+  - `font-style`
+  - `font-weight`
+  - `font-size`
 
-Also there is currently no support for arithmetic operators (Add,Sub,Mul,Div).
+**Note:** dynamic parameter values currently have no effect on Marks used inside GraphicStroke or GraphicFill and will use SLD defaults instead.
+
+### Arithmetic operators
+
+There is currently no support for arithmetic operators (Add,Sub,Mul,Div).
 
 ### Units of measure
 
