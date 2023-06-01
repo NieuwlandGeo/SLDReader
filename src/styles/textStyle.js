@@ -2,6 +2,7 @@ import { Style, Fill, Stroke, Text } from 'ol/style';
 import { getOLColorString, memoizeStyleFunction } from './styleUtils';
 import evaluate, { isDynamicExpression } from '../olEvaluator';
 import { emptyStyle } from './static';
+import { applyDynamicTextStyling } from './dynamicStyles';
 
 /**
  * @private
@@ -19,15 +20,14 @@ function textStyle(textsymbolizer) {
   // In that case, text will be set at runtime.
   const labelText = evaluate(textsymbolizer.label, null, null, '');
 
-  const fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
-  const {
-    fontFamily = 'sans-serif',
-    fontSize = 10,
-    fontStyle = '',
-    fontWeight = '',
-  } = textsymbolizer.font && textsymbolizer.font.styling
-    ? textsymbolizer.font.styling
+  const fontStyling = textsymbolizer.font
+    ? textsymbolizer.font.styling || {}
     : {};
+  const fontFamily = evaluate(fontStyling.fontFamily, null, null, 'sans-serif');
+  const fontSize = evaluate(fontStyling.fontSize, null, null, 10);
+  const fontStyle = evaluate(fontStyling.fontStyle, null, null, '');
+  const fontWeight = evaluate(fontStyling.fontWeight, null, null, '');
+  const olFontString = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
 
   const pointplacement =
     textsymbolizer &&
@@ -48,41 +48,38 @@ function textStyle(textsymbolizer) {
     pointplacement && pointplacement.displacement
       ? pointplacement.displacement
       : {};
-  const offsetX = displacement.displacementx ? displacement.displacementx : 0;
-  const offsetY = displacement.displacementy ? displacement.displacementy : 0;
+  const offsetX = evaluate(displacement.displacementx, null, null, 0.0);
+  const offsetY = evaluate(displacement.displacementy, null, null, 0.0);
 
   // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
   const anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};
 
   let textAlign = 'center';
-  const anchorpointx = Number(
-    anchorpoint.anchorpointx === '' ? NaN : anchorpoint.anchorpointx
-  );
-  if (anchorpointx < 0.25) {
+  const anchorPointX = evaluate(anchorpoint.anchorpointx, null, null, NaN);
+  if (anchorPointX < 0.25) {
     textAlign = 'left';
-  } else if (anchorpointx > 0.75) {
+  } else if (anchorPointX > 0.75) {
     textAlign = 'right';
   }
 
   let textBaseline = 'middle';
-  const anchorpointy = Number(
-    anchorpoint.anchorpointy === '' ? NaN : anchorpoint.anchorpointy
-  );
-  if (anchorpointy < 0.25) {
+  const anchorPointY = evaluate(anchorpoint.anchorpointy, null, null, NaN);
+  if (anchorPointY < 0.25) {
     textBaseline = 'bottom';
-  } else if (anchorpointy > 0.75) {
+  } else if (anchorPointY > 0.75) {
     textBaseline = 'top';
   }
 
-  const textFillColor = evaluate(fill.fill, null, null, '#000000');
-  const textFillOpacity = evaluate(fill.fillOpacity, null, null, 1.0);
+  const fillStyling = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
+  const textFillColor = evaluate(fillStyling.fill, null, null, '#000000');
+  const textFillOpacity = evaluate(fillStyling.fillOpacity, null, null, 1.0);
 
   // Assemble text style options.
   const textStyleOptions = {
     text: labelText,
-    font: `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`,
-    offsetX: Number(offsetX),
-    offsetY: Number(offsetY),
+    font: olFontString,
+    offsetX,
+    offsetY,
     rotation: (Math.PI * labelRotationDegrees) / 180.0,
     textAlign,
     textBaseline,
@@ -173,6 +170,42 @@ function getTextStyle(symbolizer, feature, getProperty) {
   const placement =
     geometryType !== 'point' && lineplacement ? 'line' : 'point';
   olText.setPlacement(placement);
+
+  // Apply dynamic style properties.
+  applyDynamicTextStyling(olStyle, symbolizer, feature, getProperty);
+
+  // Adjust font if one or more font svgparameters are dynamic.
+  if (symbolizer.font && symbolizer.font.styling) {
+    const fontStyling = symbolizer.font.styling || {};
+    if (
+      isDynamicExpression(fontStyling.fontFamily) ||
+      isDynamicExpression(fontStyling.fontStyle) ||
+      isDynamicExpression(fontStyling.fontWeight) ||
+      isDynamicExpression(fontStyling.fontSize)
+    ) {
+      const fontFamily = evaluate(
+        fontStyling.fontFamily,
+        feature,
+        getProperty,
+        'sans-serif'
+      );
+      const fontStyle = evaluate(
+        fontStyling.fontStyle,
+        feature,
+        getProperty,
+        ''
+      );
+      const fontWeight = evaluate(
+        fontStyling.fontWeight,
+        feature,
+        getProperty,
+        ''
+      );
+      const fontSize = evaluate(fontStyling.fontSize, feature, getProperty, 10);
+      const olFontString = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+      olText.setFont(olFontString);
+    }
+  }
 
   return olStyle;
 }

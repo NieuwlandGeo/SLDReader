@@ -271,7 +271,8 @@
     'strokeWidth',
     'strokeOpacity',
     'strokeDashoffset',
-    'fillOpacity' ]);
+    'fillOpacity',
+    'fontSize' ]);
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -2184,6 +2185,85 @@
     return somethingChanged;
   }
 
+  /**
+   * Change OL Text properties for dynamic symbolizer style parameters.
+   * Modification happens in-place on the given style instance.
+   * @param {ol/style/Style} olStyle OL Style instance.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
+   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
+   */
+  function applyDynamicTextStyling(
+    olStyle,
+    symbolizer,
+    feature,
+    getProperty
+  ) {
+    var olText = olStyle.getText();
+    if (!olText) {
+      return false;
+    }
+
+    if (typeof getProperty !== 'function') {
+      return false;
+    }
+
+    // Text fill style has to be applied to text color, so it has to be set as olText stroke.
+    if (
+      symbolizer.fill &&
+      symbolizer.fill.styling &&
+      (isDynamicExpression(symbolizer.fill.styling.fill) ||
+        isDynamicExpression(symbolizer.fill.styling.fillOpacity))
+    ) {
+      var textStrokeSymbolizer = {
+        stroke: {
+          styling: {
+            stroke: symbolizer.fill.styling.fill,
+            strokeOpacity: symbolizer.fill.styling.fillOpacity,
+          },
+        },
+      };
+      applyDynamicStrokeStyling(
+        olText,
+        textStrokeSymbolizer,
+        feature,
+        getProperty
+      );
+    }
+
+    // Halo fill has to be applied as olText fill.
+    if (
+      symbolizer.halo &&
+      symbolizer.halo.fill &&
+      symbolizer.halo.fill.styling &&
+      (isDynamicExpression(symbolizer.halo.fill.styling.fill) ||
+        isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))
+    ) {
+      applyDynamicFillStyling(olText, symbolizer.halo, feature, getProperty);
+    }
+
+    // Halo radius has to be applied as olText.stroke width.
+    if (symbolizer.halo && isDynamicExpression(symbolizer.halo.radius)) {
+      var haloRadius = evaluate(
+        symbolizer.halo.radius,
+        feature,
+        getProperty,
+        1.0
+      );
+      var olStroke = olText.getStroke();
+      if (olStroke) {
+        var haloStrokeWidth =
+          (haloRadius === 2 || haloRadius === 4
+            ? haloRadius - 0.00001
+            : haloRadius) * 2;
+        olStroke.setWidth(haloStrokeWidth);
+      }
+    }
+
+    return false;
+  }
+
   var defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
   var defaultMarkStroke = getSimpleStroke({ styling: { stroke: {} } });
 
@@ -3151,14 +3231,14 @@
     // In that case, text will be set at runtime.
     var labelText = evaluate(textsymbolizer.label, null, null, '');
 
-    var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
-    var ref = textsymbolizer.font && textsymbolizer.font.styling
-      ? textsymbolizer.font.styling
+    var fontStyling = textsymbolizer.font
+      ? textsymbolizer.font.styling || {}
       : {};
-    var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
-    var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
-    var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
-    var fontWeight = ref.fontWeight; if ( fontWeight === void 0 ) fontWeight = '';
+    var fontFamily = evaluate(fontStyling.fontFamily, null, null, 'sans-serif');
+    var fontSize = evaluate(fontStyling.fontSize, null, null, 10);
+    var fontStyle = evaluate(fontStyling.fontStyle, null, null, '');
+    var fontWeight = evaluate(fontStyling.fontWeight, null, null, '');
+    var olFontString = fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily;
 
     var pointplacement =
       textsymbolizer &&
@@ -3179,41 +3259,38 @@
       pointplacement && pointplacement.displacement
         ? pointplacement.displacement
         : {};
-    var offsetX = displacement.displacementx ? displacement.displacementx : 0;
-    var offsetY = displacement.displacementy ? displacement.displacementy : 0;
+    var offsetX = evaluate(displacement.displacementx, null, null, 0.0);
+    var offsetY = evaluate(displacement.displacementy, null, null, 0.0);
 
     // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
     var anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};
 
     var textAlign = 'center';
-    var anchorpointx = Number(
-      anchorpoint.anchorpointx === '' ? NaN : anchorpoint.anchorpointx
-    );
-    if (anchorpointx < 0.25) {
+    var anchorPointX = evaluate(anchorpoint.anchorpointx, null, null, NaN);
+    if (anchorPointX < 0.25) {
       textAlign = 'left';
-    } else if (anchorpointx > 0.75) {
+    } else if (anchorPointX > 0.75) {
       textAlign = 'right';
     }
 
     var textBaseline = 'middle';
-    var anchorpointy = Number(
-      anchorpoint.anchorpointy === '' ? NaN : anchorpoint.anchorpointy
-    );
-    if (anchorpointy < 0.25) {
+    var anchorPointY = evaluate(anchorpoint.anchorpointy, null, null, NaN);
+    if (anchorPointY < 0.25) {
       textBaseline = 'bottom';
-    } else if (anchorpointy > 0.75) {
+    } else if (anchorPointY > 0.75) {
       textBaseline = 'top';
     }
 
-    var textFillColor = evaluate(fill.fill, null, null, '#000000');
-    var textFillOpacity = evaluate(fill.fillOpacity, null, null, 1.0);
+    var fillStyling = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
+    var textFillColor = evaluate(fillStyling.fill, null, null, '#000000');
+    var textFillOpacity = evaluate(fillStyling.fillOpacity, null, null, 1.0);
 
     // Assemble text style options.
     var textStyleOptions = {
       text: labelText,
-      font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
-      offsetX: Number(offsetX),
-      offsetY: Number(offsetY),
+      font: olFontString,
+      offsetX: offsetX,
+      offsetY: offsetY,
       rotation: (Math.PI * labelRotationDegrees) / 180.0,
       textAlign: textAlign,
       textBaseline: textBaseline,
@@ -3305,6 +3382,42 @@
     var placement =
       geometryType !== 'point' && lineplacement ? 'line' : 'point';
     olText.setPlacement(placement);
+
+    // Apply dynamic style properties.
+    applyDynamicTextStyling(olStyle, symbolizer, feature, getProperty);
+
+    // Adjust font if one or more font svgparameters are dynamic.
+    if (symbolizer.font && symbolizer.font.styling) {
+      var fontStyling = symbolizer.font.styling || {};
+      if (
+        isDynamicExpression(fontStyling.fontFamily) ||
+        isDynamicExpression(fontStyling.fontStyle) ||
+        isDynamicExpression(fontStyling.fontWeight) ||
+        isDynamicExpression(fontStyling.fontSize)
+      ) {
+        var fontFamily = evaluate(
+          fontStyling.fontFamily,
+          feature,
+          getProperty,
+          'sans-serif'
+        );
+        var fontStyle = evaluate(
+          fontStyling.fontStyle,
+          feature,
+          getProperty,
+          ''
+        );
+        var fontWeight = evaluate(
+          fontStyling.fontWeight,
+          feature,
+          getProperty,
+          ''
+        );
+        var fontSize = evaluate(fontStyling.fontSize, feature, getProperty, 10);
+        var olFontString = fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily;
+        olText.setFont(olFontString);
+      }
+    }
 
     return olStyle;
   }

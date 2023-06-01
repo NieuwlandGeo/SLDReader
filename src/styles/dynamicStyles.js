@@ -113,3 +113,82 @@ export function applyDynamicStrokeStyling(
 
   return somethingChanged;
 }
+
+/**
+ * Change OL Text properties for dynamic symbolizer style parameters.
+ * Modification happens in-place on the given style instance.
+ * @param {ol/style/Style} olStyle OL Style instance.
+ * @param {object} symbolizer SLD symbolizer object.
+ * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
+ * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+ * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
+ */
+export function applyDynamicTextStyling(
+  olStyle,
+  symbolizer,
+  feature,
+  getProperty
+) {
+  const olText = olStyle.getText();
+  if (!olText) {
+    return false;
+  }
+
+  if (typeof getProperty !== 'function') {
+    return false;
+  }
+
+  // Text fill style has to be applied to text color, so it has to be set as olText stroke.
+  if (
+    symbolizer.fill &&
+    symbolizer.fill.styling &&
+    (isDynamicExpression(symbolizer.fill.styling.fill) ||
+      isDynamicExpression(symbolizer.fill.styling.fillOpacity))
+  ) {
+    const textStrokeSymbolizer = {
+      stroke: {
+        styling: {
+          stroke: symbolizer.fill.styling.fill,
+          strokeOpacity: symbolizer.fill.styling.fillOpacity,
+        },
+      },
+    };
+    applyDynamicStrokeStyling(
+      olText,
+      textStrokeSymbolizer,
+      feature,
+      getProperty
+    );
+  }
+
+  // Halo fill has to be applied as olText fill.
+  if (
+    symbolizer.halo &&
+    symbolizer.halo.fill &&
+    symbolizer.halo.fill.styling &&
+    (isDynamicExpression(symbolizer.halo.fill.styling.fill) ||
+      isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))
+  ) {
+    applyDynamicFillStyling(olText, symbolizer.halo, feature, getProperty);
+  }
+
+  // Halo radius has to be applied as olText.stroke width.
+  if (symbolizer.halo && isDynamicExpression(symbolizer.halo.radius)) {
+    const haloRadius = evaluate(
+      symbolizer.halo.radius,
+      feature,
+      getProperty,
+      1.0
+    );
+    const olStroke = olText.getStroke();
+    if (olStroke) {
+      const haloStrokeWidth =
+        (haloRadius === 2 || haloRadius === 4
+          ? haloRadius - 0.00001
+          : haloRadius) * 2;
+      olStroke.setWidth(haloStrokeWidth);
+    }
+  }
+
+  return false;
+}

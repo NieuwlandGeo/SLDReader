@@ -9,6 +9,7 @@ const numericSvgProps = new Set([
   'strokeOpacity',
   'strokeDashoffset',
   'fillOpacity',
+  'fontSize',
 ]);
 
 /**
