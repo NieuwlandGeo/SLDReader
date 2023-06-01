@@ -18,7 +18,7 @@ const vector = new ol.layer.Vector({
     image: new ol.style.Circle({
       radius: 8,
       fill: new ol.style.Fill({
-        color: 'gray',
+        color: '#808080',
         fillOpacity: 0.7,
       }),
     }),

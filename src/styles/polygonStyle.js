@@ -95,7 +95,7 @@ function scaleMarkGraphicFill(graphicfill, scaleFactor) {
     // Todo: do this at the SLDReader parsing stage already.
     if (!mark.stroke.styling) {
       mark.stroke.styling = {
-        stroke: 'black',
+        stroke: '#000000',
         strokeWidth: 1.0,
       };
     }
@@ -124,7 +124,7 @@ function getMarkGraphicFill(symbolizer) {
 
   // If it's a QGIS brush fill, use direct pixel manipulation to create the fill.
   if (wellknownname && wellknownname.indexOf('brush://') === 0) {
-    let brushFillColor = 'black';
+    let brushFillColor = '#000000';
     if (mark.fill && mark.fill.styling && mark.fill.styling.fill) {
       brushFillColor = mark.fill.styling.fill;
     }
@@ -217,7 +217,7 @@ function getMarkGraphicFill(symbolizer) {
   } catch (e) {
     // Default black fill as backup plan.
     fill = new Fill({
-      color: 'black',
+      color: '#000000',
     });
   }
 
