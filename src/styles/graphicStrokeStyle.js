@@ -171,7 +171,12 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
       (graphicstroke.graphic && graphicstroke.graphic.size) ||
       defaultGraphicSize;
     const graphicSize = Number(
-      evaluate(graphicSizeExpression, renderState.feature, getProperty)
+      evaluate(
+        graphicSizeExpression,
+        renderState.feature,
+        getProperty,
+        defaultGraphicSize
+      )
     );
 
     const graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);

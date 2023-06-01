@@ -3,6 +3,7 @@ import { Style } from 'ol/style';
 import { memoizeStyleFunction } from './styleUtils';
 import { getSimpleStroke } from './simpleStyles';
 import getGraphicStrokeStyle from './graphicStrokeStyle';
+import { applyDynamicStrokeStyling } from './dynamicStyles';
 
 /**
  * @private
@@ -27,8 +28,13 @@ const cachedLineStyle = memoizeStyleFunction(lineStyle);
  * @param {object} symbolizer SLD symbolizer object.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getLineStyle(symbolizer) {
-  return cachedLineStyle(symbolizer);
+function getLineStyle(symbolizer, feature, getProperty) {
+  const olStyle = cachedLineStyle(symbolizer);
+
+  // Apply dynamic properties.
+  applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+
+  return olStyle;
 }
 
 export default getLineStyle;

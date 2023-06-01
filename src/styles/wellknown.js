@@ -17,7 +17,7 @@ function getWellKnownSymbol(
   fill,
   rotationDegrees = 0.0
 ) {
-  const radius = 0.5 * parseFloat(size);
+  const radius = size / 2;
   const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
 
   let fillColor;

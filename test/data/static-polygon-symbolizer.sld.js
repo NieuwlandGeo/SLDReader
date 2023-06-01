@@ -17,6 +17,10 @@ export const staticPolygonSymbolizerSld = `<?xml version="1.0" encoding="UTF-8"?
               <se:SvgParameter name="stroke">#00FF00</se:SvgParameter>
               <se:SvgParameter name="stroke-opacity">1.0</se:SvgParameter>
               <se:SvgParameter name="stroke-width">4</se:SvgParameter>
+              <se:SvgParameter name="stroke-linejoin">bevel</se:SvgParameter>
+              <se:SvgParameter name="stroke-linecap">square</se:SvgParameter>
+              <se:SvgParameter name="stroke-dasharray">6 10</se:SvgParameter>
+              <se:SvgParameter name="stroke-dashoffset">4</se:SvgParameter>
             </se:Stroke>
           </se:PolygonSymbolizer>
         </se:Rule>

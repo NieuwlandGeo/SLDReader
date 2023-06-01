@@ -270,8 +270,9 @@
   var numericSvgProps = new Set([
     'strokeWidth',
     'strokeOpacity',
-    'strokeDashOffset',
-    'fillOpacity' ]);
+    'strokeDashoffset',
+    'fillOpacity',
+    'fontSize' ]);
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -1640,6 +1641,19 @@
   }
 
   /**
+   * Get color string for OpenLayers. Encodes opacity into color string if it's a number less than 1.
+   * @param {string} color Color string, encoded as #AABBCC.
+   * @param {number} opacity Opacity. Non-numeric values will be treated as 1.
+   * @returns {string} OpenLayers color string.
+   */
+  function getOLColorString(color, opacity) {
+    if (opacity !== null && opacity < 1.0 && color.startsWith('#')) {
+      return hexToRGB(color, opacity);
+    }
+    return color;
+  }
+
+  /**
    * @private
    * Calculate the center-to-center distance for graphics placed along a line within a GraphicSymbolizer.
    * @param {object} lineSymbolizer SLD line symbolizer object.
@@ -1700,7 +1714,7 @@
   ) {
     if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
 
-    var radius = 0.5 * parseFloat(size);
+    var radius = size / 2;
     var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
 
     var fillColor;
@@ -1902,67 +1916,80 @@
   ) {
     if ( defaultValue === void 0 ) defaultValue = null;
 
-    // If it's a number or a string (or null), return value as-is.
+    // Determine the value of the expression.
+    var value = null;
+
     var jsType = typeof expression;
-    if (jsType === 'string' || jsType === 'number') {
-      return expression;
-    }
-
-    if (jsType === 'undefined' || expression === null) {
-      return defaultValue;
-    }
-
-    if (expression.type === 'literal') {
-      if (expression.typeHint === 'number') {
-        return parseFloat(expression.value);
+    if (
+      jsType === 'string' ||
+      jsType === 'number' ||
+      jsType === 'undefined' ||
+      expression === null
+    ) {
+      // Expression value equals the expression itself if it's a native javascript type.
+      value = expression;
+    } else if (expression.type === 'literal') {
+      // Take expression value directly from literal type expression.
+      value = expression.value;
+    } else if (expression.type === 'propertyname') {
+      // Expression value is taken from input feature.
+      // If feature is null/undefined, use default value instead.
+      if (feature) {
+        value = getProperty(feature, expression.value);
+      } else {
+        value = defaultValue;
       }
-      return expression.value;
-    }
-
-    if (expression.type === 'propertyname') {
-      var propertyValue =
-        feature === null ? defaultValue : getProperty(feature, expression.value);
-      if (typeof propertyValue === 'undefined' || propertyValue === null) {
-        propertyValue = defaultValue;
-      }
-      if (expression.typeHint === 'number') {
-        // When typeHint is number, treat an empty string as missing value and return default value.
-        if (propertyValue === '') {
-          return defaultValue;
-        }
-        return parseFloat(propertyValue);
-      }
-      return propertyValue;
-    }
-
-    if (expression.type === 'function') {
-      // Todo: implement function expression evaluation.
-      return null;
-    }
-
-    if (expression.type === 'expression') {
-      var result;
+    } else if (expression.type === 'expression') {
+      // Expression value is the concatenation of all child expession values.
       if (expression.children.length === 1) {
-        result = evaluate(expression.children[0], feature, getProperty);
+        value = evaluate(
+          expression.children[0],
+          feature,
+          getProperty,
+          defaultValue
+        );
       } else {
         // In case of multiple child expressions, concatenate the evaluated child results.
         var childValues = [];
         for (var k = 0; k < expression.children.length; k += 1) {
           childValues.push(
-            evaluate(expression.children[k], feature, getProperty)
+            // Do not use default values when evaluating children. Only apply default is
+            // the concatenated result is empty.
+            evaluate(expression.children[k], feature, getProperty, null)
           );
         }
-        result = childValues.join('');
+        value = childValues.join('');
       }
-
-      if (expression.typeHint === 'number') {
-        return parseFloat(result);
-      }
-
-      return result;
+    } else if (expression.type === 'function') {
+      // Todo: evaluate function expression.
+      // For now, return null.
+      value = null;
     }
 
-    return expression;
+    // Do not substitute default value if the value is numeric zero.
+    if (value === 0) {
+      return value;
+    }
+
+    // Check if value is empty/null. If so, return default value.
+    if (
+      value === null ||
+      typeof value === 'undefined' ||
+      value === '' ||
+      Number.isNaN(value)
+    ) {
+      return defaultValue;
+    }
+
+    // Convert value to number if expression is flagged as numeric.
+    if (expression && expression.typeHint === 'number') {
+      value = Number(value);
+      if (Number.isNaN(value)) {
+        return defaultValue;
+      }
+    }
+
+    return value;
   }
 
   /* eslint-disable import/prefer-default-export */
@@ -1982,20 +2009,44 @@
     }
 
     var styleParams = stroke.styling || {};
-    return new style.Stroke({
-      color:
-        styleParams.strokeOpacity &&
-        styleParams.stroke &&
-        styleParams.stroke.slice(0, 1) === '#'
-          ? hexToRGB(styleParams.stroke, styleParams.strokeOpacity)
-          : styleParams.stroke || 'black',
-      width: parseFloat(styleParams.strokeWidth) || 1,
-      lineCap: styleParams.strokeLinecap,
-      lineDash:
-        styleParams.strokeDasharray && styleParams.strokeDasharray.split(' '),
-      lineDashOffset: parseFloat(styleParams.strokeDashoffset),
-      lineJoin: styleParams.strokeLinejoin,
-    });
+
+    // Options that have a default value.
+    var strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
+
+    var strokeOpacity = evaluate(styleParams.strokeOpacity, null, null, 1.0);
+
+    var strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
+
+    var strokeLineDashOffset = evaluate(
+      styleParams.strokeDashoffset,
+      null,
+      null,
+      0.0
+    );
+
+    var strokeOptions = {
+      color: getOLColorString(strokeColor, strokeOpacity),
+      width: strokeWidth,
+      lineDashOffset: strokeLineDashOffset,
+    };
+
+    // Optional parameters that will be added to stroke options when present in SLD.
+    var strokeLineJoin = evaluate(styleParams.strokeLinejoin, null, null);
+    if (strokeLineJoin !== null) {
+      strokeOptions.lineJoin = strokeLineJoin;
+    }
+
+    var strokeLineCap = evaluate(styleParams.strokeLinecap, null, null);
+    if (strokeLineCap !== null) {
+      strokeOptions.lineCap = strokeLineCap;
+    }
+
+    var strokeDashArray = evaluate(styleParams.strokeDasharray, null, null);
+    if (strokeDashArray !== null) {
+      strokeOptions.lineDash = strokeDashArray.split(' ');
+    }
+
+    return new style.Stroke(strokeOptions);
   }
 
   /**
@@ -2014,14 +2065,203 @@
 
     var styleParams = fill.styling || {};
 
-    return new style.Fill({
-      color:
-        styleParams.fillOpacity &&
-        styleParams.fill &&
-        styleParams.fill.slice(0, 1) === '#'
-          ? hexToRGB(styleParams.fill, styleParams.fillOpacity)
-          : styleParams.fill || 'black',
-    });
+    var fillColor = evaluate(styleParams.fill, null, null, '#808080');
+
+    var fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
+
+    return new style.Fill({ color: getOLColorString(fillColor, fillOpacity) });
+  }
+
+  /**
+   * Change OL Style fill properties for dynamic symbolizer style parameters.
+   * Modification happens in-place on the given style instance.
+   * @param {ol/style/Style} olStyle OL Style instance.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
+   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @returns {bool} Returns true if any property-dependent fill style changes have been made.
+   */
+  function applyDynamicFillStyling(
+    olStyle,
+    symbolizer,
+    feature,
+    getProperty
+  ) {
+    var olFill = olStyle.getFill();
+    if (!olFill) {
+      return false;
+    }
+
+    if (typeof getProperty !== 'function') {
+      return false;
+    }
+
+    var somethingChanged = false;
+
+    var fill = symbolizer.fill || {};
+    var styling = fill.styling || {};
+
+    // Change fill color if either color or opacity is property based.
+    if (
+      isDynamicExpression(styling.fill) ||
+      isDynamicExpression(styling.fillOpacity)
+    ) {
+      var fillColor = evaluate(styling.fill, feature, getProperty, '#808080');
+      var fillOpacity = evaluate(
+        styling.fillOpacity,
+        feature,
+        getProperty,
+        1.0
+      );
+      olFill.setColor(getOLColorString(fillColor, fillOpacity));
+      somethingChanged = true;
+    }
+
+    return somethingChanged;
+  }
+
+  /**
+   * Change OL Style stroke properties for dynamic symbolizer style parameters.
+   * Modification happens in-place on the given style instance.
+   * @param {ol/style/Style} olStyle OL Style instance.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
+   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
+   */
+  function applyDynamicStrokeStyling(
+    olStyle,
+    symbolizer,
+    feature,
+    getProperty
+  ) {
+    var olStroke = olStyle.getStroke();
+    if (!olStroke) {
+      return false;
+    }
+
+    if (typeof getProperty !== 'function') {
+      return false;
+    }
+
+    var somethingChanged = false;
+
+    var stroke = symbolizer.stroke || {};
+    var styling = stroke.styling || {};
+
+    // Change stroke width if it's property based.
+    if (isDynamicExpression(styling.strokeWidth)) {
+      var strokeWidth = evaluate(
+        styling.strokeWidth,
+        feature,
+        getProperty,
+        1.0
+      );
+      olStroke.setWidth(strokeWidth);
+      somethingChanged = true;
+    }
+
+    // Change stroke color if either color or opacity is property based.
+    if (
+      isDynamicExpression(styling.stroke) ||
+      isDynamicExpression(styling.strokeOpacity)
+    ) {
+      var strokeColor = evaluate(
+        styling.stroke,
+        feature,
+        getProperty,
+        '#000000'
+      );
+      var strokeOpacity = evaluate(
+        styling.strokeOpacity,
+        feature,
+        getProperty,
+        1.0
+      );
+      olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
+      somethingChanged = true;
+    }
+
+    return somethingChanged;
+  }
+
+  /**
+   * Change OL Text properties for dynamic symbolizer style parameters.
+   * Modification happens in-place on the given style instance.
+   * @param {ol/style/Style} olStyle OL Style instance.
+   * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
+   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
+   */
+  function applyDynamicTextStyling(
+    olStyle,
+    symbolizer,
+    feature,
+    getProperty
+  ) {
+    var olText = olStyle.getText();
+    if (!olText) {
+      return false;
+    }
+
+    if (typeof getProperty !== 'function') {
+      return false;
+    }
+
+    // Text fill style has to be applied to text color, so it has to be set as olText stroke.
+    if (
+      symbolizer.fill &&
+      symbolizer.fill.styling &&
+      (isDynamicExpression(symbolizer.fill.styling.fill) ||
+        isDynamicExpression(symbolizer.fill.styling.fillOpacity))
+    ) {
+      var textStrokeSymbolizer = {
+        stroke: {
+          styling: {
+            stroke: symbolizer.fill.styling.fill,
+            strokeOpacity: symbolizer.fill.styling.fillOpacity,
+          },
+        },
+      };
+      applyDynamicStrokeStyling(
+        olText,
+        textStrokeSymbolizer,
+        feature,
+        getProperty
+      );
+    }
+
+    // Halo fill has to be applied as olText fill.
+    if (
+      symbolizer.halo &&
+      symbolizer.halo.fill &&
+      symbolizer.halo.fill.styling &&
+      (isDynamicExpression(symbolizer.halo.fill.styling.fill) ||
+        isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))
+    ) {
+      applyDynamicFillStyling(olText, symbolizer.halo, feature, getProperty);
+    }
+
+    // Halo radius has to be applied as olText.stroke width.
+    if (symbolizer.halo && isDynamicExpression(symbolizer.halo.radius)) {
+      var haloRadius = evaluate(
+        symbolizer.halo.radius,
+        feature,
+        getProperty,
+        1.0
+      );
+      var olStroke = olText.getStroke();
+      if (olStroke) {
+        var haloStrokeWidth =
+          (haloRadius === 2 || haloRadius === 4
+            ? haloRadius - 0.00001
+            : haloRadius) * 2;
+        olStroke.setWidth(haloStrokeWidth);
+      }
+    }
+
+    return false;
   }
 
   var defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
@@ -2159,6 +2399,36 @@
       // Note: OL angles are in radians.
       var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
       olImage.setRotation(rotationRadians);
+    }
+
+    // --- Update stroke and fill ---
+    if (graphic.mark) {
+      var strokeChanged = applyDynamicStrokeStyling(
+        olImage,
+        graphic.mark,
+        feature,
+        getProperty
+      );
+
+      var fillChanged = applyDynamicFillStyling(
+        olImage,
+        graphic.mark,
+        feature,
+        getProperty
+      );
+
+      if (strokeChanged || fillChanged) {
+        // Create a new olImage in order to force a re-render to see the style changes.
+        var sizeValue$1 =
+          Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
+        olImage = getWellKnownSymbol(
+          (graphic.mark && graphic.mark.wellknownname) || 'square',
+          sizeValue$1,
+          olImage.getStroke(),
+          olImage.getFill()
+        );
+        olStyle.setImage(olImage);
+      }
     }
 
     return olStyle;
@@ -2443,7 +2713,12 @@
         (graphicstroke.graphic && graphicstroke.graphic.size) ||
         defaultGraphicSize;
       var graphicSize = Number(
-        evaluate(graphicSizeExpression, renderState.feature, getProperty)
+        evaluate(
+          graphicSizeExpression,
+          renderState.feature,
+          getProperty,
+          defaultGraphicSize
+        )
       );
 
       var graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
@@ -2502,8 +2777,13 @@
    * @param {object} symbolizer SLD symbolizer object.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getLineStyle(symbolizer) {
-    return cachedLineStyle(symbolizer);
+  function getLineStyle(symbolizer, feature, getProperty) {
+    var olStyle = cachedLineStyle(symbolizer);
+
+    // Apply dynamic properties.
+    applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+
+    return olStyle;
   }
 
   var dense1Pixels = [[1, 1]];
@@ -2728,7 +3008,7 @@
       // Todo: do this at the SLDReader parsing stage already.
       if (!mark.stroke.styling) {
         mark.stroke.styling = {
-          stroke: 'black',
+          stroke: '#000000',
           strokeWidth: 1.0,
         };
       }
@@ -2759,7 +3039,7 @@
 
     // If it's a QGIS brush fill, use direct pixel manipulation to create the fill.
     if (wellknownname && wellknownname.indexOf('brush://') === 0) {
-      var brushFillColor = 'black';
+      var brushFillColor = '#000000';
       if (mark.fill && mark.fill.styling && mark.fill.styling.fill) {
         brushFillColor = mark.fill.styling.fill;
       }
@@ -2852,7 +3132,7 @@
     } catch (e) {
       // Default black fill as backup plan.
       fill = new style.Fill({
-        color: 'black',
+        color: '#000000',
       });
     }
 
@@ -2925,8 +3205,14 @@
    * @param {object} symbolizer SLD symbolizer object.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getPolygonStyle(symbolizer) {
-    return cachedPolygonStyle(symbolizer);
+  function getPolygonStyle(symbolizer, feature, getProperty) {
+    var olStyle = cachedPolygonStyle(symbolizer);
+
+    // Apply dynamic properties.
+    applyDynamicFillStyling(olStyle, symbolizer, feature, getProperty);
+    applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+
+    return olStyle;
   }
 
   /**
@@ -2945,22 +3231,14 @@
     // In that case, text will be set at runtime.
     var labelText = evaluate(textsymbolizer.label, null, null, '');
 
-    var fill = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
-    var halo =
-      textsymbolizer.halo && textsymbolizer.halo.fill
-        ? textsymbolizer.halo.fill.styling
-        : {};
-    var haloRadius =
-      textsymbolizer.halo && textsymbolizer.halo.radius
-        ? parseFloat(textsymbolizer.halo.radius)
-        : 1;
-    var ref = textsymbolizer.font && textsymbolizer.font.styling
-      ? textsymbolizer.font.styling
+    var fontStyling = textsymbolizer.font
+      ? textsymbolizer.font.styling || {}
       : {};
-    var fontFamily = ref.fontFamily; if ( fontFamily === void 0 ) fontFamily = 'sans-serif';
-    var fontSize = ref.fontSize; if ( fontSize === void 0 ) fontSize = 10;
-    var fontStyle = ref.fontStyle; if ( fontStyle === void 0 ) fontStyle = '';
-    var fontWeight = ref.fontWeight; if ( fontWeight === void 0 ) fontWeight = '';
+    var fontFamily = evaluate(fontStyling.fontFamily, null, null, 'sans-serif');
+    var fontSize = evaluate(fontStyling.fontSize, null, null, 10);
+    var fontStyle = evaluate(fontStyling.fontStyle, null, null, '');
+    var fontWeight = evaluate(fontStyling.fontWeight, null, null, '');
+    var olFontString = fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily;
 
     var pointplacement =
       textsymbolizer &&
@@ -2981,56 +3259,57 @@
       pointplacement && pointplacement.displacement
         ? pointplacement.displacement
         : {};
-    var offsetX = displacement.displacementx ? displacement.displacementx : 0;
-    var offsetY = displacement.displacementy ? displacement.displacementy : 0;
+    var offsetX = evaluate(displacement.displacementx, null, null, 0.0);
+    var offsetY = evaluate(displacement.displacementy, null, null, 0.0);
 
     // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
     var anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};
 
     var textAlign = 'center';
-    var anchorpointx = Number(
-      anchorpoint.anchorpointx === '' ? NaN : anchorpoint.anchorpointx
-    );
-    if (anchorpointx < 0.25) {
+    var anchorPointX = evaluate(anchorpoint.anchorpointx, null, null, NaN);
+    if (anchorPointX < 0.25) {
       textAlign = 'left';
-    } else if (anchorpointx > 0.75) {
+    } else if (anchorPointX > 0.75) {
       textAlign = 'right';
     }
 
     var textBaseline = 'middle';
-    var anchorpointy = Number(
-      anchorpoint.anchorpointy === '' ? NaN : anchorpoint.anchorpointy
-    );
-    if (anchorpointy < 0.25) {
+    var anchorPointY = evaluate(anchorpoint.anchorpointy, null, null, NaN);
+    if (anchorPointY < 0.25) {
       textBaseline = 'bottom';
-    } else if (anchorpointy > 0.75) {
+    } else if (anchorPointY > 0.75) {
       textBaseline = 'top';
     }
+
+    var fillStyling = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
+    var textFillColor = evaluate(fillStyling.fill, null, null, '#000000');
+    var textFillOpacity = evaluate(fillStyling.fillOpacity, null, null, 1.0);
 
     // Assemble text style options.
     var textStyleOptions = {
       text: labelText,
-      font: (fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily),
-      offsetX: Number(offsetX),
-      offsetY: Number(offsetY),
+      font: olFontString,
+      offsetX: offsetX,
+      offsetY: offsetY,
       rotation: (Math.PI * labelRotationDegrees) / 180.0,
       textAlign: textAlign,
       textBaseline: textBaseline,
       fill: new style.Fill({
-        color:
-          fill.fillOpacity && fill.fill && fill.fill.slice(0, 1) === '#'
-            ? hexToRGB(fill.fill, fill.fillOpacity)
-            : fill.fill,
+        color: getOLColorString(textFillColor, textFillOpacity),
       }),
     };
 
     // Convert SLD halo to text symbol stroke.
     if (textsymbolizer.halo) {
+      var haloStyling =
+        textsymbolizer.halo && textsymbolizer.halo.fill
+          ? textsymbolizer.halo.fill.styling
+          : {};
+      var haloFillColor = evaluate(haloStyling.fill, null, null, '#FFFFFF');
+      var haloFillOpacity = evaluate(haloStyling.fillOpacity, null, null, 1.0);
+      var haloRadius = evaluate(textsymbolizer.halo.radius, null, null, 1.0);
       textStyleOptions.stroke = new style.Stroke({
-        color:
-          halo.fillOpacity && halo.fill && halo.fill.slice(0, 1) === '#'
-            ? hexToRGB(halo.fill, halo.fillOpacity)
-            : halo.fill,
+        color: getOLColorString(haloFillColor, haloFillOpacity),
         // wrong position width radius equal to 2 or 4
         width:
           (haloRadius === 2 || haloRadius === 4
@@ -3067,7 +3346,7 @@
 
     // Set text only if the label expression is dynamic.
     if (isDynamicExpression(label)) {
-      var labelText = evaluate(label, feature, getProperty);
+      var labelText = evaluate(label, feature, getProperty, '');
       // Important! OpenLayers expects the text property to always be a string.
       olText.setText(labelText.toString());
     }
@@ -3082,7 +3361,8 @@
         var labelRotationDegrees = evaluate(
           pointPlacementRotation,
           feature,
-          getProperty
+          getProperty,
+          0.0
         );
         olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
       }
@@ -3102,6 +3382,42 @@
     var placement =
       geometryType !== 'point' && lineplacement ? 'line' : 'point';
     olText.setPlacement(placement);
+
+    // Apply dynamic style properties.
+    applyDynamicTextStyling(olStyle, symbolizer, feature, getProperty);
+
+    // Adjust font if one or more font svgparameters are dynamic.
+    if (symbolizer.font && symbolizer.font.styling) {
+      var fontStyling = symbolizer.font.styling || {};
+      if (
+        isDynamicExpression(fontStyling.fontFamily) ||
+        isDynamicExpression(fontStyling.fontStyle) ||
+        isDynamicExpression(fontStyling.fontWeight) ||
+        isDynamicExpression(fontStyling.fontSize)
+      ) {
+        var fontFamily = evaluate(
+          fontStyling.fontFamily,
+          feature,
+          getProperty,
+          'sans-serif'
+        );
+        var fontStyle = evaluate(
+          fontStyling.fontStyle,
+          feature,
+          getProperty,
+          ''
+        );
+        var fontWeight = evaluate(
+          fontStyling.fontWeight,
+          feature,
+          getProperty,
+          ''
+        );
+        var fontSize = evaluate(fontStyling.fontSize, feature, getProperty, 10);
+        var olFontString = fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily;
+        olText.setFont(olFontString);
+      }
+    }
 
     return olStyle;
   }

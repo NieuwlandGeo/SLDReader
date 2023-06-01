@@ -1,7 +1,8 @@
 /* eslint-disable import/prefer-default-export */
 import { Stroke, Fill } from 'ol/style';
 
-import { hexToRGB } from './styleUtils';
+import { getOLColorString } from './styleUtils';
+import evaluate from '../olEvaluator';
 
 /**
  * Get an OL style/Stroke instance from the css/svg properties of the .stroke property
@@ -18,20 +19,44 @@ export function getSimpleStroke(stroke) {
   }
 
   const styleParams = stroke.styling || {};
-  return new Stroke({
-    color:
-      styleParams.strokeOpacity &&
-      styleParams.stroke &&
-      styleParams.stroke.slice(0, 1) === '#'
-        ? hexToRGB(styleParams.stroke, styleParams.strokeOpacity)
-        : styleParams.stroke || 'black',
-    width: parseFloat(styleParams.strokeWidth) || 1,
-    lineCap: styleParams.strokeLinecap,
-    lineDash:
-      styleParams.strokeDasharray && styleParams.strokeDasharray.split(' '),
-    lineDashOffset: parseFloat(styleParams.strokeDashoffset),
-    lineJoin: styleParams.strokeLinejoin,
-  });
+
+  // Options that have a default value.
+  const strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
+
+  const strokeOpacity = evaluate(styleParams.strokeOpacity, null, null, 1.0);
+
+  const strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
+
+  const strokeLineDashOffset = evaluate(
+    styleParams.strokeDashoffset,
+    null,
+    null,
+    0.0
+  );
+
+  const strokeOptions = {
+    color: getOLColorString(strokeColor, strokeOpacity),
+    width: strokeWidth,
+    lineDashOffset: strokeLineDashOffset,
+  };
+
+  // Optional parameters that will be added to stroke options when present in SLD.
+  const strokeLineJoin = evaluate(styleParams.strokeLinejoin, null, null);
+  if (strokeLineJoin !== null) {
+    strokeOptions.lineJoin = strokeLineJoin;
+  }
+
+  const strokeLineCap = evaluate(styleParams.strokeLinecap, null, null);
+  if (strokeLineCap !== null) {
+    strokeOptions.lineCap = strokeLineCap;
+  }
+
+  const strokeDashArray = evaluate(styleParams.strokeDasharray, null, null);
+  if (strokeDashArray !== null) {
+    strokeOptions.lineDash = strokeDashArray.split(' ');
+  }
+
+  return new Stroke(strokeOptions);
 }
 
 /**
@@ -50,12 +75,9 @@ export function getSimpleFill(fill) {
 
   const styleParams = fill.styling || {};
 
-  return new Fill({
-    color:
-      styleParams.fillOpacity &&
-      styleParams.fill &&
-      styleParams.fill.slice(0, 1) === '#'
-        ? hexToRGB(styleParams.fill, styleParams.fillOpacity)
-        : styleParams.fill || 'black',
-  });
+  const fillColor = evaluate(styleParams.fill, null, null, '#808080');
+
+  const fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
+
+  return new Fill({ color: getOLColorString(fillColor, fillOpacity) });
 }

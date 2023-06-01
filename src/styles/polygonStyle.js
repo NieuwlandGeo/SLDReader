@@ -14,6 +14,7 @@ import { memoizeStyleFunction } from './styleUtils';
 import { getCachedImage, getImageLoadingState } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
 import { getSimpleStroke, getSimpleFill } from './simpleStyles';
+import { applyDynamicFillStyling, applyDynamicStrokeStyling } from './dynamicStyles';
 import { getGraphicStrokeRenderer } from './graphicStrokeStyle';
 import getPointStyle from './pointStyle';
 import getQGISBrushFill from './qgisBrushFill';
@@ -94,7 +95,7 @@ function scaleMarkGraphicFill(graphicfill, scaleFactor) {
     // Todo: do this at the SLDReader parsing stage already.
     if (!mark.stroke.styling) {
       mark.stroke.styling = {
-        stroke: 'black',
+        stroke: '#000000',
         strokeWidth: 1.0,
       };
     }
@@ -123,7 +124,7 @@ function getMarkGraphicFill(symbolizer) {
 
   // If it's a QGIS brush fill, use direct pixel manipulation to create the fill.
   if (wellknownname && wellknownname.indexOf('brush://') === 0) {
-    let brushFillColor = 'black';
+    let brushFillColor = '#000000';
     if (mark.fill && mark.fill.styling && mark.fill.styling.fill) {
       brushFillColor = mark.fill.styling.fill;
     }
@@ -216,7 +217,7 @@ function getMarkGraphicFill(symbolizer) {
   } catch (e) {
     // Default black fill as backup plan.
     fill = new Fill({
-      color: 'black',
+      color: '#000000',
     });
   }
 
@@ -288,8 +289,14 @@ const cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
  * @param {object} symbolizer SLD symbolizer object.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getPolygonStyle(symbolizer) {
-  return cachedPolygonStyle(symbolizer);
+function getPolygonStyle(symbolizer, feature, getProperty) {
+  const olStyle = cachedPolygonStyle(symbolizer);
+
+  // Apply dynamic properties.
+  applyDynamicFillStyling(olStyle, symbolizer, feature, getProperty);
+  applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+
+  return olStyle;
 }
 
 export default getPolygonStyle;

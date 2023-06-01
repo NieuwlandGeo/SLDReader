@@ -19,6 +19,12 @@ import { externalGraphicStrokeSld } from './data/external-graphicstroke.sld';
 import { polyGraphicFillAndStrokeSld } from './data/poly-graphic-fill-and-stroke';
 import { simpleLineSymbolizerSld } from './data/simple-line-symbolizer.sld';
 import { simplePointSymbolizerSld } from './data/simple-point-symbolizer.sld';
+import { emptyPolygonSymbolizerSld } from './data/empty-polygon-symbolizer.sld';
+import { emptySvgParametersSld } from './data/empty-svg-parameters.sld';
+import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
+import { dynamicLineSymbolizerSld } from './data/dynamic-line-symbolizer.sld';
+import { dynamicPointSymbolizerSld } from './data/dynamic-point-symbolizer.sld';
+import { dynamicTextSymbolizerSld } from './data/dynamic-text-symbolizer.sld';
 import { doubleLineSld } from './data/double-line.sld';
 
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
@@ -625,6 +631,36 @@ describe('Dynamic style properties', () => {
         expect(textStyle.getText().getText()).to.equal('This is a test');
       });
 
+      it('Text label is empty string when feature property is missing', () => {
+        const fmtGeoJSON = new OLFormatGeoJSON();
+        const pointFeature2 = fmtGeoJSON.readFeature({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [175135, 441200],
+          },
+          properties: {},
+        });
+        const textStyle = styleFunction(pointFeature2)[1];
+        expect(textStyle.getText().getText()).to.equal('');
+      });
+
+      it('Text label is always string when feature property is numeric', () => {
+        const fmtGeoJSON = new OLFormatGeoJSON();
+        const pointFeature2 = fmtGeoJSON.readFeature({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [175135, 441200],
+          },
+          properties: {
+            title: 42,
+          },
+        });
+        const textStyle = styleFunction(pointFeature2)[1];
+        expect(textStyle.getText().getText()).to.equal('42');
+      });
+
       it('Reads label rotation from feature', () => {
         const textStyle = styleFunction(pointFeature)[1];
         // OL rotation is in radians.
@@ -943,5 +979,266 @@ describe('Static style extraction with getOlStyle', () => {
     const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
     const olStyles = createOlStyle(featureTypeStyle.rules[0]);
     expect(olStyles.length).to.equal(0);
+  });
+});
+
+describe('Styling with dynamic SVG Parameters', () => {
+  const polygonGeoJSON = {
+    type: 'Feature',
+    geometry: {
+      type: 'Polygon',
+      // prettier-ignore
+      coordinates: [[[0, 0], [0, 100], [100, 100], [100, 0], [0, 0]]],
+    },
+    properties: {
+      myStrokeWidth: 3,
+      myStrokeColor: '#223344',
+      myStrokeOpacity: 1.0,
+      myFillColor: '#646464', // [100, 100, 100]
+      myFillOpacity: 0.4,
+    },
+  };
+
+  const lineGeoJSON = {
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      // prettier-ignore
+      coordinates: [[0, 0], [0, 100], [100, 100], [100, 0], [0, 0]],
+    },
+    properties: {
+      myStrokeWidth: 3,
+      myStrokeColor: '#646464',
+      myStrokeOpacity: 0.4,
+    },
+  };
+
+  const pointGeoJSON = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [0, 0],
+    },
+    properties: {
+      myStrokeWidth: 3,
+      myStrokeColor: '#223344',
+      myStrokeOpacity: 1.0,
+      myFillColor: '#646464', // [100, 100, 100]
+      myFillOpacity: 0.4,
+    },
+  };
+
+  const pointTextGeoJSON = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [0, 0],
+    },
+    properties: {
+      myTextColor: '#646464', // [100, 100, 100]
+      myTextOpacity: 0.4,
+      myHaloColor: '#C8C8C8', // [200, 200, 200]
+      myHaloOpacity: 0.5,
+      myHaloRadius: 3,
+      myFontFamily: 'Comic Sans MS',
+      myFontSize: '14',
+      myFontStyle: 'italic',
+      myFontWeight: 'bold',
+    },
+  };
+
+  describe('Default values for missing SVG style params', () => {
+    let olStroke;
+    let olFill;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(polygonGeoJSON);
+      const sldObject = Reader(emptyPolygonSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      const olStyle = styleFunction(polygonFeature)[0];
+      olStroke = olStyle.getStroke();
+      olFill = olStyle.getFill();
+    });
+
+    it('Default fill color should be gray with opacity 1', () => {
+      expect(olFill.getColor()).to.equal('#808080');
+    });
+
+    it('Default stroke width should be 1', () => {
+      expect(olStroke.getWidth()).to.equal(1);
+    });
+
+    it('Default stroke color should be #000000', () => {
+      expect(olStroke.getColor()).to.equal('#000000');
+    });
+
+    it('Default stroke line dash offset should be 0', () => {
+      expect(olStroke.getLineDashOffset()).to.equal(0);
+    });
+
+    it('Default stroke line dash should be null', () => {
+      expect(olStroke.getLineDash()).to.be.null;
+    });
+
+    it('Default stroke line cap should be undefined', () => {
+      expect(olStroke.getLineCap()).to.be.undefined;
+    });
+
+    it('Default stroke line join should be undefined', () => {
+      expect(olStroke.getLineJoin()).to.be.undefined;
+    });
+  });
+
+  describe('Default values for empty SVG style params', () => {
+    let olStroke;
+    let olFill;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(polygonGeoJSON);
+      const sldObject = Reader(emptySvgParametersSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      const olStyle = styleFunction(polygonFeature)[0];
+      olStroke = olStyle.getStroke();
+      olFill = olStyle.getFill();
+    });
+
+    it('Default fill color should be gray with opacity 1', () => {
+      expect(olFill.getColor()).to.equal('#808080');
+    });
+
+    it('Default stroke width should be 1', () => {
+      expect(olStroke.getWidth()).to.equal(1);
+    });
+
+    it('Default stroke color should be #000000', () => {
+      expect(olStroke.getColor()).to.equal('#000000');
+    });
+
+    it('Default stroke line dash offset should be 0', () => {
+      expect(olStroke.getLineDashOffset()).to.equal(0);
+    });
+
+    it('Default stroke line dash should be null', () => {
+      expect(olStroke.getLineDash()).to.be.null;
+    });
+
+    it('Default stroke line cap should be undefined', () => {
+      expect(olStroke.getLineCap()).to.be.undefined;
+    });
+
+    it('Default stroke line join should be undefined', () => {
+      expect(olStroke.getLineJoin()).to.be.undefined;
+    });
+  });
+
+  describe('Dynamic polygon styling', () => {
+    let olStyle;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(polygonGeoJSON);
+      const sldObject = Reader(dynamicPolygonSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      olStyle = styleFunction(polygonFeature)[0];
+    });
+
+    it('Dynamic stroke width', () => {
+      expect(olStyle.getStroke().getWidth()).to.equal(3);
+    });
+
+    it('Dynamic stroke color (opacity 1 --> hex string)', () => {
+      expect(olStyle.getStroke().getColor()).to.equal('#223344');
+    });
+
+    it('Dynamic partially transparent fill color (transparency encoded in color string))', () => {
+      expect(olStyle.getFill().getColor()).to.equal('rgba(100, 100, 100, 0.4)');
+    });
+  });
+
+  describe('Dynamic line styling', () => {
+    let olStyle;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(lineGeoJSON);
+      const sldObject = Reader(dynamicLineSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      olStyle = styleFunction(polygonFeature)[0];
+    });
+
+    it('Dynamic stroke width', () => {
+      expect(olStyle.getStroke().getWidth()).to.equal(3);
+    });
+
+    it('Dynamic stroke color (transparency encoded in color string)', () => {
+      expect(olStyle.getStroke().getColor()).to.equal(
+        'rgba(100, 100, 100, 0.4)'
+      );
+    });
+  });
+
+  describe('Dynamic point graphic mark styling', () => {
+    let olStyle;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const pointFeature = fmtGeoJSON.readFeature(pointGeoJSON);
+      const sldObject = Reader(dynamicPointSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      olStyle = styleFunction(pointFeature)[0];
+    });
+
+    it('Dynamic stroke width', () => {
+      expect(olStyle.getImage().getStroke().getWidth()).to.equal(3);
+    });
+
+    it('Dynamic stroke color (opacity 1 --> hex string)', () => {
+      expect(olStyle.getImage().getStroke().getColor()).to.equal('#223344');
+    });
+
+    it('Dynamic partially transparent fill color (transparency encoded in color string))', () => {
+      expect(olStyle.getImage().getFill().getColor()).to.equal(
+        'rgba(100, 100, 100, 0.4)'
+      );
+    });
+  });
+
+  describe('Dynamic text symbolizer styling', () => {
+    let olText;
+    before(() => {
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const pointTextFeature = fmtGeoJSON.readFeature(pointTextGeoJSON);
+      const sldObject = Reader(dynamicTextSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      const olStyle = styleFunction(pointTextFeature)[0];
+      olText = olStyle.getText();
+    });
+
+    it('Dynamic partially transparent text color (transparency encoded in color string))', () => {
+      expect(olText.getStroke().getColor()).to.equal(
+        'rgba(100, 100, 100, 0.4)'
+      );
+    });
+
+    it('Dynamic partially transparent halo color (transparency encoded in color string))', () => {
+      expect(olText.getFill().getColor()).to.equal('rgba(200, 200, 200, 0.5)');
+    });
+
+    it('Dynamic text halo radius', () => {
+      expect(olText.getStroke().getWidth()).to.equal(6); // Stroke width equals twice halo radius.
+    });
+
+    it('Dynamic font style', () => {
+      expect(olText.getFont()).to.equal('italic bold 14px Comic Sans MS');
+    });
   });
 });

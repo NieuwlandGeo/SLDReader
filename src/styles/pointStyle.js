@@ -16,6 +16,10 @@ import { createCachedImageStyle, getImageLoadingState } from '../imageCache';
 import getWellKnownSymbol from './wellknown';
 import evaluate, { isDynamicExpression } from '../olEvaluator';
 import { getSimpleFill, getSimpleStroke } from './simpleStyles';
+import {
+  applyDynamicFillStyling,
+  applyDynamicStrokeStyling,
+} from './dynamicStyles';
 
 const defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
 const defaultMarkStroke = getSimpleStroke({ styling: { stroke: {} } });
@@ -151,6 +155,36 @@ function getPointStyle(symbolizer, feature, getProperty) {
     // Note: OL angles are in radians.
     const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
     olImage.setRotation(rotationRadians);
+  }
+
+  // --- Update stroke and fill ---
+  if (graphic.mark) {
+    const strokeChanged = applyDynamicStrokeStyling(
+      olImage,
+      graphic.mark,
+      feature,
+      getProperty
+    );
+
+    const fillChanged = applyDynamicFillStyling(
+      olImage,
+      graphic.mark,
+      feature,
+      getProperty
+    );
+
+    if (strokeChanged || fillChanged) {
+      // Create a new olImage in order to force a re-render to see the style changes.
+      const sizeValue =
+        Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
+      olImage = getWellKnownSymbol(
+        (graphic.mark && graphic.mark.wellknownname) || 'square',
+        sizeValue,
+        olImage.getStroke(),
+        olImage.getFill()
+      );
+      olStyle.setImage(olImage);
+    }
   }
 
   return olStyle;
