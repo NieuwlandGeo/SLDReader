@@ -1,6 +1,9 @@
 /* global describe it expect */
 
-import { calculateGraphicSpacing } from '../src/styles/styleUtils';
+import {
+  calculateGraphicSpacing,
+  getOLColorString,
+} from '../src/styles/styleUtils';
 
 describe('Style utils', () => {
   describe('Calculate graphic spacing', () => {
@@ -54,6 +57,10 @@ describe('Style utils', () => {
         },
       };
       expect(calculateGraphicSpacing(symbolizer, 10)).to.equal(30);
+    });
+
+    it('Handle zero opacity color', () => {
+      expect(getOLColorString('#646464', 0)).to.equal('rgba(100, 100, 100, 0)');
     });
   });
 });
