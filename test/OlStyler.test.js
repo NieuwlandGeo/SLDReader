@@ -1160,6 +1160,25 @@ describe('Styling with dynamic SVG Parameters', () => {
     });
   });
 
+  describe('Zero opacity', () => {
+    it('Opacity 0 should not default to fully opaque', () => {
+      const polygonGeoJSON2 = JSON.parse(JSON.stringify(polygonGeoJSON));
+      polygonGeoJSON2.properties.myFillOpacity = 0.0;
+      polygonGeoJSON2.properties.myStrokeOpacity = 0.0;
+      const fmtGeoJSON = new OLFormatGeoJSON();
+      const polygonFeature = fmtGeoJSON.readFeature(polygonGeoJSON2);
+      const sldObject = Reader(dynamicPolygonSymbolizerSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      const styleFunction = createOlStyleFunction(featureTypeStyle);
+      const olStyle = styleFunction(polygonFeature)[0];
+      const fillColor = olStyle.getFill().getColor();
+      expect(fillColor).to.equal('rgba(100, 100, 100, 0)');
+      const strokeColor = olStyle.getStroke().getColor();
+      expect(strokeColor).to.equal('rgba(34, 51, 68, 0)');
+    });
+  });
+
   describe('Dynamic line styling', () => {
     let olStyle;
     before(() => {
