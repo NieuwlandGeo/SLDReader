@@ -164,8 +164,14 @@ function createIsBetweenComparison(element, addParameterValueProp) {
 function createBinaryLogic(element, addParameterValueProp) {
   const predicates = [];
   for (let n = element.firstElementChild; n; n = n.nextElementSibling) {
-    if (isComparison(n)) {
+    if (n && isComparison(n)) {
       predicates.push(createComparison(n, addParameterValueProp));
+    }
+    if (n && isBinary(n)) {
+      predicates.push(createBinaryLogic(n, addParameterValueProp));
+    }
+    if (n && n.localName.toLowerCase() === 'not') {
+      predicates.push(createUnaryLogic(n, addParameterValueProp));
     }
   }
   return {
@@ -189,6 +195,9 @@ function createUnaryLogic(element, addParameterValueProp) {
   }
   if (childElement && isBinary(childElement)) {
     predicate = createBinaryLogic(childElement, addParameterValueProp);
+  }
+  if (childElement && childElement.localName.toLowerCase() === 'not') {
+    predicate = createUnaryLogic(childElement, addParameterValueProp);
   }
   return {
     type: element.localName.toLowerCase(),

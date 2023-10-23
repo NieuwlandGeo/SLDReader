@@ -2,7 +2,7 @@ import { filterSelector, scaleSelector } from '../src/Filter';
 /* global describe it before beforeEach expect */
 import Reader from '../src/Reader';
 
-describe.only('filter rules', () => {
+describe('filter rules', () => {
   describe('FID filter', () => {
     const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
       <FeatureId fid="tasmania_water_bodies.2" />
@@ -486,8 +486,23 @@ describe.only('filter rules', () => {
       });
     });
 
-    //FIX THIS LATER
-    it.skip('Nested logical filters', () => {
+    it('Double negation', () => {
+      const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
+        <Not>
+          <Not>
+            <PropertyIsEqualTo>
+              <PropertyName>name</PropertyName>
+              <Literal>Piet</Literal>
+            </PropertyIsEqualTo>
+          </Not>
+        </Not>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const piet = { properties: { name: 'Piet' } };
+      expect(filterSelector(filter, piet)).to.be.true;
+    });
+
+    it('Nested logical filters', () => {
       const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
         <And>
           <Not>
@@ -512,7 +527,6 @@ describe.only('filter rules', () => {
       const sjenkie = { properties: { name: 'Sjenkie', age: 8 } };
       expect(filterSelector(filter, sjenkie)).to.be.true;
       const piet = { properties: { name: 'Piet', age: 8 } };
-      console.log("INGEWIKKELD FILTER --> ", JSON.stringify(filter,null,2))
       expect(filterSelector(filter, piet)).to.be.false;
     });
   });
