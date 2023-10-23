@@ -2,7 +2,7 @@
 import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 
-describe.only('Filter tests', () => {
+describe('Filter parsing tests', () => {
   it('PropertyIsBetween', () => {
     const filterXml = `<?xml version="1.0" encoding="UTF-8"?>
     <StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
@@ -19,10 +19,14 @@ describe.only('Filter tests', () => {
 
     const { filter } = Reader(filterXml);
     expect(filter.type).to.equal('comparison');
-    expect(filter.propertyname).to.equal('AREA');
     expect(filter.lowerboundary).to.equal('1064866676');
     expect(filter.upperboundary).to.equal('1065512599');
     expect(filter.matchcase).to.be.true;
+    expect(filter.expression).to.deep.equal({
+      type: 'propertyname',
+      value: 'AREA',
+      typeHint: 'string',
+    });
   });
 
   it('PropertyIsNull', () => {
@@ -106,8 +110,12 @@ describe.only('Filter tests', () => {
     const { filter } = Reader(filterXml);
     expect(filter.type).to.equal('comparison');
     expect(filter.operator).to.equal('propertyisnotequalto');
-    expect(filter.propertyname).to.equal('PERIMETER');
-    expect(filter.literal).to.equal('1071304933');
+    expect(filter.expression1).to.deep.equal({
+      type: 'propertyname',
+      value: 'PERIMETER',
+      typeHint: 'string',
+    });
+    expect(filter.expression2).to.equal('1071304933');
     expect(filter.matchcase).to.be.true;
   });
 
@@ -126,8 +134,12 @@ describe.only('Filter tests', () => {
     expect(filter.predicate).to.be.ok;
     expect(filter.predicate.type).to.equal('comparison');
     expect(filter.predicate.operator).to.equal('propertyisequalto');
-    expect(filter.predicate.propertyname).to.equal('PERIMETER');
-    expect(filter.predicate.literal).to.equal('1071304933');
+    expect(filter.predicate.expression1).to.deep.equal({
+      type: 'propertyname',
+      value: 'PERIMETER',
+      typeHint: 'string',
+    });
+    expect(filter.predicate.expression2).to.equal('1071304933');
   });
 
   describe('From SLD', () => {
@@ -151,8 +163,12 @@ describe.only('Filter tests', () => {
         result.layers['0'].styles['2'].featuretypestyles['0'].rules['0'];
       expect(filter.type).to.equal('comparison');
       expect(filter.operator).to.equal('propertyisequalto');
-      expect(filter.propertyname).to.equal('name');
-      expect(filter.literal).to.equal('My simple Polygon');
+      expect(filter.expression1).to.deep.equal({
+        type: 'propertyname',
+        value: 'name',
+        typeHint: 'string',
+      });
+      expect(filter.expression2).to.equal('My simple Polygon');
       expect(filter.matchcase).to.be.true;
     });
     it('rules have filter for Hover Styler not_or', () => {
@@ -167,15 +183,23 @@ describe.only('Filter tests', () => {
       const orPredicate1 = predicate.predicates[0];
       expect(orPredicate1.type).to.equal('comparison');
       expect(orPredicate1.operator).to.equal('propertyisequalto');
-      expect(orPredicate1.propertyname).to.equal('PERIMETER');
-      expect(orPredicate1.literal).to.equal('1071304933');
+      expect(orPredicate1.expression1).to.deep.equal({
+        type: 'propertyname',
+        value: 'PERIMETER',
+        typeHint: 'string',
+      });
+      expect(orPredicate1.expression2).to.equal('1071304933');
       expect(orPredicate1.matchcase).to.be.true;
 
       const orPredicate2 = predicate.predicates[1];
       expect(orPredicate2.type).to.equal('comparison');
       expect(orPredicate2.operator).to.equal('propertyislessthan');
-      expect(orPredicate2.propertyname).to.equal('AREA');
-      expect(orPredicate2.literal).to.equal('1065512599');
+      expect(orPredicate2.expression1).to.deep.equal({
+        type: 'propertyname',
+        value: 'AREA',
+        typeHint: 'string',
+      });
+      expect(orPredicate2.expression2).to.equal('1065512599');
       expect(orPredicate2.matchcase).to.be.true;
     });
   });

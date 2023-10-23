@@ -102,8 +102,6 @@ function createBinaryFilterComparison(element, addParameterValueProp) {
     obj.expression2 = parsed.expressions.children[1];
   }
 
-  console.log('OBJ --> ', JSON.stringify(obj, null, 2));
-
   return obj;
 }
 
@@ -123,22 +121,6 @@ function createIsLikeComparison(element, addParameterValueProp) {
     singlechar: element.getAttribute('singleChar'),
     escapechar: element.getAttribute('escapeChar'),
   };
-  /*
-  const propertyname = getChildTextContent(element, 'PropertyName');
-  const literal = getChildTextContent(element, 'Literal');
-
-  return {
-    type: TYPE_COMPARISON,
-    operator: element.localName.toLowerCase(),
-    propertyname,
-    literal,
-    wildcard: element.getAttribute('wildCard'),
-    singlechar: element.getAttribute('singleChar'),
-    escapechar: element.getAttribute('escapeChar'),
-    // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
-    matchcase: element.getAttribute('matchCase') !== 'false',
-  };
-  */
 }
 
 /**
@@ -164,19 +146,28 @@ function createIsNullComparison(element) {
  *
  * @return {object}
  */
-function createIsBetweenComparison(element) {
-  const propertyname = getChildTextContent(element, 'PropertyName');
-  const lowerboundary = getChildTextContent(element, 'LowerBoundary');
-  const upperboundary = getChildTextContent(element, 'UpperBoundary');
-  return {
+function createIsBetweenComparison(element, addParameterValueProp) {
+  const obj = {
     type: TYPE_COMPARISON,
     operator: element.localName.toLowerCase(),
-    lowerboundary,
-    upperboundary,
-    propertyname,
     // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
     matchcase: element.getAttribute('matchCase') !== 'false',
   };
+
+  // Parse child expressions, and add them to the comparison object.
+  const parsed = {};
+  addParameterValueProp(element, parsed, 'expressions', {
+    concatenateLiterals: false,
+  });
+
+  if (parsed.expressions && parsed.expressions.children) {
+    // According to spec, the child elements should be expression, lower boundary, upper boundary.
+    obj.expression = parsed.expressions.children[0];
+    obj.lowerboundary = parsed.expressions.children[1];
+    obj.upperboundary = parsed.expressions.children[2];
+  }
+
+  return obj;
 }
 
 /**
