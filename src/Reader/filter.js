@@ -26,25 +26,6 @@ const COMPARISON_NAMES = BINARY_COMPARISON_NAMES.concat([
   'PropertyIsBetween',
 ]);
 
-/**
- * @private
- * @param {string} localName
- *
- * @return null|string
- */
-function getChildTextContent(node, localName) {
-  const propertyNameElement = node
-    .getElementsByTagNameNS(node.namespaceURI, localName)
-    .item(0);
-  if (!propertyNameElement) {
-    return null;
-  }
-  if (propertyNameElement.parentNode !== node) {
-    throw new Error('Expected direct descant');
-  }
-  return propertyNameElement ? propertyNameElement.textContent.trim() : null;
-}
-
 function isComparison(element) {
   return COMPARISON_NAMES.includes(element.localName);
 }
@@ -130,13 +111,16 @@ function createIsLikeComparison(element, addParameterValueProp) {
  *
  * @return {object}
  */
-function createIsNullComparison(element) {
-  const propertyname = getChildTextContent(element, 'PropertyName');
+function createIsNullComparison(element, addParameterValueProp) {
+  const parsed = {};
+  addParameterValueProp(element, parsed, 'expressions', {
+    concatenateLiterals: false,
+  });
 
   return {
     type: TYPE_COMPARISON,
     operator: element.localName.toLowerCase(),
-    propertyname,
+    expression: parsed.expressions,
   };
 }
 /**

@@ -39,7 +39,11 @@ describe('Filter parsing tests', () => {
     const { filter } = Reader(filterXml);
     expect(filter.type).to.equal('comparison');
     expect(filter.operator).to.equal('propertyisnull');
-    expect(filter.propertyname).to.equal('PERIMETER');
+    expect(filter.expression).to.deep.equal({
+      type: 'propertyname',
+      value: 'PERIMETER',
+      typeHint: 'string',
+    });
   });
 
   it('PropertyIsEqualTo', () => {
