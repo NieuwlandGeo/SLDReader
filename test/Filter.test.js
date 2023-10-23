@@ -614,4 +614,32 @@ describe('Custom property extraction', () => {
 
     expect(result).to.be.true;
   });
+
+  describe('Non-standard filters', () => {
+    it('Literal equals another literal', () => {
+      const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <Literal>Test1234</Literal>
+          <Literal>Test1234</Literal>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const feature = { properties: {} };
+      const result = filterSelector(filter, feature);
+      expect(result).to.be.true;
+    });
+
+    it('Property equals another property', () => {
+      const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <PropertyName>prop1</PropertyName>
+          <PropertyName>prop2</PropertyName>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const feature = { properties: { prop1: 42, prop2: 42 } };
+      const result = filterSelector(filter, feature);
+      expect(result).to.be.true;
+    });
+  });
 });
