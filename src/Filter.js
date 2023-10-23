@@ -1,3 +1,5 @@
+import evaluate from './olEvaluator';
+
 function isNullOrUndefined(value) {
   /* eslint-disable-next-line eqeqeq */
   return value == null;
@@ -43,41 +45,59 @@ function compare(a, b, matchcase) {
   return aString.toLowerCase().localeCompare(bString.toLowerCase());
 }
 
-function propertyIsLessThan(comparison, value) {
-  if (isNullOrUndefined(value)) {
-    return false;
-  }
-
-  if (isNullOrUndefined(comparison.literal)) {
-    return false;
-  }
-
-  return compare(value, comparison.literal) < 0;
+function propertyIsNull(comparison, feature, getProperty) {
+  const value = evaluate(comparison.expression, feature, getProperty);
+  return isNullOrUndefined(value);
 }
 
-function propertyIsGreaterThan(comparison, value) {
-  if (isNullOrUndefined(value)) {
+function propertyIsLessThan(comparison, feature, getProperty) {
+  const value1 = evaluate(comparison.expression1, feature, getProperty);
+  if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  if (isNullOrUndefined(comparison.literal)) {
+  const value2 = evaluate(comparison.expression2, feature, getProperty);
+  if (isNullOrUndefined(value2)) {
     return false;
   }
 
-  return compare(value, comparison.literal) > 0;
+  return compare(value1, value2) < 0;
 }
 
-function propertyIsBetween(comparison, value) {
+function propertyIsGreaterThan(comparison, feature, getProperty) {
+  const value1 = evaluate(comparison.expression1, feature, getProperty);
+  if (isNullOrUndefined(value1)) {
+    return false;
+  }
+
+  const value2 = evaluate(comparison.expression2, feature, getProperty);
+  if (isNullOrUndefined(value2)) {
+    return false;
+  }
+
+  return compare(value1, value2) > 0;
+}
+
+function propertyIsBetween(comparison, feature, getProperty) {
+  const value = evaluate(comparison.expression, feature, getProperty);
   if (isNullOrUndefined(value)) {
     return false;
   }
 
-  const lowerBoundary = comparison.lowerboundary;
+  const lowerBoundary = evaluate(
+    comparison.lowerboundary,
+    feature,
+    getProperty
+  );
   if (isNullOrUndefined(lowerBoundary)) {
     return false;
   }
 
-  const upperBoundary = comparison.upperboundary;
+  const upperBoundary = evaluate(
+    comparison.upperboundary,
+    feature,
+    getProperty
+  );
   if (isNullOrUndefined(upperBoundary)) {
     return false;
   }
@@ -87,32 +107,40 @@ function propertyIsBetween(comparison, value) {
   );
 }
 
-function propertyIsEqualTo(comparison, value) {
-  if (isNullOrUndefined(value)) {
+function propertyIsEqualTo(comparison, feature, getProperty) {
+  const value1 = evaluate(comparison.expression1, feature, getProperty);
+  if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  if (isNullOrUndefined(comparison.literal)) {
+  const value2 = evaluate(comparison.expression2, feature, getProperty);
+  if (isNullOrUndefined(value2)) {
     return false;
   }
 
   if (!comparison.matchcase) {
-    return compare(comparison.literal, value, false) === 0;
+    return compare(value1, value2, false) === 0;
   }
 
   /* eslint-disable-next-line eqeqeq */
-  return value == comparison.literal;
+  return value1 == value2;
 }
 
 // Watch out! Null-ish values should not pass propertyIsNotEqualTo,
 // just like in databases.
 // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
-function propertyIsNotEqualTo(comparison, value) {
-  if (isNullOrUndefined(value)) {
+function propertyIsNotEqualTo(comparison, feature, getProperty) {
+  const value1 = evaluate(comparison.expression1, feature, getProperty);
+  if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  return !propertyIsEqualTo(comparison, value);
+  const value2 = evaluate(comparison.expression2, feature, getProperty);
+  if (isNullOrUndefined(value2)) {
+    return false;
+  }
+
+  return !propertyIsEqualTo(comparison, feature, getProperty);
 }
 
 /**
@@ -123,10 +151,14 @@ function propertyIsNotEqualTo(comparison, value) {
  * @param {object} getProperty A function with parameters (feature, propertyName) to extract
  * the value of a property from a feature.
  */
-function propertyIsLike(comparison, value) {
-  const pattern = comparison.literal;
-
+function propertyIsLike(comparison, feature, getProperty) {
+  const value = evaluate(comparison.expression1, feature, getProperty);
   if (isNullOrUndefined(value)) {
+    return false;
+  }
+
+  const pattern = evaluate(comparison.expression2, feature, getProperty);
+  if (isNullOrUndefined(pattern)) {
     return false;
   }
 
@@ -170,33 +202,31 @@ function propertyIsLike(comparison, value) {
  * @return {bool}  does feature fullfill comparison
  */
 function doComparison(comparison, feature, getProperty) {
-  const value = getProperty(feature, comparison.propertyname);
-
   switch (comparison.operator) {
     case 'propertyislessthan':
-      return propertyIsLessThan(comparison, value);
+      return propertyIsLessThan(comparison, feature, getProperty);
     case 'propertyisequalto':
-      return propertyIsEqualTo(comparison, value);
+      return propertyIsEqualTo(comparison, feature, getProperty);
     case 'propertyislessthanorequalto':
       return (
-        propertyIsEqualTo(comparison, value) ||
-        propertyIsLessThan(comparison, value)
+        propertyIsEqualTo(comparison, feature, getProperty) ||
+        propertyIsLessThan(comparison, feature, getProperty)
       );
     case 'propertyisnotequalto':
-      return propertyIsNotEqualTo(comparison, value);
+      return propertyIsNotEqualTo(comparison, feature, getProperty);
     case 'propertyisgreaterthan':
-      return propertyIsGreaterThan(comparison, value);
+      return propertyIsGreaterThan(comparison, feature, getProperty);
     case 'propertyisgreaterthanorequalto':
       return (
-        propertyIsEqualTo(comparison, value) ||
-        propertyIsGreaterThan(comparison, value)
+        propertyIsEqualTo(comparison, feature, getProperty) ||
+        propertyIsGreaterThan(comparison, feature, getProperty)
       );
     case 'propertyisbetween':
-      return propertyIsBetween(comparison, value);
+      return propertyIsBetween(comparison, feature, getProperty);
     case 'propertyisnull':
-      return isNullOrUndefined(value);
+      return propertyIsNull(comparison, feature, getProperty);
     case 'propertyislike':
-      return propertyIsLike(comparison, value);
+      return propertyIsLike(comparison, feature, getProperty);
     default:
       throw new Error(`Unkown comparison operator ${comparison.operator}`);
   }
