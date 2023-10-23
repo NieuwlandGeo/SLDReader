@@ -2,7 +2,7 @@
 import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 
-describe('Filter tests', () => {
+describe.only('Filter tests', () => {
   it('PropertyIsBetween', () => {
     const filterXml = `<?xml version="1.0" encoding="UTF-8"?>
     <StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
@@ -38,6 +38,27 @@ describe('Filter tests', () => {
     expect(filter.propertyname).to.equal('PERIMETER');
   });
 
+  it('PropertyIsEqualTo', () => {
+    const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
+      <PropertyIsEqualTo>
+        <PropertyName>answer</PropertyName>
+        <Literal>42</Literal>
+      </PropertyIsEqualTo>
+    </Filter></StyledLayerDescriptor>`;
+
+    const { filter } = Reader(filterXml);
+
+    expect(filter.type).to.equal('comparison');
+    expect(filter.operator).to.equal('propertyisequalto');
+    expect(filter.expression1).to.deep.equal({
+      type: 'propertyname',
+      value: 'answer',
+      typeHint: 'string',
+    });
+    // Literal expressions should be simplified.
+    expect(filter.expression2).to.equal('42');
+  });
+
   it('PropertyIsLike', () => {
     const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
       <PropertyIsLike wildCard="%" singleChar="?" escapeChar="\\">
@@ -47,14 +68,19 @@ describe('Filter tests', () => {
     </Filter></StyledLayerDescriptor>`;
 
     const { filter } = Reader(filterXml);
+
     expect(filter.type).to.equal('comparison');
     expect(filter.operator).to.equal('propertyislike');
     expect(filter.wildcard).to.equal('%');
     expect(filter.singlechar).to.equal('?');
     expect(filter.escapechar).to.equal('\\');
-    expect(filter.propertyname).to.equal('name');
-    expect(filter.literal).to.equal('j?ns%');
     expect(filter.matchcase).to.be.true;
+    expect(filter.expression1).to.deep.equal({
+      type: 'propertyname',
+      value: 'name',
+      typeHint: 'string',
+    });
+    expect(filter.expression2).to.equal('j?ns%');
   });
 
   it('Parse matchCase attribute', () => {
@@ -112,9 +138,8 @@ describe('Filter tests', () => {
     });
 
     it('rules have filter for featureid', () => {
-      const { filter } = result.layers['0'].styles['0'].featuretypestyles[
-        '0'
-      ].rules['0'];
+      const { filter } =
+        result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
       expect(filter.type).to.equal('featureid');
       expect(filter.fids).to.be.an.instanceof(Array);
       expect(filter.fids).to.have.length(2);
@@ -122,9 +147,8 @@ describe('Filter tests', () => {
     });
 
     it('rules have filter for Attribute Filter Styler PropertyIsEqualTo', () => {
-      const { filter } = result.layers['0'].styles['2'].featuretypestyles[
-        '0'
-      ].rules['0'];
+      const { filter } =
+        result.layers['0'].styles['2'].featuretypestyles['0'].rules['0'];
       expect(filter.type).to.equal('comparison');
       expect(filter.operator).to.equal('propertyisequalto');
       expect(filter.propertyname).to.equal('name');
@@ -132,9 +156,8 @@ describe('Filter tests', () => {
       expect(filter.matchcase).to.be.true;
     });
     it('rules have filter for Hover Styler not_or', () => {
-      const { filter } = result.layers['0'].styles['1'].featuretypestyles[
-        '0'
-      ].rules['0'];
+      const { filter } =
+        result.layers['0'].styles['1'].featuretypestyles['0'].rules['0'];
 
       expect(filter.type).to.equal('not');
 

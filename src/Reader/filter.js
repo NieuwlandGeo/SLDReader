@@ -60,18 +60,18 @@ function isBinary(element) {
  *
  * @return {object}
  */
-function createComparison(element) {
+function createComparison(element, addParameterValueProp) {
   if (BINARY_COMPARISON_NAMES.includes(element.localName)) {
-    return createBinaryFilterComparison(element);
+    return createBinaryFilterComparison(element, addParameterValueProp);
   }
   if (element.localName === 'PropertyIsBetween') {
-    return createIsBetweenComparison(element);
+    return createIsBetweenComparison(element, addParameterValueProp);
   }
   if (element.localName === 'PropertyIsNull') {
-    return createIsNullComparison(element);
+    return createIsNullComparison(element, addParameterValueProp);
   }
   if (element.localName === 'PropertyIsLike') {
-    return createIsLikeComparison(element);
+    return createIsLikeComparison(element, addParameterValueProp);
   }
   throw new Error(`Unknown comparison element ${element.localName}`);
 }
@@ -83,18 +83,28 @@ function createComparison(element) {
  *
  * @return {object}
  */
-function createBinaryFilterComparison(element) {
-  const propertyname = getChildTextContent(element, 'PropertyName');
-  const literal = getChildTextContent(element, 'Literal');
-
-  return {
+function createBinaryFilterComparison(element, addParameterValueProp) {
+  const obj = {
     type: TYPE_COMPARISON,
     operator: element.localName.toLowerCase(),
-    propertyname,
-    literal,
     // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
     matchcase: element.getAttribute('matchCase') !== 'false',
   };
+
+  // Parse child expressions, and add them to the comparison object.
+  const parsed = {};
+  addParameterValueProp(element, parsed, 'expressions', {
+    concatenateLiterals: false,
+  });
+
+  if (parsed.expressions && parsed.expressions.children) {
+    obj.expression1 = parsed.expressions.children[0];
+    obj.expression2 = parsed.expressions.children[1];
+  }
+
+  console.log('OBJ --> ', JSON.stringify(obj, null, 2));
+
+  return obj;
 }
 
 /**
@@ -104,7 +114,16 @@ function createBinaryFilterComparison(element) {
  *
  * @return {object}
  */
-function createIsLikeComparison(element) {
+function createIsLikeComparison(element, addParameterValueProp) {
+  // A like comparison is a binary comparison expression, with extra attributes.
+  const obj = createBinaryFilterComparison(element, addParameterValueProp);
+  return {
+    ...obj,
+    wildcard: element.getAttribute('wildCard'),
+    singlechar: element.getAttribute('singleChar'),
+    escapechar: element.getAttribute('escapeChar'),
+  };
+  /*
   const propertyname = getChildTextContent(element, 'PropertyName');
   const literal = getChildTextContent(element, 'Literal');
 
@@ -119,7 +138,9 @@ function createIsLikeComparison(element) {
     // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
     matchcase: element.getAttribute('matchCase') !== 'false',
   };
+  */
 }
+
 /**
  * factory for element type PropertyIsNullType
  * @private
@@ -165,11 +186,11 @@ function createIsBetweenComparison(element) {
  *
  * @return {object}
  */
-function createBinaryLogic(element) {
+function createBinaryLogic(element, addParameterValueProp) {
   const predicates = [];
   for (let n = element.firstElementChild; n; n = n.nextElementSibling) {
     if (isComparison(n)) {
-      predicates.push(createComparison(n));
+      predicates.push(createComparison(n, addParameterValueProp));
     }
   }
   return {
@@ -185,14 +206,14 @@ function createBinaryLogic(element) {
  *
  * @return {object}
  */
-function createUnaryLogic(element) {
+function createUnaryLogic(element, addParameterValueProp) {
   let predicate = null;
   const childElement = element.firstElementChild;
   if (childElement && isComparison(childElement)) {
-    predicate = createComparison(childElement);
+    predicate = createComparison(childElement, addParameterValueProp);
   }
   if (childElement && isBinary(childElement)) {
-    predicate = createBinaryLogic(childElement);
+    predicate = createBinaryLogic(childElement, addParameterValueProp);
   }
   return {
     type: element.localName.toLowerCase(),
@@ -206,17 +227,17 @@ function createUnaryLogic(element) {
  *
  * @return {Filter}
  */
-export default function createFilter(element) {
+export default function createFilter(element, addParameterValueProp) {
   let filter = {};
   for (let n = element.firstElementChild; n; n = n.nextElementSibling) {
     if (isComparison(n)) {
-      filter = createComparison(n);
+      filter = createComparison(n, addParameterValueProp);
     }
     if (isBinary(n)) {
-      filter = createBinaryLogic(n);
+      filter = createBinaryLogic(n, addParameterValueProp);
     }
     if (n.localName.toLowerCase() === 'not') {
-      filter = createUnaryLogic(n);
+      filter = createUnaryLogic(n, addParameterValueProp);
     }
     if (n.localName.toLowerCase() === 'featureid') {
       filter.type = 'featureid';

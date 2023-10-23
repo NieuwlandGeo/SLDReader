@@ -79,9 +79,11 @@ function addNumericProp(node, obj, prop) {
  * If it's not an array, return unmodified.
  * @param {Array<OGCExpression>} expressions An array of ogc:Expression objects.
  * @param {string} typeHint Expression type. Choose 'string' or 'number'.
+ * @param {boolean} concatenateLiterals When true, and when all expressions are literals,
+ * concatenate all literal expressions into a single string.
  * @return {Array<OGCExpression>|OGCExpression|string} Simplified version of the expression array.
  */
-function simplifyChildExpressions(expressions, typeHint) {
+function simplifyChildExpressions(expressions, typeHint, concatenateLiterals) {
   if (!Array.isArray(expressions)) {
     return expressions;
   }
@@ -97,11 +99,13 @@ function simplifyChildExpressions(expressions, typeHint) {
     .filter(expression => expression !== '');
 
   // If expression children are all literals, concatenate them into a string.
-  const allLiteral = simplifiedExpressions.every(
-    expr => typeof expr !== 'object' || expr === null
-  );
-  if (allLiteral) {
-    return simplifiedExpressions.join('');
+  if (concatenateLiterals) {
+    const allLiteral = simplifiedExpressions.every(
+      expr => typeof expr !== 'object' || expr === null
+    );
+    if (allLiteral) {
+      return simplifiedExpressions.join('');
+    }
   }
 
   // If expression only has one child, return child instead.
@@ -140,12 +144,15 @@ function simplifyChildExpressions(expressions, typeHint) {
  * @param {object} [options.skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
  * @param {object} [options.forceLowerCase] Default true. If true, convert prop name to lower case before adding it to obj.
  * @param {object} [options.typeHint] Default 'string'. When set to 'number', a simple literal value will be converted to a number.
+ * @param {object} [options.concatenateLiterals] Default true. When true, and when all expressions are literals,
+ * concatenate all literal expressions into a single string.
  */
 function addParameterValueProp(node, obj, prop, options = {}) {
   const defaultParseOptions = {
     skipEmptyNodes: true,
     forceLowerCase: true,
     typeHint: 'string',
+    concatenateLiterals: true,
   };
 
   const parseOptions = {
@@ -193,7 +200,8 @@ function addParameterValueProp(node, obj, prop, options = {}) {
   // For example: if they are all literals --> concatenate into string.
   let simplifiedValue = simplifyChildExpressions(
     childExpressions,
-    parseOptions.typeHint
+    parseOptions.typeHint,
+    parseOptions.concatenateLiterals
   );
 
   // Convert simple string value to number if type hint is number.
@@ -261,7 +269,7 @@ function addParameterValue(element, obj, prop, parameterGroup) {
 
 const FilterParsers = {
   Filter: (element, obj) => {
-    obj.filter = createFilter(element);
+    obj.filter = createFilter(element, addParameterValueProp);
   },
   ElseFilter: (element, obj) => {
     obj.elsefilter = true;
