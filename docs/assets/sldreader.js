@@ -30,25 +30,6 @@
     'PropertyIsNull',
     'PropertyIsBetween' ]);
 
-  /**
-   * @private
-   * @param {string} localName
-   *
-   * @return null|string
-   */
-  function getChildTextContent(node, localName) {
-    var propertyNameElement = node
-      .getElementsByTagNameNS(node.namespaceURI, localName)
-      .item(0);
-    if (!propertyNameElement) {
-      return null;
-    }
-    if (propertyNameElement.parentNode !== node) {
-      throw new Error('Expected direct descant');
-    }
-    return propertyNameElement ? propertyNameElement.textContent.trim() : null;
-  }
-
   function isComparison(element) {
     return COMPARISON_NAMES.includes(element.localName);
   }
@@ -64,18 +45,18 @@
    *
    * @return {object}
    */
-  function createComparison(element) {
+  function createComparison(element, addParameterValueProp) {
     if (BINARY_COMPARISON_NAMES.includes(element.localName)) {
-      return createBinaryFilterComparison(element);
+      return createBinaryFilterComparison(element, addParameterValueProp);
     }
     if (element.localName === 'PropertyIsBetween') {
-      return createIsBetweenComparison(element);
+      return createIsBetweenComparison(element, addParameterValueProp);
     }
     if (element.localName === 'PropertyIsNull') {
-      return createIsNullComparison(element);
+      return createIsNullComparison(element, addParameterValueProp);
     }
     if (element.localName === 'PropertyIsLike') {
-      return createIsLikeComparison(element);
+      return createIsLikeComparison(element, addParameterValueProp);
     }
     throw new Error(("Unknown comparison element " + (element.localName)));
   }
@@ -87,18 +68,26 @@
    *
    * @return {object}
    */
-  function createBinaryFilterComparison(element) {
-    var propertyname = getChildTextContent(element, 'PropertyName');
-    var literal = getChildTextContent(element, 'Literal');
-
-    return {
+  function createBinaryFilterComparison(element, addParameterValueProp) {
+    var obj = {
       type: TYPE_COMPARISON,
       operator: element.localName.toLowerCase(),
-      propertyname: propertyname,
-      literal: literal,
       // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
       matchcase: element.getAttribute('matchCase') !== 'false',
     };
+
+    // Parse child expressions, and add them to the comparison object.
+    var parsed = {};
+    addParameterValueProp(element, parsed, 'expressions', {
+      concatenateLiterals: false,
+    });
+
+    if (parsed.expressions && parsed.expressions.children) {
+      obj.expression1 = parsed.expressions.children[0];
+      obj.expression2 = parsed.expressions.children[1];
+    }
+
+    return obj;
   }
 
   /**
@@ -108,22 +97,15 @@
    *
    * @return {object}
    */
-  function createIsLikeComparison(element) {
-    var propertyname = getChildTextContent(element, 'PropertyName');
-    var literal = getChildTextContent(element, 'Literal');
-
-    return {
-      type: TYPE_COMPARISON,
-      operator: element.localName.toLowerCase(),
-      propertyname: propertyname,
-      literal: literal,
-      wildcard: element.getAttribute('wildCard'),
+  function createIsLikeComparison(element, addParameterValueProp) {
+    // A like comparison is a binary comparison expression, with extra attributes.
+    var obj = createBinaryFilterComparison(element, addParameterValueProp);
+    return Object.assign({}, obj,
+      {wildcard: element.getAttribute('wildCard'),
       singlechar: element.getAttribute('singleChar'),
-      escapechar: element.getAttribute('escapeChar'),
-      // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
-      matchcase: element.getAttribute('matchCase') !== 'false',
-    };
+      escapechar: element.getAttribute('escapeChar')});
   }
+
   /**
    * factory for element type PropertyIsNullType
    * @private
@@ -131,13 +113,16 @@
    *
    * @return {object}
    */
-  function createIsNullComparison(element) {
-    var propertyname = getChildTextContent(element, 'PropertyName');
+  function createIsNullComparison(element, addParameterValueProp) {
+    var parsed = {};
+    addParameterValueProp(element, parsed, 'expressions', {
+      concatenateLiterals: false,
+    });
 
     return {
       type: TYPE_COMPARISON,
       operator: element.localName.toLowerCase(),
-      propertyname: propertyname,
+      expression: parsed.expressions,
     };
   }
   /**
@@ -147,19 +132,28 @@
    *
    * @return {object}
    */
-  function createIsBetweenComparison(element) {
-    var propertyname = getChildTextContent(element, 'PropertyName');
-    var lowerboundary = getChildTextContent(element, 'LowerBoundary');
-    var upperboundary = getChildTextContent(element, 'UpperBoundary');
-    return {
+  function createIsBetweenComparison(element, addParameterValueProp) {
+    var obj = {
       type: TYPE_COMPARISON,
       operator: element.localName.toLowerCase(),
-      lowerboundary: lowerboundary,
-      upperboundary: upperboundary,
-      propertyname: propertyname,
       // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
       matchcase: element.getAttribute('matchCase') !== 'false',
     };
+
+    // Parse child expressions, and add them to the comparison object.
+    var parsed = {};
+    addParameterValueProp(element, parsed, 'expressions', {
+      concatenateLiterals: false,
+    });
+
+    if (parsed.expressions && parsed.expressions.children) {
+      // According to spec, the child elements should be expression, lower boundary, upper boundary.
+      obj.expression = parsed.expressions.children[0];
+      obj.lowerboundary = parsed.expressions.children[1];
+      obj.upperboundary = parsed.expressions.children[2];
+    }
+
+    return obj;
   }
 
   /**
@@ -169,11 +163,17 @@
    *
    * @return {object}
    */
-  function createBinaryLogic(element) {
+  function createBinaryLogic(element, addParameterValueProp) {
     var predicates = [];
     for (var n = element.firstElementChild; n; n = n.nextElementSibling) {
-      if (isComparison(n)) {
-        predicates.push(createComparison(n));
+      if (n && isComparison(n)) {
+        predicates.push(createComparison(n, addParameterValueProp));
+      }
+      if (n && isBinary(n)) {
+        predicates.push(createBinaryLogic(n, addParameterValueProp));
+      }
+      if (n && n.localName.toLowerCase() === 'not') {
+        predicates.push(createUnaryLogic(n, addParameterValueProp));
       }
     }
     return {
@@ -189,14 +189,17 @@
    *
    * @return {object}
    */
-  function createUnaryLogic(element) {
+  function createUnaryLogic(element, addParameterValueProp) {
     var predicate = null;
     var childElement = element.firstElementChild;
     if (childElement && isComparison(childElement)) {
-      predicate = createComparison(childElement);
+      predicate = createComparison(childElement, addParameterValueProp);
     }
     if (childElement && isBinary(childElement)) {
-      predicate = createBinaryLogic(childElement);
+      predicate = createBinaryLogic(childElement, addParameterValueProp);
+    }
+    if (childElement && childElement.localName.toLowerCase() === 'not') {
+      predicate = createUnaryLogic(childElement, addParameterValueProp);
     }
     return {
       type: element.localName.toLowerCase(),
@@ -210,17 +213,17 @@
    *
    * @return {Filter}
    */
-  function createFilter(element) {
+  function createFilter(element, addParameterValueProp) {
     var filter = {};
     for (var n = element.firstElementChild; n; n = n.nextElementSibling) {
       if (isComparison(n)) {
-        filter = createComparison(n);
+        filter = createComparison(n, addParameterValueProp);
       }
       if (isBinary(n)) {
-        filter = createBinaryLogic(n);
+        filter = createBinaryLogic(n, addParameterValueProp);
       }
       if (n.localName.toLowerCase() === 'not') {
-        filter = createUnaryLogic(n);
+        filter = createUnaryLogic(n, addParameterValueProp);
       }
       if (n.localName.toLowerCase() === 'featureid') {
         filter.type = 'featureid';
@@ -343,9 +346,11 @@
    * If it's not an array, return unmodified.
    * @param {Array<OGCExpression>} expressions An array of ogc:Expression objects.
    * @param {string} typeHint Expression type. Choose 'string' or 'number'.
+   * @param {boolean} concatenateLiterals When true, and when all expressions are literals,
+   * concatenate all literal expressions into a single string.
    * @return {Array<OGCExpression>|OGCExpression|string} Simplified version of the expression array.
    */
-  function simplifyChildExpressions(expressions, typeHint) {
+  function simplifyChildExpressions(expressions, typeHint, concatenateLiterals) {
     if (!Array.isArray(expressions)) {
       return expressions;
     }
@@ -361,11 +366,13 @@
       .filter(function (expression) { return expression !== ''; });
 
     // If expression children are all literals, concatenate them into a string.
-    var allLiteral = simplifiedExpressions.every(
-      function (expr) { return typeof expr !== 'object' || expr === null; }
-    );
-    if (allLiteral) {
-      return simplifiedExpressions.join('');
+    if (concatenateLiterals) {
+      var allLiteral = simplifiedExpressions.every(
+        function (expr) { return typeof expr !== 'object' || expr === null; }
+      );
+      if (allLiteral) {
+        return simplifiedExpressions.join('');
+      }
     }
 
     // If expression only has one child, return child instead.
@@ -404,6 +411,8 @@
    * @param {object} [options.skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
    * @param {object} [options.forceLowerCase] Default true. If true, convert prop name to lower case before adding it to obj.
    * @param {object} [options.typeHint] Default 'string'. When set to 'number', a simple literal value will be converted to a number.
+   * @param {object} [options.concatenateLiterals] Default true. When true, and when all expressions are literals,
+   * concatenate all literal expressions into a single string.
    */
   function addParameterValueProp(node, obj, prop, options) {
     if ( options === void 0 ) options = {};
@@ -412,6 +421,7 @@
       skipEmptyNodes: true,
       forceLowerCase: true,
       typeHint: 'string',
+      concatenateLiterals: true,
     };
 
     var parseOptions = Object.assign({}, defaultParseOptions,
@@ -457,7 +467,8 @@
     // For example: if they are all literals --> concatenate into string.
     var simplifiedValue = simplifyChildExpressions(
       childExpressions,
-      parseOptions.typeHint
+      parseOptions.typeHint,
+      parseOptions.concatenateLiterals
     );
 
     // Convert simple string value to number if type hint is number.
@@ -527,7 +538,7 @@
 
   var FilterParsers = {
     Filter: function (element, obj) {
-      obj.filter = createFilter(element);
+      obj.filter = createFilter(element, addParameterValueProp);
     },
     ElseFilter: function (element, obj) {
       obj.elsefilter = true;
@@ -735,6 +746,125 @@
    * @property {Number} graphic.rotation
    * */
 
+  // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
+  // Constant expressions are returned as-is.
+
+  /**
+   * Check if an expression depends on feature properties.
+   * @param {object} expression OGC expression object.
+   * @returns {bool} Returns true if the expression depends on feature properties.
+   */
+  function isDynamicExpression(expression) {
+    switch ((expression || {}).type) {
+      case 'expression':
+        // Expressions with all static values are already concatenated into a static string,
+        // so any expression that survives that process has at least one dynamic component.
+        return true;
+      case 'literal':
+        return false;
+      case 'propertyname':
+        return true;
+      case 'function':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * @private
+   * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
+   * Constant expressions are returned as-is.
+   * @param {object|string} expression SLD object expression.
+   * @param {ol/feature} feature OpenLayers feature instance.
+   * @param {function} getProperty A function to get a specific property value from a feature.
+   * @param {any} defaultValue Optional default value to use when feature is null.
+   * Signature (feature, propertyName) => property value.
+   */
+  function evaluate(
+    expression,
+    feature,
+    getProperty,
+    defaultValue
+  ) {
+    if ( defaultValue === void 0 ) defaultValue = null;
+
+    // Determine the value of the expression.
+    var value = null;
+
+    var jsType = typeof expression;
+    if (
+      jsType === 'string' ||
+      jsType === 'number' ||
+      jsType === 'undefined' ||
+      expression === null
+    ) {
+      // Expression value equals the expression itself if it's a native javascript type.
+      value = expression;
+    } else if (expression.type === 'literal') {
+      // Take expression value directly from literal type expression.
+      value = expression.value;
+    } else if (expression.type === 'propertyname') {
+      // Expression value is taken from input feature.
+      // If feature is null/undefined, use default value instead.
+      if (feature) {
+        value = getProperty(feature, expression.value);
+      } else {
+        value = defaultValue;
+      }
+    } else if (expression.type === 'expression') {
+      // Expression value is the concatenation of all child expession values.
+      if (expression.children.length === 1) {
+        value = evaluate(
+          expression.children[0],
+          feature,
+          getProperty,
+          defaultValue
+        );
+      } else {
+        // In case of multiple child expressions, concatenate the evaluated child results.
+        var childValues = [];
+        for (var k = 0; k < expression.children.length; k += 1) {
+          childValues.push(
+            // Do not use default values when evaluating children. Only apply default is
+            // the concatenated result is empty.
+            evaluate(expression.children[k], feature, getProperty, null)
+          );
+        }
+        value = childValues.join('');
+      }
+    } else if (expression.type === 'function') {
+      // Todo: evaluate function expression.
+      // For now, return null.
+      value = null;
+    }
+
+    // Do not substitute default value if the value is numeric zero.
+    if (value === 0) {
+      return value;
+    }
+
+    // Check if value is empty/null. If so, return default value.
+    if (
+      value === null ||
+      typeof value === 'undefined' ||
+      value === '' ||
+      Number.isNaN(value)
+    ) {
+      return defaultValue;
+    }
+
+    // Convert value to number if expression is flagged as numeric.
+    if (expression && expression.typeHint === 'number') {
+      value = Number(value);
+      if (Number.isNaN(value)) {
+        return defaultValue;
+      }
+    }
+
+    return value;
+  }
+
   function isNullOrUndefined(value) {
     /* eslint-disable-next-line eqeqeq */
     return value == null;
@@ -780,41 +910,59 @@
     return aString.toLowerCase().localeCompare(bString.toLowerCase());
   }
 
-  function propertyIsLessThan(comparison, value) {
-    if (isNullOrUndefined(value)) {
-      return false;
-    }
-
-    if (isNullOrUndefined(comparison.literal)) {
-      return false;
-    }
-
-    return compare(value, comparison.literal) < 0;
+  function propertyIsNull(comparison, feature, getProperty) {
+    var value = evaluate(comparison.expression, feature, getProperty);
+    return isNullOrUndefined(value);
   }
 
-  function propertyIsGreaterThan(comparison, value) {
-    if (isNullOrUndefined(value)) {
+  function propertyIsLessThan(comparison, feature, getProperty) {
+    var value1 = evaluate(comparison.expression1, feature, getProperty);
+    if (isNullOrUndefined(value1)) {
       return false;
     }
 
-    if (isNullOrUndefined(comparison.literal)) {
+    var value2 = evaluate(comparison.expression2, feature, getProperty);
+    if (isNullOrUndefined(value2)) {
       return false;
     }
 
-    return compare(value, comparison.literal) > 0;
+    return compare(value1, value2) < 0;
   }
 
-  function propertyIsBetween(comparison, value) {
+  function propertyIsGreaterThan(comparison, feature, getProperty) {
+    var value1 = evaluate(comparison.expression1, feature, getProperty);
+    if (isNullOrUndefined(value1)) {
+      return false;
+    }
+
+    var value2 = evaluate(comparison.expression2, feature, getProperty);
+    if (isNullOrUndefined(value2)) {
+      return false;
+    }
+
+    return compare(value1, value2) > 0;
+  }
+
+  function propertyIsBetween(comparison, feature, getProperty) {
+    var value = evaluate(comparison.expression, feature, getProperty);
     if (isNullOrUndefined(value)) {
       return false;
     }
 
-    var lowerBoundary = comparison.lowerboundary;
+    var lowerBoundary = evaluate(
+      comparison.lowerboundary,
+      feature,
+      getProperty
+    );
     if (isNullOrUndefined(lowerBoundary)) {
       return false;
     }
 
-    var upperBoundary = comparison.upperboundary;
+    var upperBoundary = evaluate(
+      comparison.upperboundary,
+      feature,
+      getProperty
+    );
     if (isNullOrUndefined(upperBoundary)) {
       return false;
     }
@@ -824,32 +972,40 @@
     );
   }
 
-  function propertyIsEqualTo(comparison, value) {
-    if (isNullOrUndefined(value)) {
+  function propertyIsEqualTo(comparison, feature, getProperty) {
+    var value1 = evaluate(comparison.expression1, feature, getProperty);
+    if (isNullOrUndefined(value1)) {
       return false;
     }
 
-    if (isNullOrUndefined(comparison.literal)) {
+    var value2 = evaluate(comparison.expression2, feature, getProperty);
+    if (isNullOrUndefined(value2)) {
       return false;
     }
 
     if (!comparison.matchcase) {
-      return compare(comparison.literal, value, false) === 0;
+      return compare(value1, value2, false) === 0;
     }
 
     /* eslint-disable-next-line eqeqeq */
-    return value == comparison.literal;
+    return value1 == value2;
   }
 
   // Watch out! Null-ish values should not pass propertyIsNotEqualTo,
   // just like in databases.
   // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
-  function propertyIsNotEqualTo(comparison, value) {
-    if (isNullOrUndefined(value)) {
+  function propertyIsNotEqualTo(comparison, feature, getProperty) {
+    var value1 = evaluate(comparison.expression1, feature, getProperty);
+    if (isNullOrUndefined(value1)) {
       return false;
     }
 
-    return !propertyIsEqualTo(comparison, value);
+    var value2 = evaluate(comparison.expression2, feature, getProperty);
+    if (isNullOrUndefined(value2)) {
+      return false;
+    }
+
+    return !propertyIsEqualTo(comparison, feature, getProperty);
   }
 
   /**
@@ -860,10 +1016,14 @@
    * @param {object} getProperty A function with parameters (feature, propertyName) to extract
    * the value of a property from a feature.
    */
-  function propertyIsLike(comparison, value) {
-    var pattern = comparison.literal;
-
+  function propertyIsLike(comparison, feature, getProperty) {
+    var value = evaluate(comparison.expression1, feature, getProperty);
     if (isNullOrUndefined(value)) {
+      return false;
+    }
+
+    var pattern = evaluate(comparison.expression2, feature, getProperty);
+    if (isNullOrUndefined(pattern)) {
       return false;
     }
 
@@ -910,33 +1070,31 @@
    * @return {bool}  does feature fullfill comparison
    */
   function doComparison(comparison, feature, getProperty) {
-    var value = getProperty(feature, comparison.propertyname);
-
     switch (comparison.operator) {
       case 'propertyislessthan':
-        return propertyIsLessThan(comparison, value);
+        return propertyIsLessThan(comparison, feature, getProperty);
       case 'propertyisequalto':
-        return propertyIsEqualTo(comparison, value);
+        return propertyIsEqualTo(comparison, feature, getProperty);
       case 'propertyislessthanorequalto':
         return (
-          propertyIsEqualTo(comparison, value) ||
-          propertyIsLessThan(comparison, value)
+          propertyIsEqualTo(comparison, feature, getProperty) ||
+          propertyIsLessThan(comparison, feature, getProperty)
         );
       case 'propertyisnotequalto':
-        return propertyIsNotEqualTo(comparison, value);
+        return propertyIsNotEqualTo(comparison, feature, getProperty);
       case 'propertyisgreaterthan':
-        return propertyIsGreaterThan(comparison, value);
+        return propertyIsGreaterThan(comparison, feature, getProperty);
       case 'propertyisgreaterthanorequalto':
         return (
-          propertyIsEqualTo(comparison, value) ||
-          propertyIsGreaterThan(comparison, value)
+          propertyIsEqualTo(comparison, feature, getProperty) ||
+          propertyIsGreaterThan(comparison, feature, getProperty)
         );
       case 'propertyisbetween':
-        return propertyIsBetween(comparison, value);
+        return propertyIsBetween(comparison, feature, getProperty);
       case 'propertyisnull':
-        return isNullOrUndefined(value);
+        return propertyIsNull(comparison, feature, getProperty);
       case 'propertyislike':
-        return propertyIsLike(comparison, value);
+        return propertyIsLike(comparison, feature, getProperty);
       default:
         throw new Error(("Unkown comparison operator " + (comparison.operator)));
     }
@@ -1871,125 +2029,6 @@
           rotation: rotationRadians,
         });
     }
-  }
-
-  // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
-  // Constant expressions are returned as-is.
-
-  /**
-   * Check if an expression depends on feature properties.
-   * @param {object} expression OGC expression object.
-   * @returns {bool} Returns true if the expression depends on feature properties.
-   */
-  function isDynamicExpression(expression) {
-    switch ((expression || {}).type) {
-      case 'expression':
-        // Expressions with all static values are already concatenated into a static string,
-        // so any expression that survives that process has at least one dynamic component.
-        return true;
-      case 'literal':
-        return false;
-      case 'propertyname':
-        return true;
-      case 'function':
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * @private
-   * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
-   * Constant expressions are returned as-is.
-   * @param {object|string} expression SLD object expression.
-   * @param {ol/feature} feature OpenLayers feature instance.
-   * @param {function} getProperty A function to get a specific property value from a feature.
-   * @param {any} defaultValue Optional default value to use when feature is null.
-   * Signature (feature, propertyName) => property value.
-   */
-  function evaluate(
-    expression,
-    feature,
-    getProperty,
-    defaultValue
-  ) {
-    if ( defaultValue === void 0 ) defaultValue = null;
-
-    // Determine the value of the expression.
-    var value = null;
-
-    var jsType = typeof expression;
-    if (
-      jsType === 'string' ||
-      jsType === 'number' ||
-      jsType === 'undefined' ||
-      expression === null
-    ) {
-      // Expression value equals the expression itself if it's a native javascript type.
-      value = expression;
-    } else if (expression.type === 'literal') {
-      // Take expression value directly from literal type expression.
-      value = expression.value;
-    } else if (expression.type === 'propertyname') {
-      // Expression value is taken from input feature.
-      // If feature is null/undefined, use default value instead.
-      if (feature) {
-        value = getProperty(feature, expression.value);
-      } else {
-        value = defaultValue;
-      }
-    } else if (expression.type === 'expression') {
-      // Expression value is the concatenation of all child expession values.
-      if (expression.children.length === 1) {
-        value = evaluate(
-          expression.children[0],
-          feature,
-          getProperty,
-          defaultValue
-        );
-      } else {
-        // In case of multiple child expressions, concatenate the evaluated child results.
-        var childValues = [];
-        for (var k = 0; k < expression.children.length; k += 1) {
-          childValues.push(
-            // Do not use default values when evaluating children. Only apply default is
-            // the concatenated result is empty.
-            evaluate(expression.children[k], feature, getProperty, null)
-          );
-        }
-        value = childValues.join('');
-      }
-    } else if (expression.type === 'function') {
-      // Todo: evaluate function expression.
-      // For now, return null.
-      value = null;
-    }
-
-    // Do not substitute default value if the value is numeric zero.
-    if (value === 0) {
-      return value;
-    }
-
-    // Check if value is empty/null. If so, return default value.
-    if (
-      value === null ||
-      typeof value === 'undefined' ||
-      value === '' ||
-      Number.isNaN(value)
-    ) {
-      return defaultValue;
-    }
-
-    // Convert value to number if expression is flagged as numeric.
-    if (expression && expression.typeHint === 'number') {
-      value = Number(value);
-      if (Number.isNaN(value)) {
-        return defaultValue;
-      }
-    }
-
-    return value;
   }
 
   /* eslint-disable import/prefer-default-export */
