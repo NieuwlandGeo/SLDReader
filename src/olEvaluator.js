@@ -59,8 +59,17 @@ export default function evaluate(
   } else if (expression.type === 'propertyname') {
     // Expression value is taken from input feature.
     // If feature is null/undefined, use default value instead.
+    const propertyName = expression.value;
     if (feature) {
-      value = getProperty(feature, expression.value);
+      // If the property name equals the geometry field name, return the feature geometry.
+      if (
+        typeof feature.getGeometryName === 'function' &&
+        propertyName === feature.getGeometryName()
+      ) {
+        value = feature.getGeometry();
+      } else {
+        value = getProperty(feature, propertyName);
+      }
     } else {
       value = defaultValue;
     }

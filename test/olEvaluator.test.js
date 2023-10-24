@@ -1,5 +1,6 @@
 /* global describe it expect before beforeEach after */
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
+import OLLineString from 'ol/geom/LineString';
 
 import evaluate from '../src/olEvaluator';
 import addBuiltInFunctions from '../src/functions/builtins';
@@ -222,6 +223,38 @@ describe('Expression evaluation', () => {
       const functionExpression = filter.expression1;
       const result = evaluate(functionExpression, feature, getProperty);
       expect(result).to.equal('nieuwland');
+    });
+  });
+
+  describe('Geometry-valued expressions', () => {
+    let lineFeature;
+    before(() => {
+      const lineGeoJSON = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [0, 0],
+            [1, 1],
+          ],
+        },
+        properties: {},
+      };
+      lineFeature = fmtGeoJSON.readFeature(lineGeoJSON);
+    });
+
+    it('Propertyname expression using geometry field name returns OpenLayers geometry', () => {
+      // Note, 'geometry' is the default geometry field name used by OpenLayers.
+      const expression = {
+        type: 'propertyname',
+        value: 'geometry',
+      };
+      const result = evaluate(expression, lineFeature, getProperty);
+      expect(result instanceof OLLineString).to.be.true;
+      expect(result.getCoordinates()).to.deep.equal([
+        [0, 0],
+        [1, 1],
+      ]);
     });
   });
 });
