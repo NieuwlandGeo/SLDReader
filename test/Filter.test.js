@@ -1,8 +1,12 @@
+import OLFormatGeoJSON from 'ol/format/GeoJSON';
+
 import { filterSelector, scaleSelector } from '../src/Filter';
 /* global describe it before beforeEach after expect */
 import Reader from '../src/Reader';
 import { clearFunctionCache } from '../src/functions';
 import addBuiltInFunctions from '../src/functions/builtins';
+
+const fmtGeoJSON = new OLFormatGeoJSON();
 
 describe('filter rules', () => {
   describe('FID filter', () => {
@@ -668,6 +672,32 @@ describe('Custom property extraction', () => {
       const { filter } = Reader(filterXml);
       const feature = { properties: { title: 'Nieuwland' } };
       const result = filterSelector(filter, feature);
+      expect(result).to.be.true;
+    });
+
+    it('Comparison using a geometry function', () => {
+      const lineGeoJSON = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [0, 0],
+            [1, 1],
+          ],
+        },
+        properties: {},
+      };
+      const lineFeature = fmtGeoJSON.readFeature(lineGeoJSON);
+      const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <Function name="dimension">
+            <PropertyName>geometry</PropertyName>
+          </Function>
+          <Literal>1</Literal>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const result = filterSelector(filter, lineFeature);
       expect(result).to.be.true;
     });
   });
