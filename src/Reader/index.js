@@ -173,6 +173,30 @@ function addParameterValueProp(node, obj, prop, options = {}) {
       childExpression.type = 'propertyname';
       childExpression.typeHint = parseOptions.typeHint;
       childExpression.value = childNode.textContent.trim();
+    } else if (
+      childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
+      childNode.localName === 'Function'
+    ) {
+      const functionName = childNode.getAttribute('name');
+      const fallbackValue = childNode.getAttribute('fallbackValue') || null;
+      childExpression.type = 'function';
+      childExpression.name = functionName;
+      childExpression.fallbackValue = fallbackValue;
+
+      // Parse function parameters.
+      // Parse child expressions, and add them to the comparison object.
+      const parsed = {};
+      addParameterValueProp(childNode, parsed, 'params', {
+        concatenateLiterals: false,
+      });
+      if (Array.isArray(parsed.params.children)) {
+        // Case 0 or more than 1 children.
+        childExpression.params = parsed.params.children;
+      } else {
+        // Special case of 1 parameter.
+        // An array containing one expression is simplified into the expression itself.
+        childExpression.params = [parsed.params];
+      }
     } else if (childNode.nodeName === '#cdata-section') {
       // Add CDATA section text content untrimmed.
       childExpression.type = 'literal';

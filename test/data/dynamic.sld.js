@@ -61,6 +61,22 @@ export const dynamicSld = `<?xml version="1.0" encoding="UTF-8"?>
             <sld:VendorOption name="maxDisplacement">1</sld:VendorOption>
           </sld:TextSymbolizer>
         </sld:Rule>
+        <sld:Rule>
+          <ogc:ElseFilter />
+          <sld:PointSymbolizer>
+            <sld:Graphic>
+              <sld:Mark>
+                <sld:WellKnownName>circle</sld:WellKnownName>
+                <sld:Fill>
+                  <sld:SvgParameter name="fill">
+                    <ogc:Function name="random_color"></ogc:Function>
+                  </sld:SvgParameter>
+                </sld:Fill>
+              </sld:Mark>
+              <sld:Size>10</sld:Size>
+            </sld:Graphic>
+          </sld:PointSymbolizer>
+        </sld:Rule>  
       </sld:FeatureTypeStyle>
     </UserStyle>
   </NamedLayer>
