@@ -1,6 +1,8 @@
 import { filterSelector, scaleSelector } from '../src/Filter';
-/* global describe it before beforeEach expect */
+/* global describe it before beforeEach after expect */
 import Reader from '../src/Reader';
+import { clearFunctionCache } from '../src/functions';
+import addBuiltInFunctions from '../src/functions/builtins';
 
 describe('filter rules', () => {
   describe('FID filter', () => {
@@ -638,6 +640,33 @@ describe('Custom property extraction', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { prop1: 42, prop2: 42 } };
+      const result = filterSelector(filter, feature);
+      expect(result).to.be.true;
+    });
+  });
+
+  describe('Functions in filters', () => {
+    before(() => {
+      addBuiltInFunctions();
+    });
+
+    after(() => {
+      clearFunctionCache();
+    });
+
+    it('Comparison using function value', () => {
+      // Yes, I know the matchCase attribute exists on binary comparison operators.
+      // This is just testing if the function gets called correctly.
+      const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <Function name="upper">
+            <PropertyName>title</PropertyName>
+          </Function>
+          <Literal>NIEUWLAND</Literal>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const feature = { properties: { title: 'Nieuwland' } };
       const result = filterSelector(filter, feature);
       expect(result).to.be.true;
     });

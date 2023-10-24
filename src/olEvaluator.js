@@ -1,6 +1,8 @@
 // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
 // Constant expressions are returned as-is.
 
+import { getFunction } from './functions';
+
 /**
  * Check if an expression depends on feature properties.
  * @param {object} expression OGC expression object.
@@ -84,9 +86,20 @@ export default function evaluate(
       value = childValues.join('');
     }
   } else if (expression.type === 'function') {
-    // Todo: evaluate function expression.
-    // For now, return null.
-    value = null;
+    const func = getFunction(expression.name);
+    if (!func) {
+      value = expression.fallbackValue;
+    } else {
+      try {
+        // evaluate parameter expressions.
+        const paramValues = expression.params.map(paramExpression =>
+          evaluate(paramExpression, feature, getProperty)
+        );
+        value = func(...paramValues);
+      } catch (e) {
+        value = expression.fallbackValue;
+      }
+    }
   }
 
   // Do not substitute default value if the value is numeric zero.

@@ -1,7 +1,10 @@
-/* global describe it expect beforeEach */
+/* global describe it expect before beforeEach after */
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
 import evaluate from '../src/olEvaluator';
+import addBuiltInFunctions from '../src/functions/builtins';
+import { clearFunctionCache } from '../src/functions';
+import { Reader } from '../src';
 
 const geojson = {
   type: 'Feature',
@@ -194,6 +197,31 @@ describe('Expression evaluation', () => {
           )
         ).to.equal('DEFAULT');
       });
+    });
+  });
+
+  describe('Function evaluation', () => {
+    before(() => {
+      addBuiltInFunctions();
+    });
+
+    after(() => {
+      clearFunctionCache();
+    });
+
+    it('Evaluate function expression', () => {
+      const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <Function name="strToLowerCase">
+            <PropertyName>title</PropertyName>
+          </Function>
+          <Literal>nieuwland</Literal>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const functionExpression = filter.expression1;
+      const result = evaluate(functionExpression, feature, getProperty);
+      expect(result).to.equal('nieuwland');
     });
   });
 });
