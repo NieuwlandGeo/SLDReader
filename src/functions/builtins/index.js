@@ -174,17 +174,39 @@ function qgisGeometryType(olGeometry) {
   }
 }
 
-export default function addBuiltInFunctions() {
-  // Geoserver functions
-  registerFunction('strToLowerCase', strToLowerCase);
-  registerFunction('strToUpperCase', strToUpperCase);
-  registerFunction('strSubstring', strSubstring);
-  registerFunction('strSubstringStart', strSubstringStart);
-  registerFunction('dimension', dimension);
+/**
+ * Test if the first argument is the same as any of the other arguments.
+ * Equality is determined by comparing test and candidates as strings.
+ * @param  {...any} inputArgs Input arguments.
+ * @returns {boolean} True if the first argument is the same as any of the other arguments
+ * using string-based comparison.
+ */
+function stringIn(...inputArgs) {
+  const [test, ...candidates] = inputArgs;
+  // Compare test with candidates as string.
+  const testString = asString(test);
+  return candidates.some(candidate => asString(candidate) === testString);
+}
 
+export default function addBuiltInFunctions() {
   // QGIS functions
   registerFunction('lower', strToLowerCase);
   registerFunction('upper', strToUpperCase);
   registerFunction('geometry_type', qgisGeometryType);
   registerFunction('substr', qgisSubstr);
+
+  // Geoserver functions
+  registerFunction('strToLowerCase', strToLowerCase);
+  registerFunction('strToUpperCase', strToUpperCase);
+  registerFunction('strSubstring', strSubstring);
+  registerFunction('strSubstringStart', strSubstringStart);
+  registerFunction('geometryType', geometryType);
+  registerFunction('dimension', dimension);
+  registerFunction('in', stringIn);
+  // Also register in2/in10 as alias for the in function.
+  // This is done for backwards compatibility with older geoservers, which have explicit 'in'
+  // function versions for 2 to 10 parameters.
+  for (let k = 2; k <= 10; k += 1) {
+    registerFunction(`in${k}`, stringIn);
+  }
 }

@@ -99,4 +99,23 @@ describe('Builtin function implementations', () => {
       expect(strSubstringStart('HELLO', -2)).to.equal('LO');
     });
   });
+
+  describe('Set membership using "in" function', () => {
+    it('Test membership for strings', () => {
+      const inFunc = getFunction('in');
+      // prettier-ignore
+      expect(inFunc('fox', 'the', 'quick', 'brown', 'fox', 'jumps', 'over', 'the', 'lazy', 'dog')).to.be.true;
+    });
+
+    it('Test membership for numbers using string-based comparison', () => {
+      const inFunc = getFunction('in');
+      // prettier-ignore
+      expect(inFunc(42, '1', '2', '3', '42', '100')).to.be.true;
+    });
+
+    it('Use geoserver inN alias', () => {
+      const in4 = getFunction('in4');
+      expect(in4('fox', 'the', 'quick', 'brown', 'fox')).to.be.true;
+    });
+  });
 });

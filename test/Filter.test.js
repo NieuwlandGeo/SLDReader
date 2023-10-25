@@ -245,6 +245,34 @@ describe('filter rules', () => {
         expect(filterSelector(filter, feature)).to.be.true;
       });
     });
+
+    describe('Boolean equality testing', () => {
+      const testCases = [
+        [true, true],
+        ['true', true],
+        [true, 'true'],
+        ['true', 'true'],
+        [false, false],
+        ['false', false],
+        [false, 'false'],
+        ['false', 'false'],
+      ];
+      testCases.forEach(([b1, b2]) => {
+        const t1 = typeof b1 === 'boolean' ? b1 : `"${b1}"`;
+        const t2 = typeof b2 === 'boolean' ? b2 : `"${b2}"`;
+        it(`These should be equal: ${t1} and ${t2}`, () => {
+          const filter = {
+            type: 'comparison',
+            operator: 'propertyisequalto',
+            expression1: b1,
+            expression2: b2,
+            matchcase: true,
+          };
+          const dummyFeature = { properties: {} };
+          expect(filterSelector(filter, dummyFeature)).to.be.true;
+        });
+      });
+    });
   });
 
   describe('Comparisons with missing/null values', () => {
@@ -675,7 +703,7 @@ describe('Custom property extraction', () => {
       expect(result).to.be.true;
     });
 
-    it('Comparison using a geometry function', () => {
+    it('Comparison using geometry dimension', () => {
       const lineGeoJSON = {
         type: 'Feature',
         geometry: {
@@ -694,6 +722,39 @@ describe('Custom property extraction', () => {
             <PropertyName>geometry</PropertyName>
           </Function>
           <Literal>1</Literal>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const result = filterSelector(filter, lineFeature);
+      expect(result).to.be.true;
+    });
+
+    it('Comparison using nested functions and geometry type', () => {
+      const lineGeoJSON = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [0, 0],
+            [1, 1],
+          ],
+        },
+        properties: {},
+      };
+      const lineFeature = fmtGeoJSON.readFeature(lineGeoJSON);
+      const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <Function name="in3">
+            <Function name="strToLowerCase">
+              <Function name="geometryType">
+                <PropertyName>geometry</PropertyName>
+              </Function>
+            </Function>
+            <Literal>linestring</Literal>
+            <Literal>linearring</Literal>
+            <Literal>multilinestring</Literal>
+          </Function>
+          <Literal>true</Literal>
         </PropertyIsEqualTo>
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
