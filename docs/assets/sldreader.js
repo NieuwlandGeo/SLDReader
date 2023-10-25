@@ -856,6 +856,7 @@
       jsType === 'string' ||
       jsType === 'number' ||
       jsType === 'undefined' ||
+      jsType === 'boolean' ||
       expression === null
     ) {
       // Expression value equals the expression itself if it's a native javascript type.
@@ -1061,7 +1062,11 @@
       return false;
     }
 
-    if (!comparison.matchcase) {
+    if (
+      !comparison.matchcase ||
+      typeof value1 === 'boolean' ||
+      typeof value2 === 'boolean'
+    ) {
       return compare(value1, value2, false) === 0;
     }
 
@@ -3939,6 +3944,9 @@
    * @param {number} [length] Optional integer representing length of string to extract;
    * if length is negative, the return string will omit the given length of characters from the end of the string
    * @returns {string} The extracted substring.
+   * @example
+   * * qgisSubstr('HELLO WORLD', 3, 5) --> 'LLO W'.
+   * * qgisSubstr('HELLO WORLD', -5) --> 'WORLD'.
    */
   function qgisSubstr(input, start, length) {
     var startIndex = Number(start);
@@ -3962,7 +3970,7 @@
 
     if (startIndex > 0) {
       if (lengthInt > 0) {
-        return text.slice(startIndex - 1, startIndex + lengthInt);
+        return text.slice(startIndex - 1, startIndex - 1 + lengthInt);
       }
       return text.slice(startIndex - 1, lengthInt);
     }
@@ -3975,6 +3983,47 @@
     }
 
     return text.slice(startIndex, lengthInt);
+  }
+
+  /**
+   * Extract a substring given a begin and end index.
+   * @param {any} input Input value.
+   * @param {number} begin Begin index (0-based).
+   * @param {number} end End index (0-based).
+   * @returns {string} The substring starting at the begin index up to,
+   * but not incuding the character at the end index.
+   * @example
+   * * strSubstring('HELLO', 2, 4) --> 'LL'.
+   */
+  function strSubstring(input, begin, end) {
+    var text = asString(input);
+    var beginIndex = Number(begin);
+    var endIndex = Number(end);
+    if (Number.isNaN(beginIndex) || Number.isNaN(endIndex)) {
+      return '';
+    }
+
+    return text.slice(beginIndex, endIndex);
+  }
+
+  /**
+   * Extract a substring from a begin index until the end.
+   * @param {any} input Input value.
+   * @param {number} begin Begin index (0-based).
+   * Using a negative index -N starts at N characters from the end.
+   * @returns {string} The substring starting at the begin index until the end.
+   * @example
+   * * strSubstringStart('HELLO', 1) --> 'ELLO'.
+   * * strSubstringStart('HELLO', -2) --> 'LO'.
+   */
+  function strSubstringStart(input, begin) {
+    var text = asString(input);
+    var beginIndex = Number(begin);
+    if (Number.isNaN(beginIndex)) {
+      return '';
+    }
+
+    return text.slice(beginIndex);
   }
 
   /**
@@ -4039,17 +4088,45 @@
     }
   }
 
-  function addBuiltInFunctions() {
-    // Geoserver functions
-    registerFunction('strToLowerCase', strToLowerCase);
-    registerFunction('strToUpperCase', strToUpperCase);
-    registerFunction('dimension', dimension);
+  /**
+   * Test if the first argument is the same as any of the other arguments.
+   * Equality is determined by comparing test and candidates as strings.
+   * @param  {...any} inputArgs Input arguments.
+   * @returns {boolean} True if the first argument is the same as any of the other arguments
+   * using string-based comparison.
+   */
+  function stringIn() {
+    var inputArgs = [], len = arguments.length;
+    while ( len-- ) inputArgs[ len ] = arguments[ len ];
 
+    var test = inputArgs[0];
+    var candidates = inputArgs.slice(1);
+    // Compare test with candidates as string.
+    var testString = asString(test);
+    return candidates.some(function (candidate) { return asString(candidate) === testString; });
+  }
+
+  function addBuiltInFunctions() {
     // QGIS functions
     registerFunction('lower', strToLowerCase);
     registerFunction('upper', strToUpperCase);
     registerFunction('geometry_type', qgisGeometryType);
     registerFunction('substr', qgisSubstr);
+
+    // Geoserver functions
+    registerFunction('strToLowerCase', strToLowerCase);
+    registerFunction('strToUpperCase', strToUpperCase);
+    registerFunction('strSubstring', strSubstring);
+    registerFunction('strSubstringStart', strSubstringStart);
+    registerFunction('geometryType', geometryType);
+    registerFunction('dimension', dimension);
+    registerFunction('in', stringIn);
+    // Also register in2/in10 as alias for the in function.
+    // This is done for backwards compatibility with older geoservers, which have explicit 'in'
+    // function versions for 2 to 10 parameters.
+    for (var k = 2; k <= 10; k += 1) {
+      registerFunction(("in" + k), stringIn);
+    }
   }
 
   // Add support for a handful of built-in SLD function implementations.
