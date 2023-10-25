@@ -440,6 +440,30 @@
         childExpression.type = 'propertyname';
         childExpression.typeHint = parseOptions.typeHint;
         childExpression.value = childNode.textContent.trim();
+      } else if (
+        childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
+        childNode.localName === 'Function'
+      ) {
+        var functionName = childNode.getAttribute('name');
+        var fallbackValue = childNode.getAttribute('fallbackValue') || null;
+        childExpression.type = 'function';
+        childExpression.name = functionName;
+        childExpression.fallbackValue = fallbackValue;
+
+        // Parse function parameters.
+        // Parse child expressions, and add them to the comparison object.
+        var parsed = {};
+        addParameterValueProp(childNode, parsed, 'params', {
+          concatenateLiterals: false,
+        });
+        if (Array.isArray(parsed.params.children)) {
+          // Case 0 or more than 1 children.
+          childExpression.params = parsed.params.children;
+        } else {
+          // Special case of 1 parameter.
+          // An array containing one expression is simplified into the expression itself.
+          childExpression.params = [parsed.params];
+        }
       } else if (childNode.nodeName === '#cdata-section') {
         // Add CDATA section text content untrimmed.
         childExpression.type = 'literal';
@@ -746,8 +770,43 @@
    * @property {Number} graphic.rotation
    * */
 
+  // This module contains a global registry of function implementations,
+  // and functions to register new function implementations.
+
+  var FunctionCache = new Map();
+
+  /**
+   * Register a function implementation by name. When evaluating the function, it will be called
+   * with the values of the parameter elements evaluated for a single feature.
+   * If the function returns null, the fallback value given in the SLD function element will be used instead.
+   *
+   * Note: take care of these possible gotcha's in the function implementation.
+   * * The function will be called with the number of parameters given in the SLD function element.
+   *   This number can be different from the expected number of arguments.
+   * * Try to avoid throwing errors from the function implementation and return null if possible.
+   * * Literal values will always be provided as strings. Convert numeric parameters to numbers yourself.
+   * * Geometry valued parameters will be provided as OpenLayers geometry instances. Do not mutate these!
+   * @param {string} functionName Function name.
+   * @param {Function} implementation The function implementation.
+   */
+  function registerFunction(functionName, implementation) {
+    if (typeof implementation !== 'function') {
+      throw new Error('Function implementation is not a function');
+    }
+    FunctionCache[functionName] = implementation;
+  }
+
+  /**
+   * Get a function implementation by name.
+   * @param {string} functionName Function name.
+   * @returns {Function} The function implementation, or null if no function with the given
+   * name has been registered yet.
+   */
+  function getFunction(functionName) {
+    return FunctionCache[functionName] || null;
+  }
+
   // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
-  // Constant expressions are returned as-is.
 
   /**
    * Check if an expression depends on feature properties.
@@ -807,8 +866,17 @@
     } else if (expression.type === 'propertyname') {
       // Expression value is taken from input feature.
       // If feature is null/undefined, use default value instead.
+      var propertyName = expression.value;
       if (feature) {
-        value = getProperty(feature, expression.value);
+        // If the property name equals the geometry field name, return the feature geometry.
+        if (
+          typeof feature.getGeometryName === 'function' &&
+          propertyName === feature.getGeometryName()
+        ) {
+          value = feature.getGeometry();
+        } else {
+          value = getProperty(feature, propertyName);
+        }
       } else {
         value = defaultValue;
       }
@@ -834,9 +902,19 @@
         value = childValues.join('');
       }
     } else if (expression.type === 'function') {
-      // Todo: evaluate function expression.
-      // For now, return null.
-      value = null;
+      var func = getFunction(expression.name);
+      if (!func) {
+        value = expression.fallbackValue;
+      } else {
+        try {
+          // evaluate parameter expressions.
+          var paramValues = expression.params.map(function (paramExpression) { return evaluate(paramExpression, feature, getProperty); }
+          );
+          value = func.apply(void 0, paramValues);
+        } catch (e) {
+          value = expression.fallbackValue;
+        }
+      }
     }
 
     // Do not substitute default value if the value is numeric zero.
@@ -3802,17 +3880,194 @@
     return olStyles.filter(function (style) { return style !== null; });
   }
 
+  /**
+   *
+   * @param {any} input Input value.
+   * @returns The string representation of the input value.
+   * It will always return a valid string and return an empty string for null and undefined values.
+   * Other types of input will be returned as their type name.
+   */
+  // eslint-disable-next-line import/prefer-default-export
+  function asString(input) {
+    if (input === null) {
+      return '';
+    }
+    var inputType = typeof input;
+    switch (inputType) {
+      case 'string':
+        return input;
+      case 'number':
+      case 'bigint':
+      case 'boolean':
+        return input.toString();
+      case 'undefined':
+        return '';
+      default:
+        // object, function, symbol, bigint, boolean, other?
+        return inputType;
+    }
+  }
+
+  // The functions below are taken from the Geoserver function list.
+  // https://docs.geoserver.org/latest/en/user/filter/function_reference.html#string-functions
+  // Note: implementation details may be different from Geoserver implementations.
+  // SLDReader function parameters are not strictly typed and will convert inputs in a sensible manner.
+
+  /**
+   * Converts the text representation of the input value to lower case.
+   * @param {any} input Input value.
+   * @returns Lower case version of the text representation of the input value.
+   */
+  function strToLowerCase(input) {
+    return asString(input).toLowerCase();
+  }
+
+  /**
+   * Converts the text representation of the input value to upper case.
+   * @param {any} input Input value.
+   * @returns Upper case version of the text representation of the input value.
+   */
+  function strToUpperCase(input) {
+    return asString(input).toUpperCase();
+  }
+
+  /**
+   * Extract a substring from the input text.
+   * @param {any} input Input value.
+   * @param {number} start Integer representing start position to extract beginning with 1;
+   * if start is negative, the return string will begin at the end of the string minus the start value.
+   * @param {number} [length] Optional integer representing length of string to extract;
+   * if length is negative, the return string will omit the given length of characters from the end of the string
+   * @returns {string} The extracted substring.
+   */
+  function qgisSubstr(input, start, length) {
+    var startIndex = Number(start);
+    var lengthInt = Number(length);
+    if (Number.isNaN(startIndex)) {
+      return '';
+    }
+
+    // Note: implementation specification taken from https://docs.qgis.org/3.28/en/docs/user_manual/expressions/functions_list.html#substr
+    var text = asString(input);
+    if (Number.isNaN(lengthInt)) {
+      if (startIndex > 0) {
+        return text.slice(startIndex - 1);
+      }
+      return text.slice(startIndex);
+    }
+
+    if (lengthInt === 0) {
+      return '';
+    }
+
+    if (startIndex > 0) {
+      if (lengthInt > 0) {
+        return text.slice(startIndex - 1, startIndex + lengthInt);
+      }
+      return text.slice(startIndex - 1, lengthInt);
+    }
+
+    if (lengthInt > 0) {
+      if (startIndex + lengthInt < 0) {
+        return text.slice(startIndex, startIndex + lengthInt);
+      }
+      return text.slice(startIndex);
+    }
+
+    return text.slice(startIndex, lengthInt);
+  }
+
+  /**
+   * Get the geometry type of an OpenLayers geometry instance.
+   * Calls geom.getType() and returns the result.
+   * See https://openlayers.org/en/latest/apidoc/module-ol_geom_Geometry.html#~Type
+   * for possible values.
+   * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
+   * @returns {string} The OpenLayers geometry type.
+   */
+  function geometryType(olGeometry) {
+    if (olGeometry && typeof olGeometry.getType === 'function') {
+      return olGeometry.getType();
+    }
+
+    return 'Unknown';
+  }
+
+  /**
+   * Get the dimension of a geometry. Multipart geometries will return the dimension of their separate parts.
+   * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
+   * @returns {number} The dimension of the geometry. Will return 0 for GeometryCollection or unknown type.
+   */
+  function dimension(olGeometry) {
+    switch (geometryType(olGeometry)) {
+      case 'Point':
+      case 'MultiPoint':
+        return 0;
+      case 'LineString':
+      case 'LinearRing':
+      case 'Circle':
+      case 'MultiLineString':
+        return 1;
+      case 'Polygon':
+      case 'MultiPolygon':
+        return 2;
+      default:
+        return 0;
+    }
+  }
+
+  /**
+   * Determine the type of an OpenLayers geometry. Does not differentiate between multipart and single part.
+   * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
+   * @returns {string} The geometry type: one of Point, Line, Polygon, or Unknown (geometry collection).
+   */
+  function qgisGeometryType(olGeometry) {
+    switch (geometryType(olGeometry)) {
+      case 'Point':
+      case 'MultiPoint':
+        return 'Point';
+      case 'LineString':
+      case 'LinearRing':
+      case 'Circle':
+      case 'MultiLineString':
+        return 'Line';
+      case 'Polygon':
+      case 'MultiPolygon':
+        return 'Polygon';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  function addBuiltInFunctions() {
+    // Geoserver functions
+    registerFunction('strToLowerCase', strToLowerCase);
+    registerFunction('strToUpperCase', strToUpperCase);
+    registerFunction('dimension', dimension);
+
+    // QGIS functions
+    registerFunction('lower', strToLowerCase);
+    registerFunction('upper', strToUpperCase);
+    registerFunction('geometry_type', qgisGeometryType);
+    registerFunction('substr', qgisSubstr);
+  }
+
+  // Add support for a handful of built-in SLD function implementations.
+  addBuiltInFunctions();
+
   exports.OlStyler = OlStyler;
   exports.Reader = Reader;
   exports.categorizeSymbolizers = categorizeSymbolizers;
   exports.createOlStyle = createOlStyle;
   exports.createOlStyleFunction = createOlStyleFunction;
   exports.getByPath = getByPath;
+  exports.getFunction = getFunction;
   exports.getLayer = getLayer;
   exports.getLayerNames = getLayerNames;
   exports.getRuleSymbolizers = getRuleSymbolizers;
   exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;
+  exports.registerFunction = registerFunction;
 
 }));

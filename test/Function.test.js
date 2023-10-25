@@ -67,4 +67,36 @@ describe('Builtin function implementations', () => {
       });
     });
   });
+
+  describe('Substring extraction', () => {
+    describe('QGIS substr function', () => {
+      const testCases = [
+        ['HELLO WORLD', 3, 5, 'LLO W'],
+        ['HELLO WORLD', 6, undefined, ' WORLD'],
+        ['HELLO WORLD', -5, undefined, 'WORLD'],
+        ['HELLO', 3, -1, 'LL'],
+        ['HELLO WORLD', -5, 2, 'WO'],
+        ['HELLO WORLD', -5, -1, 'WORL'],
+        ['HELLO WORLD', '2', '3', 'ELL'], // should also work for stringly typed parameters.
+      ];
+
+      testCases.forEach(([input, start, length, output]) => {
+        it(`'${input}', start: ${start}, length: ${length}, output: '${output}'`, () => {
+          const substr = getFunction('substr');
+          expect(substr(input, start, length)).to.equal(output);
+        });
+      });
+    });
+
+    it('Geoserver strSubstring', () => {
+      const strSubstring = getFunction('strSubstring');
+      expect(strSubstring('HELLO', 2, 4)).to.equal('LL');
+    });
+
+    it('Geoserver strSubstringStart', () => {
+      const strSubstringStart = getFunction('strSubstringStart');
+      expect(strSubstringStart('HELLO', 2)).to.equal('LLO');
+      expect(strSubstringStart('HELLO', -2)).to.equal('LO');
+    });
+  });
 });

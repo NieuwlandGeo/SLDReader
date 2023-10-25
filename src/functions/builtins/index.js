@@ -8,20 +8,108 @@ import { registerFunction } from '../index';
 
 /**
  * Converts the text representation of the input value to lower case.
- * @param {any} text Input value.
+ * @param {any} input Input value.
  * @returns Lower case version of the text representation of the input value.
  */
-function strToLowerCase(text) {
-  return asString(text).toLowerCase();
+function strToLowerCase(input) {
+  return asString(input).toLowerCase();
 }
 
 /**
  * Converts the text representation of the input value to upper case.
- * @param {any} text Input value.
+ * @param {any} input Input value.
  * @returns Upper case version of the text representation of the input value.
  */
-function strToUpperCase(text) {
-  return asString(text).toUpperCase();
+function strToUpperCase(input) {
+  return asString(input).toUpperCase();
+}
+
+/**
+ * Extract a substring from the input text.
+ * @param {any} input Input value.
+ * @param {number} start Integer representing start position to extract beginning with 1;
+ * if start is negative, the return string will begin at the end of the string minus the start value.
+ * @param {number} [length] Optional integer representing length of string to extract;
+ * if length is negative, the return string will omit the given length of characters from the end of the string
+ * @returns {string} The extracted substring.
+ * @example
+ * * qgisSubstr('HELLO WORLD', 3, 5) --> 'LLO W'.
+ * * qgisSubstr('HELLO WORLD', -5) --> 'WORLD'.
+ */
+function qgisSubstr(input, start, length) {
+  const startIndex = Number(start);
+  const lengthInt = Number(length);
+  if (Number.isNaN(startIndex)) {
+    return '';
+  }
+
+  // Note: implementation specification taken from https://docs.qgis.org/3.28/en/docs/user_manual/expressions/functions_list.html#substr
+  const text = asString(input);
+  if (Number.isNaN(lengthInt)) {
+    if (startIndex > 0) {
+      return text.slice(startIndex - 1);
+    }
+    return text.slice(startIndex);
+  }
+
+  if (lengthInt === 0) {
+    return '';
+  }
+
+  if (startIndex > 0) {
+    if (lengthInt > 0) {
+      return text.slice(startIndex - 1, startIndex - 1 + lengthInt);
+    }
+    return text.slice(startIndex - 1, lengthInt);
+  }
+
+  if (lengthInt > 0) {
+    if (startIndex + lengthInt < 0) {
+      return text.slice(startIndex, startIndex + lengthInt);
+    }
+    return text.slice(startIndex);
+  }
+
+  return text.slice(startIndex, lengthInt);
+}
+
+/**
+ * Extract a substring given a begin and end index.
+ * @param {any} input Input value.
+ * @param {number} begin Begin index (0-based).
+ * @param {number} end End index (0-based).
+ * @returns {string} The substring starting at the begin index up to,
+ * but not incuding the character at the end index.
+ * @example
+ * * strSubstring('HELLO', 2, 4) --> 'LL'.
+ */
+function strSubstring(input, begin, end) {
+  const beginIndex = Number(begin);
+  const endIndex = Number(end);
+  if (Number.isNaN(beginIndex) || Number.isNaN(endIndex)) {
+    return '';
+  }
+
+  return input.slice(beginIndex, endIndex);
+}
+
+/**
+ * Extract a substring from a begin index until the end.
+ * @param {any} input Input value.
+ * @param {number} begin Begin index (0-based).
+ * Using a negative index -N starts at N characters from the end.
+ * @returns {string} The substring starting at the begin index until the end.
+ * @example
+ * * strSubstringStart('HELLO', 1) --> 'ELLO'.
+ * * strSubstringStart('HELLO', -2) --> 'LO'.
+ */
+function strSubstringStart(input, begin) {
+  const beginIndex = Number(begin);
+  if (Number.isNaN(beginIndex)) {
+    return '';
+  }
+
+  return input.slice(beginIndex);
 }
 
 /**
@@ -90,10 +178,13 @@ export default function addBuiltInFunctions() {
   // Geoserver functions
   registerFunction('strToLowerCase', strToLowerCase);
   registerFunction('strToUpperCase', strToUpperCase);
+  registerFunction('strSubstring', strSubstring);
+  registerFunction('strSubstringStart', strSubstringStart);
   registerFunction('dimension', dimension);
 
   // QGIS functions
   registerFunction('lower', strToLowerCase);
   registerFunction('upper', strToUpperCase);
   registerFunction('geometry_type', qgisGeometryType);
+  registerFunction('substr', qgisSubstr);
 }
