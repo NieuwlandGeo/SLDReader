@@ -118,7 +118,11 @@ function propertyIsEqualTo(comparison, feature, getProperty) {
     return false;
   }
 
-  if (!comparison.matchcase) {
+  if (
+    !comparison.matchcase ||
+    typeof value1 === 'boolean' ||
+    typeof value2 === 'boolean'
+  ) {
     return compare(value1, value2, false) === 0;
   }
 

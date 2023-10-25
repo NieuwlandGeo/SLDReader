@@ -1,6 +1,12 @@
+import OLFormatGeoJSON from 'ol/format/GeoJSON';
+
 import { filterSelector, scaleSelector } from '../src/Filter';
-/* global describe it before beforeEach expect */
+/* global describe it before beforeEach after expect */
 import Reader from '../src/Reader';
+import { clearFunctionCache } from '../src/functions';
+import addBuiltInFunctions from '../src/functions/builtins';
+
+const fmtGeoJSON = new OLFormatGeoJSON();
 
 describe('filter rules', () => {
   describe('FID filter', () => {
@@ -237,6 +243,34 @@ describe('filter rules', () => {
         const { filter } = Reader(filterXml);
         const feature = { properties: { text: 'TEST' } };
         expect(filterSelector(filter, feature)).to.be.true;
+      });
+    });
+
+    describe('Boolean equality testing', () => {
+      const testCases = [
+        [true, true],
+        ['true', true],
+        [true, 'true'],
+        ['true', 'true'],
+        [false, false],
+        ['false', false],
+        [false, 'false'],
+        ['false', 'false'],
+      ];
+      testCases.forEach(([b1, b2]) => {
+        const t1 = typeof b1 === 'boolean' ? b1 : `"${b1}"`;
+        const t2 = typeof b2 === 'boolean' ? b2 : `"${b2}"`;
+        it(`These should be equal: ${t1} and ${t2}`, () => {
+          const filter = {
+            type: 'comparison',
+            operator: 'propertyisequalto',
+            expression1: b1,
+            expression2: b2,
+            matchcase: true,
+          };
+          const dummyFeature = { properties: {} };
+          expect(filterSelector(filter, dummyFeature)).to.be.true;
+        });
       });
     });
   });
@@ -639,6 +673,92 @@ describe('Custom property extraction', () => {
       const { filter } = Reader(filterXml);
       const feature = { properties: { prop1: 42, prop2: 42 } };
       const result = filterSelector(filter, feature);
+      expect(result).to.be.true;
+    });
+  });
+
+  describe('Functions in filters', () => {
+    before(() => {
+      addBuiltInFunctions();
+    });
+
+    after(() => {
+      clearFunctionCache();
+    });
+
+    it('Comparison using function value', () => {
+      // Yes, I know the matchCase attribute exists on binary comparison operators.
+      // This is just testing if the function gets called correctly.
+      const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <Function name="upper">
+            <PropertyName>title</PropertyName>
+          </Function>
+          <Literal>NIEUWLAND</Literal>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const feature = { properties: { title: 'Nieuwland' } };
+      const result = filterSelector(filter, feature);
+      expect(result).to.be.true;
+    });
+
+    it('Comparison using geometry dimension', () => {
+      const lineGeoJSON = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [0, 0],
+            [1, 1],
+          ],
+        },
+        properties: {},
+      };
+      const lineFeature = fmtGeoJSON.readFeature(lineGeoJSON);
+      const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <Function name="dimension">
+            <PropertyName>geometry</PropertyName>
+          </Function>
+          <Literal>1</Literal>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const result = filterSelector(filter, lineFeature);
+      expect(result).to.be.true;
+    });
+
+    it('Comparison using nested functions and geometry type', () => {
+      const lineGeoJSON = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [0, 0],
+            [1, 1],
+          ],
+        },
+        properties: {},
+      };
+      const lineFeature = fmtGeoJSON.readFeature(lineGeoJSON);
+      const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <Function name="in3">
+            <Function name="strToLowerCase">
+              <Function name="geometryType">
+                <PropertyName>geometry</PropertyName>
+              </Function>
+            </Function>
+            <Literal>linestring</Literal>
+            <Literal>linearring</Literal>
+            <Literal>multilinestring</Literal>
+          </Function>
+          <Literal>true</Literal>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const result = filterSelector(filter, lineFeature);
       expect(result).to.be.true;
     });
   });

@@ -8,10 +8,12 @@
     <UserStyle>
       <se:FeatureTypeStyle>
         <se:Rule>
-          <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
+          <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>geometryType</ogc:PropertyName>
-              <ogc:Literal>Point</ogc:Literal>
+              <ogc:Function name="dimension">
+                <ogc:PropertyName>geometry</ogc:PropertyName>
+              </ogc:Function>
+              <ogc:Literal>0</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
           <se:PointSymbolizer>
@@ -45,10 +47,12 @@
           </se:PointSymbolizer>
         </se:Rule>
         <se:Rule>
-          <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
+          <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>geometryType</ogc:PropertyName>
-              <ogc:Literal>LineString</ogc:Literal>
+              <ogc:Function name="dimension">
+                <ogc:PropertyName>geometry</ogc:PropertyName>
+              </ogc:Function>
+              <ogc:Literal>1</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
           <se:LineSymbolizer>
@@ -66,10 +70,12 @@
           </se:LineSymbolizer>
         </se:Rule>
         <se:Rule>
-          <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
+          <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>geometryType</ogc:PropertyName>
-              <ogc:Literal>Polygon</ogc:Literal>
+              <ogc:Function name="dimension">
+                <ogc:PropertyName>geometry</ogc:PropertyName>
+              </ogc:Function>
+              <ogc:Literal>2</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
           <se:PolygonSymbolizer>

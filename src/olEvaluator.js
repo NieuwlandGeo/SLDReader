@@ -1,6 +1,8 @@
 // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
 // Constant expressions are returned as-is.
 
+import { getFunction } from './functions';
+
 /**
  * Check if an expression depends on feature properties.
  * @param {object} expression OGC expression object.
@@ -47,6 +49,7 @@ export default function evaluate(
     jsType === 'string' ||
     jsType === 'number' ||
     jsType === 'undefined' ||
+    jsType === 'boolean' ||
     expression === null
   ) {
     // Expression value equals the expression itself if it's a native javascript type.
@@ -57,8 +60,17 @@ export default function evaluate(
   } else if (expression.type === 'propertyname') {
     // Expression value is taken from input feature.
     // If feature is null/undefined, use default value instead.
+    const propertyName = expression.value;
     if (feature) {
-      value = getProperty(feature, expression.value);
+      // If the property name equals the geometry field name, return the feature geometry.
+      if (
+        typeof feature.getGeometryName === 'function' &&
+        propertyName === feature.getGeometryName()
+      ) {
+        value = feature.getGeometry();
+      } else {
+        value = getProperty(feature, propertyName);
+      }
     } else {
       value = defaultValue;
     }
@@ -84,9 +96,20 @@ export default function evaluate(
       value = childValues.join('');
     }
   } else if (expression.type === 'function') {
-    // Todo: evaluate function expression.
-    // For now, return null.
-    value = null;
+    const func = getFunction(expression.name);
+    if (!func) {
+      value = expression.fallbackValue;
+    } else {
+      try {
+        // evaluate parameter expressions.
+        const paramValues = expression.params.map(paramExpression =>
+          evaluate(paramExpression, feature, getProperty)
+        );
+        value = func(...paramValues);
+      } catch (e) {
+        value = expression.fallbackValue;
+      }
+    }
   }
 
   // Do not substitute default value if the value is numeric zero.

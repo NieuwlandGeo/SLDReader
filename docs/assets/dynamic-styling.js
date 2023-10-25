@@ -38,7 +38,6 @@ for (let k = 0; k < numFeatures; k += 1) {
         coordinates: [centerX, centerY],
       },
       properties: {
-        geometryType: 'Point',
         mySize: 10 * (1 + Math.random()),
         myFillColor: weightedRandomColor(255, 0, 0),
         myFillOpacity: 0.5 + 0.5 * Math.random(),
@@ -68,7 +67,6 @@ for (let k = 0; k < numFeatures; k += 1) {
         coordinates: linePoints,
       },
       properties: {
-        geometryType: 'LineString',
         myStrokeColor: weightedRandomColor(0, 255, 0),
         myStrokeWidth: 1 + 3 * Math.random(),
         myStrokeOpacity: 0.8 + 0.2 * Math.random(),
@@ -94,7 +92,6 @@ for (let k = 0; k < numFeatures; k += 1) {
         ],
       },
       properties: {
-        geometryType: 'Polygon',
         myFillColor: weightedRandomColor(0, 0, 255),
         myFillOpacity: 0.5 + 0.5 * Math.random(),
         myStrokeColor: weightedRandomColor(0, 0, 128),
