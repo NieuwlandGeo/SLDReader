@@ -140,10 +140,6 @@ Only pixels are supported as unit of measure.
 
 The use of a Geometry element to point to a different geometry property on a feature to use for styling is not supported.
 
-### Function elements
-
-The use of Function expressions is not supported.
-
 ### Filter comparisons
 
 The SLDReader library supports the following operators inside Filter elements:
@@ -162,9 +158,100 @@ The SLDReader library supports the following operators inside Filter elements:
 - Not
 - FeatureId
 
+## Function support
+
+SLDReader can parse `<Function>` elements, but the support for functions is vendor specific. Geoserver supports different functions than QGIS does. Since it's not feasible to support all possible vendor specific functions, SLDReader only supports a handful of them, listed below.
+
+### Implementing your own function
+
+It's possible to add support for a specific function yourself, using `SLDReader.registerFunction(functionName, implementation)`.
+
+Example:
+
+```javascript
+SLDReader.registerFunction('strSubstringStart', (text, startIndex) =>
+  text.slice(startIndex)
+);
+```
+
+After registering your function implementation, you can use it for example in a filter expression:
+
+```xml
+<Filter>
+  <PropertyIsEqualTo>
+    <Function name="strSubstringStart">
+      <PropertyName>title</PropertyName>
+      <Literal>2</Literal>
+    </Function>
+    <Literal>LLO WORLD</Literal>
+  </PropertyIsEqualTo>
+</Filter>
+```
+
+The registered function will be called with the value of its child expressions as parameters.
+
+**Important notes:**
+
+- The type of `<Literal>` expressions is always string. If your function expects numeric parameters, convert accordingly.
+- The type of `<PropertyName>` expressions depends on the feature. Typically, when serializing from GeoJSON, integer values are actual integers.
+- SLDReader does not check if the functions are called with the correct number of parameters. Make your function robust against receiving fewer parameters than expected.
+- Geometry-valued expressions will always be OpenLayers Geometry instances.
+- Unless specifically set for your features, the geometry property name is always `'geometry'` for OpenLayers features by default.
+- Make your functions as lenient as possible regarding possible inputs. Do not throw errors, but try to return a value that makes sense in that case. If you return `null` from a function implementation, the function fallback value will be used if one is specified in the SLD.
+  - `<Function name="someFunction" fallbackValue="42">`
+
+### Functions supported by SLDReader
+
+- `geometryType(geometry) -> string`
+
+  - Returns OpenLayers geometry type for the input geometry: (Multi)Point, (Multi)LineString, (Multi)Polygon, LinearRing, Circle, or GeometryCollection.
+
+- `dimension(geometry) -> integer`
+
+  - Returns the dimension of the input geometry. 0 for points, 1 for lines and 2 for polygons.
+  - Returns 0 for a GeometryCollection.
+  - For a multipart geometry, returns the dimension of the part geometries.
+  - Example as part of a `Filter` expression:
+```xml
+<Filter>
+  <PropertyIsEqualTo>
+    <Function name="dimension">
+      <PropertyName>geometry</PropertyName>
+    </Function>
+    <Literal>1</Literal>
+  </PropertyIsEqualTo>
+</Filter>
+```
+
+- `substr(string, start, [length]) -> string`
+
+  - Returns part of a string, starting from start index, starting with 1 (!!).
+  - Runs until the end if length is not given.
+  - A negative start index `-N` means start `N` characters from the end.
+  - If length is negative, omit the last `length` characters from the end of the string.
+  - See [QGIS docs](https://docs.qgis.org/3.28/en/docs/user_manual/expressions/functions_list.html#substr) for more detailed documentation.
+
+- `strSubstring(string, begin, end) -> string`
+
+  - Returns a new string that is a substring of this string. The substring begins at the specified begin and extends to the character at index endIndex - 1 (indexes are zero-based).
+
+- `strSubstringStart(string, begin) -> string`
+
+  - Returns a new string that is a substring of this string. The substring begins at the specified begin and extends to the last character of the string.
+  - A negative `begin` index means: start at that many characters from the end of the string.
+
+- `in(test, ...candidates) -> boolean`
+
+  - Returns `true` if `test` value is present in the list of `candidates` arguments, using string-based, case sensitive, comparison.
+  - Example: `in('fox', 'the', 'quick', 'brown', 'fox') --> true`.
+  - Example: `in(2, '1', '2', '3') --> true`.
+
+- `in2..in10`
+  - These are aliases for the `in` function, coming from (older) GeoServer versions that required a different function for each amount of test candidates.
+
 ## Supported OpenLayers version
 
-The SLDReader has a peer dependency on OpenLayers version 5.3.0. Because there are no backwards incompatible changes between v7+ and v5.3, it is possible to use this library in a project that uses a later (v7+) version of OpenLayers.
+The SLDReader has a peer dependency on OpenLayers version 5.3.0. Because there are no backwards incompatible changes between v7+ and v5.3, it is possible to use this library in a project that uses a later (v8+) version of OpenLayers.
 
 This may change in the future if the newest version of OpenLayers stops being backwards compatible with this library, or when a juicy new must-have feature is introduced. When that happens, SLDReader will be based on that OpenLayers version.
 
