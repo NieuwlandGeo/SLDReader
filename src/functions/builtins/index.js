@@ -84,13 +84,14 @@ function qgisSubstr(input, start, length) {
  * * strSubstring('HELLO', 2, 4) --> 'LL'.
  */
 function strSubstring(input, begin, end) {
+  const text = asString(input);
   const beginIndex = Number(begin);
   const endIndex = Number(end);
   if (Number.isNaN(beginIndex) || Number.isNaN(endIndex)) {
     return '';
   }
 
-  return input.slice(beginIndex, endIndex);
+  return text.slice(beginIndex, endIndex);
 }
 
 /**
@@ -104,12 +105,13 @@ function strSubstring(input, begin, end) {
  * * strSubstringStart('HELLO', -2) --> 'LO'.
  */
 function strSubstringStart(input, begin) {
+  const text = asString(input);
   const beginIndex = Number(begin);
   if (Number.isNaN(beginIndex)) {
     return '';
   }
 
-  return input.slice(beginIndex);
+  return text.slice(beginIndex);
 }
 
 /**
