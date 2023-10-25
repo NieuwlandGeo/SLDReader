@@ -49,6 +49,7 @@ export default function evaluate(
     jsType === 'string' ||
     jsType === 'number' ||
     jsType === 'undefined' ||
+    jsType === 'boolean' ||
     expression === null
   ) {
     // Expression value equals the expression itself if it's a native javascript type.
