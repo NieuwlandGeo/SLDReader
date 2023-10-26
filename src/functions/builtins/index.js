@@ -224,4 +224,10 @@ export default function addBuiltInFunctions() {
   for (let k = 2; k <= 10; k += 1) {
     registerFunction(`in${k}`, stringIn);
   }
+
+  // Math operators as functions
+  registerFunction('__fe:Add__', (a, b) => Number(a) + Number(b));
+  registerFunction('__fe:Sub__', (a, b) => Number(a) - Number(b));
+  registerFunction('__fe:Mul__', (a, b) => Number(a) * Number(b));
+  registerFunction('__fe:Div__', (a, b) => Number(a) / Number(b));
 }

@@ -481,6 +481,30 @@
           // An array containing one expression is simplified into the expression itself.
           childExpression.params = [parsed.params];
         }
+      } else if (
+        childNode.localName === 'Add' ||
+        childNode.localName === 'Sub' ||
+        childNode.localName === 'Mul' ||
+        childNode.localName === 'Div'
+      ) {
+        // Convert mathematical operators to builtin function expressions.
+        childExpression.type = 'function';
+        childExpression.name = "__fe:" + (childNode.localName) + "__";
+        childExpression.typeHint = 'number';
+        // Parse function parameters.
+        // Parse child expressions, and add them to the comparison object.
+        var parsed$1 = {};
+        addParameterValueProp(childNode, parsed$1, 'params', {
+          concatenateLiterals: false,
+        });
+        if (Array.isArray(parsed$1.params.children)) {
+          // Case 0 or more than 1 children.
+          childExpression.params = parsed$1.params.children;
+        } else {
+          // Special case of 1 parameter.
+          // An array containing one expression is simplified into the expression itself.
+          childExpression.params = [parsed$1.params];
+        }
       } else if (childNode.nodeName === '#cdata-section') {
         // Add CDATA section text content untrimmed.
         childExpression.type = 'literal';
@@ -4170,6 +4194,12 @@
     for (var k = 2; k <= 10; k += 1) {
       registerFunction(("in" + k), stringIn);
     }
+
+    // Math operators as functions
+    registerFunction('__fe:Add__', function (a, b) { return Number(a) + Number(b); });
+    registerFunction('__fe:Sub__', function (a, b) { return Number(a) - Number(b); });
+    registerFunction('__fe:Mul__', function (a, b) { return Number(a) * Number(b); });
+    registerFunction('__fe:Div__', function (a, b) { return Number(a) / Number(b); });
   }
 
   // Add support for a handful of built-in SLD function implementations.

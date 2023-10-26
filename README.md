@@ -130,7 +130,7 @@ SLDReader supports dynamic values in these cases:
 
 ### Arithmetic operators
 
-There is currently no support for arithmetic operators (Add,Sub,Mul,Div).
+Operators `Add`, `Sub`, `Mul`, and `Div` are implemented by converting them to function expressions.
 
 ### Units of measure
 

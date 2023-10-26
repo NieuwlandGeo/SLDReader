@@ -198,6 +198,30 @@ function addParameterValueProp(node, obj, prop, options = {}) {
         // An array containing one expression is simplified into the expression itself.
         childExpression.params = [parsed.params];
       }
+    } else if (
+      childNode.localName === 'Add' ||
+      childNode.localName === 'Sub' ||
+      childNode.localName === 'Mul' ||
+      childNode.localName === 'Div'
+    ) {
+      // Convert mathematical operators to builtin function expressions.
+      childExpression.type = 'function';
+      childExpression.name = `__fe:${childNode.localName}__`;
+      childExpression.typeHint = 'number';
+      // Parse function parameters.
+      // Parse child expressions, and add them to the comparison object.
+      const parsed = {};
+      addParameterValueProp(childNode, parsed, 'params', {
+        concatenateLiterals: false,
+      });
+      if (Array.isArray(parsed.params.children)) {
+        // Case 0 or more than 1 children.
+        childExpression.params = parsed.params.children;
+      } else {
+        // Special case of 1 parameter.
+        // An array containing one expression is simplified into the expression itself.
+        childExpression.params = [parsed.params];
+      }
     } else if (childNode.nodeName === '#cdata-section') {
       // Add CDATA section text content untrimmed.
       childExpression.type = 'literal';

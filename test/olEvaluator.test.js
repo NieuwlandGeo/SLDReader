@@ -257,4 +257,30 @@ describe('Expression evaluation', () => {
       ]);
     });
   });
+
+  it('Mathematical operator expressions', () => {
+    // (36 / (8 - 2)) * (4 + 3)
+    const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+      <PropertyIsEqualTo>
+        <Mul>
+          <Div>
+            <Literal>36</Literal>
+            <Sub>
+              <Literal>8</Literal>
+              <Literal>2</Literal>
+            </Sub>
+          </Div>
+          <Add>
+            <Literal>4</Literal>
+            <Literal>3</Literal>
+          </Add>
+        </Mul>
+        <Literal>42</Literal>
+      </PropertyIsEqualTo>
+    </Filter></StyledLayerDescriptor>`;
+    const { filter } = Reader(filterXml);
+    const mathExpression = filter.expression1;
+    const result = evaluate(mathExpression, null, null);
+    expect(result).to.equal(42);
+  });
 });
