@@ -235,10 +235,25 @@
   }
 
   /**
+   * Generic expression used in SLDReader objects.
+   * @typedef Expression
+   * @name Expression
+   * @description Modeled after [SvgParameterType](https://schemas.opengis.net/se/1.1.0/Symbolizer.xsd).
+   * Can be either a primitive value (string,integer,boolean), or an object with these properties:
+   * @property {string} type One of 'literal', 'propertyname', or 'function'.
+   * @property {string} [typeHint] Optional type hint, used when evaluating the expression. Defaults to 'string'. Can be 'number'.
+   * @property {any} [value] The primitive type representing the value of a literal expresion,
+   * or a string representing the name of a propertyname expression .
+   * @property {string} [name] Required for function expressions. Contains the function name.
+   * @property {any} [fallbackValue] Optional fallback value when function evaluation returns null.
+   * @property {Array<Expression>} [params] Required array of function parameters for function expressions.
+   */
+
+  /**
    * A filter predicate.
    * @typedef Filter
    * @name Filter
-   * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+   * @description [filter operators](https://schemas.opengis.net/filter/2.0/filter.xsd), see also
    * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
    * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
    * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
@@ -251,15 +266,16 @@
    * 'propertyisgreaterthanorequalto',
    * 'propertyislike',
    * 'propertyisbetween'
+   * 'propertyisnull'
    * @property {Filter[]} [predicates] Required for type='and' or type='or'.
    * An array of filter predicates that must all evaluate to true for 'and', or
    * for which at least one must evaluate to true for 'or'.
    * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
-   * @property {string} [propertyname] Required for type='comparison'.
-   * @property {string} [literal] A literal value to use in a comparison,
-   * required for type='comparison'.
-   * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
-   * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
+   * @property {Expression} [expression1] First expression required for boolean comparison filters.
+   * @property {Expression} [expression2] Second expression required for boolean comparison filters.
+   * @property {Expression} [expression] Expression required for unary comparison filters.
+   * @property {Expression} [lowerboundary] Lower boundary expression, required for operator='propertyisbetween'.
+   * @property {Expression} [upperboundary] Upper boundary expression, required for operator='propertyisbetween'.
    * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
    * @property {string} [singlechar] Required single char match character,
    * required for operator='propertyislike'.
@@ -344,6 +360,7 @@
    * Simplifies array of ogc:Expressions. If all expressions are literals, they will be concatenated into a string.
    * If the array contains only one expression, it will be returned.
    * If it's not an array, return unmodified.
+   * @private
    * @param {Array<OGCExpression>} expressions An array of ogc:Expression objects.
    * @param {string} typeHint Expression type. Choose 'string' or 'number'.
    * @param {boolean} concatenateLiterals When true, and when all expressions are literals,
@@ -715,8 +732,9 @@
    * @name Rule
    * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
    * @property {string} name rule name
-   * @property {Filter[]} [filter]
-   * @property {boolean} [elsefilter]
+   * @property {Filter} [filter] Optional filter expression for the rule.
+   * @property {boolean} [elsefilter] Set this to true when rule has no filter expression
+   * to catch everything not passing any other filter.
    * @property {integer} [minscaledenominator]
    * @property {integer} [maxscaledenominator]
    * @property {PolygonSymbolizer} [polygonsymbolizer]
@@ -730,9 +748,9 @@
    * @description a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
    * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html)
    * @property {Object} fill
-   * @property {array} fill.css one object per CssParameter with props name (camelcased) & value
+   * @property {Object<Expression>} fill.styling one object per SvgParameter with props name (camelCased)
    * @property {Object} stroke
-   * @property {Object[]} stroke.css with camelcased name & value
+   * @property {Object<Expression>} stroke.styling with camelcased name & value
    * */
 
   /**
@@ -741,7 +759,7 @@
    * @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
    * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
    * @property {Object} stroke
-   * @property {Object[]} stroke.css one object per CssParameter with props name (camelcased) & value
+   * @property {Object<Expression>} stroke.styling one object per SvgParameter with props name (camelCased)
    * @property {Object} graphicstroke
    * @property {Object} graphicstroke.graphic
    * @property {Object} graphicstroke.graphic.mark
@@ -766,8 +784,8 @@
    * @property {Object} graphic.mark.fill
    * @property {Object} graphic.mark.stroke
    * @property {Number} graphic.opacity
-   * @property {Number} graphic.size
-   * @property {Number} graphic.rotation
+   * @property {Expression} graphic.size
+   * @property {Expression} graphic.rotation
    * */
 
   // This module contains a global registry of function implementations,
@@ -810,20 +828,26 @@
 
   /**
    * Check if an expression depends on feature properties.
-   * @param {object} expression OGC expression object.
+   * @private
+   * @param {Expression} expression SLDReader expression object.
    * @returns {bool} Returns true if the expression depends on feature properties.
    */
   function isDynamicExpression(expression) {
     switch ((expression || {}).type) {
       case 'expression':
-        // Expressions with all static values are already concatenated into a static string,
-        // so any expression that survives that process has at least one dynamic component.
+        // Expressions with all literal child values are already concatenated into a static string,
+        // so any expression that survives that process has at least one non-literal child
+        // and therefore possibly dynamic component.
         return true;
       case 'literal':
         return false;
       case 'propertyname':
         return true;
       case 'function':
+        // Note: assuming function expressions are dynamic is correct in most practical cases.
+        // A more accurate implementation would be that a function expression is static if:
+        // * The function is idempotent. You cannot tell from the implementation, unless the implementor marks it as such.
+        // * All function parameter expressions are static.
         return true;
       default:
         return false;
@@ -834,7 +858,7 @@
    * @private
    * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
    * Constant expressions are returned as-is.
-   * @param {object|string} expression SLD object expression.
+   * @param {Expression} expression SLD object expression.
    * @param {ol/feature} feature OpenLayers feature instance.
    * @param {function} getProperty A function to get a specific property value from a feature.
    * @param {any} defaultValue Optional default value to use when feature is null.
@@ -1838,11 +1862,11 @@
   });
 
   /**
-   * @private
    * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
    * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
    * Uses a WeakMap internally.
    * Note: This only works for constant symbolizers.
+   * @private
    * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
    * @returns {Function} The memoized function of the style conversion function.
    */
@@ -1865,8 +1889,8 @@
   }
 
   /**
-   * @private
    * Convert a hex color (like #AABBCC) to an rgba-string.
+   * @private
    * @param  {string} hex   eg #AA00FF
    * @param  {Number} alpha eg 0.5
    * @return {string}       rgba(0,0,0,0)
@@ -1883,6 +1907,7 @@
 
   /**
    * Get color string for OpenLayers. Encodes opacity into color string if it's a number less than 1.
+   * @private
    * @param {string} color Color string, encoded as #AABBCC.
    * @param {number} opacity Opacity. Non-numeric values will be treated as 1.
    * @returns {string} OpenLayers color string.
@@ -1895,8 +1920,8 @@
   }
 
   /**
-   * @private
    * Calculate the center-to-center distance for graphics placed along a line within a GraphicSymbolizer.
+   * @private
    * @param {object} lineSymbolizer SLD line symbolizer object.
    * @param {number} graphicWidth Width of the symbolizer graphic in pixels. This size may be dependent on feature properties,
    * so it has to be supplied separately from the line symbolizer object.
@@ -1925,8 +1950,8 @@
   }
 
   /**
-   * @private
    * Get initial gap size from line symbolizer.
+   * @private
    * @param {object} lineSymbolizer SLD line symbolizer object.
    * @returns {number} Inital gap size. Defaults to 0 if not present.
    */
@@ -2197,6 +2222,7 @@
   /**
    * Change OL Style fill properties for dynamic symbolizer style parameters.
    * Modification happens in-place on the given style instance.
+   * @private
    * @param {ol/style/Style} olStyle OL Style instance.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
@@ -2245,6 +2271,7 @@
   /**
    * Change OL Style stroke properties for dynamic symbolizer style parameters.
    * Modification happens in-place on the given style instance.
+   * @private
    * @param {ol/style/Style} olStyle OL Style instance.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
@@ -2310,6 +2337,7 @@
   /**
    * Change OL Text properties for dynamic symbolizer style parameters.
    * Modification happens in-place on the given style instance.
+   * @private
    * @param {ol/style/Style} olStyle OL Style instance.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
@@ -2573,6 +2601,7 @@
   /**
    * Calculate the angle of a vector in radians clockwise from the positive x-axis.
    * Example: (0,0) -> (1,1) --> -pi/4 radians.
+   * @private
    * @param {Array<number>} p1 Start of the line segment as [x,y].
    * @param {Array<number>} p2 End of the line segment as [x,y].
    * @param {boolean} invertY If true, calculate with Y-axis pointing downwards.
@@ -3110,6 +3139,7 @@
   /**
    * Scale mark graphic fill symbol with given scale factor to improve mark fill rendering.
    * Scale factor will be applied to stroke width depending on the original value for visual fidelity.
+   * @private
    * @param {object} graphicfill GraphicFill symbolizer object.
    * @param {number} scaleFactor Scale factor.
    * @returns {object} A new GraphifFill symbolizer object with scale factor applied.
@@ -3920,6 +3950,7 @@
 
   /**
    * Converts the text representation of the input value to lower case.
+   * @private
    * @param {any} input Input value.
    * @returns Lower case version of the text representation of the input value.
    */
@@ -3929,6 +3960,7 @@
 
   /**
    * Converts the text representation of the input value to upper case.
+   * @private
    * @param {any} input Input value.
    * @returns Upper case version of the text representation of the input value.
    */
@@ -3938,6 +3970,7 @@
 
   /**
    * Extract a substring from the input text.
+   * @private
    * @param {any} input Input value.
    * @param {number} start Integer representing start position to extract beginning with 1;
    * if start is negative, the return string will begin at the end of the string minus the start value.
@@ -3987,6 +4020,7 @@
 
   /**
    * Extract a substring given a begin and end index.
+   * @private
    * @param {any} input Input value.
    * @param {number} begin Begin index (0-based).
    * @param {number} end End index (0-based).
@@ -4008,6 +4042,7 @@
 
   /**
    * Extract a substring from a begin index until the end.
+   * @private
    * @param {any} input Input value.
    * @param {number} begin Begin index (0-based).
    * Using a negative index -N starts at N characters from the end.
@@ -4031,6 +4066,7 @@
    * Calls geom.getType() and returns the result.
    * See https://openlayers.org/en/latest/apidoc/module-ol_geom_Geometry.html#~Type
    * for possible values.
+   * @private
    * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
    * @returns {string} The OpenLayers geometry type.
    */
@@ -4044,6 +4080,7 @@
 
   /**
    * Get the dimension of a geometry. Multipart geometries will return the dimension of their separate parts.
+   * @private
    * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
    * @returns {number} The dimension of the geometry. Will return 0 for GeometryCollection or unknown type.
    */
@@ -4067,6 +4104,7 @@
 
   /**
    * Determine the type of an OpenLayers geometry. Does not differentiate between multipart and single part.
+   * @private
    * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
    * @returns {string} The geometry type: one of Point, Line, Polygon, or Unknown (geometry collection).
    */
@@ -4091,6 +4129,7 @@
   /**
    * Test if the first argument is the same as any of the other arguments.
    * Equality is determined by comparing test and candidates as strings.
+   * @private
    * @param  {...any} inputArgs Input arguments.
    * @returns {boolean} True if the first argument is the same as any of the other arguments
    * using string-based comparison.
@@ -4106,6 +4145,10 @@
     return candidates.some(function (candidate) { return asString(candidate) === testString; });
   }
 
+  /**
+   * Register all builtin functions at once.
+   * @private
+   */
   function addBuiltInFunctions() {
     // QGIS functions
     registerFunction('lower', strToLowerCase);

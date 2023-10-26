@@ -75,6 +75,7 @@ function getExternalGraphicFill(symbolizer) {
 /**
  * Scale mark graphic fill symbol with given scale factor to improve mark fill rendering.
  * Scale factor will be applied to stroke width depending on the original value for visual fidelity.
+ * @private
  * @param {object} graphicfill GraphicFill symbolizer object.
  * @param {number} scaleFactor Scale factor.
  * @returns {object} A new GraphifFill symbolizer object with scale factor applied.

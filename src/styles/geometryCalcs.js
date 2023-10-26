@@ -19,6 +19,7 @@ function calculateSplitPointCoords(startCoord, endCoord, distanceFromStart) {
 /**
  * Calculate the angle of a vector in radians clockwise from the positive x-axis.
  * Example: (0,0) -> (1,1) --> -pi/4 radians.
+ * @private
  * @param {Array<number>} p1 Start of the line segment as [x,y].
  * @param {Array<number>} p2 End of the line segment as [x,y].
  * @param {boolean} invertY If true, calculate with Y-axis pointing downwards.

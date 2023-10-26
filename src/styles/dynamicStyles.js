@@ -4,6 +4,7 @@ import { getOLColorString } from './styleUtils';
 /**
  * Change OL Style fill properties for dynamic symbolizer style parameters.
  * Modification happens in-place on the given style instance.
+ * @private
  * @param {ol/style/Style} olStyle OL Style instance.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
@@ -52,6 +53,7 @@ export function applyDynamicFillStyling(
 /**
  * Change OL Style stroke properties for dynamic symbolizer style parameters.
  * Modification happens in-place on the given style instance.
+ * @private
  * @param {ol/style/Style} olStyle OL Style instance.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
@@ -117,6 +119,7 @@ export function applyDynamicStrokeStyling(
 /**
  * Change OL Text properties for dynamic symbolizer style parameters.
  * Modification happens in-place on the given style instance.
+ * @private
  * @param {ol/style/Style} olStyle OL Style instance.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.

@@ -1,9 +1,9 @@
 /**
- * @private
  * Function to memoize style conversion functions that convert sld symbolizers to OpenLayers style instances.
  * The memoized version of the style converter returns the same OL style instance if the symbolizer is the same object.
  * Uses a WeakMap internally.
  * Note: This only works for constant symbolizers.
+ * @private
  * @param {Function} styleFunction Function that accepts a single symbolizer object and returns the corresponding OpenLayers style object.
  * @returns {Function} The memoized function of the style conversion function.
  */
@@ -26,8 +26,8 @@ export function memoizeStyleFunction(styleFunction) {
 }
 
 /**
- * @private
  * Convert a hex color (like #AABBCC) to an rgba-string.
+ * @private
  * @param  {string} hex   eg #AA00FF
  * @param  {Number} alpha eg 0.5
  * @return {string}       rgba(0,0,0,0)
@@ -44,6 +44,7 @@ function hexToRGB(hex, alpha) {
 
 /**
  * Get color string for OpenLayers. Encodes opacity into color string if it's a number less than 1.
+ * @private
  * @param {string} color Color string, encoded as #AABBCC.
  * @param {number} opacity Opacity. Non-numeric values will be treated as 1.
  * @returns {string} OpenLayers color string.
@@ -56,8 +57,8 @@ export function getOLColorString(color, opacity) {
 }
 
 /**
- * @private
  * Calculate the center-to-center distance for graphics placed along a line within a GraphicSymbolizer.
+ * @private
  * @param {object} lineSymbolizer SLD line symbolizer object.
  * @param {number} graphicWidth Width of the symbolizer graphic in pixels. This size may be dependent on feature properties,
  * so it has to be supplied separately from the line symbolizer object.
@@ -84,8 +85,8 @@ export function calculateGraphicSpacing(lineSymbolizer, graphicWidth) {
 }
 
 /**
- * @private
  * Get initial gap size from line symbolizer.
+ * @private
  * @param {object} lineSymbolizer SLD line symbolizer object.
  * @returns {number} Inital gap size. Defaults to 0 if not present.
  */

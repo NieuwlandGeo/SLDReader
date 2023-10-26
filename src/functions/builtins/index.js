@@ -8,6 +8,7 @@ import { registerFunction } from '../index';
 
 /**
  * Converts the text representation of the input value to lower case.
+ * @private
  * @param {any} input Input value.
  * @returns Lower case version of the text representation of the input value.
  */
@@ -17,6 +18,7 @@ function strToLowerCase(input) {
 
 /**
  * Converts the text representation of the input value to upper case.
+ * @private
  * @param {any} input Input value.
  * @returns Upper case version of the text representation of the input value.
  */
@@ -26,6 +28,7 @@ function strToUpperCase(input) {
 
 /**
  * Extract a substring from the input text.
+ * @private
  * @param {any} input Input value.
  * @param {number} start Integer representing start position to extract beginning with 1;
  * if start is negative, the return string will begin at the end of the string minus the start value.
@@ -75,6 +78,7 @@ function qgisSubstr(input, start, length) {
 
 /**
  * Extract a substring given a begin and end index.
+ * @private
  * @param {any} input Input value.
  * @param {number} begin Begin index (0-based).
  * @param {number} end End index (0-based).
@@ -96,6 +100,7 @@ function strSubstring(input, begin, end) {
 
 /**
  * Extract a substring from a begin index until the end.
+ * @private
  * @param {any} input Input value.
  * @param {number} begin Begin index (0-based).
  * Using a negative index -N starts at N characters from the end.
@@ -119,6 +124,7 @@ function strSubstringStart(input, begin) {
  * Calls geom.getType() and returns the result.
  * See https://openlayers.org/en/latest/apidoc/module-ol_geom_Geometry.html#~Type
  * for possible values.
+ * @private
  * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
  * @returns {string} The OpenLayers geometry type.
  */
@@ -132,6 +138,7 @@ function geometryType(olGeometry) {
 
 /**
  * Get the dimension of a geometry. Multipart geometries will return the dimension of their separate parts.
+ * @private
  * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
  * @returns {number} The dimension of the geometry. Will return 0 for GeometryCollection or unknown type.
  */
@@ -155,6 +162,7 @@ function dimension(olGeometry) {
 
 /**
  * Determine the type of an OpenLayers geometry. Does not differentiate between multipart and single part.
+ * @private
  * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
  * @returns {string} The geometry type: one of Point, Line, Polygon, or Unknown (geometry collection).
  */
@@ -179,6 +187,7 @@ function qgisGeometryType(olGeometry) {
 /**
  * Test if the first argument is the same as any of the other arguments.
  * Equality is determined by comparing test and candidates as strings.
+ * @private
  * @param  {...any} inputArgs Input arguments.
  * @returns {boolean} True if the first argument is the same as any of the other arguments
  * using string-based comparison.
@@ -190,6 +199,10 @@ function stringIn(...inputArgs) {
   return candidates.some(candidate => asString(candidate) === testString);
 }
 
+/**
+ * Register all builtin functions at once.
+ * @private
+ */
 export default function addBuiltInFunctions() {
   // QGIS functions
   registerFunction('lower', strToLowerCase);

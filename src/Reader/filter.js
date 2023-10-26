@@ -233,10 +233,25 @@ export default function createFilter(element, addParameterValueProp) {
 }
 
 /**
+ * Generic expression used in SLDReader objects.
+ * @typedef Expression
+ * @name Expression
+ * @description Modeled after [SvgParameterType](https://schemas.opengis.net/se/1.1.0/Symbolizer.xsd).
+ * Can be either a primitive value (string,integer,boolean), or an object with these properties:
+ * @property {string} type One of 'literal', 'propertyname', or 'function'.
+ * @property {string} [typeHint] Optional type hint, used when evaluating the expression. Defaults to 'string'. Can be 'number'.
+ * @property {any} [value] The primitive type representing the value of a literal expresion,
+ * or a string representing the name of a propertyname expression .
+ * @property {string} [name] Required for function expressions. Contains the function name.
+ * @property {any} [fallbackValue] Optional fallback value when function evaluation returns null.
+ * @property {Array<Expression>} [params] Required array of function parameters for function expressions.
+ */
+
+/**
  * A filter predicate.
  * @typedef Filter
  * @name Filter
- * @description [filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also
+ * @description [filter operators](https://schemas.opengis.net/filter/2.0/filter.xsd), see also
  * [geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
  * @property {string} type Can be 'comparison', 'and', 'or', 'not', or 'featureid'.
  * @property {Array<string>} [fids] An array of feature id's. Required for type='featureid'.
@@ -249,15 +264,16 @@ export default function createFilter(element, addParameterValueProp) {
  * 'propertyisgreaterthanorequalto',
  * 'propertyislike',
  * 'propertyisbetween'
+ * 'propertyisnull'
  * @property {Filter[]} [predicates] Required for type='and' or type='or'.
  * An array of filter predicates that must all evaluate to true for 'and', or
  * for which at least one must evaluate to true for 'or'.
  * @property {Filter} [predicate] Required for type='not'. A single predicate to negate.
- * @property {string} [propertyname] Required for type='comparison'.
- * @property {string} [literal] A literal value to use in a comparison,
- * required for type='comparison'.
- * @property {string} [lowerboundary] Lower boundary, required for operator='propertyisbetween'.
- * @property {string} [upperboundary] Upper boundary, required for operator='propertyisbetween'.
+ * @property {Expression} [expression1] First expression required for boolean comparison filters.
+ * @property {Expression} [expression2] Second expression required for boolean comparison filters.
+ * @property {Expression} [expression] Expression required for unary comparison filters.
+ * @property {Expression} [lowerboundary] Lower boundary expression, required for operator='propertyisbetween'.
+ * @property {Expression} [upperboundary] Upper boundary expression, required for operator='propertyisbetween'.
  * @property {string} [wildcard] Required wildcard character for operator='propertyislike'.
  * @property {string} [singlechar] Required single char match character,
  * required for operator='propertyislike'.

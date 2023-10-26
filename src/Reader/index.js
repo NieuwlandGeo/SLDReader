@@ -77,6 +77,7 @@ function addNumericProp(node, obj, prop) {
  * Simplifies array of ogc:Expressions. If all expressions are literals, they will be concatenated into a string.
  * If the array contains only one expression, it will be returned.
  * If it's not an array, return unmodified.
+ * @private
  * @param {Array<OGCExpression>} expressions An array of ogc:Expression objects.
  * @param {string} typeHint Expression type. Choose 'string' or 'number'.
  * @param {boolean} concatenateLiterals When true, and when all expressions are literals,
@@ -452,8 +453,9 @@ export default function Reader(sld) {
  * @name Rule
  * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
  * @property {string} name rule name
- * @property {Filter[]} [filter]
- * @property {boolean} [elsefilter]
+ * @property {Filter} [filter] Optional filter expression for the rule.
+ * @property {boolean} [elsefilter] Set this to true when rule has no filter expression
+ * to catch everything not passing any other filter.
  * @property {integer} [minscaledenominator]
  * @property {integer} [maxscaledenominator]
  * @property {PolygonSymbolizer} [polygonsymbolizer]
@@ -467,9 +469,9 @@ export default function Reader(sld) {
  * @description a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
  * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html)
  * @property {Object} fill
- * @property {array} fill.css one object per CssParameter with props name (camelcased) & value
+ * @property {Object<Expression>} fill.styling one object per SvgParameter with props name (camelCased)
  * @property {Object} stroke
- * @property {Object[]} stroke.css with camelcased name & value
+ * @property {Object<Expression>} stroke.styling with camelcased name & value
  * */
 
 /**
@@ -478,7 +480,7 @@ export default function Reader(sld) {
  * @description a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
  * [geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
  * @property {Object} stroke
- * @property {Object[]} stroke.css one object per CssParameter with props name (camelcased) & value
+ * @property {Object<Expression>} stroke.styling one object per SvgParameter with props name (camelCased)
  * @property {Object} graphicstroke
  * @property {Object} graphicstroke.graphic
  * @property {Object} graphicstroke.graphic.mark
@@ -503,6 +505,6 @@ export default function Reader(sld) {
  * @property {Object} graphic.mark.fill
  * @property {Object} graphic.mark.stroke
  * @property {Number} graphic.opacity
- * @property {Number} graphic.size
- * @property {Number} graphic.rotation
+ * @property {Expression} graphic.size
+ * @property {Expression} graphic.rotation
  * */

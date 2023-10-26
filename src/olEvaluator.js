@@ -5,20 +5,26 @@ import { getFunction } from './functions';
 
 /**
  * Check if an expression depends on feature properties.
- * @param {object} expression OGC expression object.
+ * @private
+ * @param {Expression} expression SLDReader expression object.
  * @returns {bool} Returns true if the expression depends on feature properties.
  */
 export function isDynamicExpression(expression) {
   switch ((expression || {}).type) {
     case 'expression':
-      // Expressions with all static values are already concatenated into a static string,
-      // so any expression that survives that process has at least one dynamic component.
+      // Expressions with all literal child values are already concatenated into a static string,
+      // so any expression that survives that process has at least one non-literal child
+      // and therefore possibly dynamic component.
       return true;
     case 'literal':
       return false;
     case 'propertyname':
       return true;
     case 'function':
+      // Note: assuming function expressions are dynamic is correct in most practical cases.
+      // A more accurate implementation would be that a function expression is static if:
+      // * The function is idempotent. You cannot tell from the implementation, unless the implementor marks it as such.
+      // * All function parameter expressions are static.
       return true;
     default:
       return false;
@@ -29,7 +35,7 @@ export function isDynamicExpression(expression) {
  * @private
  * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
  * Constant expressions are returned as-is.
- * @param {object|string} expression SLD object expression.
+ * @param {Expression} expression SLD object expression.
  * @param {ol/feature} feature OpenLayers feature instance.
  * @param {function} getProperty A function to get a specific property value from a feature.
  * @param {any} defaultValue Optional default value to use when feature is null.

@@ -11,14 +11,39 @@
 ## Functions
 
 <dl>
-<dt><a href="#getGeometryStyles">getGeometryStyles(rules)</a> ⇒ <code><a href="#GeometryStyles">GeometryStyles</a></code></dt>
+<dt><a href="#categorizeSymbolizers">categorizeSymbolizers(rules)</a> ⇒ <code><a href="#CategorizedSymbolizers">CategorizedSymbolizers</a></code></dt>
 <dd><p>Get styling from rules per geometry type</p>
+</dd>
+<dt><a href="#registerFunction">registerFunction(functionName, implementation)</a></dt>
+<dd><p>Register a function implementation by name. When evaluating the function, it will be called
+with the values of the parameter elements evaluated for a single feature.
+If the function returns null, the fallback value given in the SLD function element will be used instead.</p>
+<p>Note: take care of these possible gotcha&#39;s in the function implementation.</p>
+<ul>
+<li>The function will be called with the number of parameters given in the SLD function element.
+This number can be different from the expected number of arguments.</li>
+<li>Try to avoid throwing errors from the function implementation and return null if possible.</li>
+<li>Literal values will always be provided as strings. Convert numeric parameters to numbers yourself.</li>
+<li>Geometry valued parameters will be provided as OpenLayers geometry instances. Do not mutate these!</li>
+</ul>
+</dd>
+<dt><a href="#getFunction">getFunction(functionName)</a> ⇒ <code>function</code></dt>
+<dd><p>Get a function implementation by name.</p>
+</dd>
+<dt><a href="#clearFunctionCache">clearFunctionCache()</a></dt>
+<dd><p>Clear the function cache.</p>
 </dd>
 <dt><a href="#createOlStyleFunction">createOlStyleFunction(featureTypeStyle, options)</a> ⇒ <code>function</code></dt>
 <dd><p>Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.</p>
 <p><strong>Important!</strong> When using externalGraphics for point styling, make sure to call .changed() on the layer
 inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
 image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).</p>
+</dd>
+<dt><a href="#createOlStyle">createOlStyle(styleRule, geometryType)</a> ⇒ <code>Array.&lt;ol.Style&gt;</code></dt>
+<dd><p>Create an array of OpenLayers style instances for features with the chosen geometry type from a style rule.
+Since this function creates a static OpenLayers style and not a style function,
+usage of this function is only suitable for simple symbolizers that do not depend on feature properties
+and do not contain external graphics. External graphic marks will be shown as a grey circle instead.</p>
 </dd>
 <dt><a href="#getLayerNames">getLayerNames(sld)</a> ⇒ <code>Array.&lt;string&gt;</code></dt>
 <dd><p>get all layer names in sld</p>
@@ -45,11 +70,15 @@ Note: this will be a mix of Point/Line/Polygon/Text symbolizers.</p>
 ## Typedefs
 
 <dl>
-<dt><a href="#GeometryStyles">GeometryStyles</a></dt>
+<dt><a href="#CategorizedSymbolizers">CategorizedSymbolizers</a></dt>
 <dd><p>contains for each geometry type the symbolizer from an array of rules</p>
 </dd>
+<dt><a href="#Expression">Expression</a></dt>
+<dd><p>Modeled after <a href="https://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">SvgParameterType</a>.
+Can be either a primitive value (string,integer,boolean), or an object with these properties:</p>
+</dd>
 <dt><a href="#Filter">Filter</a></dt>
-<dd><p><a href="http://schemas.opengis.net/filter/1.1.0/filter.xsd">filter operators</a>, see also
+<dd><p><a href="https://schemas.opengis.net/filter/2.0/filter.xsd">filter operators</a>, see also
 <a href="http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html">geoserver</a></p>
 </dd>
 <dt><a href="#StyledLayerDescriptor">StyledLayerDescriptor</a></dt>
@@ -110,9 +139,9 @@ Creates a object from an sld xml string,
 | --- | --- | --- |
 | sld | <code>string</code> | xml string |
 
-<a name="getGeometryStyles"></a>
+<a name="categorizeSymbolizers"></a>
 
-## getGeometryStyles(rules) ⇒ [<code>GeometryStyles</code>](#GeometryStyles)
+## categorizeSymbolizers(rules) ⇒ [<code>CategorizedSymbolizers</code>](#CategorizedSymbolizers)
 Get styling from rules per geometry type
 
 **Kind**: global function  
@@ -121,6 +150,36 @@ Get styling from rules per geometry type
 | --- | --- | --- |
 | rules | [<code>Array.&lt;Rule&gt;</code>](#Rule) | [description] |
 
+<a name="registerFunction"></a>
+
+## registerFunction(functionName, implementation)
+Register a function implementation by name. When evaluating the function, it will be calledwith the values of the parameter elements evaluated for a single feature.If the function returns null, the fallback value given in the SLD function element will be used instead.Note: take care of these possible gotcha's in the function implementation.* The function will be called with the number of parameters given in the SLD function element.  This number can be different from the expected number of arguments.* Try to avoid throwing errors from the function implementation and return null if possible.* Literal values will always be provided as strings. Convert numeric parameters to numbers yourself.* Geometry valued parameters will be provided as OpenLayers geometry instances. Do not mutate these!
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| functionName | <code>string</code> | Function name. |
+| implementation | <code>function</code> | The function implementation. |
+
+<a name="getFunction"></a>
+
+## getFunction(functionName) ⇒ <code>function</code>
+Get a function implementation by name.
+
+**Kind**: global function  
+**Returns**: <code>function</code> - The function implementation, or null if no function with the givenname has been registered yet.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| functionName | <code>string</code> | Function name. |
+
+<a name="clearFunctionCache"></a>
+
+## clearFunctionCache()
+Clear the function cache.
+
+**Kind**: global function  
 <a name="createOlStyleFunction"></a>
 
 ## createOlStyleFunction(featureTypeStyle, options) ⇒ <code>function</code>
@@ -140,6 +199,23 @@ Create an OpenLayers style function from a FeatureTypeStyle object extracted fro
 **Example**  
 ```js
 myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {  imageLoadedCallback: () => { myOlVectorLayer.changed(); }}));
+```
+<a name="createOlStyle"></a>
+
+## createOlStyle(styleRule, geometryType) ⇒ <code>Array.&lt;ol.Style&gt;</code>
+Create an array of OpenLayers style instances for features with the chosen geometry type from a style rule.Since this function creates a static OpenLayers style and not a style function,usage of this function is only suitable for simple symbolizers that do not depend on feature propertiesand do not contain external graphics. External graphic marks will be shown as a grey circle instead.
+
+**Kind**: global function  
+**Returns**: <code>Array.&lt;ol.Style&gt;</code> - An array of OpenLayers style instances.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| styleRule | <code>StyleRule</code> | Feature Type Style Rule object. |
+| geometryType | <code>string</code> | One of 'Point', 'LineString' or 'Polygon' |
+
+**Example**  
+```js
+myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
 ```
 <a name="getLayerNames"></a>
 
@@ -189,7 +265,7 @@ get style from array layer.styles, if name is undefined it returns default style
 | Param | Type | Description |
 | --- | --- | --- |
 | layer | [<code>Layer</code>](#Layer) | [description] |
-| [name] | <code>string</code> | of style |
+| [name] | <code>string</code> | of style. If not given, the style marked as default will be returned. If there is no default style, the first one will be returned. |
 
 <a name="getRules"></a>
 
@@ -222,9 +298,9 @@ Get all symbolizers inside a given rule.Note: this will be a mix of Point/Line/
 | --- | --- | --- |
 | rule | <code>object</code> | SLD rule object. |
 
-<a name="GeometryStyles"></a>
+<a name="CategorizedSymbolizers"></a>
 
-## GeometryStyles
+## CategorizedSymbolizers
 contains for each geometry type the symbolizer from an array of rules
 
 **Kind**: global typedef  
@@ -232,14 +308,32 @@ contains for each geometry type the symbolizer from an array of rules
 
 | Name | Type | Description |
 | --- | --- | --- |
-| polygon | [<code>Array.&lt;PolygonSymbolizer&gt;</code>](#PolygonSymbolizer) | polygonsymbolizers |
-| line | [<code>Array.&lt;LineSymbolizer&gt;</code>](#LineSymbolizer) | linesymbolizers |
-| point | [<code>Array.&lt;PointSymbolizer&gt;</code>](#PointSymbolizer) | pointsymbolizers, same as graphic prop from PointSymbolizer |
+| polygonSymbolizers | [<code>Array.&lt;PolygonSymbolizer&gt;</code>](#PolygonSymbolizer) | polygonsymbolizers |
+| lineSymbolizers | [<code>Array.&lt;LineSymbolizer&gt;</code>](#LineSymbolizer) | linesymbolizers |
+| pointSymbolizers | [<code>Array.&lt;PointSymbolizer&gt;</code>](#PointSymbolizer) | pointsymbolizers, same as graphic prop from PointSymbolizer |
+| textSymbolizers | <code>Array.&lt;TextSymbolizer&gt;</code> | textsymbolizers |
+
+<a name="Expression"></a>
+
+## Expression
+Modeled after [SvgParameterType](https://schemas.opengis.net/se/1.1.0/Symbolizer.xsd).Can be either a primitive value (string,integer,boolean), or an object with these properties:
+
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| type | <code>string</code> | One of 'literal', 'propertyname', or 'function'. |
+| [typeHint] | <code>string</code> | Optional type hint, used when evaluating the expression. Defaults to 'string'. Can be 'number'. |
+| [value] | <code>any</code> | The primitive type representing the value of a literal expresion, or a string representing the name of a propertyname expression . |
+| [name] | <code>string</code> | Required for function expressions. Contains the function name. |
+| [fallbackValue] | <code>any</code> | Optional fallback value when function evaluation returns null. |
+| [params] | [<code>Array.&lt;Expression&gt;</code>](#Expression) | Required array of function parameters for function expressions. |
 
 <a name="Filter"></a>
 
 ## Filter
-[filter operators](http://schemas.opengis.net/filter/1.1.0/filter.xsd), see also[geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+[filter operators](https://schemas.opengis.net/filter/2.0/filter.xsd), see also[geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
 
 **Kind**: global typedef  
 **Properties**
@@ -248,13 +342,14 @@ contains for each geometry type the symbolizer from an array of rules
 | --- | --- | --- |
 | type | <code>string</code> | Can be 'comparison', 'and', 'or', 'not', or 'featureid'. |
 | [fids] | <code>Array.&lt;string&gt;</code> | An array of feature id's. Required for type='featureid'. |
-| [operator] | <code>string</code> | Required for type='comparison'. Can be one of 'propertyisequalto', 'propertyisnotequalto', 'propertyislessthan', 'propertyislessthanorequalto', 'propertyisgreaterthan', 'propertyisgreaterthanorequalto', 'propertyislike', 'propertyisbetween' |
+| [operator] | <code>string</code> | Required for type='comparison'. Can be one of 'propertyisequalto', 'propertyisnotequalto', 'propertyislessthan', 'propertyislessthanorequalto', 'propertyisgreaterthan', 'propertyisgreaterthanorequalto', 'propertyislike', 'propertyisbetween' 'propertyisnull' |
 | [predicates] | [<code>Array.&lt;Filter&gt;</code>](#Filter) | Required for type='and' or type='or'. An array of filter predicates that must all evaluate to true for 'and', or for which at least one must evaluate to true for 'or'. |
 | [predicate] | [<code>Filter</code>](#Filter) | Required for type='not'. A single predicate to negate. |
-| [propertyname] | <code>string</code> | Required for type='comparison'. |
-| [literal] | <code>string</code> | A literal value to use in a comparison, required for type='comparison'. |
-| [lowerboundary] | <code>string</code> | Lower boundary, required for operator='propertyisbetween'. |
-| [upperboundary] | <code>string</code> | Upper boundary, required for operator='propertyisbetween'. |
+| [expression1] | [<code>Expression</code>](#Expression) | First expression required for boolean comparison filters. |
+| [expression2] | [<code>Expression</code>](#Expression) | Second expression required for boolean comparison filters. |
+| [expression] | [<code>Expression</code>](#Expression) | Expression required for unary comparison filters. |
+| [lowerboundary] | [<code>Expression</code>](#Expression) | Lower boundary expression, required for operator='propertyisbetween'. |
+| [upperboundary] | [<code>Expression</code>](#Expression) | Upper boundary expression, required for operator='propertyisbetween'. |
 | [wildcard] | <code>string</code> | Required wildcard character for operator='propertyislike'. |
 | [singlechar] | <code>string</code> | Required single char match character, required for operator='propertyislike'. |
 | [escapechar] | <code>string</code> | Required escape character for operator='propertyislike'. |
@@ -311,8 +406,8 @@ a typedef for Rule to match a feature: [xsd](http://schemas.opengis.net/se/1.1.0
 | Name | Type | Description |
 | --- | --- | --- |
 | name | <code>string</code> | rule name |
-| [filter] | [<code>Array.&lt;Filter&gt;</code>](#Filter) |  |
-| [elsefilter] | <code>boolean</code> |  |
+| [filter] | [<code>Filter</code>](#Filter) | Optional filter expression for the rule. |
+| [elsefilter] | <code>boolean</code> | Set this to true when rule has no filter expression to catch everything not passing any other filter. |
 | [minscaledenominator] | <code>integer</code> |  |
 | [maxscaledenominator] | <code>integer</code> |  |
 | [polygonsymbolizer] | [<code>PolygonSymbolizer</code>](#PolygonSymbolizer) |  |
@@ -330,9 +425,9 @@ a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer
 | Name | Type | Description |
 | --- | --- | --- |
 | fill | <code>Object</code> |  |
-| fill.css | <code>array</code> | one object per CssParameter with props name (camelcased) & value |
+| fill.styling | [<code>Object.&lt;Expression&gt;</code>](#Expression) | one object per SvgParameter with props name (camelCased) |
 | stroke | <code>Object</code> |  |
-| stroke.css | <code>Array.&lt;Object&gt;</code> | with camelcased name & value |
+| stroke.styling | [<code>Object.&lt;Expression&gt;</code>](#Expression) | with camelcased name & value |
 
 <a name="LineSymbolizer"></a>
 
@@ -345,7 +440,7 @@ a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xs
 | Name | Type | Description |
 | --- | --- | --- |
 | stroke | <code>Object</code> |  |
-| stroke.css | <code>Array.&lt;Object&gt;</code> | one object per CssParameter with props name (camelcased) & value |
+| stroke.styling | [<code>Object.&lt;Expression&gt;</code>](#Expression) | one object per SvgParameter with props name (camelCased) |
 | graphicstroke | <code>Object</code> |  |
 | graphicstroke.graphic | <code>Object</code> |  |
 | graphicstroke.graphic.mark | <code>Object</code> |  |
@@ -374,6 +469,6 @@ a typedef for PointSymbolizer [xsd](http://schemas.opengis.net/se/1.1.0/Symboliz
 | graphic.mark.fill | <code>Object</code> | 
 | graphic.mark.stroke | <code>Object</code> | 
 | graphic.opacity | <code>Number</code> | 
-| graphic.size | <code>Number</code> | 
-| graphic.rotation | <code>Number</code> | 
+| graphic.size | [<code>Expression</code>](#Expression) | 
+| graphic.rotation | [<code>Expression</code>](#Expression) | 
 
