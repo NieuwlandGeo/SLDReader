@@ -3436,7 +3436,8 @@
         ? pointplacement.displacement
         : {};
     var offsetX = evaluate(displacement.displacementx, null, null, 0.0);
-    var offsetY = evaluate(displacement.displacementy, null, null, 0.0);
+    // Positive offsetY shifts the label downwards. Positive displacementY in SLD means shift upwards.
+    var offsetY = -evaluate(displacement.displacementy, null, null, 0.0);
 
     // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
     var anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};

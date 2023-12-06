@@ -773,6 +773,16 @@ describe('Text symbolizer', () => {
     // CDATA whitespace should be kept intact.
     expect(textStyle.getText().getText()).to.equal('Size: 100\nAngle: 42');
   });
+
+  it('Labal displacement', () => {
+    const sldObject = Reader(textSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+    const textStyle = styleFunction(pointFeature)[0];
+    expect(textStyle.getText().getOffsetX()).to.equal(10);
+    // OpenLayers Y offset is inverted. Negative offset shifts upwards.
+    expect(textStyle.getText().getOffsetY()).to.equal(-20);
+  });
 });
 
 describe('Polygon styling', () => {

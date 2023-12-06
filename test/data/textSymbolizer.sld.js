@@ -18,6 +18,10 @@ export const textSymbolizerSld = `<?xml version="1.0" encoding="UTF-8"?>
                   <AnchorPointX>0</AnchorPointX>
                   <AnchorPointY>1</AnchorPointY>
                 </AnchorPoint>
+                <Displacement>
+                  <DisplacementX>10</DisplacementX>
+                  <DisplacementY>20</DisplacementY>
+                </Displacement>
               </PointPlacement>
             </LabelPlacement>
           </TextSymbolizer>
