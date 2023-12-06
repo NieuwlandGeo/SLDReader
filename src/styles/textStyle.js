@@ -49,7 +49,8 @@ function textStyle(textsymbolizer) {
       ? pointplacement.displacement
       : {};
   const offsetX = evaluate(displacement.displacementx, null, null, 0.0);
-  const offsetY = evaluate(displacement.displacementy, null, null, 0.0);
+  // Positive offsetY shifts the label downwards. Positive displacementY in SLD means shift upwards.
+  const offsetY = -evaluate(displacement.displacementy, null, null, 0.0);
 
   // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
   const anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};

@@ -2575,6 +2575,23 @@
       olImage.setRotation(rotationRadians);
     }
 
+    // Update displacement
+    var displacement = graphic.displacement;
+    if (displacement) {
+      var displacementx = displacement.displacementx;
+      var displacementy = displacement.displacementy;
+      if (
+        typeof displacementx !== 'undefined' ||
+        typeof displacementy !== 'undefined'
+      ) {
+        var dx = evaluate(displacementx, feature, getProperty) || 0.0;
+        var dy = evaluate(displacementy, feature, getProperty) || 0.0;
+        if (dx !== 0.0 || dy !== 0.0) {
+          olImage.setDisplacement([dx, dy]);
+        }
+      }
+    }
+
     // --- Update stroke and fill ---
     if (graphic.mark) {
       var strokeChanged = applyDynamicStrokeStyling(
@@ -3436,7 +3453,8 @@
         ? pointplacement.displacement
         : {};
     var offsetX = evaluate(displacement.displacementx, null, null, 0.0);
-    var offsetY = evaluate(displacement.displacementy, null, null, 0.0);
+    // Positive offsetY shifts the label downwards. Positive displacementY in SLD means shift upwards.
+    var offsetY = -evaluate(displacement.displacementy, null, null, 0.0);
 
     // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
     var anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};

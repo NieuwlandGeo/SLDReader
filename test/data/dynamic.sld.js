@@ -28,6 +28,14 @@ export const dynamicSld = `<?xml version="1.0" encoding="UTF-8"?>
               <sld:Rotation>
                 <ogc:PropertyName>angle</ogc:PropertyName>
               </sld:Rotation>
+              <sld:Displacement>
+                <sld:DisplacementX>
+                  <ogc:PropertyName>displacementX</ogc:PropertyName>
+                </sld:DisplacementX>
+                <sld:DisplacementY>
+                  <ogc:PropertyName>displacementY</ogc:PropertyName>
+                </sld:DisplacementY>
+              </sld:Displacement>
             </sld:Graphic>
           </sld:PointSymbolizer>
           <sld:TextSymbolizer>

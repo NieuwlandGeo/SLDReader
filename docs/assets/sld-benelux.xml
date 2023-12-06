@@ -32,6 +32,17 @@
               </Rotation>
             </Graphic>
           </PointSymbolizer>
+          <PointSymbolizer>
+            <Graphic>
+              <Mark>
+                <WellKnownName>circle</WellKnownName>
+                <Fill>
+                  <CssParameter name="fill">#FF0000</CssParameter>
+                </Fill>
+              </Mark>
+              <Size>6</Size>
+            </Graphic>
+          </PointSymbolizer>
         </Rule>
         <Rule>
           <Name>be</Name>
@@ -56,6 +67,17 @@
               </Rotation>
             </Graphic>
           </PointSymbolizer>
+          <PointSymbolizer>
+            <Graphic>
+              <Mark>
+                <WellKnownName>circle</WellKnownName>
+                <Fill>
+                  <CssParameter name="fill">#FF0000</CssParameter>
+                </Fill>
+              </Mark>
+              <Size>6</Size>
+            </Graphic>
+          </PointSymbolizer>
         </Rule>
         <Rule>
           <Name>lu</Name>
@@ -78,6 +100,21 @@
               <Rotation>
                 <ogc:PropertyName>angle</ogc:PropertyName>
               </Rotation>
+              <Displacement>
+                <DisplacementX>0</DisplacementX>
+                <DisplacementY>12</DisplacementY>
+              </Displacement>
+            </Graphic>
+          </PointSymbolizer>
+          <PointSymbolizer>
+            <Graphic>
+              <Mark>
+                <WellKnownName>circle</WellKnownName>
+                <Fill>
+                  <CssParameter name="fill">#FF0000</CssParameter>
+                </Fill>
+              </Mark>
+              <Size>6</Size>
             </Graphic>
           </PointSymbolizer>
         </Rule>

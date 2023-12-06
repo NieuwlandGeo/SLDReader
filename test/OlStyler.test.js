@@ -593,6 +593,8 @@ describe('Dynamic style properties', () => {
       properties: {
         size: 100,
         angle: 42,
+        displacementX: 10,
+        displacementY: 20,
         title: 'This is a test',
       },
     };
@@ -624,6 +626,11 @@ describe('Dynamic style properties', () => {
         expect(style.getImage().getRotation()).to.equal(
           (Math.PI * 42.0) / 180.0
         );
+      });
+
+      it('Reads displacement from feature', () => {
+        const style = styleFunction(pointFeature)[0];
+        expect(style.getImage().getDisplacement()).to.deep.equal([10, 20]);
       });
 
       it('Reads text for label from feature', () => {
@@ -772,6 +779,16 @@ describe('Text symbolizer', () => {
     const textStyle = styleFunction(pointFeature)[0];
     // CDATA whitespace should be kept intact.
     expect(textStyle.getText().getText()).to.equal('Size: 100\nAngle: 42');
+  });
+
+  it('Labal displacement', () => {
+    const sldObject = Reader(textSymbolizerSld);
+    const [featureTypeStyle] = sldObject.layers[0].styles[0].featuretypestyles;
+    const styleFunction = createOlStyleFunction(featureTypeStyle);
+    const textStyle = styleFunction(pointFeature)[0];
+    expect(textStyle.getText().getOffsetX()).to.equal(10);
+    // OpenLayers Y offset is inverted. Negative offset shifts upwards.
+    expect(textStyle.getText().getOffsetY()).to.equal(-20);
   });
 });
 
