@@ -97,6 +97,7 @@ for (let k = 0; k < numFeatures; k += 1) {
         myStrokeColor: weightedRandomColor(0, 0, 128),
         myStrokeWidth: 1 + 3 * Math.random(),
         myStrokeOpacity: 0.8 + 0.2 * Math.random(),
+        myAngle: 360.0 * Math.random(),
       },
     };
     randomGeoJSON.features.push(randomPolygonFeature);
