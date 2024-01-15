@@ -43,6 +43,9 @@
               <se:Size>
                 <ogc:PropertyName>mySize</ogc:PropertyName>
               </se:Size>
+              <se:Rotation>
+                <ogc:PropertyName>myRotation</ogc:PropertyName>
+              </se:Rotation>
             </se:Graphic>
           </se:PointSymbolizer>
         </se:Rule>

@@ -1042,6 +1042,10 @@ describe('Styling with dynamic SVG Parameters', () => {
       myStrokeOpacity: 1.0,
       myFillColor: '#646464', // [100, 100, 100]
       myFillOpacity: 0.4,
+      mySize: 14,
+      myAngle: 42,
+      myDisplacementX: 15,
+      myDisplacementY: 45,
     },
   };
 
@@ -1243,6 +1247,16 @@ describe('Styling with dynamic SVG Parameters', () => {
       expect(olStyle.getImage().getFill().getColor()).to.equal(
         'rgba(100, 100, 100, 0.4)'
       );
+    });
+
+    it('Dynamic rotation', () => {
+      const imageRotation = olStyle.getImage().getRotation();
+      const imageRotationDegrees = (180.0 * imageRotation) / Math.PI;
+      expect(imageRotationDegrees).to.equal(42);
+    });
+
+    it('Dynamic displacement', () => {
+      expect(olStyle.getImage().getDisplacement()).to.deep.equal([15, 45]);
     });
   });
 

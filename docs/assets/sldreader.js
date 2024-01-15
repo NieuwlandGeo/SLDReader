@@ -2538,13 +2538,18 @@
 
     // Apply dynamic values to the cached OL style instance before returning it.
 
-    // --- Update dynamic size ---
     var graphic = symbolizer.graphic;
-    var size = graphic.size;
-    if (isDynamicExpression(size)) {
-      var sizeValue =
-        Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
 
+    // Calculate size and rotation values first.
+    var size = graphic.size;
+    var rotation = graphic.rotation;
+    var sizeValue =
+      Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
+    var rotationDegrees =
+      Number(evaluate(rotation, feature, getProperty)) || 0.0;
+
+    // --- Update dynamic size ---
+    if (isDynamicExpression(size)) {
       if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
         var height = olImage.getSize()[1];
         var scale = sizeValue / height || 1;
@@ -2559,37 +2564,18 @@
           sizeValue,
           // Note: re-use stroke and fill instances for a (small?) performance gain.
           olImage.getStroke(),
-          olImage.getFill()
+          olImage.getFill(),
+          rotationDegrees
         );
         olStyle.setImage(olImage);
       }
     }
 
     // --- Update dynamic rotation ---
-    var rotation = graphic.rotation;
     if (isDynamicExpression(rotation)) {
-      var rotationDegrees =
-        Number(evaluate(rotation, feature, getProperty)) || 0.0;
       // Note: OL angles are in radians.
       var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
       olImage.setRotation(rotationRadians);
-    }
-
-    // Update displacement
-    var displacement = graphic.displacement;
-    if (displacement) {
-      var displacementx = displacement.displacementx;
-      var displacementy = displacement.displacementy;
-      if (
-        typeof displacementx !== 'undefined' ||
-        typeof displacementy !== 'undefined'
-      ) {
-        var dx = evaluate(displacementx, feature, getProperty) || 0.0;
-        var dy = evaluate(displacementy, feature, getProperty) || 0.0;
-        if (dx !== 0.0 || dy !== 0.0) {
-          olImage.setDisplacement([dx, dy]);
-        }
-      }
     }
 
     // --- Update stroke and fill ---
@@ -2610,15 +2596,31 @@
 
       if (strokeChanged || fillChanged) {
         // Create a new olImage in order to force a re-render to see the style changes.
-        var sizeValue$1 =
-          Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
         olImage = getWellKnownSymbol(
           (graphic.mark && graphic.mark.wellknownname) || 'square',
-          sizeValue$1,
+          sizeValue,
           olImage.getStroke(),
-          olImage.getFill()
+          olImage.getFill(),
+          rotationDegrees
         );
         olStyle.setImage(olImage);
+      }
+    }
+
+    // Update displacement
+    var displacement = graphic.displacement;
+    if (displacement) {
+      var displacementx = displacement.displacementx;
+      var displacementy = displacement.displacementy;
+      if (
+        typeof displacementx !== 'undefined' ||
+        typeof displacementy !== 'undefined'
+      ) {
+        var dx = evaluate(displacementx, feature, getProperty) || 0.0;
+        var dy = evaluate(displacementy, feature, getProperty) || 0.0;
+        if (dx !== 0.0 || dy !== 0.0) {
+          olImage.setDisplacement([dx, dy]);
+        }
       }
     }
 
