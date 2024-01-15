@@ -36,7 +36,7 @@ export const dynamicPointSymbolizerSld = `<?xml version="1.0" encoding="UTF-8"?>
                 <ogc:PropertyName>mySize</ogc:PropertyName>
               </se:Size>
               <se:Rotation>
-                <ogc:PropertyName>myRotation</ogc:PropertyName>
+                <ogc:PropertyName>myAngle</ogc:PropertyName>
               </se:Rotation>
               <se:Displacement>
                 <se:DisplacementX>

@@ -120,13 +120,17 @@ function getPointStyle(symbolizer, feature, getProperty) {
 
   // Apply dynamic values to the cached OL style instance before returning it.
 
-  // --- Update dynamic size ---
   const { graphic } = symbolizer;
-  const { size } = graphic;
-  if (isDynamicExpression(size)) {
-    const sizeValue =
-      Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
 
+  // Calculate size and rotation values first.
+  const { size, rotation } = graphic;
+  const sizeValue =
+    Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
+  const rotationDegrees =
+    Number(evaluate(rotation, feature, getProperty)) || 0.0;
+
+  // --- Update dynamic size ---
+  if (isDynamicExpression(size)) {
     if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
       const height = olImage.getSize()[1];
       const scale = sizeValue / height || 1;
@@ -141,17 +145,15 @@ function getPointStyle(symbolizer, feature, getProperty) {
         sizeValue,
         // Note: re-use stroke and fill instances for a (small?) performance gain.
         olImage.getStroke(),
-        olImage.getFill()
+        olImage.getFill(),
+        rotationDegrees
       );
       olStyle.setImage(olImage);
     }
   }
 
   // --- Update dynamic rotation ---
-  const { rotation } = graphic;
   if (isDynamicExpression(rotation)) {
-    const rotationDegrees =
-      Number(evaluate(rotation, feature, getProperty)) || 0.0;
     // Note: OL angles are in radians.
     const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
     olImage.setRotation(rotationRadians);
@@ -175,13 +177,12 @@ function getPointStyle(symbolizer, feature, getProperty) {
 
     if (strokeChanged || fillChanged) {
       // Create a new olImage in order to force a re-render to see the style changes.
-      const sizeValue =
-        Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
       olImage = getWellKnownSymbol(
         (graphic.mark && graphic.mark.wellknownname) || 'square',
         sizeValue,
         olImage.getStroke(),
-        olImage.getFill()
+        olImage.getFill(),
+        rotationDegrees
       );
       olStyle.setImage(olImage);
     }

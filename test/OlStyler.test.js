@@ -1250,7 +1250,9 @@ describe('Styling with dynamic SVG Parameters', () => {
     });
 
     it('Dynamic rotation', () => {
-      expect(olStyle.getImage().getRotation()).to.equal(42);
+      const imageRotation = olStyle.getImage().getRotation();
+      const imageRotationDegrees = (180.0 * imageRotation) / Math.PI;
+      expect(imageRotationDegrees).to.equal(42);
     });
 
     it('Dynamic displacement', () => {
