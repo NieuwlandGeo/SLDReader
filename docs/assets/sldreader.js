@@ -2575,23 +2575,6 @@
       olImage.setRotation(rotationRadians);
     }
 
-    // Update displacement
-    var displacement = graphic.displacement;
-    if (displacement) {
-      var displacementx = displacement.displacementx;
-      var displacementy = displacement.displacementy;
-      if (
-        typeof displacementx !== 'undefined' ||
-        typeof displacementy !== 'undefined'
-      ) {
-        var dx = evaluate(displacementx, feature, getProperty) || 0.0;
-        var dy = evaluate(displacementy, feature, getProperty) || 0.0;
-        if (dx !== 0.0 || dy !== 0.0) {
-          olImage.setDisplacement([dx, dy]);
-        }
-      }
-    }
-
     // --- Update stroke and fill ---
     if (graphic.mark) {
       var strokeChanged = applyDynamicStrokeStyling(
@@ -2619,6 +2602,23 @@
           olImage.getFill()
         );
         olStyle.setImage(olImage);
+      }
+    }
+
+    // Update displacement
+    var displacement = graphic.displacement;
+    if (displacement) {
+      var displacementx = displacement.displacementx;
+      var displacementy = displacement.displacementy;
+      if (
+        typeof displacementx !== 'undefined' ||
+        typeof displacementy !== 'undefined'
+      ) {
+        var dx = evaluate(displacementx, feature, getProperty) || 0.0;
+        var dy = evaluate(displacementy, feature, getProperty) || 0.0;
+        if (dx !== 0.0 || dy !== 0.0) {
+          olImage.setDisplacement([dx, dy]);
+        }
       }
     }
 
