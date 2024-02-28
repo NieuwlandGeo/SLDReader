@@ -46,7 +46,7 @@ function getWellKnownSymbol(
       return new RegularShape({
         fill,
         points: 5,
-        radius1: radius,
+        radius,
         radius2: radius / 2.5,
         stroke,
         rotation: rotationRadians,
@@ -56,7 +56,7 @@ function getWellKnownSymbol(
       return new RegularShape({
         fill,
         points: 4,
-        radius1: radius,
+        radius,
         radius2: 0,
         stroke:
           stroke ||
@@ -102,7 +102,7 @@ function getWellKnownSymbol(
         angle: Math.PI / 4,
         fill,
         points: 4,
-        radius1: Math.sqrt(2.0) * radius,
+        radius: Math.sqrt(2.0) * radius,
         radius2: 0,
         stroke:
           stroke ||
@@ -117,7 +117,7 @@ function getWellKnownSymbol(
       return new RegularShape({
         fill,
         points: 4,
-        radius1: radius,
+        radius,
         stroke,
         rotation: rotationRadians,
       });
@@ -169,7 +169,7 @@ function getWellKnownSymbol(
         fill,
         points: 4,
         // For square, scale radius so the height of the square equals the given size.
-        radius1: radius * Math.sqrt(2.0),
+        radius: radius * Math.sqrt(2.0),
         stroke,
         rotation: rotationRadians,
       });

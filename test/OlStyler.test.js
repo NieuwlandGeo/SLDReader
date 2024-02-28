@@ -97,7 +97,7 @@ describe('creates point style', () => {
       {
         graphic: {
           mark: {
-            wellknownname: 'circle',
+            wellknownname: 'star',
             fill: {},
             stroke: {},
           },
@@ -109,12 +109,17 @@ describe('creates point style', () => {
     ],
   };
   it('returns array', () => {
-    const style = OlStyler(styleDescription, getMockOLFeature('Point'));
-    expect(style).to.be.an('array');
+    const styles = OlStyler(styleDescription, getMockOLFeature('Point'));
+    expect(styles).to.be.an('array');
   });
   it('returns style', () => {
-    const style = OlStyler(styleDescription, getMockOLFeature('Point'));
-    expect(style['0']).to.be.an.instanceOf(Style);
+    const [style] = OlStyler(styleDescription, getMockOLFeature('Point'));
+    expect(style).to.be.an.instanceOf(Style);
+  });
+  it('uses radius and radius2 for star-like regular shape', () => {
+    const [style] = OlStyler(styleDescription, getMockOLFeature('Point'));
+    expect(style.getImage().getRadius()).to.equal(5);
+    expect(style.getImage().getRadius2()).to.equal(2);
   });
 });
 
