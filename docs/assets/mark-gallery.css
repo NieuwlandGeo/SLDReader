@@ -1,0 +1,25 @@
+#mark-gallery {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.mark-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #5c5962;
+  max-width: 92px;
+  margin: 1rem;
+}
+
+.mark-card .mark-box {
+  width: 92px;
+  height: 92px;
+}
+
+.mark-card .mark-title {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  font-size: 10;
+  font-family: monospace;
+}
