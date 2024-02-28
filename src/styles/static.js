@@ -42,7 +42,7 @@ export const imageErrorPointStyle = new Style({
       color: 'red',
     }),
     points: 4,
-    radius1: 8,
+    radius: 8,
     radius2: 0,
     stroke: new Stroke({
       color: 'red',

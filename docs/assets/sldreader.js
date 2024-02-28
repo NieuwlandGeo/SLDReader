@@ -1866,7 +1866,7 @@
         color: 'red',
       }),
       points: 4,
-      radius1: 8,
+      radius: 8,
       radius2: 0,
       stroke: new style.Stroke({
         color: 'red',
@@ -2033,7 +2033,7 @@
         return new style.RegularShape({
           fill: fill,
           points: 5,
-          radius1: radius,
+          radius: radius,
           radius2: radius / 2.5,
           stroke: stroke,
           rotation: rotationRadians,
@@ -2043,7 +2043,7 @@
         return new style.RegularShape({
           fill: fill,
           points: 4,
-          radius1: radius,
+          radius: radius,
           radius2: 0,
           stroke:
             stroke ||
@@ -2089,7 +2089,7 @@
           angle: Math.PI / 4,
           fill: fill,
           points: 4,
-          radius1: Math.sqrt(2.0) * radius,
+          radius: Math.sqrt(2.0) * radius,
           radius2: 0,
           stroke:
             stroke ||
@@ -2104,7 +2104,7 @@
         return new style.RegularShape({
           fill: fill,
           points: 4,
-          radius1: radius,
+          radius: radius,
           stroke: stroke,
           rotation: rotationRadians,
         });
@@ -2156,7 +2156,7 @@
           fill: fill,
           points: 4,
           // For square, scale radius so the height of the square equals the given size.
-          radius1: radius * Math.sqrt(2.0),
+          radius: radius * Math.sqrt(2.0),
           stroke: stroke,
           rotation: rotationRadians,
         });

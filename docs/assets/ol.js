@@ -55,6 +55,7 @@ fetch('assets/sld-tasmania.xml')
   .then(response => response.text())
   .then(text => {
     const sldObject = SLDReader.Reader(text);
+    window.sldObject = sldObject;
     styleSelector(sldObject);
 
     const setLayerStyle = (layer, stylename) => {
