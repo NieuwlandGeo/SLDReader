@@ -20,12 +20,34 @@
     #olmap {
         border: 1px solid;
         height: calc(30vh);
-        min-height: 300px;
-        margin-bottom: 1rem;
     }
 
     .CodeMirror {
         height: calc(30vh);
         min-height: 300px;
     }
+
+    .split-panels {
+        display: flex;
+        flex-direction: row;
+        margin-bottom: 0.5rem;
+    }
+
+    .split-panel {
+        width: 50%;
+        height: calc(30vh);
+    }
+
+    #custom-geojson {
+        resize: none;
+        width: 100%;
+        height: 100%;
+        font-family: monospace;
+        font-size: 12px;
+    }
+
+    .split-panel .ol-mouse-position {
+        font-size: 11px;
+    }
+
 </style>
