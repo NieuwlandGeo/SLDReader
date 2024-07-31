@@ -5,4 +5,4 @@ sass:
   style: compressed
 aux_links:
   "SLDReader on GitHub":
-    - "//github.com/nieuwlandgeo/sldreader"
+    - "//github.com/letsdev/sldreader"
