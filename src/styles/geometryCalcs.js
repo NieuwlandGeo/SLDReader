@@ -33,10 +33,8 @@ function calculateAngle(p1, p2, invertY) {
 }
 
 // eslint-disable-next-line import/prefer-default-export
-export function splitLineString(geometry, graphicSpacing, options) {
-  if ( options === void 0 ) options = {};
-
-  var coords = geometry.getCoordinates();
+export function splitLineString(geometry, graphicSpacing, options = {}) {
+  const coords = geometry.getCoordinates();
 
   // Handle degenerate cases.
   // LineString without points
@@ -46,42 +44,42 @@ export function splitLineString(geometry, graphicSpacing, options) {
 
   // LineString containing only one point.
   if (coords.length === 1) {
-    return [( coords[0] ).concat( [0])];
+    return [(coords[0]).concat([0])];
   }
 
   // Handle first point placement case.
   if (options.placement === PLACEMENT_FIRSTPOINT) {
-    var p1 = coords[0];
-    var p2 = coords[1];
+    const p1 = coords[0];
+    const p2 = coords[1];
     return [[p1[0], p1[1], calculateAngle(p1, p2, options.invertY)]];
   }
 
   // Handle last point placement case.
   if (options.placement === PLACEMENT_LASTPOINT) {
-    var p1$1 = coords[coords.length - 2];
-    var p2$1 = coords[coords.length - 1];
+    const p1$1 = coords[coords.length - 2];
+    const p2$1 = coords[coords.length - 1];
     return [[p2$1[0], p2$1[1], calculateAngle(p1$1, p2$1, options.invertY)]];
   }
 
-  var gapSize = Math.max(graphicSpacing, 0.1); // 0.1 px minimum gap size to prevent accidents.
+  const gapSize = Math.max(graphicSpacing, 0.1); // 0.1 px minimum gap size to prevent accidents.
 
   // Measure along line to place the next point.
   // Can start at a nonzero value if initialGap is used.
-  var nextPointMeasure = gapSize / 2;
-  var pointIndex = 0;
-  var currentSegmentStart = [].concat( coords[0] );
-  var currentSegmentEnd = [].concat( coords[1] );
+  let nextPointMeasure = gapSize / 2;
+  let pointIndex = 0;
+  const currentSegmentStart = [].concat(coords[0]);
+  const currentSegmentEnd = [].concat(coords[1]);
 
   // Cumulative measure of the line where each segment's length is added in succession.
-  var cumulativeMeasure = 0;
+  let cumulativeMeasure = 0;
 
-  var splitPoints = [];
+  const splitPoints = [];
 
   // Keep adding points until the next point measure lies beyond the line length.
   while (true) {
-    var currentSegmentLength = calculatePointsDistance(
+    const currentSegmentLength = calculatePointsDistance(
       currentSegmentStart,
-      currentSegmentEnd
+      currentSegmentEnd,
     );
     if (cumulativeMeasure + currentSegmentLength < nextPointMeasure) {
       // If the current segment is too short to reach the next point, go to the next segment.
@@ -97,7 +95,7 @@ export function splitLineString(geometry, graphicSpacing, options) {
         options.invertY
       );
       if (!options.extent
-        || extent.containsCoordinate(options.extent, splitPointCoords)) {
+        || containsCoordinate(options.extent, splitPointCoords)) {
         splitPointCoords.push(angle);
         splitPoints.push(splitPointCoords);
       }
@@ -112,24 +110,24 @@ export function splitLineString(geometry, graphicSpacing, options) {
       currentSegmentEnd[1] = coords[pointIndex + 2][1];
       pointIndex += 1;
       cumulativeMeasure = 0;
-      nextPointMeasure = gapSize / 2
+      nextPointMeasure = gapSize / 2;
     } else {
       // Next point lies on the current segment.
       // Calculate its position and increase next point measure by gap size.
-      var distanceFromSegmentStart = nextPointMeasure - cumulativeMeasure;
-      var splitPointCoords = calculateSplitPointCoords(
+      const distanceFromSegmentStart = nextPointMeasure - cumulativeMeasure;
+      const splitPointCoords = calculateSplitPointCoords(
         currentSegmentStart,
         currentSegmentEnd,
-        distanceFromSegmentStart
+        distanceFromSegmentStart,
       );
-      var angle = calculateAngle(
+      const angle = calculateAngle(
         currentSegmentStart,
         currentSegmentEnd,
-        options.invertY
+        options.invertY,
       );
       if (
         !options.extent ||
-        extent.containsCoordinate(options.extent, splitPointCoords)
+        containsCoordinate(options.extent, splitPointCoords)
       ) {
         splitPointCoords.push(angle);
         splitPoints.push(splitPointCoords);
