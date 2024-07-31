@@ -33,8 +33,10 @@ function calculateAngle(p1, p2, invertY) {
 }
 
 // eslint-disable-next-line import/prefer-default-export
-export function splitLineString(geometry, graphicSpacing, options = {}) {
-  const coords = geometry.getCoordinates();
+export function splitLineString(geometry, graphicSpacing, options) {
+  if ( options === void 0 ) options = {};
+
+  var coords = geometry.getCoordinates();
 
   // Handle degenerate cases.
   // LineString without points
@@ -44,46 +46,62 @@ export function splitLineString(geometry, graphicSpacing, options = {}) {
 
   // LineString containing only one point.
   if (coords.length === 1) {
-    return [[...coords[0], 0]];
+    return [( coords[0] ).concat( [0])];
   }
 
   // Handle first point placement case.
   if (options.placement === PLACEMENT_FIRSTPOINT) {
-    const p1 = coords[0];
-    const p2 = coords[1];
+    var p1 = coords[0];
+    var p2 = coords[1];
     return [[p1[0], p1[1], calculateAngle(p1, p2, options.invertY)]];
   }
 
   // Handle last point placement case.
   if (options.placement === PLACEMENT_LASTPOINT) {
-    const p1 = coords[coords.length - 2];
-    const p2 = coords[coords.length - 1];
-    return [[p2[0], p2[1], calculateAngle(p1, p2, options.invertY)]];
+    var p1$1 = coords[coords.length - 2];
+    var p2$1 = coords[coords.length - 1];
+    return [[p2$1[0], p2$1[1], calculateAngle(p1$1, p2$1, options.invertY)]];
   }
 
-  const totalLength = geometry.getLength();
-  const gapSize = Math.max(graphicSpacing, 0.1); // 0.1 px minimum gap size to prevent accidents.
+  var gapSize = Math.max(graphicSpacing, 0.1); // 0.1 px minimum gap size to prevent accidents.
 
   // Measure along line to place the next point.
   // Can start at a nonzero value if initialGap is used.
-  let nextPointMeasure = options.initialGap || 0.0;
-  let pointIndex = 0;
-  const currentSegmentStart = [...coords[0]];
-  const currentSegmentEnd = [...coords[1]];
+  var nextPointMeasure = gapSize / 2;
+  var pointIndex = 0;
+  var currentSegmentStart = [].concat( coords[0] );
+  var currentSegmentEnd = [].concat( coords[1] );
 
   // Cumulative measure of the line where each segment's length is added in succession.
-  let cumulativeMeasure = 0;
+  var cumulativeMeasure = 0;
 
-  const splitPoints = [];
+  var splitPoints = [];
 
   // Keep adding points until the next point measure lies beyond the line length.
-  while (nextPointMeasure <= totalLength) {
-    const currentSegmentLength = calculatePointsDistance(
+  while (true) {
+    var currentSegmentLength = calculatePointsDistance(
       currentSegmentStart,
       currentSegmentEnd
     );
     if (cumulativeMeasure + currentSegmentLength < nextPointMeasure) {
       // If the current segment is too short to reach the next point, go to the next segment.
+
+      const splitPointCoords = calculateSplitPointCoords(
+        currentSegmentEnd,
+        currentSegmentStart,
+        gapSize / 2
+      );
+      const angle = calculateAngle(
+        currentSegmentStart,
+        currentSegmentEnd,
+        options.invertY
+      );
+      if (!options.extent
+        || extent.containsCoordinate(options.extent, splitPointCoords)) {
+        splitPointCoords.push(angle);
+        splitPoints.push(splitPointCoords);
+      }
+
       if (pointIndex === coords.length - 2) {
         // Stop if there is no next segment to process.
         break;
@@ -93,24 +111,25 @@ export function splitLineString(geometry, graphicSpacing, options = {}) {
       currentSegmentEnd[0] = coords[pointIndex + 2][0];
       currentSegmentEnd[1] = coords[pointIndex + 2][1];
       pointIndex += 1;
-      cumulativeMeasure += currentSegmentLength;
+      cumulativeMeasure = 0;
+      nextPointMeasure = gapSize / 2
     } else {
       // Next point lies on the current segment.
       // Calculate its position and increase next point measure by gap size.
-      const distanceFromSegmentStart = nextPointMeasure - cumulativeMeasure;
-      const splitPointCoords = calculateSplitPointCoords(
+      var distanceFromSegmentStart = nextPointMeasure - cumulativeMeasure;
+      var splitPointCoords = calculateSplitPointCoords(
         currentSegmentStart,
         currentSegmentEnd,
         distanceFromSegmentStart
       );
-      const angle = calculateAngle(
+      var angle = calculateAngle(
         currentSegmentStart,
         currentSegmentEnd,
         options.invertY
       );
       if (
         !options.extent ||
-        containsCoordinate(options.extent, splitPointCoords)
+        extent.containsCoordinate(options.extent, splitPointCoords)
       ) {
         splitPointCoords.push(angle);
         splitPoints.push(splitPointCoords);
