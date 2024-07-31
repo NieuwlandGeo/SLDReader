@@ -2688,12 +2688,11 @@
       return [[p2$1[0], p2$1[1], calculateAngle(p1$1, p2$1, options.invertY)]];
     }
 
-    var totalLength = geometry.getLength();
     var gapSize = Math.max(graphicSpacing, 0.1); // 0.1 px minimum gap size to prevent accidents.
 
     // Measure along line to place the next point.
     // Can start at a nonzero value if initialGap is used.
-    var nextPointMeasure = options.initialGap || 0.0;
+    var nextPointMeasure = gapSize / 2;
     var pointIndex = 0;
     var currentSegmentStart = [].concat( coords[0] );
     var currentSegmentEnd = [].concat( coords[1] );
@@ -2704,13 +2703,30 @@
     var splitPoints = [];
 
     // Keep adding points until the next point measure lies beyond the line length.
-    while (nextPointMeasure <= totalLength) {
+    while (true) {
       var currentSegmentLength = calculatePointsDistance(
         currentSegmentStart,
         currentSegmentEnd
       );
       if (cumulativeMeasure + currentSegmentLength < nextPointMeasure) {
         // If the current segment is too short to reach the next point, go to the next segment.
+
+        const splitPointCoords = calculateSplitPointCoords(
+          currentSegmentEnd,
+          currentSegmentStart,
+          gapSize / 2
+        );
+        const angle = calculateAngle(
+          currentSegmentStart,
+          currentSegmentEnd,
+          options.invertY
+        );
+        if (!options.extent
+          || extent.containsCoordinate(options.extent, splitPointCoords)) {
+          splitPointCoords.push(angle);
+          splitPoints.push(splitPointCoords);
+        }
+
         if (pointIndex === coords.length - 2) {
           // Stop if there is no next segment to process.
           break;
@@ -2720,7 +2736,8 @@
         currentSegmentEnd[0] = coords[pointIndex + 2][0];
         currentSegmentEnd[1] = coords[pointIndex + 2][1];
         pointIndex += 1;
-        cumulativeMeasure += currentSegmentLength;
+        cumulativeMeasure = 0;
+        nextPointMeasure = gapSize / 2
       } else {
         // Next point lies on the current segment.
         // Calculate its position and increase next point measure by gap size.
