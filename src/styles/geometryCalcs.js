@@ -81,8 +81,9 @@ export function splitLineString(geometry, graphicSpacing, options = {}) {
       currentSegmentStart,
       currentSegmentEnd,
     );
-    if (cumulativeMeasure + currentSegmentLength < nextPointMeasure) {
-      // If the current segment is too short to reach the next point, go to the next segment.
+    // If the next point exceeds the line length (minus half the gapsize because we hook the image in the center, not the beginning),
+    // we go to the next segment.
+    if (cumulativeMeasure + currentSegmentLength < nextPointMeasure + gapSize / 2) {
 
       const splitPointCoords = calculateSplitPointCoords(
         currentSegmentEnd,
