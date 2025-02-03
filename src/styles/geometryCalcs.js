@@ -121,3 +121,18 @@ export function splitLineString(geometry, graphicSpacing, options = {}) {
 
   return splitPoints;
 }
+
+/**
+ * @private
+ * Get the point located at the middle along a line string.
+ * @param {ol/geom/LineString} geometry An OpenLayers LineString geometry.
+ * @returns {Array<number>} An [x, y] coordinate array.
+ */
+export function getLineMidpoint(geometry) {
+  // Use the splitpoints routine to distribute points over the line with
+  // a point-to-point distance along the line equal to half line length.
+  // This results in three points. Take the middle point.
+  const splitPoints = splitLineString(geometry, geometry.getLength() / 2);
+  const [x, y] = splitPoints[1];
+  return [x, y];
+}

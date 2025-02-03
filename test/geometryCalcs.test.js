@@ -1,6 +1,6 @@
 /* global describe it expect beforeEach */
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
-import { splitLineString } from '../src/styles/geometryCalcs';
+import { getLineMidpoint, splitLineString } from '../src/styles/geometryCalcs';
 
 describe('Geometry calcs', () => {
   const lineGeoJSON = {
@@ -42,5 +42,12 @@ describe('Geometry calcs', () => {
       [3, -2],
       [4, 1],
     ]);
+  });
+
+  it('Midpoint calculation by splitting on half geometry length', () => {
+    const feature = fmtGeoJSON.readFeature(lineGeoJSON);
+    const geometry = feature.getGeometry();
+    const midpoint = getLineMidpoint(geometry);
+    expect(midpoint).to.deep.equal([3, -2]);
   });
 });
