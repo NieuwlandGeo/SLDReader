@@ -33,7 +33,13 @@ function calculateAngle(p1, p2, invertY) {
 }
 
 // eslint-disable-next-line import/prefer-default-export
-export function splitLineString(geometry, graphicSpacing, options = {}) {
+export function splitLineString(geometry, graphicSpacing, _options = {}) {
+  const defaultOptions = {
+    minimumGraphicSpacing: 0,
+  };
+
+  const splitOptions = Object.assign(defaultOptions, _options);
+
   const coords = geometry.getCoordinates();
 
   // Handle degenerate cases.
@@ -48,25 +54,25 @@ export function splitLineString(geometry, graphicSpacing, options = {}) {
   }
 
   // Handle first point placement case.
-  if (options.placement === PLACEMENT_FIRSTPOINT) {
+  if (splitOptions.placement === PLACEMENT_FIRSTPOINT) {
     const p1 = coords[0];
     const p2 = coords[1];
-    return [[p1[0], p1[1], calculateAngle(p1, p2, options.invertY)]];
+    return [[p1[0], p1[1], calculateAngle(p1, p2, splitOptions.invertY)]];
   }
 
   // Handle last point placement case.
-  if (options.placement === PLACEMENT_LASTPOINT) {
+  if (splitOptions.placement === PLACEMENT_LASTPOINT) {
     const p1 = coords[coords.length - 2];
     const p2 = coords[coords.length - 1];
-    return [[p2[0], p2[1], calculateAngle(p1, p2, options.invertY)]];
+    return [[p2[0], p2[1], calculateAngle(p1, p2, splitOptions.invertY)]];
   }
 
   const totalLength = geometry.getLength();
-  const gapSize = Math.max(graphicSpacing, 0.1); // 0.1 px minimum gap size to prevent accidents.
+  const gapSize = Math.max(graphicSpacing, splitOptions.minimumGraphicSpacing);
 
   // Measure along line to place the next point.
   // Can start at a nonzero value if initialGap is used.
-  let nextPointMeasure = options.initialGap || 0.0;
+  let nextPointMeasure = splitOptions.initialGap || 0.0;
   let pointIndex = 0;
   const currentSegmentStart = [...coords[0]];
   const currentSegmentEnd = [...coords[1]];
@@ -106,11 +112,11 @@ export function splitLineString(geometry, graphicSpacing, options = {}) {
       const angle = calculateAngle(
         currentSegmentStart,
         currentSegmentEnd,
-        options.invertY
+        splitOptions.invertY
       );
       if (
-        !options.extent ||
-        containsCoordinate(options.extent, splitPointCoords)
+        !splitOptions.extent ||
+        containsCoordinate(splitOptions.extent, splitPointCoords)
       ) {
         splitPointCoords.push(angle);
         splitPoints.push(splitPointCoords);
@@ -120,4 +126,19 @@ export function splitLineString(geometry, graphicSpacing, options = {}) {
   }
 
   return splitPoints;
+}
+
+/**
+ * @private
+ * Get the point located at the middle along a line string.
+ * @param {ol/geom/LineString} geometry An OpenLayers LineString geometry.
+ * @returns {Array<number>} An [x, y] coordinate array.
+ */
+export function getLineMidpoint(geometry) {
+  // Use the splitpoints routine to distribute points over the line with
+  // a point-to-point distance along the line equal to half line length.
+  // This results in three points. Take the middle point.
+  const splitPoints = splitLineString(geometry, geometry.getLength() / 2);
+  const [x, y] = splitPoints[1];
+  return [x, y];
 }

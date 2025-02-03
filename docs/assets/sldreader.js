@@ -849,6 +849,8 @@
   }
 
   // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
+  // Constant expressions are returned as-is.
+
 
   /**
    * Check if an expression depends on feature properties.
@@ -2658,8 +2660,14 @@
   }
 
   // eslint-disable-next-line import/prefer-default-export
-  function splitLineString(geometry, graphicSpacing, options) {
-    if ( options === void 0 ) options = {};
+  function splitLineString(geometry, graphicSpacing, _options) {
+    if ( _options === void 0 ) _options = {};
+
+    var defaultOptions = {
+      minimumGraphicSpacing: 0,
+    };
+
+    var splitOptions = Object.assign(defaultOptions, _options);
 
     var coords = geometry.getCoordinates();
 
@@ -2675,25 +2683,25 @@
     }
 
     // Handle first point placement case.
-    if (options.placement === PLACEMENT_FIRSTPOINT) {
+    if (splitOptions.placement === PLACEMENT_FIRSTPOINT) {
       var p1 = coords[0];
       var p2 = coords[1];
-      return [[p1[0], p1[1], calculateAngle(p1, p2, options.invertY)]];
+      return [[p1[0], p1[1], calculateAngle(p1, p2, splitOptions.invertY)]];
     }
 
     // Handle last point placement case.
-    if (options.placement === PLACEMENT_LASTPOINT) {
+    if (splitOptions.placement === PLACEMENT_LASTPOINT) {
       var p1$1 = coords[coords.length - 2];
       var p2$1 = coords[coords.length - 1];
-      return [[p2$1[0], p2$1[1], calculateAngle(p1$1, p2$1, options.invertY)]];
+      return [[p2$1[0], p2$1[1], calculateAngle(p1$1, p2$1, splitOptions.invertY)]];
     }
 
     var totalLength = geometry.getLength();
-    var gapSize = Math.max(graphicSpacing, 0.1); // 0.1 px minimum gap size to prevent accidents.
+    var gapSize = Math.max(graphicSpacing, splitOptions.minimumGraphicSpacing);
 
     // Measure along line to place the next point.
     // Can start at a nonzero value if initialGap is used.
-    var nextPointMeasure = options.initialGap || 0.0;
+    var nextPointMeasure = splitOptions.initialGap || 0.0;
     var pointIndex = 0;
     var currentSegmentStart = [].concat( coords[0] );
     var currentSegmentEnd = [].concat( coords[1] );
@@ -2733,11 +2741,11 @@
         var angle = calculateAngle(
           currentSegmentStart,
           currentSegmentEnd,
-          options.invertY
+          splitOptions.invertY
         );
         if (
-          !options.extent ||
-          extent.containsCoordinate(options.extent, splitPointCoords)
+          !splitOptions.extent ||
+          extent.containsCoordinate(splitOptions.extent, splitPointCoords)
         ) {
           splitPointCoords.push(angle);
           splitPoints.push(splitPointCoords);
@@ -2747,6 +2755,23 @@
     }
 
     return splitPoints;
+  }
+
+  /**
+   * @private
+   * Get the point located at the middle along a line string.
+   * @param {ol/geom/LineString} geometry An OpenLayers LineString geometry.
+   * @returns {Array<number>} An [x, y] coordinate array.
+   */
+  function getLineMidpoint(geometry) {
+    // Use the splitpoints routine to distribute points over the line with
+    // a point-to-point distance along the line equal to half line length.
+    // This results in three points. Take the middle point.
+    var splitPoints = splitLineString(geometry, geometry.getLength() / 2);
+    var ref = splitPoints[1];
+    var x = ref[0];
+    var y = ref[1];
+    return [x, y];
   }
 
   // A flag to prevent multiple renderer patches.
@@ -2835,6 +2860,8 @@
         extent: render.extent_,
         placement: options.placement,
         initialGap: options.initialGap,
+        // Use graphic spacing of at least 0.1 px to prevent an infinite number of split points happening by accident.
+        minimumGraphicSpacing: 0.1,
       }
     );
 
@@ -3616,23 +3643,6 @@
     }
 
     return olStyle;
-  }
-
-  /**
-   * @private
-   * Get the point located at the middle along a line string.
-   * @param {ol/geom/LineString} geometry An OpenLayers LineString geometry.
-   * @returns {Array<number>} An [x, y] coordinate array.
-   */
-  function getLineMidpoint(geometry) {
-    // Use the splitpoints routine to distribute points over the line with
-    // a point-to-point distance along the line equal to half line length.
-    // This results in three points. Take the middle point.
-    var splitPoints = splitLineString(geometry, geometry.getLength() / 2);
-    var ref = splitPoints[1];
-    var x = ref[0];
-    var y = ref[1];
-    return [x, y];
   }
 
   /**

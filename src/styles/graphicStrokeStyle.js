@@ -100,6 +100,8 @@ function renderStrokeMarks(
       extent: render.extent_,
       placement: options.placement,
       initialGap: options.initialGap,
+      // Use graphic spacing of at least 0.1 px to prevent an infinite number of split points happening by accident.
+      minimumGraphicSpacing: 0.1,
     }
   );
 
