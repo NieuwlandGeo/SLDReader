@@ -50,4 +50,25 @@ describe('Geometry calcs', () => {
     const midpoint = getLineMidpoint(geometry);
     expect(midpoint).to.deep.equal([3, -2]);
   });
+
+  it('Midpoint calculation should not crash on small (length < 0.1 map units) geometries', () => {
+    const shortLineGeoJSON = {
+      type: 'Feature',
+      id: 'some.feature.1',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [106652.4318, 485565.3644],
+          [106652.4268, 485565.414],
+        ],
+      },
+      geometry_name: 'geom',
+      properties: {},
+    };
+
+    const feature = fmtGeoJSON.readFeature(shortLineGeoJSON);
+    const geometry = feature.getGeometry();
+    const midpoint = getLineMidpoint(geometry);
+    expect(midpoint).to.deep.equal([106652.4293, 485565.3892]);
+  });
 });
