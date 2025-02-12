@@ -227,8 +227,8 @@ function addParameterValueProp(node, obj, prop, options = {}) {
       childExpression.type = 'literal';
       childExpression.typeHint = parseOptions.typeHint;
       childExpression.value = childNode.textContent;
-    } else {
-      // Add ogc:Literal elements and plain text nodes as type:literal.
+    } else if (childNode.nodeType !== Node.COMMENT_NODE) {
+      // Add ogc:Literal elements and plain non-comment text nodes as type:literal.
       childExpression.type = 'literal';
       childExpression.typeHint = parseOptions.typeHint;
       childExpression.value = childNode.textContent.trim();

@@ -193,7 +193,7 @@ describe('filter rules', () => {
         const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
           <PropertyIsLike wildCard="%" singleChar="?" escapeChar="\\">
             <PropertyName>value</PropertyName>
-            <Literal></Literal> <!-- will be overidden in testLike function below -->
+            <Literal>[content overwritten by testLike function below]</Literal>
           </PropertyIsLike>
         </Filter></StyledLayerDescriptor>`;
         filterBase = Reader(filterXml).filter;
