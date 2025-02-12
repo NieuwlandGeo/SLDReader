@@ -5,6 +5,7 @@ import { sld11 } from './data/test11.sld';
 import { dynamicSld } from './data/dynamic.sld';
 import { graphicstrokeSymbolizerSld } from './data/graphicstrokeSymbolizer.sld';
 import { graphicStrokeWithGap } from './data/graphicstroke-with-gap.sld';
+import { graphicStrokeWithComments } from './data/graphicstroke-with-comments.sld';
 import { multipleSymbolizersSld } from './data/multiple-symbolizers.sld';
 import { staticPolygonSymbolizerSld } from './data/static-polygon-symbolizer.sld';
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
@@ -193,6 +194,24 @@ describe('Reads xml sld 11', () => {
     const [symbolizer] = rule.textsymbolizer;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
+  });
+});
+
+describe('Other reader tests', () => {
+  it('Reader ignores comments', () => {
+    const resultWithComments = Reader(graphicStrokeWithComments);
+    expect(resultWithComments).to.be.ok;
+  });
+
+  it('Reader throws when root node is not a StyledLayerDescriptor', () => {
+    expect(() => Reader('<PointSymbolizer />')).to.throw(
+      'Expected StyledLayerDescriptor root element. Found PointSymbolizer instead.'
+    );
+  });
+
+  it('Reader does not throw when root node is a namespaced StyledLayerDescriptor', () => {
+    const result2 = Reader('<sld:StyledLayerDescriptor xmlns:sld="http://www.opengis.net/sld" />');
+    expect(result2).to.be.ok;
   });
 });
 

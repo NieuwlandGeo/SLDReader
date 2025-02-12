@@ -11,7 +11,7 @@ export const textSymbolizerCDataSld = `<?xml version="1.0" encoding="UTF-8"?>
       <FeatureTypeStyle>
         <Rule>
           <TextSymbolizer>
-            <Label>Size:<![CDATA[ ]]><ogc:PropertyName>size</ogc:PropertyName><![CDATA[
+            <Label><!--IGNORE THIS COMMENT!-->Size:<![CDATA[ ]]><ogc:PropertyName>size</ogc:PropertyName><![CDATA[
 ]]>Angle:<![CDATA[ ]]><ogc:PropertyName>angle</ogc:PropertyName>
             </Label>
           </TextSymbolizer>
