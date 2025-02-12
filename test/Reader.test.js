@@ -202,17 +202,6 @@ describe('Other reader tests', () => {
     const resultWithComments = Reader(graphicStrokeWithComments);
     expect(resultWithComments).to.be.ok;
   });
-
-  it('Reader throws when root node is not a StyledLayerDescriptor', () => {
-    expect(() => Reader('<PointSymbolizer />')).to.throw(
-      'Expected StyledLayerDescriptor root element. Found PointSymbolizer instead.'
-    );
-  });
-
-  it('Reader does not throw when root node is a namespaced StyledLayerDescriptor', () => {
-    const result2 = Reader('<sld:StyledLayerDescriptor xmlns:sld="http://www.opengis.net/sld" />');
-    expect(result2).to.be.ok;
-  });
 });
 
 describe('Dynamic filter expressions', () => {

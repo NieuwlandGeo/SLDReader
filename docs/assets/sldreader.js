@@ -718,12 +718,6 @@
     var doc = parser.parseFromString(sld, 'application/xml');
 
     var rootNode = doc.documentElement;
-    if (rootNode.localName !== 'StyledLayerDescriptor') {
-      throw new Error(
-        ("Expected StyledLayerDescriptor root element. Found " + (rootNode.localName) + " instead.")
-      );
-    }
-
     result.version = rootNode.getAttribute('version');
     readNode(rootNode, result);
 

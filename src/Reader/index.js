@@ -439,12 +439,6 @@ export default function Reader(sld) {
   const doc = parser.parseFromString(sld, 'application/xml');
 
   const rootNode = doc.documentElement;
-  if (rootNode.localName !== 'StyledLayerDescriptor') {
-    throw new Error(
-      `Expected StyledLayerDescriptor root element. Found ${rootNode.localName} instead.`
-    );
-  }
-
   result.version = rootNode.getAttribute('version');
   readNode(rootNode, result);
 
