@@ -195,6 +195,24 @@ describe('Reads xml sld 11', () => {
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
   });
+  describe('Metadata', () => {
+    let rule;
+    beforeEach(() => {
+      rule = result.layers[0].styles[0].featuretypestyles[0].rules[0];
+    });
+
+    it('Rule name', () => {
+      expect(rule.name).to.equal('Other');
+    });
+
+    it('Takes Rule title from description', () => {
+      expect(rule.title).to.equal('Other provinces');
+    });
+
+    it('Takes Rule abstract from description', () => {
+      expect(rule.abstract).to.equal('This rule matches all other provinces');
+    });
+  });
 });
 
 describe('Other reader tests', () => {
