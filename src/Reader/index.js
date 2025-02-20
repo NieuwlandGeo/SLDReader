@@ -407,6 +407,7 @@ const parsers = {
   Name: addPropWithTextContent,
   Title: addPropWithTextContent,
   Abstract: addPropWithTextContent,
+  Description: readNode,
   MaxScaleDenominator: addNumericProp,
   MinScaleDenominator: addNumericProp,
   ...FilterParsers,

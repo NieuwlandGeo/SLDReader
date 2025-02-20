@@ -8,7 +8,8 @@ export const sld11 = `<?xml version="1.0" encoding="UTF-8"?>
         <se:Rule>
           <se:Name>Other</se:Name>
           <se:Description>
-            <se:Title>Other</se:Title>
+            <se:Title>Other provinces</se:Title>
+            <se:Abstract>This rule matches all other provinces</se:Abstract>
           </se:Description>
           <ogc:Filter xmlns:ogc="http://www.opengis.net/ogc">
             <ogc:PropertyIsNotEqualTo>
