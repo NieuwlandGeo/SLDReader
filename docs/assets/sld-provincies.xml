@@ -46,7 +46,7 @@
                     <se:WellKnownName>cross</se:WellKnownName>
                     <se:Stroke>
                       <se:SvgParameter name="stroke">#3544ea</se:SvgParameter>
-                      <se:CssParameter name="stroke-width">1</se:CssParameter>
+                      <se:SvgParameter name="stroke-width">1</se:SvgParameter>
                     </se:Stroke>
                   </se:Mark>
                   <se:Size>8</se:Size>
