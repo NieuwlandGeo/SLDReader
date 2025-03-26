@@ -189,6 +189,17 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
   // Keep track of whether a callback has been registered per image url.
   const callbackRef = {};
 
+  //Todo: introduce context object outside returned function.
+  //Set context.getProperty outside returned function.
+  //Set context.convertMapResolution function outside returned function.
+  //Set context.resolution inside returned function at each invocation through context.convertMapResolution.
+  //(Note: setting context.resolution is a convenience, so it's not necessary to pass both context and mapResolution to the style functions).
+  //Pass context to OlStyler and then to getBla style functions instead of getProperty.
+  //Now all getBla functions returning a style can access the real resolution for non-pixel uoms.
+  //The graphicStroke render function can also get hold of the real resolution by:
+  //* Reading map resolution from renderContext.resolution.
+  //* Converting it into a real resolution via context.convertMapResolution.
+
   return (feature, mapResolution) => {
     // Determine resolution in meters/pixel.
     const resolution =

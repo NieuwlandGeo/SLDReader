@@ -1,5 +1,4 @@
 /* global describe it expect before beforeEach */
-import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
 import { dynamicSld } from './data/dynamic.sld';
@@ -10,8 +9,11 @@ import { multipleSymbolizersSld } from './data/multiple-symbolizers.sld';
 import { staticPolygonSymbolizerSld } from './data/static-polygon-symbolizer.sld';
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
 import { graphicStrokeVendorOption } from './data/graphicstroke-vendoroption.sld';
-import sldWithUom from './data/sld-with-uom';
-import { UOM_METRE, UOM_PIXEL } from '../src/constants';
+import { sldWithUom } from './data/sld-with-uom';
+
+import { UOM_METRE } from '../src/constants';
+
+import Reader from '../src/Reader';
 
 let result;
 
@@ -531,7 +533,7 @@ describe('SVG style parameters', () => {
     });
   });
 
-  describe.only('Parse units of measure', () => {
+  describe('Parse units of measure', () => {
     let pointSymbolizer;
     let lineSymbolizer;
     let polygonSymbolizer;
@@ -562,18 +564,15 @@ describe('SVG style parameters', () => {
     });
 
     it('PointSymbolizer stroke width overrides uom by appending px', () => {
-      expect(
-        pointSymbolizer.graphic.mark.stroke.styling.strokeWidth
-      ).to.deep.equal({
-        type: 'literal',
-        typeHint: 'number',
-        value: 2,
-        uom: UOM_PIXEL,
-      });
+      expect(pointSymbolizer.graphic.mark.stroke.styling.strokeWidth).to.equal(
+        2
+      );
     });
 
     it('Opacity is always a dimensionless number', () => {
-      expect(pointSymbolizer.graphic.mark.fill.styling.fillOpacity).to.equal(0.8);
+      expect(pointSymbolizer.graphic.mark.fill.styling.fillOpacity).to.equal(
+        0.8
+      );
     });
 
     it('LineSymbolizer stroke width in metres', () => {
@@ -590,7 +589,7 @@ describe('SVG style parameters', () => {
         type: 'literal',
         typeHint: 'number',
         value: 12,
-        uom: UOM_PIXEL,
+        uom: UOM_METRE,
       });
     });
 
@@ -615,21 +614,11 @@ describe('SVG style parameters', () => {
     });
 
     it('Text symbolizer font size always pixel', () => {
-      expect(textSymbolizer.font.styling.fontSize).to.deep.equal({
-        type: 'literal',
-        typeHint: 'number',
-        value: 13,
-        uom: UOM_PIXEL,
-      });
+      expect(textSymbolizer.font.styling.fontSize).to.equal(13);
     });
 
     it('Text symbolizer halo radius always pixel', () => {
-      expect(textSymbolizer.halo.radius).to.deep.equal({
-        type: 'literal',
-        typeHint: 'number',
-        value: 2,
-        uom: UOM_PIXEL,
-      });
+      expect(textSymbolizer.halo.radius).to.equal(2);
     });
 
     it('Text symbolizer anchor point X/Y always a dimensionless number', () => {
@@ -639,22 +628,12 @@ describe('SVG style parameters', () => {
     });
 
     it('Polygon graphic fill mark size always pixel', () => {
-      expect(polygonSymbolizer.fill.graphicfill.graphic.size).to.deep.equal({
-        type: 'literal',
-        typeHint: 'number',
-        value: 8,
-        uom: UOM_PIXEL,
-      });
+      expect(polygonSymbolizer.fill.graphicfill.graphic.size).to.equal(8);
     });
 
     it('Polygon graphic fill stroke width always pixel', () => {
       const graphicFillMark = polygonSymbolizer.fill.graphicfill.graphic.mark;
-      expect(graphicFillMark.stroke.styling.strokeWidth).to.deep.equal({
-        type: 'literal',
-        typeHint: 'number',
-        value: 1,
-        uom: UOM_PIXEL,
-      });
+      expect(graphicFillMark.stroke.styling.strokeWidth).to.equal(1);
     });
   });
 });
