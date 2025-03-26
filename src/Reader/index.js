@@ -1,3 +1,4 @@
+import { UOM_METRE, UOM_FOOT, UOM_PIXEL } from '../constants';
 import createFilter from './filter';
 
 /**
@@ -25,6 +26,49 @@ function addPropArray(node, obj, prop) {
   obj[property] = obj[property] || [];
   const item = {};
   readNode(node, item);
+  obj[property].push(item);
+}
+
+/**
+ * Parse symbolizer element and extract units of measure attribute.
+ * @param {Element} node the xml element to parse
+ * @param {object} obj  the object to modify
+ * @param {string} prop key on obj to hold array
+ */
+function addSymbolizer(node, obj, prop) {
+  const property = prop.toLowerCase();
+  obj[property] = obj[property] || [];
+  const item = {};
+
+  // Check and add if symbolizer node has uom attribute.
+  // If there is no uom attribute, default to pixel.
+  const uom = node.getAttribute('uom');
+  if (uom) {
+    switch (uom) {
+      // From symbology encoding spec:
+      // The following uom definitions are recommended to be used:
+      case 'http://www.opengeospatial.org/se/units/metre':
+        item.uom = UOM_METRE;
+        break;
+      case 'http://www.opengeospatial.org/se/units/foot':
+        item.uom = UOM_FOOT;
+        break;
+      case 'http://www.opengeospatial.org/se/units/pixel':
+        item.uom = UOM_PIXEL;
+        break;
+      default:
+        // eslint-disable-next-line no-console
+        console.warn(
+          'Unsupported uom attribute found, one of http://www.opengeospatial.org/se/units/(metre|feet|pixel) expected.'
+        );
+        item.uom = UOM_PIXEL;
+        break;
+    }
+  } else {
+    item.uom = UOM_PIXEL;
+  }
+
+  readNode(node, item); //TODO: pass uom down to readNode and all symbolizer parser functions
   obj[property].push(item);
 }
 
@@ -326,10 +370,10 @@ const FilterParsers = {
 };
 
 const SymbParsers = {
-  PolygonSymbolizer: addPropArray,
-  LineSymbolizer: addPropArray,
-  PointSymbolizer: addPropArray,
-  TextSymbolizer: addPropArray,
+  PolygonSymbolizer: addSymbolizer,
+  LineSymbolizer: addSymbolizer,
+  PointSymbolizer: addSymbolizer,
+  TextSymbolizer: addSymbolizer,
   Fill: addProp,
   Stroke: addProp,
   GraphicStroke: addProp,
