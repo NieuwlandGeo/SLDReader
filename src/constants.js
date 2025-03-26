@@ -12,3 +12,12 @@ export const DEFAULT_EXTERNALGRAPHIC_SIZE = 16; // pixels
 export const PLACEMENT_DEFAULT = 'PLACEMENT_DEFAULT';
 export const PLACEMENT_FIRSTPOINT = 'PLACEMENT_FIRSTPOINT';
 export const PLACEMENT_LASTPOINT = 'PLACEMENT_LASTPOINT';
+
+// Supported units of measure
+export const UOM_METRE = 'metre';
+export const UOM_FOOT = 'foot';
+export const UOM_PIXEL = 'pixel';
+// None = number is dimensionless.
+export const UOM_NONE = 'none';
+
+export const METRES_PER_FOOT = 0.3048;

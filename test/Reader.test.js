@@ -10,6 +10,8 @@ import { multipleSymbolizersSld } from './data/multiple-symbolizers.sld';
 import { staticPolygonSymbolizerSld } from './data/static-polygon-symbolizer.sld';
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
 import { graphicStrokeVendorOption } from './data/graphicstroke-vendoroption.sld';
+import sldWithUom from './data/sld-with-uom';
+import { UOM_METRE, UOM_PIXEL } from '../src/constants';
 
 let result;
 
@@ -526,6 +528,133 @@ describe('SVG style parameters', () => {
     });
     it('Stroke width should be number', () => {
       expect(strokeStyle.strokeWidth.typeHint).to.equal('number');
+    });
+  });
+
+  describe.only('Parse units of measure', () => {
+    let pointSymbolizer;
+    let lineSymbolizer;
+    let polygonSymbolizer;
+    let textSymbolizer;
+    beforeEach(() => {
+      const parsedSld = Reader(sldWithUom);
+      const fts = parsedSld.layers[0].styles[0].featuretypestyles[0];
+      pointSymbolizer = fts.rules[0].pointsymbolizer[0];
+      textSymbolizer = fts.rules[0].textsymbolizer[0];
+      lineSymbolizer = fts.rules[1].linesymbolizer[0];
+      polygonSymbolizer = fts.rules[2].polygonsymbolizer[0];
+    });
+
+    it('Parse uom attribute for symbolizer elements', () => {
+      expect(pointSymbolizer.uom).to.equal(UOM_METRE);
+      expect(textSymbolizer.uom).to.equal(UOM_METRE);
+      expect(lineSymbolizer.uom).to.equal(UOM_METRE);
+      expect(polygonSymbolizer.uom).to.equal(UOM_METRE);
+    });
+
+    it('PointSymbolizer size in metres', () => {
+      expect(pointSymbolizer.graphic.size).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 10,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('PointSymbolizer stroke width overrides uom by appending px', () => {
+      expect(
+        pointSymbolizer.graphic.mark.stroke.styling.strokeWidth
+      ).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 2,
+        uom: UOM_PIXEL,
+      });
+    });
+
+    it('Opacity is always a dimensionless number', () => {
+      expect(pointSymbolizer.graphic.mark.fill.styling.fillOpacity).to.equal(0.8);
+    });
+
+    it('LineSymbolizer stroke width in metres', () => {
+      expect(lineSymbolizer.stroke.styling.strokeWidth).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 3,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('LineSymbolizer graphic stroke gap inherits uom', () => {
+      expect(lineSymbolizer.graphicstroke.gap).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 12,
+        uom: UOM_PIXEL,
+      });
+    });
+
+    it('LineSymbolizer graphic stroke mark size inherits uom', () => {
+      const { graphic } = lineSymbolizer.graphicstroke;
+      expect(graphic.size).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 4,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('LineSymbolizer graphic stroke mark stroke width inherits uom', () => {
+      const { mark } = lineSymbolizer.graphicstroke.graphic;
+      expect(mark.stroke.styling.strokeWidth).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 2,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('Text symbolizer font size always pixel', () => {
+      expect(textSymbolizer.font.styling.fontSize).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 13,
+        uom: UOM_PIXEL,
+      });
+    });
+
+    it('Text symbolizer halo radius always pixel', () => {
+      expect(textSymbolizer.halo.radius).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 2,
+        uom: UOM_PIXEL,
+      });
+    });
+
+    it('Text symbolizer anchor point X/Y always a dimensionless number', () => {
+      const { anchorpoint } = textSymbolizer.labelplacement.pointplacement;
+      expect(anchorpoint.anchorpointx).to.equal(0.5);
+      expect(anchorpoint.anchorpointy).to.equal(0.5);
+    });
+
+    it('Polygon graphic fill mark size always pixel', () => {
+      expect(polygonSymbolizer.fill.graphicfill.graphic.size).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 8,
+        uom: UOM_PIXEL,
+      });
+    });
+
+    it('Polygon graphic fill stroke width always pixel', () => {
+      const graphicFillMark = polygonSymbolizer.fill.graphicfill.graphic.mark;
+      expect(graphicFillMark.stroke.styling.strokeWidth).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 1,
+        uom: UOM_PIXEL,
+      });
     });
   });
 });
