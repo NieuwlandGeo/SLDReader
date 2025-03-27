@@ -343,7 +343,7 @@
   function addSymbolizer(node, obj, prop) {
     var property = prop.toLowerCase();
     obj[property] = obj[property] || [];
-    var item = {};
+    var item = { type: 'symbolizer' };
 
     // Check and add if symbolizer node has uom attribute.
     // If there is no uom attribute, default to pixel.
@@ -4011,17 +4011,6 @@
 
     // Keep track of whether a callback has been registered per image url.
     var callbackRef = {};
-
-    //Todo: introduce context object outside returned function.
-    //Set context.getProperty outside returned function.
-    //Set context.convertMapResolution function outside returned function.
-    //Set context.resolution inside returned function at each invocation through context.convertMapResolution.
-    //(Note: setting context.resolution is a convenience, so it's not necessary to pass both context and mapResolution to the style functions).
-    //Pass context to OlStyler and then to getBla style functions instead of getProperty.
-    //Now all getBla functions returning a style can access the real resolution for non-pixel uoms.
-    //The graphicStroke render function can also get hold of the real resolution by:
-    //* Reading map resolution from renderContext.resolution.
-    //* Converting it into a real resolution via context.convertMapResolution.
 
     return function (feature, mapResolution) {
       // Determine resolution in meters/pixel.
