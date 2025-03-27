@@ -41,7 +41,7 @@ function addPropArray(node, obj, prop, options) {
 function addSymbolizer(node, obj, prop) {
   const property = prop.toLowerCase();
   obj[property] = obj[property] || [];
-  const item = {};
+  const item = { type: 'symbolizer' };
 
   // Check and add if symbolizer node has uom attribute.
   // If there is no uom attribute, default to pixel.

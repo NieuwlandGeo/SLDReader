@@ -14,6 +14,7 @@ import { sldWithUom } from './data/sld-with-uom';
 import { UOM_METRE } from '../src/constants';
 
 import Reader from '../src/Reader';
+import { validateObjectProperties } from './test-helpers';
 
 let result;
 
@@ -534,12 +535,13 @@ describe('SVG style parameters', () => {
   });
 
   describe('Parse units of measure', () => {
+    let parsedSld;
     let pointSymbolizer;
     let lineSymbolizer;
     let polygonSymbolizer;
     let textSymbolizer;
     beforeEach(() => {
-      const parsedSld = Reader(sldWithUom);
+      parsedSld = Reader(sldWithUom);
       const fts = parsedSld.layers[0].styles[0].featuretypestyles[0];
       pointSymbolizer = fts.rules[0].pointsymbolizer[0];
       textSymbolizer = fts.rules[0].textsymbolizer[0];
@@ -552,6 +554,29 @@ describe('SVG style parameters', () => {
       expect(textSymbolizer.uom).to.equal(UOM_METRE);
       expect(lineSymbolizer.uom).to.equal(UOM_METRE);
       expect(polygonSymbolizer.uom).to.equal(UOM_METRE);
+    });
+
+    it('Has no unnecessary uom attributes', () => {
+      const invalidUoms = validateObjectProperties(
+        parsedSld,
+        'parsedSld',
+        (node, nodeName) => {
+          if (typeof node === 'object') {
+            if (node.uom && node.type === 'literal') {
+              if (node.typeHint !== 'number') {
+                throw new Error(
+                  `Found uom on non-numeric literal [${nodeName}].`
+                );
+              }
+            } else if (node.uom && node.type !== 'symbolizer') {
+              throw new Error(
+                `Found uom on non-symbolizer object [${nodeName}].`
+              );
+            }
+          }
+        }
+      );
+      expect(invalidUoms).to.deep.equal([]);
     });
 
     it('PointSymbolizer size in metres', () => {
