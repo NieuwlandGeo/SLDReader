@@ -4,6 +4,28 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SLDReader = {}, global.ol.style, global.ol.render, global.ol.geom, global.ol.extent, global.ol.has));
 })(this, (function (exports, style, render, geom, extent, has) { 'use strict';
 
+  var IMAGE_LOADING = 'IMAGE_LOADING';
+  var IMAGE_LOADED = 'IMAGE_LOADED';
+  var IMAGE_ERROR = 'IMAGE_ERROR';
+
+  // SLD Spec: Default size for Marks without Size should be 6 pixels.
+  var DEFAULT_MARK_SIZE = 6; // pixels
+  // SLD Spec: Default size for ExternalGraphic with an unknown native size,
+  // like SVG without dimensions, should be 16 pixels.
+  var DEFAULT_EXTERNALGRAPHIC_SIZE = 16; // pixels
+
+  // QGIS Graphic stroke placement options
+  var PLACEMENT_DEFAULT = 'PLACEMENT_DEFAULT';
+  var PLACEMENT_FIRSTPOINT = 'PLACEMENT_FIRSTPOINT';
+  var PLACEMENT_LASTPOINT = 'PLACEMENT_LASTPOINT';
+
+  // Supported units of measure
+  var UOM_METRE = 'metre';
+  var UOM_FOOT = 'foot';
+  var UOM_PIXEL = 'pixel';
+  // None = number is dimensionless.
+  var UOM_NONE = 'none';
+
   /**
    * Factory methods for filterelements
    * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
@@ -293,6 +315,8 @@
     'fillOpacity',
     'fontSize' ]);
 
+  var dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
+
   /**
    * Generic parser for elements with maxOccurs > 1
    * it pushes result of readNode(node) to array on obj[prop]
@@ -300,12 +324,59 @@
    * @param {Element} node the xml element to parse
    * @param {object} obj  the object to modify
    * @param {string} prop key on obj to hold array
+   * @param {object} options Parse options.
    */
-  function addPropArray(node, obj, prop) {
+  function addPropArray(node, obj, prop, options) {
     var property = prop.toLowerCase();
     obj[property] = obj[property] || [];
     var item = {};
-    readNode(node, item);
+    readNode(node, item, options);
+    obj[property].push(item);
+  }
+
+  /**
+   * Parse symbolizer element and extract units of measure attribute.
+   * @param {Element} node the xml element to parse
+   * @param {object} obj  the object to modify
+   * @param {string} prop key on obj to hold array
+   */
+  function addSymbolizer(node, obj, prop) {
+    var property = prop.toLowerCase();
+    obj[property] = obj[property] || [];
+    var item = { type: 'symbolizer' };
+
+    // Check and add if symbolizer node has uom attribute.
+    // If there is no uom attribute, default to pixel.
+    var uom = node.getAttribute('uom');
+    if (uom) {
+      switch (uom) {
+        // From symbology encoding spec:
+        // The following uom definitions are recommended to be used:
+        case 'http://www.opengeospatial.org/se/units/metre':
+          item.uom = UOM_METRE;
+          break;
+        case 'http://www.opengeospatial.org/se/units/foot':
+          item.uom = UOM_FOOT;
+          break;
+        case 'http://www.opengeospatial.org/se/units/pixel':
+          item.uom = UOM_PIXEL;
+          break;
+        default:
+          // eslint-disable-next-line no-console
+          console.warn(
+            'Unsupported uom attribute found, one of http://www.opengeospatial.org/se/units/(metre|feet|pixel) expected.'
+          );
+          item.uom = UOM_PIXEL;
+          break;
+      }
+    } else {
+      item.uom = UOM_PIXEL;
+    }
+
+    readNode(node, item, {
+      // Note: text symbolizer units of measure are always pixel.
+      uom: property === 'textsymbolizer' ? UOM_PIXEL : item.uom,
+    });
     obj[property].push(item);
   }
 
@@ -316,11 +387,12 @@
    * @param {Element} node the xml element to parse
    * @param {object} obj  the object to modify
    * @param {string} prop key on obj to hold empty object
+   * @param {object} options Parse options.
    */
-  function addProp(node, obj, prop) {
+  function addProp(node, obj, prop, options) {
     var property = prop.toLowerCase();
     obj[property] = {};
-    readNode(node, obj[property]);
+    readNode(node, obj[property], options);
   }
 
   /**
@@ -329,13 +401,12 @@
    * @param {Element} node [description]
    * @param {object} obj  [description]
    * @param {string} prop [description]
-   * @param {bool} [trimText] Trim whitespace from text content (default false).
+   * @param {object} options Parse options.
+   * @param {bool} [options.trimText] Trim whitespace from text content (default false).
    */
-  function addPropWithTextContent(node, obj, prop, trimText) {
-    if ( trimText === void 0 ) trimText = false;
-
+  function addPropWithTextContent(node, obj, prop, options) {
     var property = prop.toLowerCase();
-    if (trimText) {
+    if (options && options.trimText) {
       obj[property] = node.textContent.trim();
     } else {
       obj[property] = node.textContent;
@@ -345,6 +416,7 @@
   /**
    * Assigns numeric value of text content to obj.prop.
    * Assigns NaN if the text value is not a valid text representation of a floating point number.
+   * If you need a value with unit of measure, use addParameterValueProp instead.
    * @private
    * @param {Element} node The XML node element.
    * @param {object} obj  The object to add the element value to.
@@ -365,17 +437,26 @@
    * @param {string} typeHint Expression type. Choose 'string' or 'number'.
    * @param {boolean} concatenateLiterals When true, and when all expressions are literals,
    * concatenate all literal expressions into a single string.
+   * @param {string} uom Unit of measure.
    * @return {Array<OGCExpression>|OGCExpression|string} Simplified version of the expression array.
    */
-  function simplifyChildExpressions(expressions, typeHint, concatenateLiterals) {
+  function simplifyChildExpressions(
+    expressions,
+    typeHint,
+    concatenateLiterals,
+    uom
+  ) {
     if (!Array.isArray(expressions)) {
       return expressions;
     }
 
-    // Replace each literal expression with its value.
+    // Replace each literal expression with its value, unless it has units of measure that are not pixels.
     var simplifiedExpressions = expressions
       .map(function (expression) {
-        if (expression.type === 'literal') {
+        if (
+          expression.type === 'literal' &&
+          !(expression.uom === UOM_METRE || expression.uom === UOM_FOOT)
+        ) {
           return expression.value;
         }
         return expression;
@@ -400,6 +481,7 @@
     return {
       type: 'expression',
       typeHint: typeHint,
+      uom: uom,
       children: simplifiedExpressions,
     };
   }
@@ -425,10 +507,11 @@
    * @param {object} obj Object to add XML node contents to.
    * @param {string} prop Property name on obj that will hold the parsed node contents.
    * @param {object} [options] Parse options.
-   * @param {object} [options.skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
-   * @param {object} [options.forceLowerCase] Default true. If true, convert prop name to lower case before adding it to obj.
-   * @param {object} [options.typeHint] Default 'string'. When set to 'number', a simple literal value will be converted to a number.
-   * @param {object} [options.concatenateLiterals] Default true. When true, and when all expressions are literals,
+   * @param {bool} [options.skipEmptyNodes] Default true. If true, emtpy (whitespace-only) text nodes will me omitted in the result.
+   * @param {bool} [options.forceLowerCase] Default true. If true, convert prop name to lower case before adding it to obj.
+   * @param {string} [options.typeHint] Default 'string'. When set to 'number', a simple literal value will be converted to a number.
+   * @param {bool} [options.concatenateLiterals] Default true. When true, and when all expressions are literals,
+   * @param {string} [options.uom] Unit of measure.
    * concatenate all literal expressions into a single string.
    */
   function addParameterValueProp(node, obj, prop, options) {
@@ -439,6 +522,7 @@
       forceLowerCase: true,
       typeHint: 'string',
       concatenateLiterals: true,
+      uom: UOM_NONE,
     };
 
     var parseOptions = Object.assign({}, defaultParseOptions,
@@ -470,9 +554,8 @@
         // Parse function parameters.
         // Parse child expressions, and add them to the comparison object.
         var parsed = {};
-        addParameterValueProp(childNode, parsed, 'params', {
-          concatenateLiterals: false,
-        });
+        addParameterValueProp(childNode, parsed, 'params', Object.assign({}, parseOptions,
+          {concatenateLiterals: false}));
         if (Array.isArray(parsed.params.children)) {
           // Case 0 or more than 1 children.
           childExpression.params = parsed.params.children;
@@ -494,9 +577,8 @@
         // Parse function parameters.
         // Parse child expressions, and add them to the comparison object.
         var parsed$1 = {};
-        addParameterValueProp(childNode, parsed$1, 'params', {
-          concatenateLiterals: false,
-        });
+        addParameterValueProp(childNode, parsed$1, 'params', Object.assign({}, parseOptions,
+          {concatenateLiterals: false}));
         if (Array.isArray(parsed$1.params.children)) {
           // Case 0 or more than 1 children.
           childExpression.params = parsed$1.params.children;
@@ -533,15 +615,29 @@
     var simplifiedValue = simplifyChildExpressions(
       childExpressions,
       parseOptions.typeHint,
-      parseOptions.concatenateLiterals
+      parseOptions.concatenateLiterals,
+      parseOptions.uom
     );
 
     // Convert simple string value to number if type hint is number.
+    // Keep full literal expression if unit of measure is in metre or foot.
     if (
       typeof simplifiedValue === 'string' &&
       parseOptions.typeHint === 'number'
     ) {
-      simplifiedValue = parseFloat(simplifiedValue);
+      // If numbers are written with 'px' at the end, they override the symbolizer's own uom.
+      var uom =
+        simplifiedValue.indexOf('px') > -1 ? UOM_PIXEL : parseOptions.uom;
+      if (uom === UOM_METRE || uom === UOM_FOOT) {
+        simplifiedValue = {
+          type: 'literal',
+          typeHint: 'number',
+          value: parseFloat(simplifiedValue),
+          uom: uom,
+        };
+      } else {
+        simplifiedValue = parseFloat(simplifiedValue);
+      }
     }
 
     obj[propertyName] = simplifiedValue;
@@ -551,6 +647,19 @@
     if ( options === void 0 ) options = {};
 
     addParameterValueProp(node, obj, prop, Object.assign({}, options, {typeHint: 'number'}));
+  }
+
+  function addDimensionlessNumericParameterValueProp(
+    node,
+    obj,
+    prop,
+    options
+  ) {
+    if ( options === void 0 ) options = {};
+
+    addParameterValueProp(node, obj, prop, Object.assign({}, options,
+      {typeHint: 'number',
+      uom: UOM_NONE}));
   }
 
   /**
@@ -578,8 +687,11 @@
    * @param  {object} obj
    * @param  {string} prop
    * @param  {string} parameterGroup Name of parameter group.
+   * @param  {object} options Parse options.
    */
-  function addParameterValue(element, obj, prop, parameterGroup) {
+  function addParameterValue(element, obj, prop, parameterGroup, options) {
+    var parseOptions = Object.assign({}, options);
+
     obj[parameterGroup] = obj[parameterGroup] || {};
     var name = element
       .getAttribute('name')
@@ -587,18 +699,23 @@
       .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
 
     // Flag certain SVG parameters as numeric.
+    // Some SVG parameters are always dimensionless (like opacity).
     var typeHint = 'string';
+    var uom = parseOptions.uom;
     if (parameterGroup === 'styling') {
       if (numericSvgProps.has(name)) {
         typeHint = 'number';
       }
+      if (dimensionlessSvgProps.has(name)) {
+        uom = UOM_NONE;
+      }
     }
 
-    addParameterValueProp(element, obj[parameterGroup], name, {
-      skipEmptyNodes: true,
+    addParameterValueProp(element, obj[parameterGroup], name, Object.assign({}, options,
+      {skipEmptyNodes: true,
       forceLowerCase: false,
       typeHint: typeHint,
-    });
+      uom: uom}));
   }
 
   var FilterParsers = {
@@ -611,20 +728,21 @@
   };
 
   var SymbParsers = {
-    PolygonSymbolizer: addPropArray,
-    LineSymbolizer: addPropArray,
-    PointSymbolizer: addPropArray,
-    TextSymbolizer: addPropArray,
+    PolygonSymbolizer: addSymbolizer,
+    LineSymbolizer: addSymbolizer,
+    PointSymbolizer: addSymbolizer,
+    TextSymbolizer: addSymbolizer,
     Fill: addProp,
     Stroke: addProp,
     GraphicStroke: addProp,
-    GraphicFill: addProp,
+    GraphicFill: function (node, obj, prop, options) { return addProp(node, obj, prop, Object.assign({}, options, {uom: UOM_PIXEL})); },
     Graphic: addProp,
     ExternalGraphic: addProp,
     Gap: addNumericParameterValueProp,
     InitialGap: addNumericParameterValueProp,
     Mark: addProp,
-    Label: function (node, obj, prop) { return addParameterValueProp(node, obj, prop, { skipEmptyNodes: false }); },
+    Label: function (node, obj, prop, options) { return addParameterValueProp(node, obj, prop, Object.assign({}, options,
+        {skipEmptyNodes: false})); },
     Halo: addProp,
     Font: addProp,
     Radius: addNumericParameterValueProp,
@@ -633,22 +751,22 @@
     LinePlacement: addProp,
     PerpendicularOffset: addNumericParameterValueProp,
     AnchorPoint: addProp,
-    AnchorPointX: addNumericParameterValueProp,
-    AnchorPointY: addNumericParameterValueProp,
-    Opacity: addNumericParameterValueProp,
-    Rotation: addNumericParameterValueProp,
+    AnchorPointX: addDimensionlessNumericParameterValueProp,
+    AnchorPointY: addDimensionlessNumericParameterValueProp,
+    Opacity: addDimensionlessNumericParameterValueProp,
+    Rotation: addDimensionlessNumericParameterValueProp,
     Displacement: addProp,
     DisplacementX: addNumericParameterValueProp,
     DisplacementY: addNumericParameterValueProp,
     Size: addNumericParameterValueProp,
     WellKnownName: addPropWithTextContent,
     MarkIndex: addNumericProp,
-    VendorOption: function (element, obj, prop) { return addParameterValue(element, obj, prop, 'vendoroptions'); },
+    VendorOption: function (element, obj, prop, options) { return addParameterValue(element, obj, prop, 'vendoroptions', options); },
     OnlineResource: function (element, obj) {
       obj.onlineresource = element.getAttribute('xlink:href');
     },
-    CssParameter: function (element, obj, prop) { return addParameterValue(element, obj, prop, 'styling'); },
-    SvgParameter: function (element, obj, prop) { return addParameterValue(element, obj, prop, 'styling'); },
+    CssParameter: function (element, obj, prop, options) { return addParameterValue(element, obj, prop, 'styling', options); },
+    SvgParameter: function (element, obj, prop, options) { return addParameterValue(element, obj, prop, 'styling', options); },
   };
 
   /**
@@ -698,12 +816,13 @@
    * @private
    * @param  {Element} node derived from xml
    * @param  {object} obj recieves results
+   * @param  {object} options Parse options.
    * @return {void}
    */
-  function readNode(node, obj) {
+  function readNode(node, obj, options) {
     for (var n = node.firstElementChild; n; n = n.nextElementSibling) {
       if (parsers[n.localName]) {
-        parsers[n.localName](n, obj, n.localName);
+        parsers[n.localName](n, obj, n.localName, options);
       }
     }
   }
@@ -1557,21 +1676,6 @@
    * @property {PointSymbolizer[]} pointSymbolizers  pointsymbolizers, same as graphic prop from PointSymbolizer
    * @property {TextSymbolizer[]} textSymbolizers  textsymbolizers
    */
-
-  var IMAGE_LOADING = 'IMAGE_LOADING';
-  var IMAGE_LOADED = 'IMAGE_LOADED';
-  var IMAGE_ERROR = 'IMAGE_ERROR';
-
-  // SLD Spec: Default size for Marks without Size should be 6 pixels.
-  var DEFAULT_MARK_SIZE = 6; // pixels
-  // SLD Spec: Default size for ExternalGraphic with an unknown native size,
-  // like SVG without dimensions, should be 16 pixels.
-  var DEFAULT_EXTERNALGRAPHIC_SIZE = 16; // pixels
-
-  // QGIS Graphic stroke placement options
-  var PLACEMENT_DEFAULT = 'PLACEMENT_DEFAULT';
-  var PLACEMENT_FIRSTPOINT = 'PLACEMENT_FIRSTPOINT';
-  var PLACEMENT_LASTPOINT = 'PLACEMENT_LASTPOINT';
 
   /* eslint-disable no-continue */
 
