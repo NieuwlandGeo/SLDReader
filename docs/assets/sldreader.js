@@ -1100,7 +1100,7 @@
       value === '' ||
       Number.isNaN(value)
     ) {
-      return defaultValue;
+      value = defaultValue;
     }
 
     // Convert value to number if expression is flagged as numeric.
