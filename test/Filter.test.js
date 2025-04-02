@@ -8,6 +8,12 @@ import addBuiltInFunctions from '../src/functions/builtins';
 
 const fmtGeoJSON = new OLFormatGeoJSON();
 
+const context = {
+  getProperty: (feature, propertyName) => feature.properties[propertyName],
+  getId: feature => feature.id,
+  resolution: 10,
+};
+
 describe('filter rules', () => {
   describe('FID filter', () => {
     const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
@@ -18,12 +24,12 @@ describe('filter rules', () => {
 
     it('filter fid', () => {
       const feature = { id: 'tasmania_water_bodies.2' };
-      expect(filterSelector(filter, feature)).to.be.true;
+      expect(filterSelector(filter, feature, context)).to.be.true;
     });
 
     it('filter fid false', () => {
       const feature = { id: 'tasmania_water_bodies.0' };
-      expect(filterSelector(filter, feature)).to.be.false;
+      expect(filterSelector(filter, feature, context)).to.be.false;
     });
   });
 
@@ -37,7 +43,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { AREA: 1065512598 } };
-      expect(filterSelector(filter, feature)).to.be.true;
+      expect(filterSelector(filter, feature, context)).to.be.true;
     });
 
     it('propertyislessthan when false', () => {
@@ -49,7 +55,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { AREA: 1065512599 } };
-      expect(filterSelector(filter, feature)).to.be.false;
+      expect(filterSelector(filter, feature, context)).to.be.false;
     });
 
     it('propertyisequalto', () => {
@@ -61,7 +67,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { PERIMETER: 1071304933 } };
-      expect(filterSelector(filter, feature)).to.be.true;
+      expect(filterSelector(filter, feature, context)).to.be.true;
     });
 
     it('propertyisequalto for non existent prop', () => {
@@ -73,7 +79,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { PERIMETEEER: 1071304933 } };
-      expect(filterSelector(filter, feature)).to.be.false;
+      expect(filterSelector(filter, feature, context)).to.be.false;
     });
 
     it('propertyisnotequalto', () => {
@@ -85,9 +91,9 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const featureeq = { properties: { PERIMETER: 1071304933 } };
-      expect(filterSelector(filter, featureeq)).to.be.false;
+      expect(filterSelector(filter, featureeq, context)).to.be.false;
       const featureuneq = { properties: { PERIMETER: 1071304900 } };
-      expect(filterSelector(filter, featureuneq)).to.be.true;
+      expect(filterSelector(filter, featureuneq, context)).to.be.true;
     });
 
     it('propertyisnull', () => {
@@ -98,9 +104,9 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const featureeq = { properties: { PERIMETER: 1071304933 } };
-      expect(filterSelector(filter, featureeq)).to.be.false;
+      expect(filterSelector(filter, featureeq, context)).to.be.false;
       const featureuneq = { properties: { PERIMETER: null } };
-      expect(filterSelector(filter, featureuneq)).to.be.true;
+      expect(filterSelector(filter, featureuneq, context)).to.be.true;
     });
 
     it('propertyislessthanorequalto', () => {
@@ -112,11 +118,11 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { PERIMETER: 1071304933 } };
-      expect(filterSelector(filter, feature)).to.be.true;
+      expect(filterSelector(filter, feature, context)).to.be.true;
       const featurels = { properties: { PERIMETER: 1071304932 } };
-      expect(filterSelector(filter, featurels)).to.be.true;
+      expect(filterSelector(filter, featurels, context)).to.be.true;
       const featuregt = { properties: { PERIMETER: 1071304934 } };
-      expect(filterSelector(filter, featuregt)).to.be.false;
+      expect(filterSelector(filter, featuregt, context)).to.be.false;
     });
 
     it('propertyisgreaterthan', () => {
@@ -128,7 +134,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { PERIMETER: 1071304933 } };
-      expect(filterSelector(filter, feature)).to.be.false;
+      expect(filterSelector(filter, feature, context)).to.be.false;
     });
 
     it('propertyisgreaterthanorequalto', () => {
@@ -140,7 +146,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { PERIMETER: 1071304933 } };
-      expect(filterSelector(filter, feature)).to.be.true;
+      expect(filterSelector(filter, feature, context)).to.be.true;
     });
 
     describe('propertyisbetween', () => {
@@ -163,27 +169,27 @@ describe('filter rules', () => {
 
       it('inside', () => {
         const feature = { properties: { age: 42 } };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('at lower bound', () => {
         const feature = { properties: { age: 30 } };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('below lower bound', () => {
         const feature = { properties: { age: 10 } };
-        expect(filterSelector(filter, feature)).to.be.false;
+        expect(filterSelector(filter, feature, context)).to.be.false;
       });
 
       it('at upper bound', () => {
         const feature = { properties: { age: 100 } };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('above upper bound', () => {
         const feature = { properties: { age: 100.001 } };
-        expect(filterSelector(filter, feature)).to.be.false;
+        expect(filterSelector(filter, feature, context)).to.be.false;
       });
     });
 
@@ -202,7 +208,7 @@ describe('filter rules', () => {
       function testLike(pattern, value) {
         const filter = Object.assign(filterBase, { expression2: pattern });
         const feature = { properties: { value } };
-        return filterSelector(filter, feature);
+        return filterSelector(filter, feature, context);
       }
 
       it('exact match true', () => {
@@ -242,7 +248,7 @@ describe('filter rules', () => {
         </Filter></StyledLayerDescriptor>`;
         const { filter } = Reader(filterXml);
         const feature = { properties: { text: 'TEST' } };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
     });
 
@@ -269,7 +275,7 @@ describe('filter rules', () => {
             matchcase: true,
           };
           const dummyFeature = { properties: {} };
-          expect(filterSelector(filter, dummyFeature)).to.be.true;
+          expect(filterSelector(filter, dummyFeature, context)).to.be.true;
         });
       });
     });
@@ -285,7 +291,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const emptyFeature = { properties: { text: null } };
-      expect(filterSelector(filter, emptyFeature)).to.be.false;
+      expect(filterSelector(filter, emptyFeature, context)).to.be.false;
     });
 
     it('propertyisbetween should return false for missing/null values', () => {
@@ -303,7 +309,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const emptyFeature = { properties: { age: null } };
-      expect(filterSelector(filter, emptyFeature)).to.be.false;
+      expect(filterSelector(filter, emptyFeature, context)).to.be.false;
     });
 
     const operators = [
@@ -325,7 +331,7 @@ describe('filter rules', () => {
         </Filter></StyledLayerDescriptor>`;
         const { filter } = Reader(filterXml);
         const emptyFeature = { properties: { TEMPERATURE: null } };
-        expect(filterSelector(filter, emptyFeature)).to.be.false;
+        expect(filterSelector(filter, emptyFeature, context)).to.be.false;
       });
     });
   });
@@ -340,7 +346,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { text: 'test' } };
-      expect(filterSelector(filter, feature)).to.be.true;
+      expect(filterSelector(filter, feature, context)).to.be.true;
     });
 
     it('propertyisgreaterthan with matchCase: true', () => {
@@ -352,7 +358,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { text: 'monkey' } };
-      expect(filterSelector(filter, feature)).to.be.true;
+      expect(filterSelector(filter, feature, context)).to.be.true;
     });
 
     describe('propertyisbetween for strings', () => {
@@ -375,32 +381,32 @@ describe('filter rules', () => {
 
       it('inside', () => {
         const feature = { properties: { date: '1999-12-31' } };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('at lower bound', () => {
         const feature = { properties: { date: '1980-05-02' } };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('below lower bound', () => {
         const feature = { properties: { date: '1950-09-07' } };
-        expect(filterSelector(filter, feature)).to.be.false;
+        expect(filterSelector(filter, feature, context)).to.be.false;
       });
 
       it('at upper bound', () => {
         const feature = { properties: { date: '2021-06-27' } };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('at upper bound, simple date', () => {
         const feature = { properties: { date: '2021-06-27' } };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('above upper bound', () => {
         const feature = { properties: { date: '2222-12-21' } };
-        expect(filterSelector(filter, feature)).to.be.false;
+        expect(filterSelector(filter, feature, context)).to.be.false;
       });
     });
   });
@@ -445,7 +451,7 @@ describe('filter rules', () => {
           type: 'and',
           predicates: [lakeFilter, areaFilter2],
         };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('and filter with 2 child filters of same type', () => {
@@ -453,7 +459,7 @@ describe('filter rules', () => {
           type: 'and',
           predicates: [areaFilter],
         };
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
 
       it('and filter with no predicates returns false', () => {
@@ -461,7 +467,7 @@ describe('filter rules', () => {
           type: 'and',
           predicates: [],
         };
-        expect(filterSelector(filter, feature)).to.be.false;
+        expect(filterSelector(filter, feature, context)).to.be.false;
       });
     });
 
@@ -485,7 +491,7 @@ describe('filter rules', () => {
 
       it('or filter without predicates should return false', () => {
         const filter = { type: 'or', predicates: [] };
-        expect(filterSelector(filter, duckling)).to.be.false;
+        expect(filterSelector(filter, duckling, context)).to.be.false;
       });
 
       it('or filter with one match returns true', () => {
@@ -493,7 +499,7 @@ describe('filter rules', () => {
           type: 'or',
           predicates: [kwikFilter, kwekFilter, kwakFilter],
         };
-        expect(filterSelector(filter, duckling)).to.be.true;
+        expect(filterSelector(filter, duckling, context)).to.be.true;
       });
 
       it('or filter with no matches returns false', () => {
@@ -501,7 +507,7 @@ describe('filter rules', () => {
           type: 'or',
           predicates: [kwikFilter, kwekFilter],
         };
-        expect(filterSelector(filter, duckling)).to.be.false;
+        expect(filterSelector(filter, duckling, context)).to.be.false;
       });
     });
 
@@ -516,7 +522,7 @@ describe('filter rules', () => {
           </Not>
         </Filter></StyledLayerDescriptor>`;
         const { filter } = Reader(filterXml);
-        expect(filterSelector(filter, feature)).to.be.true;
+        expect(filterSelector(filter, feature, context)).to.be.true;
       });
     });
 
@@ -533,7 +539,7 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const piet = { properties: { name: 'Piet' } };
-      expect(filterSelector(filter, piet)).to.be.true;
+      expect(filterSelector(filter, piet, context)).to.be.true;
     });
 
     it('Nested logical filters', () => {
@@ -559,9 +565,9 @@ describe('filter rules', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const sjenkie = { properties: { name: 'Sjenkie', age: 8 } };
-      expect(filterSelector(filter, sjenkie)).to.be.true;
+      expect(filterSelector(filter, sjenkie, context)).to.be.true;
       const piet = { properties: { name: 'Piet', age: 8 } };
-      expect(filterSelector(filter, piet)).to.be.false;
+      expect(filterSelector(filter, piet, context)).to.be.false;
     });
   });
 });
@@ -588,7 +594,7 @@ describe('Custom Feature Id extraction', () => {
     };
 
     const result = filterSelector(fidFilter, myFeature, {
-      getFeatureId: feature => feature.ogc_fid,
+      getId: feature => feature.ogc_fid,
     });
 
     expect(result).to.be.true;
@@ -611,10 +617,13 @@ describe('Custom property extraction', () => {
       }),
     };
 
-    const result = filterSelector(filter, myFeature, {
+    const customContext = {
+      ...context,
       getProperty: (feature, propertyName) =>
         feature.getAttributes()[propertyName],
-    });
+    };
+
+    const result = filterSelector(filter, myFeature, customContext);
 
     expect(result).to.be.false;
   });
@@ -641,10 +650,13 @@ describe('Custom property extraction', () => {
       }),
     };
 
-    const result = filterSelector(filter, myFeature, {
+    const customContext = {
+      ...context,
       getProperty: (feature, propertyName) =>
         feature.getAttributes()[propertyName],
-    });
+    };
+
+    const result = filterSelector(filter, myFeature, customContext);
 
     expect(result).to.be.true;
   });
@@ -659,7 +671,7 @@ describe('Custom property extraction', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: {} };
-      const result = filterSelector(filter, feature);
+      const result = filterSelector(filter, feature, context);
       expect(result).to.be.true;
     });
 
@@ -672,7 +684,7 @@ describe('Custom property extraction', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { prop1: 42, prop2: 42 } };
-      const result = filterSelector(filter, feature);
+      const result = filterSelector(filter, feature, context);
       expect(result).to.be.true;
     });
   });
@@ -699,7 +711,7 @@ describe('Custom property extraction', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const feature = { properties: { title: 'Nieuwland' } };
-      const result = filterSelector(filter, feature);
+      const result = filterSelector(filter, feature, context);
       expect(result).to.be.true;
     });
 
@@ -725,7 +737,7 @@ describe('Custom property extraction', () => {
         </PropertyIsEqualTo>
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
-      const result = filterSelector(filter, lineFeature);
+      const result = filterSelector(filter, lineFeature, context);
       expect(result).to.be.true;
     });
 
@@ -758,7 +770,7 @@ describe('Custom property extraction', () => {
         </PropertyIsEqualTo>
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
-      const result = filterSelector(filter, lineFeature);
+      const result = filterSelector(filter, lineFeature, context);
       expect(result).to.be.true;
     });
   });

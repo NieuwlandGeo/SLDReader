@@ -37,14 +37,14 @@ export function isDynamicExpression(expression) {
  * Constant expressions are returned as-is.
  * @param {Expression} expression SLD object expression.
  * @param {ol/feature} feature OpenLayers feature instance.
- * @param {function} getProperty A function to get a specific property value from a feature.
+ * @param {EvaluationContext} context Evaluation context.
  * @param {any} defaultValue Optional default value to use when feature is null.
  * Signature (feature, propertyName) => property value.
  */
 export default function evaluate(
   expression,
   feature,
-  getProperty,
+  context,
   defaultValue = null
 ) {
   // Determine the value of the expression.
@@ -75,7 +75,7 @@ export default function evaluate(
       ) {
         value = feature.getGeometry();
       } else {
-        value = getProperty(feature, propertyName);
+        value = context.getProperty(feature, propertyName);
       }
     } else {
       value = defaultValue;
@@ -86,7 +86,7 @@ export default function evaluate(
       value = evaluate(
         expression.children[0],
         feature,
-        getProperty,
+        context,
         defaultValue
       );
     } else {
@@ -96,7 +96,7 @@ export default function evaluate(
         childValues.push(
           // Do not use default values when evaluating children. Only apply default is
           // the concatenated result is empty.
-          evaluate(expression.children[k], feature, getProperty, null)
+          evaluate(expression.children[k], feature, context, null)
         );
       }
       value = childValues.join('');
@@ -109,7 +109,7 @@ export default function evaluate(
       try {
         // evaluate parameter expressions.
         const paramValues = expression.params.map(paramExpression =>
-          evaluate(paramExpression, feature, getProperty)
+          evaluate(paramExpression, feature, context)
         );
         value = func(...paramValues);
       } catch (e) {
@@ -130,7 +130,7 @@ export default function evaluate(
     value === '' ||
     Number.isNaN(value)
   ) {
-    return defaultValue;
+    value = defaultValue;
   }
 
   // Convert value to number if expression is flagged as numeric.

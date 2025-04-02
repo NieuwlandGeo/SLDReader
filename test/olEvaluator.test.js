@@ -23,7 +23,11 @@ const geojson = {
 const fmtGeoJSON = new OLFormatGeoJSON();
 
 describe('Expression evaluation', () => {
-  const getProperty = (feat, prop) => feat.get(prop);
+  const context = {
+    getProperty: (feature, propertyName) => feature.get(propertyName),
+    getId: feature => feature.id,
+    resolution: 10,
+  };
 
   let feature;
   beforeEach(() => {
@@ -32,7 +36,7 @@ describe('Expression evaluation', () => {
 
   it('Constant value', () => {
     const expression = 42;
-    expect(evaluate(expression, feature, getProperty)).to.equal(42);
+    expect(evaluate(expression, feature, context)).to.equal(42);
   });
 
   it('PropertyName', () => {
@@ -45,7 +49,7 @@ describe('Expression evaluation', () => {
         },
       ],
     };
-    expect(evaluate(expression, feature, getProperty)).to.equal(20);
+    expect(evaluate(expression, feature, context)).to.equal(20);
   });
 
   it('Compound filter expression', () => {
@@ -63,15 +67,17 @@ describe('Expression evaluation', () => {
         },
       ],
     };
-    expect(evaluate(expression, feature, getProperty)).to.equal(-42);
+    expect(evaluate(expression, feature, context)).to.equal(-42);
   });
 
   it('Custom property getter', () => {
-    const customGetProperty = (feat, prop) => {
-      if (prop === 'size') {
-        return 100;
-      }
-      return feat.get(prop);
+    const customcontext = {
+      getProperty: (feat, prop) => {
+        if (prop === 'size') {
+          return 100;
+        }
+        return feat.get(prop);
+      },
     };
 
     const expression = {
@@ -83,7 +89,7 @@ describe('Expression evaluation', () => {
         },
       ],
     };
-    expect(evaluate(expression, feature, customGetProperty)).to.equal(100);
+    expect(evaluate(expression, feature, customcontext)).to.equal(100);
   });
 
   describe('Default values', () => {
@@ -107,14 +113,15 @@ describe('Expression evaluation', () => {
 
     describe('Property lookups', () => {
       function readValueProperty(testFeature, defaultValue, typeHint) {
-        const testGetter = (feat, propertyName) =>
-          feat.properties[propertyName];
+        const testContext = {
+          getProperty: (feat, propertyName) => feat.properties[propertyName],
+        };
         const testExpression = {
           type: 'propertyname',
           typeHint,
           value: 'value',
         };
-        return evaluate(testExpression, testFeature, testGetter, defaultValue);
+        return evaluate(testExpression, testFeature, testContext, defaultValue);
       }
 
       it('Use default value when feature is null', () => {
@@ -221,7 +228,7 @@ describe('Expression evaluation', () => {
       </Filter></StyledLayerDescriptor>`;
       const { filter } = Reader(filterXml);
       const functionExpression = filter.expression1;
-      const result = evaluate(functionExpression, feature, getProperty);
+      const result = evaluate(functionExpression, feature, context);
       expect(result).to.equal('nieuwland');
     });
   });
@@ -249,7 +256,7 @@ describe('Expression evaluation', () => {
         type: 'propertyname',
         value: 'geometry',
       };
-      const result = evaluate(expression, lineFeature, getProperty);
+      const result = evaluate(expression, lineFeature, context);
       expect(result instanceof OLLineString).to.be.true;
       expect(result.getCoordinates()).to.deep.equal([
         [0, 0],

@@ -20,9 +20,10 @@ function getInteriorPoint(geometry) {
  * The style will render a point on the middle of the line.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature} feature OpenLayers Feature.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getPolygonPointStyle(symbolizer, feature) {
+function getPolygonPointStyle(symbolizer, feature, context) {
   if (typeof feature.getGeometry !== 'function') {
     return null;
   }
@@ -35,12 +36,12 @@ function getPolygonPointStyle(symbolizer, feature) {
   let pointStyle = null;
   const geomType = geom.getType();
   if (geomType === 'Polygon') {
-    pointStyle = getPointStyle(symbolizer, feature);
+    pointStyle = getPointStyle(symbolizer, feature, context);
     pointStyle.setGeometry(new Point(getInteriorPoint(geom)));
   } else if (geomType === 'MultiPolygon') {
     const polygons = geom.getPolygons();
     const multiPointCoords = polygons.map(getInteriorPoint);
-    pointStyle = getPointStyle(symbolizer, feature);
+    pointStyle = getPointStyle(symbolizer, feature, context);
     pointStyle.setGeometry(new MultiPoint(multiPointCoords));
   }
 

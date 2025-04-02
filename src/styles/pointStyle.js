@@ -102,10 +102,10 @@ const cachedPointStyle = memoizeStyleFunction(pointStyle);
  * Get an OL point style instance for a feature according to a symbolizer.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature} feature OpenLayers Feature.
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getPointStyle(symbolizer, feature, getProperty) {
+function getPointStyle(symbolizer, feature, context) {
   // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
   if (!(symbolizer && symbolizer.graphic)) {
     return emptyStyle;
@@ -125,9 +125,8 @@ function getPointStyle(symbolizer, feature, getProperty) {
   // Calculate size and rotation values first.
   const { size, rotation } = graphic;
   const sizeValue =
-    Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
-  const rotationDegrees =
-    Number(evaluate(rotation, feature, getProperty)) || 0.0;
+    Number(evaluate(size, feature, context)) || DEFAULT_MARK_SIZE;
+  const rotationDegrees = Number(evaluate(rotation, feature, context)) || 0.0;
 
   // --- Update dynamic size ---
   if (isDynamicExpression(size)) {
@@ -165,14 +164,14 @@ function getPointStyle(symbolizer, feature, getProperty) {
       olImage,
       graphic.mark,
       feature,
-      getProperty
+      context
     );
 
     const fillChanged = applyDynamicFillStyling(
       olImage,
       graphic.mark,
       feature,
-      getProperty
+      context
     );
 
     if (strokeChanged || fillChanged) {
@@ -196,8 +195,8 @@ function getPointStyle(symbolizer, feature, getProperty) {
       typeof displacementx !== 'undefined' ||
       typeof displacementy !== 'undefined'
     ) {
-      const dx = evaluate(displacementx, feature, getProperty) || 0.0;
-      const dy = evaluate(displacementy, feature, getProperty) || 0.0;
+      const dx = evaluate(displacementx, feature, context) || 0.0;
+      const dy = evaluate(displacementy, feature, context) || 0.0;
       if (dx !== 0.0 || dy !== 0.0) {
         olImage.setDisplacement([dx, dy]);
       }

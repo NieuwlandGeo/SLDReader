@@ -26,13 +26,15 @@ const cachedLineStyle = memoizeStyleFunction(lineStyle);
  * @private
  * Get an OL line style instance for a feature according to a symbolizer.
  * @param {object} symbolizer SLD symbolizer object.
+ * @param {ol/Feature} feature OpenLayers Feature.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getLineStyle(symbolizer, feature, getProperty) {
+function getLineStyle(symbolizer, feature, context) {
   const olStyle = cachedLineStyle(symbolizer);
 
   // Apply dynamic properties.
-  applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+  applyDynamicStrokeStyling(olStyle, symbolizer, feature, context);
 
   return olStyle;
 }

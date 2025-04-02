@@ -45,18 +45,18 @@ function compare(a, b, matchcase) {
   return aString.toLowerCase().localeCompare(bString.toLowerCase());
 }
 
-function propertyIsNull(comparison, feature, getProperty) {
-  const value = evaluate(comparison.expression, feature, getProperty);
+function propertyIsNull(comparison, feature, context) {
+  const value = evaluate(comparison.expression, feature, context);
   return isNullOrUndefined(value);
 }
 
-function propertyIsLessThan(comparison, feature, getProperty) {
-  const value1 = evaluate(comparison.expression1, feature, getProperty);
+function propertyIsLessThan(comparison, feature, context) {
+  const value1 = evaluate(comparison.expression1, feature, context);
   if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  const value2 = evaluate(comparison.expression2, feature, getProperty);
+  const value2 = evaluate(comparison.expression2, feature, context);
   if (isNullOrUndefined(value2)) {
     return false;
   }
@@ -64,13 +64,13 @@ function propertyIsLessThan(comparison, feature, getProperty) {
   return compare(value1, value2) < 0;
 }
 
-function propertyIsGreaterThan(comparison, feature, getProperty) {
-  const value1 = evaluate(comparison.expression1, feature, getProperty);
+function propertyIsGreaterThan(comparison, feature, context) {
+  const value1 = evaluate(comparison.expression1, feature, context);
   if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  const value2 = evaluate(comparison.expression2, feature, getProperty);
+  const value2 = evaluate(comparison.expression2, feature, context);
   if (isNullOrUndefined(value2)) {
     return false;
   }
@@ -78,8 +78,8 @@ function propertyIsGreaterThan(comparison, feature, getProperty) {
   return compare(value1, value2) > 0;
 }
 
-function propertyIsBetween(comparison, feature, getProperty) {
-  const value = evaluate(comparison.expression, feature, getProperty);
+function propertyIsBetween(comparison, feature, context) {
+  const value = evaluate(comparison.expression, feature, context);
   if (isNullOrUndefined(value)) {
     return false;
   }
@@ -87,7 +87,7 @@ function propertyIsBetween(comparison, feature, getProperty) {
   const lowerBoundary = evaluate(
     comparison.lowerboundary,
     feature,
-    getProperty
+    context
   );
   if (isNullOrUndefined(lowerBoundary)) {
     return false;
@@ -96,7 +96,7 @@ function propertyIsBetween(comparison, feature, getProperty) {
   const upperBoundary = evaluate(
     comparison.upperboundary,
     feature,
-    getProperty
+    context
   );
   if (isNullOrUndefined(upperBoundary)) {
     return false;
@@ -107,13 +107,13 @@ function propertyIsBetween(comparison, feature, getProperty) {
   );
 }
 
-function propertyIsEqualTo(comparison, feature, getProperty) {
-  const value1 = evaluate(comparison.expression1, feature, getProperty);
+function propertyIsEqualTo(comparison, feature, context) {
+  const value1 = evaluate(comparison.expression1, feature, context);
   if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  const value2 = evaluate(comparison.expression2, feature, getProperty);
+  const value2 = evaluate(comparison.expression2, feature, context);
   if (isNullOrUndefined(value2)) {
     return false;
   }
@@ -133,18 +133,18 @@ function propertyIsEqualTo(comparison, feature, getProperty) {
 // Watch out! Null-ish values should not pass propertyIsNotEqualTo,
 // just like in databases.
 // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
-function propertyIsNotEqualTo(comparison, feature, getProperty) {
-  const value1 = evaluate(comparison.expression1, feature, getProperty);
+function propertyIsNotEqualTo(comparison, feature, context) {
+  const value1 = evaluate(comparison.expression1, feature, context);
   if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  const value2 = evaluate(comparison.expression2, feature, getProperty);
+  const value2 = evaluate(comparison.expression2, feature, context);
   if (isNullOrUndefined(value2)) {
     return false;
   }
 
-  return !propertyIsEqualTo(comparison, feature, getProperty);
+  return !propertyIsEqualTo(comparison, feature, context);
 }
 
 /**
@@ -152,16 +152,16 @@ function propertyIsNotEqualTo(comparison, feature, getProperty) {
  * @private
  * @param {object} comparison filter object for operator 'propertyislike'
  * @param {string|number} value Feature property value.
- * @param {object} getProperty A function with parameters (feature, propertyName) to extract
+ * @param {EvaluationContext} context Evaluation context.
  * the value of a property from a feature.
  */
-function propertyIsLike(comparison, feature, getProperty) {
-  const value = evaluate(comparison.expression1, feature, getProperty);
+function propertyIsLike(comparison, feature, context) {
+  const value = evaluate(comparison.expression1, feature, context);
   if (isNullOrUndefined(value)) {
     return false;
   }
 
-  const pattern = evaluate(comparison.expression2, feature, getProperty);
+  const pattern = evaluate(comparison.expression2, feature, context);
   if (isNullOrUndefined(pattern)) {
     return false;
   }
@@ -201,36 +201,35 @@ function propertyIsLike(comparison, feature, getProperty) {
  * @private
  * @param  {Filter} comparison A comparison filter object.
  * @param  {object} feature A feature object.
- * @param  {Function} getProperty A function with parameters (feature, propertyName)
- * to extract a single property value from a feature.
+ * @param {EvaluationContext} context Evaluation context.
  * @return {bool}  does feature fullfill comparison
  */
-function doComparison(comparison, feature, getProperty) {
+function doComparison(comparison, feature, context) {
   switch (comparison.operator) {
     case 'propertyislessthan':
-      return propertyIsLessThan(comparison, feature, getProperty);
+      return propertyIsLessThan(comparison, feature, context);
     case 'propertyisequalto':
-      return propertyIsEqualTo(comparison, feature, getProperty);
+      return propertyIsEqualTo(comparison, feature, context);
     case 'propertyislessthanorequalto':
       return (
-        propertyIsEqualTo(comparison, feature, getProperty) ||
-        propertyIsLessThan(comparison, feature, getProperty)
+        propertyIsEqualTo(comparison, feature, context) ||
+        propertyIsLessThan(comparison, feature, context)
       );
     case 'propertyisnotequalto':
-      return propertyIsNotEqualTo(comparison, feature, getProperty);
+      return propertyIsNotEqualTo(comparison, feature, context);
     case 'propertyisgreaterthan':
-      return propertyIsGreaterThan(comparison, feature, getProperty);
+      return propertyIsGreaterThan(comparison, feature, context);
     case 'propertyisgreaterthanorequalto':
       return (
-        propertyIsEqualTo(comparison, feature, getProperty) ||
-        propertyIsGreaterThan(comparison, feature, getProperty)
+        propertyIsEqualTo(comparison, feature, context) ||
+        propertyIsGreaterThan(comparison, feature, context)
       );
     case 'propertyisbetween':
-      return propertyIsBetween(comparison, feature, getProperty);
+      return propertyIsBetween(comparison, feature, context);
     case 'propertyisnull':
-      return propertyIsNull(comparison, feature, getProperty);
+      return propertyIsNull(comparison, feature, context);
     case 'propertyislike':
-      return propertyIsLike(comparison, feature, getProperty);
+      return propertyIsLike(comparison, feature, context);
     default:
       throw new Error(`Unkown comparison operator ${comparison.operator}`);
   }
@@ -247,58 +246,22 @@ function doFIDFilter(fids, featureId) {
 }
 
 /**
- * @private
- * Get feature properties from a GeoJSON feature.
- * @param {object} feature GeoJSON feature.
- * @returns {object} Feature properties.
- *
- */
-function getGeoJSONProperty(feature, propertyName) {
-  return feature.properties[propertyName];
-}
-
-/**
- * @private
- * Gets feature id from a GeoJSON feature.
- * @param {object} feature GeoJSON feature.
- * @returns {number|string} Feature ID.
- */
-function getGeoJSONFeatureId(feature) {
-  return feature.id;
-}
-
-/**
  * Calls functions from Filter object to test if feature passes filter.
  * Functions are called with filter part they match and feature.
  * @private
  * @param  {Filter} filter
  * @param  {object} feature feature
- * @param  {object} options Custom filter options.
- * @param  {Function} options.getProperty An optional function with parameters (feature, propertyName)
- * that can be used to extract properties from a feature.
- * When not given, properties are read from feature.properties directly.
- * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.
- * When not given, feature id is read from feature.id.
+ * @param {EvaluationContext} context Evaluation context.
  * @return {boolean} True if the feature passes the conditions described by the filter object.
  */
-export function filterSelector(filter, feature, options = {}) {
-  const getProperty =
-    typeof options.getProperty === 'function'
-      ? options.getProperty
-      : getGeoJSONProperty;
-
-  const getFeatureId =
-    typeof options.getFeatureId === 'function'
-      ? options.getFeatureId
-      : getGeoJSONFeatureId;
-
+export function filterSelector(filter, feature, context) {
   const { type } = filter;
   switch (type) {
     case 'featureid':
-      return doFIDFilter(filter.fids, getFeatureId(feature));
+      return doFIDFilter(filter.fids, context.getId(feature));
 
     case 'comparison':
-      return doComparison(filter, feature, getProperty);
+      return doComparison(filter, feature, context);
 
     case 'and': {
       if (!filter.predicates) {
@@ -311,7 +274,7 @@ export function filterSelector(filter, feature, options = {}) {
       }
 
       return filter.predicates.every(predicate =>
-        filterSelector(predicate, feature, options)
+        filterSelector(predicate, feature, context)
       );
     }
 
@@ -321,7 +284,7 @@ export function filterSelector(filter, feature, options = {}) {
       }
 
       return filter.predicates.some(predicate =>
-        filterSelector(predicate, feature, options)
+        filterSelector(predicate, feature, context)
       );
     }
 
@@ -330,7 +293,7 @@ export function filterSelector(filter, feature, options = {}) {
         throw new Error('Not filter must have predicate.');
       }
 
-      return !filterSelector(filter.predicate, feature, options);
+      return !filterSelector(filter.predicate, feature, context);
     }
 
     default:

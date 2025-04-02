@@ -120,10 +120,10 @@ const cachedTextStyle = memoizeStyleFunction(textStyle);
  * Get an OL text style instance for a feature according to a symbolizer.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature} feature OpenLayers Feature.
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getTextStyle(symbolizer, feature, getProperty) {
+function getTextStyle(symbolizer, feature, context) {
   const olStyle = cachedTextStyle(symbolizer);
   const olText = olStyle.getText();
   if (!olText) {
@@ -135,7 +135,7 @@ function getTextStyle(symbolizer, feature, getProperty) {
 
   // Set text only if the label expression is dynamic.
   if (isDynamicExpression(label)) {
-    const labelText = evaluate(label, feature, getProperty, '');
+    const labelText = evaluate(label, feature, context, '');
     // Important! OpenLayers expects the text property to always be a string.
     olText.setText(labelText.toString());
   }
@@ -150,7 +150,7 @@ function getTextStyle(symbolizer, feature, getProperty) {
       const labelRotationDegrees = evaluate(
         pointPlacementRotation,
         feature,
-        getProperty,
+        context,
         0.0
       );
       olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
@@ -173,7 +173,7 @@ function getTextStyle(symbolizer, feature, getProperty) {
   olText.setPlacement(placement);
 
   // Apply dynamic style properties.
-  applyDynamicTextStyling(olStyle, symbolizer, feature, getProperty);
+  applyDynamicTextStyling(olStyle, symbolizer, feature, context);
 
   // Adjust font if one or more font svgparameters are dynamic.
   if (symbolizer.font && symbolizer.font.styling) {
@@ -187,22 +187,12 @@ function getTextStyle(symbolizer, feature, getProperty) {
       const fontFamily = evaluate(
         fontStyling.fontFamily,
         feature,
-        getProperty,
+        context,
         'sans-serif'
       );
-      const fontStyle = evaluate(
-        fontStyling.fontStyle,
-        feature,
-        getProperty,
-        ''
-      );
-      const fontWeight = evaluate(
-        fontStyling.fontWeight,
-        feature,
-        getProperty,
-        ''
-      );
-      const fontSize = evaluate(fontStyling.fontSize, feature, getProperty, 10);
+      const fontStyle = evaluate(fontStyling.fontStyle, feature, context, '');
+      const fontWeight = evaluate(fontStyling.fontWeight, feature, context, '');
+      const fontSize = evaluate(fontStyling.fontSize, feature, context, 10);
       const olFontString = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
       olText.setFont(olFontString);
     }
