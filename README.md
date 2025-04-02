@@ -65,10 +65,10 @@ GraphicFill and PerpendicularOffset are not supported.
 
 #### Note about GraphicStroke
 
-ExternalGraphic is mostly supported with these caveats:
-
-- Always add a Size-element, even if using an ExternalGraphic instead of a Mark.
-- SLD V1.0.0 does not officially support the Gap property. For this, SLDReader implements the same workaround that Geoserver uses. You can use the `stroke-dasharray` parameter to add a gap between stroke marks. To do this, use a dash array with two parameters: the first parameter being the size of the graphic and the second being the gap size. See the " GraphicStroke: ExternalGraphic" example.
+- It's not possible to use property-dependent values inside a GraphicStroke symbolizer.
+- ExternalGraphic is mostly supported with these caveats:
+  - Always add a Size-element, even if using an ExternalGraphic instead of a Mark.
+  - SLD V1.0.0 does not officially support the Gap property. For this, SLDReader implements the same workaround that Geoserver uses. You can use the `stroke-dasharray` parameter to add a gap between stroke marks. To do this, use a dash array with two parameters: the first parameter being the size of the graphic and the second being the gap size. See the " GraphicStroke: ExternalGraphic" example.
 
 #### GraphicStroke vendor options
 
@@ -94,6 +94,8 @@ The following WellKnownNames used by QGIS simple fills can be used as well:
 - slash
 - backslash
 - brush://dense1 (till dense7)
+
+**Note:** It's not possible to use property-dependent values for inside a GraphicFill element.
 
 #### TextSymbolizer
 
