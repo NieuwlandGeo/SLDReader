@@ -117,10 +117,9 @@ function renderStrokeMarks(
  * to be used inside an OpenLayers Style.renderer function.
  * @private
  * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
  */
-export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
+export function getGraphicStrokeRenderer(linesymbolizer) {
   if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
     throw new Error(
       'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
@@ -163,7 +162,7 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
     const pointStyle = getPointStyle(
       graphicstroke,
       renderState.feature,
-      getProperty
+      null
     );
 
     // Calculate graphic spacing.
@@ -176,7 +175,7 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
       evaluate(
         graphicSizeExpression,
         renderState.feature,
-        getProperty,
+        null,
         defaultGraphicSize
       )
     );
@@ -199,10 +198,9 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
  * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
  * @private
  * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @returns {ol/style/Style} An OpenLayers style instance.
  */
-function getGraphicStrokeStyle(linesymbolizer, getProperty) {
+function getGraphicStrokeStyle(linesymbolizer) {
   if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
     throw new Error(
       'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
@@ -210,7 +208,7 @@ function getGraphicStrokeStyle(linesymbolizer, getProperty) {
   }
 
   return new Style({
-    renderer: getGraphicStrokeRenderer(linesymbolizer, getProperty),
+    renderer: getGraphicStrokeRenderer(linesymbolizer),
   });
 }
 
