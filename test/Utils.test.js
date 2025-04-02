@@ -127,11 +127,9 @@ describe('reads info from StyledLayerDescriptor object', () => {
           },
         ],
       };
-      const filteredRules = Utils.getRules(
-        featureTypeStyle,
-        testFeature,
-        0.28 // scale 1:1000.
-      );
+      const filteredRules = Utils.getRules(featureTypeStyle, testFeature, {
+        resolution: 0.28, // scale 1:1000.
+      });
       expect(filteredRules.map(rule => rule.name)).to.deep.equal(['rule2']);
     });
 
