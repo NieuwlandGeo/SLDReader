@@ -1006,14 +1006,14 @@
    * Constant expressions are returned as-is.
    * @param {Expression} expression SLD object expression.
    * @param {ol/feature} feature OpenLayers feature instance.
-   * @param {function} getProperty A function to get a specific property value from a feature.
+   * @param {EvaluationContext} context Evaluation context.
    * @param {any} defaultValue Optional default value to use when feature is null.
    * Signature (feature, propertyName) => property value.
    */
   function evaluate(
     expression,
     feature,
-    getProperty,
+    context,
     defaultValue
   ) {
     if ( defaultValue === void 0 ) defaultValue = null;
@@ -1046,7 +1046,7 @@
         ) {
           value = feature.getGeometry();
         } else {
-          value = getProperty(feature, propertyName);
+          value = context.getProperty(feature, propertyName);
         }
       } else {
         value = defaultValue;
@@ -1057,7 +1057,7 @@
         value = evaluate(
           expression.children[0],
           feature,
-          getProperty,
+          context,
           defaultValue
         );
       } else {
@@ -1067,7 +1067,7 @@
           childValues.push(
             // Do not use default values when evaluating children. Only apply default is
             // the concatenated result is empty.
-            evaluate(expression.children[k], feature, getProperty, null)
+            evaluate(expression.children[k], feature, context, null)
           );
         }
         value = childValues.join('');
@@ -1079,7 +1079,7 @@
       } else {
         try {
           // evaluate parameter expressions.
-          var paramValues = expression.params.map(function (paramExpression) { return evaluate(paramExpression, feature, getProperty); }
+          var paramValues = expression.params.map(function (paramExpression) { return evaluate(paramExpression, feature, context); }
           );
           value = func.apply(void 0, paramValues);
         } catch (e) {
@@ -1159,18 +1159,18 @@
     return aString.toLowerCase().localeCompare(bString.toLowerCase());
   }
 
-  function propertyIsNull(comparison, feature, getProperty) {
-    var value = evaluate(comparison.expression, feature, getProperty);
+  function propertyIsNull(comparison, feature, context) {
+    var value = evaluate(comparison.expression, feature, context);
     return isNullOrUndefined(value);
   }
 
-  function propertyIsLessThan(comparison, feature, getProperty) {
-    var value1 = evaluate(comparison.expression1, feature, getProperty);
+  function propertyIsLessThan(comparison, feature, context) {
+    var value1 = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value1)) {
       return false;
     }
 
-    var value2 = evaluate(comparison.expression2, feature, getProperty);
+    var value2 = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(value2)) {
       return false;
     }
@@ -1178,13 +1178,13 @@
     return compare(value1, value2) < 0;
   }
 
-  function propertyIsGreaterThan(comparison, feature, getProperty) {
-    var value1 = evaluate(comparison.expression1, feature, getProperty);
+  function propertyIsGreaterThan(comparison, feature, context) {
+    var value1 = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value1)) {
       return false;
     }
 
-    var value2 = evaluate(comparison.expression2, feature, getProperty);
+    var value2 = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(value2)) {
       return false;
     }
@@ -1192,8 +1192,8 @@
     return compare(value1, value2) > 0;
   }
 
-  function propertyIsBetween(comparison, feature, getProperty) {
-    var value = evaluate(comparison.expression, feature, getProperty);
+  function propertyIsBetween(comparison, feature, context) {
+    var value = evaluate(comparison.expression, feature, context);
     if (isNullOrUndefined(value)) {
       return false;
     }
@@ -1201,7 +1201,7 @@
     var lowerBoundary = evaluate(
       comparison.lowerboundary,
       feature,
-      getProperty
+      context
     );
     if (isNullOrUndefined(lowerBoundary)) {
       return false;
@@ -1210,7 +1210,7 @@
     var upperBoundary = evaluate(
       comparison.upperboundary,
       feature,
-      getProperty
+      context
     );
     if (isNullOrUndefined(upperBoundary)) {
       return false;
@@ -1221,13 +1221,13 @@
     );
   }
 
-  function propertyIsEqualTo(comparison, feature, getProperty) {
-    var value1 = evaluate(comparison.expression1, feature, getProperty);
+  function propertyIsEqualTo(comparison, feature, context) {
+    var value1 = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value1)) {
       return false;
     }
 
-    var value2 = evaluate(comparison.expression2, feature, getProperty);
+    var value2 = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(value2)) {
       return false;
     }
@@ -1247,18 +1247,18 @@
   // Watch out! Null-ish values should not pass propertyIsNotEqualTo,
   // just like in databases.
   // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
-  function propertyIsNotEqualTo(comparison, feature, getProperty) {
-    var value1 = evaluate(comparison.expression1, feature, getProperty);
+  function propertyIsNotEqualTo(comparison, feature, context) {
+    var value1 = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value1)) {
       return false;
     }
 
-    var value2 = evaluate(comparison.expression2, feature, getProperty);
+    var value2 = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(value2)) {
       return false;
     }
 
-    return !propertyIsEqualTo(comparison, feature, getProperty);
+    return !propertyIsEqualTo(comparison, feature, context);
   }
 
   /**
@@ -1266,16 +1266,16 @@
    * @private
    * @param {object} comparison filter object for operator 'propertyislike'
    * @param {string|number} value Feature property value.
-   * @param {object} getProperty A function with parameters (feature, propertyName) to extract
+   * @param {EvaluationContext} context Evaluation context.
    * the value of a property from a feature.
    */
-  function propertyIsLike(comparison, feature, getProperty) {
-    var value = evaluate(comparison.expression1, feature, getProperty);
+  function propertyIsLike(comparison, feature, context) {
+    var value = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value)) {
       return false;
     }
 
-    var pattern = evaluate(comparison.expression2, feature, getProperty);
+    var pattern = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(pattern)) {
       return false;
     }
@@ -1318,36 +1318,35 @@
    * @private
    * @param  {Filter} comparison A comparison filter object.
    * @param  {object} feature A feature object.
-   * @param  {Function} getProperty A function with parameters (feature, propertyName)
-   * to extract a single property value from a feature.
+   * @param {EvaluationContext} context Evaluation context.
    * @return {bool}  does feature fullfill comparison
    */
-  function doComparison(comparison, feature, getProperty) {
+  function doComparison(comparison, feature, context) {
     switch (comparison.operator) {
       case 'propertyislessthan':
-        return propertyIsLessThan(comparison, feature, getProperty);
+        return propertyIsLessThan(comparison, feature, context);
       case 'propertyisequalto':
-        return propertyIsEqualTo(comparison, feature, getProperty);
+        return propertyIsEqualTo(comparison, feature, context);
       case 'propertyislessthanorequalto':
         return (
-          propertyIsEqualTo(comparison, feature, getProperty) ||
-          propertyIsLessThan(comparison, feature, getProperty)
+          propertyIsEqualTo(comparison, feature, context) ||
+          propertyIsLessThan(comparison, feature, context)
         );
       case 'propertyisnotequalto':
-        return propertyIsNotEqualTo(comparison, feature, getProperty);
+        return propertyIsNotEqualTo(comparison, feature, context);
       case 'propertyisgreaterthan':
-        return propertyIsGreaterThan(comparison, feature, getProperty);
+        return propertyIsGreaterThan(comparison, feature, context);
       case 'propertyisgreaterthanorequalto':
         return (
-          propertyIsEqualTo(comparison, feature, getProperty) ||
-          propertyIsGreaterThan(comparison, feature, getProperty)
+          propertyIsEqualTo(comparison, feature, context) ||
+          propertyIsGreaterThan(comparison, feature, context)
         );
       case 'propertyisbetween':
-        return propertyIsBetween(comparison, feature, getProperty);
+        return propertyIsBetween(comparison, feature, context);
       case 'propertyisnull':
-        return propertyIsNull(comparison, feature, getProperty);
+        return propertyIsNull(comparison, feature, context);
       case 'propertyislike':
-        return propertyIsLike(comparison, feature, getProperty);
+        return propertyIsLike(comparison, feature, context);
       default:
         throw new Error(("Unkown comparison operator " + (comparison.operator)));
     }
@@ -1364,60 +1363,22 @@
   }
 
   /**
-   * @private
-   * Get feature properties from a GeoJSON feature.
-   * @param {object} feature GeoJSON feature.
-   * @returns {object} Feature properties.
-   *
-   */
-  function getGeoJSONProperty(feature, propertyName) {
-    return feature.properties[propertyName];
-  }
-
-  /**
-   * @private
-   * Gets feature id from a GeoJSON feature.
-   * @param {object} feature GeoJSON feature.
-   * @returns {number|string} Feature ID.
-   */
-  function getGeoJSONFeatureId(feature) {
-    return feature.id;
-  }
-
-  /**
    * Calls functions from Filter object to test if feature passes filter.
    * Functions are called with filter part they match and feature.
    * @private
    * @param  {Filter} filter
    * @param  {object} feature feature
-   * @param  {object} options Custom filter options.
-   * @param  {Function} options.getProperty An optional function with parameters (feature, propertyName)
-   * that can be used to extract properties from a feature.
-   * When not given, properties are read from feature.properties directly.
-   * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.
-   * When not given, feature id is read from feature.id.
+   * @param {EvaluationContext} context Evaluation context.
    * @return {boolean} True if the feature passes the conditions described by the filter object.
    */
-  function filterSelector(filter, feature, options) {
-    if ( options === void 0 ) options = {};
-
-    var getProperty =
-      typeof options.getProperty === 'function'
-        ? options.getProperty
-        : getGeoJSONProperty;
-
-    var getFeatureId =
-      typeof options.getFeatureId === 'function'
-        ? options.getFeatureId
-        : getGeoJSONFeatureId;
-
+  function filterSelector(filter, feature, context) {
     var type = filter.type;
     switch (type) {
       case 'featureid':
-        return doFIDFilter(filter.fids, getFeatureId(feature));
+        return doFIDFilter(filter.fids, context.getId(feature));
 
       case 'comparison':
-        return doComparison(filter, feature, getProperty);
+        return doComparison(filter, feature, context);
 
       case 'and': {
         if (!filter.predicates) {
@@ -1429,7 +1390,7 @@
           return false;
         }
 
-        return filter.predicates.every(function (predicate) { return filterSelector(predicate, feature, options); }
+        return filter.predicates.every(function (predicate) { return filterSelector(predicate, feature, context); }
         );
       }
 
@@ -1438,7 +1399,7 @@
           throw new Error('Or filter must have predicates array.');
         }
 
-        return filter.predicates.some(function (predicate) { return filterSelector(predicate, feature, options); }
+        return filter.predicates.some(function (predicate) { return filterSelector(predicate, feature, context); }
         );
       }
 
@@ -1447,7 +1408,7 @@
           throw new Error('Not filter must have predicate.');
         }
 
-        return !filterSelector(filter.predicate, feature, options);
+        return !filterSelector(filter.predicate, feature, context);
       }
 
       default:
@@ -1544,23 +1505,16 @@
    * getRules(style.featuretypestyles['0'], geojson, resolution);
    * @param  {FeatureTypeStyle} featureTypeStyle
    * @param  {object} feature geojson
-   * @param  {number} resolution m/px
-   * @param  {Function} options.getProperty An optional function with parameters (feature, propertyName)
-   * that can be used to extract a property value from a feature.
-   * When not given, properties are read from feature.properties directly.Error
-   * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.Error
-   * When not given, feature id is read from feature.id.
+   * @param {EvaluationContext} context Evaluation context.
    * @return {Rule[]}
    */
-  function getRules(featureTypeStyle, feature, resolution, options) {
-    if ( options === void 0 ) options = {};
-
+  function getRules(featureTypeStyle, feature, context) {
     var validRules = [];
     var elseFilterCount = 0;
     for (var j = 0; j < featureTypeStyle.rules.length; j += 1) {
       var rule = featureTypeStyle.rules[j];
       // Only keep rules that pass the rule's min/max scale denominator checks.
-      if (scaleSelector(rule, resolution)) {
+      if (scaleSelector(rule, context.resolution)) {
         if (rule.elsefilter) {
           // In the first rule selection step, keep all rules with an ElseFilter.
           validRules.push(rule);
@@ -1568,7 +1522,7 @@
         } else if (!rule.filter) {
           // Rules without filter always apply.
           validRules.push(rule);
-        } else if (filterSelector(rule.filter, feature, options)) {
+        } else if (filterSelector(rule.filter, feature, context)) {
           // If a rule has a filter, only keep it if the feature passes the filter.
           validRules.push(rule);
         }
@@ -2357,21 +2311,16 @@
    * @param {ol/style/Style} olStyle OL Style instance.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
-   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {bool} Returns true if any property-dependent fill style changes have been made.
    */
-  function applyDynamicFillStyling(
-    olStyle,
-    symbolizer,
-    feature,
-    getProperty
-  ) {
+  function applyDynamicFillStyling(olStyle, symbolizer, feature, context) {
     var olFill = olStyle.getFill();
     if (!olFill) {
       return false;
     }
 
-    if (typeof getProperty !== 'function') {
+    if (!context) {
       return false;
     }
 
@@ -2385,13 +2334,8 @@
       isDynamicExpression(styling.fill) ||
       isDynamicExpression(styling.fillOpacity)
     ) {
-      var fillColor = evaluate(styling.fill, feature, getProperty, '#808080');
-      var fillOpacity = evaluate(
-        styling.fillOpacity,
-        feature,
-        getProperty,
-        1.0
-      );
+      var fillColor = evaluate(styling.fill, feature, context, '#808080');
+      var fillOpacity = evaluate(styling.fillOpacity, feature, context, 1.0);
       olFill.setColor(getOLColorString(fillColor, fillOpacity));
       somethingChanged = true;
     }
@@ -2406,21 +2350,21 @@
    * @param {ol/style/Style} olStyle OL Style instance.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
-   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
    */
   function applyDynamicStrokeStyling(
     olStyle,
     symbolizer,
     feature,
-    getProperty
+    context
   ) {
     var olStroke = olStyle.getStroke();
     if (!olStroke) {
       return false;
     }
 
-    if (typeof getProperty !== 'function') {
+    if (!context) {
       return false;
     }
 
@@ -2431,12 +2375,7 @@
 
     // Change stroke width if it's property based.
     if (isDynamicExpression(styling.strokeWidth)) {
-      var strokeWidth = evaluate(
-        styling.strokeWidth,
-        feature,
-        getProperty,
-        1.0
-      );
+      var strokeWidth = evaluate(styling.strokeWidth, feature, context, 1.0);
       olStroke.setWidth(strokeWidth);
       somethingChanged = true;
     }
@@ -2446,16 +2385,11 @@
       isDynamicExpression(styling.stroke) ||
       isDynamicExpression(styling.strokeOpacity)
     ) {
-      var strokeColor = evaluate(
-        styling.stroke,
-        feature,
-        getProperty,
-        '#000000'
-      );
+      var strokeColor = evaluate(styling.stroke, feature, context, '#000000');
       var strokeOpacity = evaluate(
         styling.strokeOpacity,
         feature,
-        getProperty,
+        context,
         1.0
       );
       olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
@@ -2472,21 +2406,16 @@
    * @param {ol/style/Style} olStyle OL Style instance.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
-   * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
    */
-  function applyDynamicTextStyling(
-    olStyle,
-    symbolizer,
-    feature,
-    getProperty
-  ) {
+  function applyDynamicTextStyling(olStyle, symbolizer, feature, context) {
     var olText = olStyle.getText();
     if (!olText) {
       return false;
     }
 
-    if (typeof getProperty !== 'function') {
+    if (!context) {
       return false;
     }
 
@@ -2505,12 +2434,7 @@
           },
         },
       };
-      applyDynamicStrokeStyling(
-        olText,
-        textStrokeSymbolizer,
-        feature,
-        getProperty
-      );
+      applyDynamicStrokeStyling(olText, textStrokeSymbolizer, feature, context);
     }
 
     // Halo fill has to be applied as olText fill.
@@ -2521,17 +2445,12 @@
       (isDynamicExpression(symbolizer.halo.fill.styling.fill) ||
         isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))
     ) {
-      applyDynamicFillStyling(olText, symbolizer.halo, feature, getProperty);
+      applyDynamicFillStyling(olText, symbolizer.halo, feature, context);
     }
 
     // Halo radius has to be applied as olText.stroke width.
     if (symbolizer.halo && isDynamicExpression(symbolizer.halo.radius)) {
-      var haloRadius = evaluate(
-        symbolizer.halo.radius,
-        feature,
-        getProperty,
-        1.0
-      );
+      var haloRadius = evaluate(symbolizer.halo.radius, feature, context, 1.0);
       var olStroke = olText.getStroke();
       if (olStroke) {
         var haloStrokeWidth =
@@ -2627,10 +2546,10 @@
    * Get an OL point style instance for a feature according to a symbolizer.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature} feature OpenLayers Feature.
-   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getPointStyle(symbolizer, feature, getProperty) {
+  function getPointStyle(symbolizer, feature, context) {
     // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
     if (!(symbolizer && symbolizer.graphic)) {
       return emptyStyle;
@@ -2651,9 +2570,8 @@
     var size = graphic.size;
     var rotation = graphic.rotation;
     var sizeValue =
-      Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
-    var rotationDegrees =
-      Number(evaluate(rotation, feature, getProperty)) || 0.0;
+      Number(evaluate(size, feature, context)) || DEFAULT_MARK_SIZE;
+    var rotationDegrees = Number(evaluate(rotation, feature, context)) || 0.0;
 
     // --- Update dynamic size ---
     if (isDynamicExpression(size)) {
@@ -2691,14 +2609,14 @@
         olImage,
         graphic.mark,
         feature,
-        getProperty
+        context
       );
 
       var fillChanged = applyDynamicFillStyling(
         olImage,
         graphic.mark,
         feature,
-        getProperty
+        context
       );
 
       if (strokeChanged || fillChanged) {
@@ -2723,8 +2641,8 @@
         typeof displacementx !== 'undefined' ||
         typeof displacementy !== 'undefined'
       ) {
-        var dx = evaluate(displacementx, feature, getProperty) || 0.0;
-        var dy = evaluate(displacementy, feature, getProperty) || 0.0;
+        var dx = evaluate(displacementx, feature, context) || 0.0;
+        var dy = evaluate(displacementy, feature, context) || 0.0;
         if (dx !== 0.0 || dy !== 0.0) {
           olImage.setDisplacement([dx, dy]);
         }
@@ -3101,13 +3019,15 @@
    * @private
    * Get an OL line style instance for a feature according to a symbolizer.
    * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature} feature OpenLayers Feature.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getLineStyle(symbolizer, feature, getProperty) {
+  function getLineStyle(symbolizer, feature, context) {
     var olStyle = cachedLineStyle(symbolizer);
 
     // Apply dynamic properties.
-    applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+    applyDynamicStrokeStyling(olStyle, symbolizer, feature, context);
 
     return olStyle;
   }
@@ -3530,14 +3450,16 @@
    * @private
    * Get an OL line style instance for a feature according to a symbolizer.
    * @param {object} symbolizer SLD symbolizer object.
+   * @param {ol/Feature} feature OpenLayers Feature.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getPolygonStyle(symbolizer, feature, getProperty) {
+  function getPolygonStyle(symbolizer, feature, context) {
     var olStyle = cachedPolygonStyle(symbolizer);
 
     // Apply dynamic properties.
-    applyDynamicFillStyling(olStyle, symbolizer, feature, getProperty);
-    applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+    applyDynamicFillStyling(olStyle, symbolizer, feature, context);
+    applyDynamicStrokeStyling(olStyle, symbolizer, feature, context);
 
     return olStyle;
   }
@@ -3658,10 +3580,10 @@
    * Get an OL text style instance for a feature according to a symbolizer.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature} feature OpenLayers Feature.
-   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getTextStyle(symbolizer, feature, getProperty) {
+  function getTextStyle(symbolizer, feature, context) {
     var olStyle = cachedTextStyle(symbolizer);
     var olText = olStyle.getText();
     if (!olText) {
@@ -3674,7 +3596,7 @@
 
     // Set text only if the label expression is dynamic.
     if (isDynamicExpression(label)) {
-      var labelText = evaluate(label, feature, getProperty, '');
+      var labelText = evaluate(label, feature, context, '');
       // Important! OpenLayers expects the text property to always be a string.
       olText.setText(labelText.toString());
     }
@@ -3689,7 +3611,7 @@
         var labelRotationDegrees = evaluate(
           pointPlacementRotation,
           feature,
-          getProperty,
+          context,
           0.0
         );
         olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
@@ -3712,7 +3634,7 @@
     olText.setPlacement(placement);
 
     // Apply dynamic style properties.
-    applyDynamicTextStyling(olStyle, symbolizer, feature, getProperty);
+    applyDynamicTextStyling(olStyle, symbolizer, feature, context);
 
     // Adjust font if one or more font svgparameters are dynamic.
     if (symbolizer.font && symbolizer.font.styling) {
@@ -3726,22 +3648,12 @@
         var fontFamily = evaluate(
           fontStyling.fontFamily,
           feature,
-          getProperty,
+          context,
           'sans-serif'
         );
-        var fontStyle = evaluate(
-          fontStyling.fontStyle,
-          feature,
-          getProperty,
-          ''
-        );
-        var fontWeight = evaluate(
-          fontStyling.fontWeight,
-          feature,
-          getProperty,
-          ''
-        );
-        var fontSize = evaluate(fontStyling.fontSize, feature, getProperty, 10);
+        var fontStyle = evaluate(fontStyling.fontStyle, feature, context, '');
+        var fontWeight = evaluate(fontStyling.fontWeight, feature, context, '');
+        var fontSize = evaluate(fontStyling.fontSize, feature, context, 10);
         var olFontString = fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily;
         olText.setFont(olFontString);
       }
@@ -3756,9 +3668,10 @@
    * The style will render a point on the middle of the line.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature} feature OpenLayers Feature.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getLinePointStyle(symbolizer, feature) {
+  function getLinePointStyle(symbolizer, feature, context) {
     if (typeof feature.getGeometry !== 'function') {
       return null;
     }
@@ -3771,12 +3684,12 @@
     var pointStyle = null;
     var geomType = geom$1.getType();
     if (geomType === 'LineString') {
-      pointStyle = getPointStyle(symbolizer, feature);
+      pointStyle = getPointStyle(symbolizer, feature, context);
       pointStyle.setGeometry(new geom.Point(getLineMidpoint(geom$1)));
     } else if (geomType === 'MultiLineString') {
       var lineStrings = geom$1.getLineStrings();
       var multiPointCoords = lineStrings.map(getLineMidpoint);
-      pointStyle = getPointStyle(symbolizer, feature);
+      pointStyle = getPointStyle(symbolizer, feature, context);
       pointStyle.setGeometry(new geom.MultiPoint(multiPointCoords));
     }
 
@@ -3803,9 +3716,10 @@
    * The style will render a point on the middle of the line.
    * @param {object} symbolizer SLD symbolizer object.
    * @param {ol/Feature} feature OpenLayers Feature.
+   * @param {EvaluationContext} context Evaluation context.
    * @returns {ol/Style} OpenLayers style instance.
    */
-  function getPolygonPointStyle(symbolizer, feature) {
+  function getPolygonPointStyle(symbolizer, feature, context) {
     if (typeof feature.getGeometry !== 'function') {
       return null;
     }
@@ -3818,12 +3732,12 @@
     var pointStyle = null;
     var geomType = geom$1.getType();
     if (geomType === 'Polygon') {
-      pointStyle = getPointStyle(symbolizer, feature);
+      pointStyle = getPointStyle(symbolizer, feature, context);
       pointStyle.setGeometry(new geom.Point(getInteriorPoint(geom$1)));
     } else if (geomType === 'MultiPolygon') {
       var polygons = geom$1.getPolygons();
       var multiPointCoords = polygons.map(getInteriorPoint);
-      pointStyle = getPointStyle(symbolizer, feature);
+      pointStyle = getPointStyle(symbolizer, feature, context);
       pointStyle.setGeometry(new geom.MultiPoint(multiPointCoords));
     }
 
@@ -3833,6 +3747,14 @@
   var defaultStyles = [defaultPointStyle];
 
   /**
+   * Evaluation context for style functions.
+   * @typedef {object} EvaluationContext
+   * @property {Function} getProperty A function (feature, propertyName) -> value that returns the value of the property of a feature.
+   * @property {Function} getId A function feature -> any that gets the id of a feature.
+   * @property {number} resolution The current resolution in ground units in meters / pixel.
+   */
+
+  /**
    * @private
    * Convert symbolizers together with the feature to OL style objects and append them to the OL styles array.
    * @example appendStyles(styles, point[j], feature, getPointStyle);
@@ -3840,17 +3762,11 @@
    * @param {Array<object>} symbolizers Array of feature symbolizers.
    * @param {ol/feature} feature OpenLayers feature.
    * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
-   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+   * @param {EvaluationContext} context Evaluation context.
    */
-  function appendStyles(
-    styles,
-    symbolizers,
-    feature,
-    styleFunction,
-    getProperty
-  ) {
+  function appendStyles(styles, symbolizers, feature, styleFunction, context) {
     (symbolizers || []).forEach(function (symbolizer) {
-      var olStyle = styleFunction(symbolizer, feature, getProperty);
+      var olStyle = styleFunction(symbolizer, feature, context);
       if (olStyle) {
         styles.push(olStyle);
       }
@@ -3863,7 +3779,7 @@
    * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
    * @param {object|Feature} feature {@link http://geojson.org|geojson}
    *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
-   * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+   * @param {EvaluationContext} context Evaluation context.
    * @param {object} [options] Optional options object.
    * @param {boolean} [options.strictGeometryMatch] Default false. When true, only apply symbolizers to the corresponding geometry type.
    * E.g. point symbolizers will not be applied to lines and polygons. Default false (according to SLD spec).
@@ -3873,7 +3789,7 @@
   function OlStyler(
     categorizedSymbolizers,
     feature,
-    getProperty,
+    context,
     options
   ) {
     if ( options === void 0 ) options = {};
@@ -3899,29 +3815,23 @@
     switch (geometryType) {
       case 'Point':
       case 'MultiPoint':
-        appendStyles(
-          styles,
-          pointSymbolizers,
-          feature,
-          getPointStyle,
-          getProperty
-        );
-        appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
+        appendStyles(styles, pointSymbolizers, feature, getPointStyle, context);
+        appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
         break;
 
       case 'LineString':
       case 'MultiLineString':
-        appendStyles(styles, lineSymbolizers, feature, getLineStyle, getProperty);
+        appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
         if (!styleOptions.strictGeometryMatch) {
           appendStyles(
             styles,
             pointSymbolizers,
             feature,
             getLinePointStyle,
-            getProperty
+            context
           );
         }
-        appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
+        appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
         break;
 
       case 'Polygon':
@@ -3931,25 +3841,19 @@
           polygonSymbolizers,
           feature,
           getPolygonStyle,
-          getProperty
+          context
         );
         if (!styleOptions.strictGeometryMatch) {
-          appendStyles(
-            styles,
-            lineSymbolizers,
-            feature,
-            getLineStyle,
-            getProperty
-          );
+          appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
         }
         appendStyles(
           styles,
           pointSymbolizers,
           feature,
           getPolygonPointStyle,
-          getProperty
+          context
         );
-        appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
+        appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
         break;
 
       default:
@@ -4012,23 +3916,27 @@
     // Keep track of whether a callback has been registered per image url.
     var callbackRef = {};
 
+    // Evaluation context.
+    var context = {};
+
+    context.getProperty =
+      typeof options.getProperty === 'function'
+        ? options.getProperty
+        : getOlFeatureProperty;
+
+    context.getId = getOlFeatureId;
+
     return function (feature, mapResolution) {
       // Determine resolution in meters/pixel.
-      var resolution =
+      var groundResolution =
         typeof options.convertResolution === 'function'
           ? options.convertResolution(mapResolution)
           : mapResolution;
 
-      var getProperty =
-        typeof options.getProperty === 'function'
-          ? options.getProperty
-          : getOlFeatureProperty;
+      context.resolution = groundResolution;
 
       // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
-      var rules = getRules(featureTypeStyle, feature, resolution, {
-        getProperty: getProperty,
-        getFeatureId: getOlFeatureId,
-      });
+      var rules = getRules(featureTypeStyle, feature, context);
 
       // Start loading images for external graphic symbolizers and when loaded:
       // * update symbolizers to use the cached image.
@@ -4044,7 +3952,7 @@
       var categorizedSymbolizers = categorizeSymbolizers(rules);
 
       // Determine style rule array.
-      var olStyles = OlStyler(categorizedSymbolizers, feature, getProperty);
+      var olStyles = OlStyler(categorizedSymbolizers, feature, context);
 
       return olStyles;
     };

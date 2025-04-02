@@ -8,21 +8,16 @@ import { getOLColorString } from './styleUtils';
  * @param {ol/style/Style} olStyle OL Style instance.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
- * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {bool} Returns true if any property-dependent fill style changes have been made.
  */
-export function applyDynamicFillStyling(
-  olStyle,
-  symbolizer,
-  feature,
-  getProperty
-) {
+export function applyDynamicFillStyling(olStyle, symbolizer, feature, context) {
   const olFill = olStyle.getFill();
   if (!olFill) {
     return false;
   }
 
-  if (typeof getProperty !== 'function') {
+  if (!context) {
     return false;
   }
 
@@ -36,13 +31,8 @@ export function applyDynamicFillStyling(
     isDynamicExpression(styling.fill) ||
     isDynamicExpression(styling.fillOpacity)
   ) {
-    const fillColor = evaluate(styling.fill, feature, getProperty, '#808080');
-    const fillOpacity = evaluate(
-      styling.fillOpacity,
-      feature,
-      getProperty,
-      1.0
-    );
+    const fillColor = evaluate(styling.fill, feature, context, '#808080');
+    const fillOpacity = evaluate(styling.fillOpacity, feature, context, 1.0);
     olFill.setColor(getOLColorString(fillColor, fillOpacity));
     somethingChanged = true;
   }
@@ -57,21 +47,21 @@ export function applyDynamicFillStyling(
  * @param {ol/style/Style} olStyle OL Style instance.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
- * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
  */
 export function applyDynamicStrokeStyling(
   olStyle,
   symbolizer,
   feature,
-  getProperty
+  context
 ) {
   const olStroke = olStyle.getStroke();
   if (!olStroke) {
     return false;
   }
 
-  if (typeof getProperty !== 'function') {
+  if (!context) {
     return false;
   }
 
@@ -82,12 +72,7 @@ export function applyDynamicStrokeStyling(
 
   // Change stroke width if it's property based.
   if (isDynamicExpression(styling.strokeWidth)) {
-    const strokeWidth = evaluate(
-      styling.strokeWidth,
-      feature,
-      getProperty,
-      1.0
-    );
+    const strokeWidth = evaluate(styling.strokeWidth, feature, context, 1.0);
     olStroke.setWidth(strokeWidth);
     somethingChanged = true;
   }
@@ -97,16 +82,11 @@ export function applyDynamicStrokeStyling(
     isDynamicExpression(styling.stroke) ||
     isDynamicExpression(styling.strokeOpacity)
   ) {
-    const strokeColor = evaluate(
-      styling.stroke,
-      feature,
-      getProperty,
-      '#000000'
-    );
+    const strokeColor = evaluate(styling.stroke, feature, context, '#000000');
     const strokeOpacity = evaluate(
       styling.strokeOpacity,
       feature,
-      getProperty,
+      context,
       1.0
     );
     olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
@@ -123,21 +103,16 @@ export function applyDynamicStrokeStyling(
  * @param {ol/style/Style} olStyle OL Style instance.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature|GeoJSON} feature OL Feature instance or GeoJSON feature object.
- * @param {Function} getProperty Property getter (feature, propertyName) => propertyValue.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
  */
-export function applyDynamicTextStyling(
-  olStyle,
-  symbolizer,
-  feature,
-  getProperty
-) {
+export function applyDynamicTextStyling(olStyle, symbolizer, feature, context) {
   const olText = olStyle.getText();
   if (!olText) {
     return false;
   }
 
-  if (typeof getProperty !== 'function') {
+  if (!context) {
     return false;
   }
 
@@ -156,12 +131,7 @@ export function applyDynamicTextStyling(
         },
       },
     };
-    applyDynamicStrokeStyling(
-      olText,
-      textStrokeSymbolizer,
-      feature,
-      getProperty
-    );
+    applyDynamicStrokeStyling(olText, textStrokeSymbolizer, feature, context);
   }
 
   // Halo fill has to be applied as olText fill.
@@ -172,17 +142,12 @@ export function applyDynamicTextStyling(
     (isDynamicExpression(symbolizer.halo.fill.styling.fill) ||
       isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))
   ) {
-    applyDynamicFillStyling(olText, symbolizer.halo, feature, getProperty);
+    applyDynamicFillStyling(olText, symbolizer.halo, feature, context);
   }
 
   // Halo radius has to be applied as olText.stroke width.
   if (symbolizer.halo && isDynamicExpression(symbolizer.halo.radius)) {
-    const haloRadius = evaluate(
-      symbolizer.halo.radius,
-      feature,
-      getProperty,
-      1.0
-    );
+    const haloRadius = evaluate(symbolizer.halo.radius, feature, context, 1.0);
     const olStroke = olText.getStroke();
     if (olStroke) {
       const haloStrokeWidth =
