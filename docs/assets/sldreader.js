@@ -543,6 +543,12 @@
         childExpression.type = 'propertyname';
         childExpression.typeHint = parseOptions.typeHint;
         childExpression.value = childNode.textContent.trim();
+        if (
+          childExpression.typeHint === 'number' &&
+          (parseOptions.uom === UOM_METRE || parseOptions.uom === UOM_FOOT)
+        ) {
+          childExpression.uom = parseOptions.uom;
+        }
       } else if (
         childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
         childNode.localName === 'Function'

@@ -562,7 +562,10 @@ describe('SVG style parameters', () => {
         'parsedSld',
         (node, nodeName) => {
           if (typeof node === 'object') {
-            if (node.uom && node.type === 'literal') {
+            if (
+              node.uom &&
+              (node.type === 'literal' || node.type === 'propertyname')
+            ) {
               if (node.typeHint !== 'number') {
                 throw new Error(
                   `Found uom on non-numeric literal [${nodeName}].`
@@ -600,11 +603,11 @@ describe('SVG style parameters', () => {
       );
     });
 
-    it('LineSymbolizer stroke width in metres', () => {
+    it('LineSymbolizer stroke width as PropertyName inherits uom', () => {
       expect(lineSymbolizer.stroke.styling.strokeWidth).to.deep.equal({
-        type: 'literal',
+        type: 'propertyname',
         typeHint: 'number',
-        value: 3,
+        value: 'width_m',
         uom: UOM_METRE,
       });
     });

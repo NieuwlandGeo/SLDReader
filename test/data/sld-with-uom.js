@@ -55,7 +55,9 @@ export const sldWithUom = `<?xml version="1.0" encoding="UTF-8"?>
           <se:LineSymbolizer uom="http://www.opengeospatial.org/se/units/metre">
             <se:Stroke>
               <se:SvgParameter name="stroke">#00AA00</se:SvgParameter>
-              <se:SvgParameter name="stroke-width">3</se:SvgParameter>
+              <se:SvgParameter name="stroke-width">
+                <ogc:PropertyName>width_m</ogc:PropertyName>
+              </se:SvgParameter>
             </se:Stroke>
             <se:GraphicStroke>
               <se:Graphic>
