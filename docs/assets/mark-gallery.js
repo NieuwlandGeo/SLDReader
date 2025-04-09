@@ -6,7 +6,7 @@ let styleFunction = null; // Style that maps a feature with a wellknownname prop
 
 // prettier-ignore
 const wellknownnames = [
-  'circle', 'triangle', 'star', 'cross', 'hexagon', 'octagon',
+  'square', 'circle', 'triangle', 'star', 'cross', 'hexagon', 'octagon',
   'cross2', 'x', 'diamond', 'horline', 'line', 'backslash', 'slash',
 ];
 

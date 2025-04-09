@@ -24,7 +24,7 @@ function _validateObjectProperties(prop, propName, path, validateFn, errors) {
           errors
         );
       }
-    } else if (typeof prop === 'object') {
+    } else if (prop && typeof prop === 'object') {
       const childProps = Object.keys(prop);
       childProps.forEach(childPropName => {
         currentPath = appendPropToPath(path, childPropName);

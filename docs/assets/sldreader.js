@@ -26,6 +26,8 @@
   // None = number is dimensionless.
   var UOM_NONE = 'none';
 
+  var METRES_PER_FOOT = 0.3048;
+
   /**
    * Factory methods for filterelements
    * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
@@ -373,10 +375,7 @@
       item.uom = UOM_PIXEL;
     }
 
-    readNode(node, item, {
-      // Note: text symbolizer units of measure are always pixel.
-      uom: property === 'textsymbolizer' ? UOM_PIXEL : item.uom,
-    });
+    readNode(node, item, { uom: item.uom });
     obj[property].push(item);
   }
 
@@ -541,6 +540,12 @@
         childExpression.type = 'propertyname';
         childExpression.typeHint = parseOptions.typeHint;
         childExpression.value = childNode.textContent.trim();
+        if (
+          childExpression.typeHint === 'number' &&
+          (parseOptions.uom === UOM_METRE || parseOptions.uom === UOM_FOOT)
+        ) {
+          childExpression.uom = parseOptions.uom;
+        }
       } else if (
         childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
         childNode.localName === 'Function'
@@ -979,6 +984,14 @@
    * @returns {bool} Returns true if the expression depends on feature properties.
    */
   function isDynamicExpression(expression) {
+    // Expressions whose pixel value changes with resolution are dynamic by definition.
+    if (
+      expression &&
+      (expression.uom === UOM_METRE || expression.uom === UOM_FOOT)
+    ) {
+      return true;
+    }
+
     switch ((expression || {}).type) {
       case 'expression':
         // Expressions with all literal child values are already concatenated into a static string,
@@ -1054,12 +1067,7 @@
     } else if (expression.type === 'expression') {
       // Expression value is the concatenation of all child expession values.
       if (expression.children.length === 1) {
-        value = evaluate(
-          expression.children[0],
-          feature,
-          context,
-          defaultValue
-        );
+        value = evaluate(expression.children[0], feature, context, defaultValue);
       } else {
         // In case of multiple child expressions, concatenate the evaluated child results.
         var childValues = [];
@@ -1103,11 +1111,23 @@
       value = defaultValue;
     }
 
-    // Convert value to number if expression is flagged as numeric.
-    if (expression && expression.typeHint === 'number') {
-      value = Number(value);
-      if (Number.isNaN(value)) {
-        return defaultValue;
+    if (expression) {
+      // Convert value to number if expression is flagged as numeric.
+      if (expression.typeHint === 'number') {
+        value = Number(value);
+        if (Number.isNaN(value)) {
+          value = defaultValue;
+        }
+      }
+      // Convert value to pixels in case of uom = metre or feet.
+      if (expression.uom === UOM_FOOT) {
+        // Convert feet to metres.
+        value *= METRES_PER_FOOT;
+      }
+      if (expression.uom === UOM_METRE || expression.uom === UOM_FOOT) {
+        // Convert metres to pixels.
+        var scaleFactor = context ? context.resolution : 1;
+        value /= scaleFactor;
       }
     }
 

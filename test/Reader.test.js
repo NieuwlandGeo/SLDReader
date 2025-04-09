@@ -561,8 +561,11 @@ describe('SVG style parameters', () => {
         parsedSld,
         'parsedSld',
         (node, nodeName) => {
-          if (typeof node === 'object') {
-            if (node.uom && node.type === 'literal') {
+          if (node && typeof node === 'object') {
+            if (
+              node.uom &&
+              (node.type === 'literal' || node.type === 'propertyname')
+            ) {
               if (node.typeHint !== 'number') {
                 throw new Error(
                   `Found uom on non-numeric literal [${nodeName}].`
@@ -600,11 +603,11 @@ describe('SVG style parameters', () => {
       );
     });
 
-    it('LineSymbolizer stroke width in metres', () => {
+    it('LineSymbolizer stroke width as PropertyName inherits uom', () => {
       expect(lineSymbolizer.stroke.styling.strokeWidth).to.deep.equal({
-        type: 'literal',
+        type: 'propertyname',
         typeHint: 'number',
-        value: 3,
+        value: 'width_m',
         uom: UOM_METRE,
       });
     });
@@ -638,12 +641,22 @@ describe('SVG style parameters', () => {
       });
     });
 
-    it('Text symbolizer font size always pixel', () => {
-      expect(textSymbolizer.font.styling.fontSize).to.equal(13);
+    it('Text symbolizer font size uom', () => {
+      expect(textSymbolizer.font.styling.fontSize).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 13,
+        uom: UOM_METRE,
+      });
     });
 
-    it('Text symbolizer halo radius always pixel', () => {
-      expect(textSymbolizer.halo.radius).to.equal(2);
+    it('Text symbolizer halo radius uom', () => {
+      expect(textSymbolizer.halo.radius).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 2,
+        uom: 'metre',
+      });
     });
 
     it('Text symbolizer anchor point X/Y always a dimensionless number', () => {
