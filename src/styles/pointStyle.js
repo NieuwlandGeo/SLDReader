@@ -128,29 +128,6 @@ function getPointStyle(symbolizer, feature, context) {
     Number(evaluate(size, feature, context)) || DEFAULT_MARK_SIZE;
   const rotationDegrees = Number(evaluate(rotation, feature, context)) || 0.0;
 
-  // --- Update dynamic size ---
-  if (isDynamicExpression(size)) {
-    if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
-      const height = olImage.getSize()[1];
-      const scale = sizeValue / height || 1;
-      olImage.setScale(scale);
-    } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
-      // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
-      olImage.setRadius(sizeValue * 0.5);
-    } else {
-      // For a non-Circle RegularShape, create a new olImage in order to update the size.
-      olImage = getWellKnownSymbol(
-        (graphic.mark && graphic.mark.wellknownname) || 'square',
-        sizeValue,
-        // Note: re-use stroke and fill instances for a (small?) performance gain.
-        olImage.getStroke(),
-        olImage.getFill(),
-        rotationDegrees
-      );
-      olStyle.setImage(olImage);
-    }
-  }
-
   // --- Update dynamic rotation ---
   if (isDynamicExpression(rotation)) {
     // Note: OL angles are in radians.
@@ -166,6 +143,9 @@ function getPointStyle(symbolizer, feature, context) {
       feature,
       context
     );
+    if (strokeChanged) {
+      olImage.setStroke(olImage.getStroke());
+    }
 
     const fillChanged = applyDynamicFillStyling(
       olImage,
@@ -173,12 +153,26 @@ function getPointStyle(symbolizer, feature, context) {
       feature,
       context
     );
+    if (fillChanged) {
+      olImage.setFill(olImage.getFill());
+    }
+  }
 
-    if (strokeChanged || fillChanged) {
-      // Create a new olImage in order to force a re-render to see the style changes.
+  // --- Update dynamic size ---
+  if (isDynamicExpression(size)) {
+    if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
+      const height = olImage.getSize()[1];
+      const scale = sizeValue / height || 1;
+      olImage.setScale(scale);
+    } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
+      // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
+      olImage.setRadius(sizeValue * 0.5);
+    } else {
+      // For a non-Circle RegularShape, create a new olImage in order to update the size.
       olImage = getWellKnownSymbol(
         (graphic.mark && graphic.mark.wellknownname) || 'square',
         sizeValue,
+        // Note: re-use stroke and fill instances for a (small?) performance gain.
         olImage.getStroke(),
         olImage.getFill(),
         rotationDegrees
