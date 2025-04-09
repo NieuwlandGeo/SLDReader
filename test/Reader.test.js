@@ -561,7 +561,7 @@ describe('SVG style parameters', () => {
         parsedSld,
         'parsedSld',
         (node, nodeName) => {
-          if (typeof node === 'object') {
+          if (node && typeof node === 'object') {
             if (
               node.uom &&
               (node.type === 'literal' || node.type === 'propertyname')

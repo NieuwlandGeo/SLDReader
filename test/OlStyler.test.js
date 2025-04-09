@@ -25,6 +25,7 @@ import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.s
 import { dynamicLineSymbolizerSld } from './data/dynamic-line-symbolizer.sld';
 import { dynamicPointSymbolizerSld } from './data/dynamic-point-symbolizer.sld';
 import { dynamicTextSymbolizerSld } from './data/dynamic-text-symbolizer.sld';
+import { dynamicPointSymbolizerWithUom } from './data/dynamic-point-symbolizer-with-uom';
 import { doubleLineSld } from './data/double-line.sld';
 
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
@@ -1294,6 +1295,48 @@ describe('Styling with dynamic SVG Parameters', () => {
 
     it('Dynamic font style', () => {
       expect(olText.getFont()).to.equal('italic bold 14px Comic Sans MS');
+    });
+  });
+
+  describe('UOM scaling', () => {
+    let styleFunction;
+    let fmtGeoJSON;
+    before(() => {
+      fmtGeoJSON = new OLFormatGeoJSON();
+      const sldObject = Reader(dynamicPointSymbolizerWithUom);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      styleFunction = createOlStyleFunction(featureTypeStyle);
+    });
+
+    it('Point symbolizer mark size as propertyname in metres', () => {
+      const olFeature = fmtGeoJSON.readFeature({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [175135, 441200],
+        },
+        properties: {
+          point_size_m: 42,
+        },
+      });
+      const [style] = styleFunction(olFeature, 10); // Test with resolution of 10 m/px.
+      // Size = 40 metres / (10 metres / pixel) = 4.2 pixel.
+      expect(style.getImage().getRadius()).to.deep.equal(2.1); // radius = size / 2
+    });
+
+    it('Point symbolizer mark stroke in pixels with px override', () => {
+      const olFeature = fmtGeoJSON.readFeature({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [175135, 441200],
+        },
+        properties: {},
+      });
+      const [style] = styleFunction(olFeature);
+      // Point symbolizer mark stroke width is always 2 pixels.
+      expect(style.getImage().getStroke().getWidth()).to.equal(2);
     });
   });
 });
