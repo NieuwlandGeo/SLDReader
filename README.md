@@ -136,7 +136,41 @@ Operators `Add`, `Sub`, `Mul`, and `Div` are implemented by converting them to f
 
 ### Units of measure
 
-Only pixels are supported as unit of measure.
+The following units of measure are supported on symbolizers, as `uom` attribute:
+
+```
+http://www.opengeospatial.org/se/units/pixel
+http://www.opengeospatial.org/se/units/metre
+http://www.opengeospatial.org/se/units/foot
+```
+
+Values can be forced to pixels by appending px:
+
+```xml
+<se:PointSymbolizer uom="http://www.opengeospatial.org/se/units/metre">
+  <se:Graphic>
+    <se:Mark>
+      <se:WellKnownName>circle</se:WellKnownName>
+      <se:Fill>
+        <se:SvgParameter name="fill">#88aa88</se:SvgParameter>
+      </se:Fill>
+      <se:Stroke>
+        <se:SvgParameter name="stroke">#004000</se:SvgParameter>
+        <!-- Override symbolizer uom with pixels by appending px to the value. -->
+        <se:SvgParameter name="stroke-width">2px</se:SvgParameter>
+      </se:Stroke>
+    </se:Mark>
+    <se:Size>10</se:Size> <!-- in metres, as per uom attribute -->
+  </se:Graphic>
+</se:PointSymbolizer>
+```
+
+**Restrictions:**
+
+- Units of measure are not supported for `GraphicStroke` and `GraphicFill`.
+- Units of measure are not supported on `stroke-dasharray`.
+- Units of measure are not supported within or as return value of `Function` elements. The return type of `Functions` is always treated as dimensionless or pixels, depending on context.
+- Values will always be treated as pixels where units of measure are not supported.
 
 ### Geometry element
 
