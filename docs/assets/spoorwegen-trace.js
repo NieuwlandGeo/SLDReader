@@ -9,7 +9,7 @@ const editor = CodeMirror.fromTextArea(document.getElementById('sld'), {
 
 const vectorSource = new ol.source.Vector({
   format: new ol.format.GeoJSON(),
-  url: 'assets/hoogspanning.json',
+  url: 'assets/spoorwegen-trace.json',
   strategy: ol.loadingstrategy.bbox,
 });
 
@@ -70,7 +70,7 @@ function loadSld(mode) {
 
   switch (mode) {
     case 'DEMO_MARK':
-      sldUrl = 'assets/sld-hoogspanning.xml';
+      sldUrl = 'assets/sld-spoorwegen-trace.xml';
       break;
     case 'DEMO_EXTERNALGRAPHIC':
       sldUrl = 'assets/sld-external-graphic-mark.xml';

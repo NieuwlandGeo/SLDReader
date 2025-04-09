@@ -254,7 +254,7 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('returns object for the layers', () => {
     expect(result.layers).to.have.length(1);
-    expect(result.layers['0'].name).to.equal('Hoogspanning');
+    expect(result.layers['0'].name).to.equal('spoorwegen-trace');
   });
   it('has styles', () => {
     const { styles } = result.layers['0'];

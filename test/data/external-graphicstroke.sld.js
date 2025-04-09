@@ -4,9 +4,9 @@ export const externalGraphicStrokeSld = `<?xml version="1.0" encoding="UTF-8"?>
   xmlns:xlink="http://www.w3.org/1999/xlink" 
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd">
   <NamedLayer>
-    <Name>Hoogspanning</Name>
+    <Name>spoorwegen-trace</Name>
     <UserStyle>
-      <Name>Hoogspanning</Name>
+      <Name>spoorwegen-trace</Name>
       <FeatureTypeStyle>
         <Rule>
           <Name>All</Name>
