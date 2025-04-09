@@ -35,8 +35,8 @@ const map = new ol.Map({
   target: document.getElementById('olmap'),
   view: new ol.View({
     center: [630300, 6793900],
-    maxZoom: 19,
-    zoom: 14,
+    maxZoom: 20,
+    zoom: 16,
   }),
 });
 map.addControl(new ol.control.MousePosition());

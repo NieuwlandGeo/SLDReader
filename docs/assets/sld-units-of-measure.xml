@@ -19,10 +19,11 @@
                 </se:Fill>
                 <se:Stroke>
                   <se:SvgParameter name="stroke">#004000</se:SvgParameter>
-                  <se:SvgParameter name="stroke-width">2</se:SvgParameter>
+<!-- Override symbolizer uom with pixels by appending px to the value. -->
+                  <se:SvgParameter name="stroke-width">2px</se:SvgParameter>
                 </se:Stroke>
               </se:Mark>
-              <se:Size>7.5</se:Size>
+              <se:Size>10</se:Size>
             </se:Graphic>
           </se:PointSymbolizer>
         </se:Rule>
