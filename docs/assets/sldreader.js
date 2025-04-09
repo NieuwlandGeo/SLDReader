@@ -375,10 +375,7 @@
       item.uom = UOM_PIXEL;
     }
 
-    readNode(node, item, {
-      // Note: text symbolizer units of measure are always pixel.
-      uom: property === 'textsymbolizer' ? UOM_PIXEL : item.uom,
-    });
+    readNode(node, item, { uom: item.uom });
     obj[property].push(item);
   }
 

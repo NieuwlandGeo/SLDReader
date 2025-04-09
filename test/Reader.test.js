@@ -641,12 +641,22 @@ describe('SVG style parameters', () => {
       });
     });
 
-    it('Text symbolizer font size always pixel', () => {
-      expect(textSymbolizer.font.styling.fontSize).to.equal(13);
+    it('Text symbolizer font size uom', () => {
+      expect(textSymbolizer.font.styling.fontSize).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 13,
+        uom: UOM_METRE,
+      });
     });
 
-    it('Text symbolizer halo radius always pixel', () => {
-      expect(textSymbolizer.halo.radius).to.equal(2);
+    it('Text symbolizer halo radius uom', () => {
+      expect(textSymbolizer.halo.radius).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 2,
+        uom: 'metre',
+      });
     });
 
     it('Text symbolizer anchor point X/Y always a dimensionless number', () => {

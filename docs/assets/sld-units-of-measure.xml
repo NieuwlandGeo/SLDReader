@@ -19,13 +19,39 @@
                 </se:Fill>
                 <se:Stroke>
                   <se:SvgParameter name="stroke">#004000</se:SvgParameter>
-<!-- Override symbolizer uom with pixels by appending px to the value. -->
+                  <!-- Override symbolizer uom with pixels by appending px to the value. -->
                   <se:SvgParameter name="stroke-width">2px</se:SvgParameter>
                 </se:Stroke>
               </se:Mark>
               <se:Size>10</se:Size>
             </se:Graphic>
           </se:PointSymbolizer>
+          <se:TextSymbolizer uom="http://www.opengeospatial.org/se/units/foot">
+            <se:Label>
+              <ogc:PropertyName>Jaar</ogc:PropertyName>
+            </se:Label>
+            <se:Font>
+              <se:SvgParameter name="font-family">Noto Sans</se:SvgParameter>
+              <se:SvgParameter name="font-size">9</se:SvgParameter>
+            </se:Font>
+            <se:LabelPlacement>
+              <se:PointPlacement>
+                <se:AnchorPoint>
+                  <se:AnchorPointX>0.5</se:AnchorPointX>
+                  <se:AnchorPointY>0.5</se:AnchorPointY>
+                </se:AnchorPoint>
+              </se:PointPlacement>
+            </se:LabelPlacement>
+            <se:Halo>
+              <se:Radius>1</se:Radius>
+              <se:Fill>
+                <se:SvgParameter name="fill">#FFFFFF</se:SvgParameter>
+              </se:Fill>
+            </se:Halo>
+            <se:Fill>
+              <se:SvgParameter name="fill">#000000</se:SvgParameter>
+            </se:Fill>
+          </se:TextSymbolizer>
         </se:Rule>
       </se:FeatureTypeStyle>
     </UserStyle>
