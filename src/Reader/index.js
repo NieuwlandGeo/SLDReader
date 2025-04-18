@@ -90,6 +90,34 @@ function addProp(node, obj, prop, options) {
   readNode(node, obj[property], options);
 }
 
+function addGraphicProp(node, obj, prop, options) {
+  const property = prop.toLowerCase();
+  obj[property] = {};
+  readGraphicNode(node, obj[property], options);
+}
+
+function addExternalGraphicProp(node, obj, prop, options) {
+  const property = prop.toLowerCase();
+  obj[property] = {};
+  readNode(node, obj[property], options);
+
+  const externalgraphic = obj[property];
+  if (externalgraphic.onlineresource) {
+    // Trim url.
+    externalgraphic.onlineresource = externalgraphic.onlineresource.trim();
+
+    // QGIS fix: if onlineresource starts with 'base64:', repair it into a valid data url using the externalgraphic Format element.
+    if (
+      /^base64:/.test(externalgraphic.onlineresource) &&
+      externalgraphic.format
+    ) {
+      const fixedPrefix = `data:${externalgraphic.format || ''};base64,`;
+      const base64Data = externalgraphic.onlineresource.replace(/^base64:/, '');
+      externalgraphic.onlineresource = `${fixedPrefix}${base64Data}`;
+    }
+  }
+}
+
 /**
  * Assigns textcontent to obj.prop
  * @private
@@ -442,8 +470,9 @@ const SymbParsers = {
   GraphicStroke: addProp,
   GraphicFill: (node, obj, prop, options) =>
     addProp(node, obj, prop, { ...options, uom: UOM_PIXEL }),
-  Graphic: addProp,
-  ExternalGraphic: addProp,
+  Graphic: addGraphicProp,
+  ExternalGraphic: addExternalGraphicProp,
+  Format: addPropWithTextContent,
   Gap: addNumericParameterValueProp,
   InitialGap: addNumericParameterValueProp,
   Mark: addProp,
@@ -537,6 +566,35 @@ function readNode(node, obj, options) {
   for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
     if (parsers[n.localName]) {
       parsers[n.localName](n, obj, n.localName, options);
+    }
+  }
+}
+
+/**
+ * Same as readNode, but for Graphic elements.
+ * Only one Mark or ExternalGraphic is allowed, so take the first one encountered.
+ * @private
+ * @param  {Element} node derived from xml
+ * @param  {object} obj recieves results
+ * @param  {object} options Parse options.
+ * @return {void}
+ */
+function readGraphicNode(node, obj, options) {
+  let hasMarkOrExternalGraphic = false;
+  for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
+    // Skip Mark or ExternalGraphic if another one has already been parsed.
+    if (
+      hasMarkOrExternalGraphic &&
+      (n.localName === 'Mark' || n.localName === 'ExternalGraphic')
+    ) {
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+    if (parsers[n.localName]) {
+      parsers[n.localName](n, obj, n.localName, options);
+      if (n.localName === 'Mark' || n.localName === 'ExternalGraphic') {
+        hasMarkOrExternalGraphic = true;
+      }
     }
   }
 }
