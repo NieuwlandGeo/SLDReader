@@ -9,6 +9,7 @@ import { multipleSymbolizersSld } from './data/multiple-symbolizers.sld';
 import { staticPolygonSymbolizerSld } from './data/static-polygon-symbolizer.sld';
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
 import { graphicStrokeVendorOption } from './data/graphicstroke-vendoroption.sld';
+import { qgisParametricSvg } from './data/qgis-parametric-svg.sld';
 import { sldWithUom } from './data/sld-with-uom';
 
 import { UOM_METRE } from '../src/constants';
@@ -531,6 +532,53 @@ describe('SVG style parameters', () => {
     });
     it('Stroke width should be number', () => {
       expect(strokeStyle.strokeWidth.typeHint).to.equal('number');
+    });
+  });
+
+  describe('Parse QGIS export with parametric SVG', () => {
+    let style;
+    let graphic;
+    beforeEach(() => {
+      const parsedSld = Reader(qgisParametricSvg);
+      [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      graphic = style.rules[0].pointsymbolizer[0].graphic;
+    });
+
+    it('Skip mark element when ExternalGraphic has already been encountered', () => {
+      // Mark element should be skipped.
+      expect(graphic.mark).to.be.undefined;
+    });
+
+    it('Parse ExternalGraphic format', () => {
+      // Mark element should be skipped.
+      expect(graphic.externalgraphic.format).to.equal('image/svg+xml');
+    });
+
+    it('Turn base64: prefix into a full data url prefix with format', () => {
+      expect(
+        graphic.externalgraphic.onlineresource.indexOf(
+          'data:image/svg+xml;base64,'
+        )
+      ).to.equal(0);
+    });
+
+    it('Removes query string from encoded image url', () => {
+      const base64String = graphic.externalgraphic.onlineresource.replace(
+        'data:image/svg+xml;base64,',
+        ''
+      );
+      // URL should not contain a parameter array anymore.
+      expect(/\?/.test(base64String)).to.be.false;
+    });
+
+    it('Replace param(...) expressions in svg', () => {
+      const base64String = graphic.externalgraphic.onlineresource.replace(
+        'data:image/svg+xml;base64,',
+        ''
+      );
+      const svg = window.atob(base64String);
+      // Parameters (param(...) expressions) should have been replaced.
+      expect(/param\(([^)]*)\)/.test(svg)).to.be.false;
     });
   });
 

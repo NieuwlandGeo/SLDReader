@@ -15,6 +15,9 @@ const numericSvgProps = new Set([
 
 const dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
 
+const parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
+const paramReplacerRegex = /param\(([^)]*)\)/g;
+
 /**
  * Generic parser for elements with maxOccurs > 1
  * it pushes result of readNode(node) to array on obj[prop]
@@ -88,6 +91,60 @@ function addProp(node, obj, prop, options) {
   const property = prop.toLowerCase();
   obj[property] = {};
   readNode(node, obj[property], options);
+}
+
+function addGraphicProp(node, obj, prop, options) {
+  const property = prop.toLowerCase();
+  obj[property] = {};
+  readGraphicNode(node, obj[property], options);
+}
+
+function addExternalGraphicProp(node, obj, prop, options) {
+  const property = prop.toLowerCase();
+  obj[property] = {};
+  readNode(node, obj[property], options);
+
+  const externalgraphic = obj[property];
+  if (externalgraphic.onlineresource) {
+    // Trim url.
+    externalgraphic.onlineresource = externalgraphic.onlineresource.trim();
+
+    // QGIS fix: if onlineresource starts with 'base64:', repair it into a valid data url using the externalgraphic Format element.
+    if (
+      /^base64:/.test(externalgraphic.onlineresource) &&
+      externalgraphic.format
+    ) {
+      const fixedPrefix = `data:${externalgraphic.format || ''};base64,`;
+      const base64Data = externalgraphic.onlineresource.replace(/^base64:/, '');
+      externalgraphic.onlineresource = `${fixedPrefix}${base64Data}`;
+    }
+
+    // Test if onlineresource is a parametric SVG (QGIS export).
+    if (parametricSvgRegex.test(externalgraphic.onlineresource)) {
+      try {
+        // Parametric (embedded) SVG is exported by QGIS as <base64data>?<query parameter list>;
+        const [, base64SvgXML, queryString] =
+          externalgraphic.onlineresource.match(parametricSvgRegex);
+        const svgXml = window.atob(base64SvgXML);
+        const svgParams = new URLSearchParams(queryString);
+
+        // Replace all 'param(name)' strings in the SVG with the value of 'name'.
+        const replacedSvgXml = svgXml.replace(
+          paramReplacerRegex,
+          (_, paramName) => svgParams.get(paramName) || ''
+        );
+
+        // Encode fixed SVG back to base64 and assemble a new data: url.
+        const fixedBase64SvgXml = window.btoa(replacedSvgXml);
+        externalgraphic.onlineresource = `data:${
+          externalgraphic.format || ''
+        };base64,${fixedBase64SvgXml}`;
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Error converting parametric SVG: ', e);
+      }
+    }
+  }
 }
 
 /**
@@ -442,8 +499,9 @@ const SymbParsers = {
   GraphicStroke: addProp,
   GraphicFill: (node, obj, prop, options) =>
     addProp(node, obj, prop, { ...options, uom: UOM_PIXEL }),
-  Graphic: addProp,
-  ExternalGraphic: addProp,
+  Graphic: addGraphicProp,
+  ExternalGraphic: addExternalGraphicProp,
+  Format: addPropWithTextContent,
   Gap: addNumericParameterValueProp,
   InitialGap: addNumericParameterValueProp,
   Mark: addProp,
@@ -537,6 +595,35 @@ function readNode(node, obj, options) {
   for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
     if (parsers[n.localName]) {
       parsers[n.localName](n, obj, n.localName, options);
+    }
+  }
+}
+
+/**
+ * Same as readNode, but for Graphic elements.
+ * Only one Mark or ExternalGraphic is allowed, so take the first one encountered.
+ * @private
+ * @param  {Element} node derived from xml
+ * @param  {object} obj recieves results
+ * @param  {object} options Parse options.
+ * @return {void}
+ */
+function readGraphicNode(node, obj, options) {
+  let hasMarkOrExternalGraphic = false;
+  for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
+    // Skip Mark or ExternalGraphic if another one has already been parsed.
+    if (
+      hasMarkOrExternalGraphic &&
+      (n.localName === 'Mark' || n.localName === 'ExternalGraphic')
+    ) {
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+    if (parsers[n.localName]) {
+      parsers[n.localName](n, obj, n.localName, options);
+      if (n.localName === 'Mark' || n.localName === 'ExternalGraphic') {
+        hasMarkOrExternalGraphic = true;
+      }
     }
   }
 }
