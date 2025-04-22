@@ -15,6 +15,9 @@ const numericSvgProps = new Set([
 
 const dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
 
+const parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
+const paramReplacerRegex = /param\(([^)]*)\)/g;
+
 /**
  * Generic parser for elements with maxOccurs > 1
  * it pushes result of readNode(node) to array on obj[prop]
@@ -114,6 +117,32 @@ function addExternalGraphicProp(node, obj, prop, options) {
       const fixedPrefix = `data:${externalgraphic.format || ''};base64,`;
       const base64Data = externalgraphic.onlineresource.replace(/^base64:/, '');
       externalgraphic.onlineresource = `${fixedPrefix}${base64Data}`;
+    }
+
+    // Test if onlineresource is a parametric SVG (QGIS export).
+    if (parametricSvgRegex.test(externalgraphic.onlineresource)) {
+      try {
+        // Parametric (embedded) SVG is exported by QGIS as <base64data>?<query parameter list>;
+        const [, base64SvgXML, queryString] =
+          externalgraphic.onlineresource.match(parametricSvgRegex);
+        const svgXml = window.atob(base64SvgXML);
+        const svgParams = new URLSearchParams(queryString);
+
+        // Replace all 'param(name)' strings in the SVG with the value of 'name'.
+        const replacedSvgXml = svgXml.replace(
+          paramReplacerRegex,
+          (_, paramName) => svgParams.get(paramName) || ''
+        );
+
+        // Encode fixed SVG back to base64 and assemble a new data: url.
+        const fixedBase64SvgXml = window.btoa(replacedSvgXml);
+        externalgraphic.onlineresource = `data:${
+          externalgraphic.format || ''
+        };base64,${fixedBase64SvgXml}`;
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Error converting parametric SVG: ', e);
+      }
     }
   }
 }

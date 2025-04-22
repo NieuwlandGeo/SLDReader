@@ -319,6 +319,9 @@
 
   var dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
 
+  var parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
+  var paramReplacerRegex = /param\(([^)]*)\)/g;
+
   /**
    * Generic parser for elements with maxOccurs > 1
    * it pushes result of readNode(node) to array on obj[prop]
@@ -418,6 +421,32 @@
         var fixedPrefix = "data:" + (externalgraphic.format || '') + ";base64,";
         var base64Data = externalgraphic.onlineresource.replace(/^base64:/, '');
         externalgraphic.onlineresource = "" + fixedPrefix + base64Data;
+      }
+
+      // Test if onlineresource is a parametric SVG (QGIS export).
+      if (parametricSvgRegex.test(externalgraphic.onlineresource)) {
+        try {
+          // Parametric (embedded) SVG is exported by QGIS as <base64data>?<query parameter list>;
+          var ref =
+            externalgraphic.onlineresource.match(parametricSvgRegex);
+          var base64SvgXML = ref[1];
+          var queryString = ref[2];
+          var svgXml = window.atob(base64SvgXML);
+          var svgParams = new URLSearchParams(queryString);
+
+          // Replace all 'param(name)' strings in the SVG with the value of 'name'.
+          var replacedSvgXml = svgXml.replace(
+            paramReplacerRegex,
+            function (_, paramName) { return svgParams.get(paramName) || ''; }
+          );
+
+          // Encode fixed SVG back to base64 and assemble a new data: url.
+          var fixedBase64SvgXml = window.btoa(replacedSvgXml);
+          externalgraphic.onlineresource = "data:" + (externalgraphic.format || '') + ";base64," + fixedBase64SvgXml;
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error('Error converting parametric SVG: ', e);
+        }
       }
     }
   }
