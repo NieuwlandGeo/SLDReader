@@ -561,6 +561,25 @@ describe('SVG style parameters', () => {
         )
       ).to.equal(0);
     });
+
+    it('Removes query string from encoded image url', () => {
+      const base64String = graphic.externalgraphic.onlineresource.replace(
+        'data:image/svg+xml;base64,',
+        ''
+      );
+      // URL should not contain a parameter array anymore.
+      expect(/\?/.test(base64String)).to.be.false;
+    });
+
+    it('Replace param(...) expressions in svg', () => {
+      const base64String = graphic.externalgraphic.onlineresource.replace(
+        'data:image/svg+xml;base64,',
+        ''
+      );
+      const svg = window.atob(base64String);
+      // Parameters (param(...) expressions) should have been replaced.
+      expect(/param\(([^)]*)\)/.test(svg)).to.be.false;
+    });
   });
 
   describe('Parse units of measure', () => {
