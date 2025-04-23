@@ -1,6 +1,7 @@
-import { Style } from 'ol/style';
+import Style from 'ol/style/Style';
 import { toContext } from 'ol/render';
-import { Point, LineString } from 'ol/geom';
+import Point from 'ol/geom/Point';
+import LineString from 'ol/geom/LineString';
 
 import {
   DEFAULT_MARK_SIZE,
@@ -26,7 +27,6 @@ function patchRenderer(renderer) {
   // This fixes a problem with re-use of the (cached) image style instance when drawing
   // many points inside a single line feature that are aligned according to line segment direction.
   const rendererProto = Object.getPrototypeOf(renderer);
-  // eslint-disable-next-line
   rendererProto.setImageStyle2 = function (imageStyle, rotation) {
     // First call the original setImageStyle method.
     rendererProto.setImageStyle.call(this, imageStyle);
@@ -117,11 +117,10 @@ function renderStrokeMarks(
  * to be used inside an OpenLayers Style.renderer function.
  * @private
  * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
  */
-export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
-  if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+export function getGraphicStrokeRenderer(linesymbolizer) {
+  if (!linesymbolizer?.stroke?.graphicstroke) {
     throw new Error(
       'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
     );
@@ -160,23 +159,18 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
       defaultGraphicSize = DEFAULT_EXTERNALGRAPHIC_SIZE;
     }
 
-    const pointStyle = getPointStyle(
-      graphicstroke,
-      renderState.feature,
-      getProperty
-    );
+    const pointStyle = getPointStyle(graphicstroke, renderState.feature, null);
 
     // Calculate graphic spacing.
     // Graphic spacing equals the center-to-center distance of graphics along the line.
     // If there's no gap, segment length will be equal to graphic size.
     const graphicSizeExpression =
-      (graphicstroke.graphic && graphicstroke.graphic.size) ||
-      defaultGraphicSize;
+      graphicstroke?.graphic?.size || defaultGraphicSize;
     const graphicSize = Number(
       evaluate(
         graphicSizeExpression,
         renderState.feature,
-        getProperty,
+        null,
         defaultGraphicSize
       )
     );
@@ -199,18 +193,17 @@ export function getGraphicStrokeRenderer(linesymbolizer, getProperty) {
  * Create an OpenLayers style for rendering line symbolizers with a GraphicStroke.
  * @private
  * @param {LineSymbolizer} linesymbolizer SLD line symbolizer object.
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
  * @returns {ol/style/Style} An OpenLayers style instance.
  */
-function getGraphicStrokeStyle(linesymbolizer, getProperty) {
-  if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+function getGraphicStrokeStyle(linesymbolizer) {
+  if (!linesymbolizer?.stroke?.graphicstroke) {
     throw new Error(
       'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
     );
   }
 
   return new Style({
-    renderer: getGraphicStrokeRenderer(linesymbolizer, getProperty),
+    renderer: getGraphicStrokeRenderer(linesymbolizer),
   });
 }
 

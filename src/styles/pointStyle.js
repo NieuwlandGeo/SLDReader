@@ -1,4 +1,4 @@
-import { Style } from 'ol/style';
+import Style from 'ol/style/Style';
 
 import {
   IMAGE_LOADING,
@@ -38,7 +38,7 @@ function pointStyle(pointsymbolizer) {
   // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
   const rotationDegrees = evaluate(style.rotation, null, null, 0.0);
 
-  if (style.externalgraphic && style.externalgraphic.onlineresource) {
+  if (style?.externalgraphic?.onlineresource) {
     // For external graphics: the default size is the native image size.
     // In that case, set pointSizeValue to null, so no scaling is calculated for the image.
     if (!style.size) {
@@ -67,8 +67,8 @@ function pointStyle(pointsymbolizer) {
 
   if (style.mark) {
     const { wellknownname } = style.mark;
-    const olFill = getSimpleFill(style.mark.fill);
-    const olStroke = getSimpleStroke(style.mark.stroke);
+    const olFill = getSimpleFill(style?.mark?.fill);
+    const olStroke = getSimpleStroke(style?.mark?.stroke);
 
     return new Style({
       // Note: size will be set dynamically later.
@@ -102,12 +102,12 @@ const cachedPointStyle = memoizeStyleFunction(pointStyle);
  * Get an OL point style instance for a feature according to a symbolizer.
  * @param {object} symbolizer SLD symbolizer object.
  * @param {ol/Feature} feature OpenLayers Feature.
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getPointStyle(symbolizer, feature, getProperty) {
+function getPointStyle(symbolizer, feature, context) {
   // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
-  if (!(symbolizer && symbolizer.graphic)) {
+  if (!symbolizer?.graphic) {
     return emptyStyle;
   }
 
@@ -125,32 +125,8 @@ function getPointStyle(symbolizer, feature, getProperty) {
   // Calculate size and rotation values first.
   const { size, rotation } = graphic;
   const sizeValue =
-    Number(evaluate(size, feature, getProperty)) || DEFAULT_MARK_SIZE;
-  const rotationDegrees =
-    Number(evaluate(rotation, feature, getProperty)) || 0.0;
-
-  // --- Update dynamic size ---
-  if (isDynamicExpression(size)) {
-    if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
-      const height = olImage.getSize()[1];
-      const scale = sizeValue / height || 1;
-      olImage.setScale(scale);
-    } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
-      // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
-      olImage.setRadius(sizeValue * 0.5);
-    } else {
-      // For a non-Circle RegularShape, create a new olImage in order to update the size.
-      olImage = getWellKnownSymbol(
-        (graphic.mark && graphic.mark.wellknownname) || 'square',
-        sizeValue,
-        // Note: re-use stroke and fill instances for a (small?) performance gain.
-        olImage.getStroke(),
-        olImage.getFill(),
-        rotationDegrees
-      );
-      olStyle.setImage(olImage);
-    }
-  }
+    Number(evaluate(size, feature, context)) || DEFAULT_MARK_SIZE;
+  const rotationDegrees = Number(evaluate(rotation, feature, context)) || 0.0;
 
   // --- Update dynamic rotation ---
   if (isDynamicExpression(rotation)) {
@@ -165,21 +141,38 @@ function getPointStyle(symbolizer, feature, getProperty) {
       olImage,
       graphic.mark,
       feature,
-      getProperty
+      context
     );
+    if (strokeChanged) {
+      olImage.setStroke(olImage.getStroke());
+    }
 
     const fillChanged = applyDynamicFillStyling(
       olImage,
       graphic.mark,
       feature,
-      getProperty
+      context
     );
+    if (fillChanged) {
+      olImage.setFill(olImage.getFill());
+    }
+  }
 
-    if (strokeChanged || fillChanged) {
-      // Create a new olImage in order to force a re-render to see the style changes.
+  // --- Update dynamic size ---
+  if (isDynamicExpression(size)) {
+    if (graphic?.externalgraphic?.onlineresource) {
+      const height = olImage.getSize()[1];
+      const scale = sizeValue / height || 1;
+      olImage.setScale(scale);
+    } else if (graphic?.mark?.wellknownname === 'circle') {
+      // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
+      olImage.setRadius(sizeValue * 0.5);
+    } else {
+      // For a non-Circle RegularShape, create a new olImage in order to update the size.
       olImage = getWellKnownSymbol(
-        (graphic.mark && graphic.mark.wellknownname) || 'square',
+        graphic?.mark?.wellknownname ?? 'square',
         sizeValue,
+        // Note: re-use stroke and fill instances for a (small?) performance gain.
         olImage.getStroke(),
         olImage.getFill(),
         rotationDegrees
@@ -196,8 +189,8 @@ function getPointStyle(symbolizer, feature, getProperty) {
       typeof displacementx !== 'undefined' ||
       typeof displacementy !== 'undefined'
     ) {
-      const dx = evaluate(displacementx, feature, getProperty) || 0.0;
-      const dy = evaluate(displacementy, feature, getProperty) || 0.0;
+      const dx = evaluate(displacementx, feature, context) || 0.0;
+      const dy = evaluate(displacementy, feature, context) || 0.0;
       if (dx !== 0.0 || dy !== 0.0) {
         olImage.setDisplacement([dx, dy]);
       }

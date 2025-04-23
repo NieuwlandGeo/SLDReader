@@ -1,12 +1,11 @@
 /* global ol SLDReader */
-const BOX_WIDTH = 92; // px
-const BOX_HEIGHT = 92; // px
+const BOX_SIZE = 92; // px
 
 let styleFunction = null; // Style that maps a feature with a wellknownname property to a mark symbolizer.
 
 // prettier-ignore
 const wellknownnames = [
-  'circle', 'triangle', 'star', 'cross', 'hexagon', 'octagon',
+  'square', 'circle', 'triangle', 'star', 'cross', 'hexagon', 'octagon',
   'cross2', 'x', 'diamond', 'horline', 'line', 'backslash', 'slash',
 ];
 
@@ -41,7 +40,7 @@ function createFeatureTypeStyle() {
                 },
               },
             },
-            size: 40,
+            size: BOX_SIZE / 2,
           },
         },
       ],
@@ -68,7 +67,7 @@ function createFeatureTypeStyle() {
               },
             },
           },
-          size: 20,
+          size: BOX_SIZE / 2,
         },
       },
     ],
@@ -89,8 +88,15 @@ function getOlMarkStyle(wellknownname) {
   return style;
 }
 
-function prepareGallery() {
+function prepareGallery(options) {
+  const defaultOptions = {
+    showOutlines: false,
+  };
+
+  const galleryOptions = Object.assign(defaultOptions, options);
+
   const galleryContainer = document.querySelector('#mark-gallery');
+  galleryContainer.innerHTML = '';
   wellknownnames.forEach(wellknownname => {
     const markCard = document.createElement('div');
     markCard.classList.add('mark-card');
@@ -101,8 +107,8 @@ function prepareGallery() {
     markCard.appendChild(markBox);
 
     // Draw point symbol using point style corresponding to the symbol wellknownname.
-    const canvasWidth = BOX_WIDTH * ol.has.DEVICE_PIXEL_RATIO;
-    const canvasHeight = BOX_HEIGHT * ol.has.DEVICE_PIXEL_RATIO;
+    const canvasWidth = BOX_SIZE * ol.has.DEVICE_PIXEL_RATIO;
+    const canvasHeight = BOX_SIZE * ol.has.DEVICE_PIXEL_RATIO;
     const symbolCanvas = document.createElement('canvas');
     symbolCanvas.width = canvasWidth;
     symbolCanvas.height = canvasHeight;
@@ -110,12 +116,32 @@ function prepareGallery() {
 
     const context = symbolCanvas.getContext('2d');
     const olContext = ol.render.toContext(context, {
-      size: [BOX_WIDTH, BOX_HEIGHT],
+      size: [BOX_SIZE, BOX_SIZE],
     });
+    const centerX = BOX_SIZE / 2;
+    const centerY = BOX_SIZE / 2;
+
+    if (galleryOptions.showOutlines) {
+      const outlineStyle = new ol.style.Style({
+        image: new ol.style.RegularShape({
+          angle: Math.PI / 4,
+          points: 4,
+          radius: (BOX_SIZE / 4) * Math.sqrt(2.0),
+          stroke: new ol.style.Stroke({
+            color: '#444444',
+            width: 1,
+            lineDash: [3, 3],
+          }),
+          rotation: 0,
+        }),
+      });
+      olContext.setStyle(outlineStyle);
+      olContext.drawGeometry(new ol.geom.Point([centerX, centerY]));
+    }
+
     const symbolStyle = getOlMarkStyle(wellknownname);
     olContext.setStyle(symbolStyle);
-    const centerX = BOX_WIDTH / 2;
-    const centerY = BOX_HEIGHT / 2;
+
     olContext.drawGeometry(new ol.geom.Point([centerX, centerY]));
 
     const markTitle = document.createElement('div');
@@ -127,6 +153,13 @@ function prepareGallery() {
 
 function init() {
   prepareGallery();
+
+  document
+    .getElementById('chk-show-outline')
+    .addEventListener('change', evt => {
+      prepareGallery({ showOutlines: evt.target.checked });
+    });
+  window.meep = prepareGallery;
 }
 
 document.addEventListener('DOMContentLoaded', init);

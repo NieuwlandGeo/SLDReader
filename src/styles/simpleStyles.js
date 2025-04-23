@@ -1,5 +1,5 @@
-/* eslint-disable import/prefer-default-export */
-import { Stroke, Fill } from 'ol/style';
+import Stroke from 'ol/style/Stroke';
+import Fill from 'ol/style/Fill';
 
 import { getOLColorString } from './styleUtils';
 import evaluate from '../olEvaluator';
@@ -18,17 +18,17 @@ export function getSimpleStroke(stroke) {
     return undefined;
   }
 
-  const styleParams = stroke.styling || {};
+  const styleParams = stroke?.styling;
 
   // Options that have a default value.
-  const strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
+  const strokeColor = evaluate(styleParams?.stroke, null, null, '#000000');
 
-  const strokeOpacity = evaluate(styleParams.strokeOpacity, null, null, 1.0);
+  const strokeOpacity = evaluate(styleParams?.strokeOpacity, null, null, 1.0);
 
-  const strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
+  const strokeWidth = evaluate(styleParams?.strokeWidth, null, null, 1.0);
 
   const strokeLineDashOffset = evaluate(
-    styleParams.strokeDashoffset,
+    styleParams?.strokeDashoffset,
     null,
     null,
     0.0
@@ -41,17 +41,17 @@ export function getSimpleStroke(stroke) {
   };
 
   // Optional parameters that will be added to stroke options when present in SLD.
-  const strokeLineJoin = evaluate(styleParams.strokeLinejoin, null, null);
+  const strokeLineJoin = evaluate(styleParams?.strokeLinejoin, null, null);
   if (strokeLineJoin !== null) {
     strokeOptions.lineJoin = strokeLineJoin;
   }
 
-  const strokeLineCap = evaluate(styleParams.strokeLinecap, null, null);
+  const strokeLineCap = evaluate(styleParams?.strokeLinecap, null, null);
   if (strokeLineCap !== null) {
     strokeOptions.lineCap = strokeLineCap;
   }
 
-  const strokeDashArray = evaluate(styleParams.strokeDasharray, null, null);
+  const strokeDashArray = evaluate(styleParams?.strokeDasharray, null, null);
   if (strokeDashArray !== null) {
     strokeOptions.lineDash = strokeDashArray.split(' ');
   }
@@ -73,11 +73,11 @@ export function getSimpleFill(fill) {
     return undefined;
   }
 
-  const styleParams = fill.styling || {};
+  const styleParams = fill?.styling;
 
-  const fillColor = evaluate(styleParams.fill, null, null, '#808080');
+  const fillColor = evaluate(styleParams?.fill, null, null, '#808080');
 
-  const fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
+  const fillOpacity = evaluate(styleParams?.fillOpacity, null, null, 1.0);
 
   return new Fill({ color: getOLColorString(fillColor, fillOpacity) });
 }

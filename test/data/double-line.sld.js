@@ -5,9 +5,9 @@ export const doubleLineSld = `<?xml version="1.0" encoding="UTF-8"?>
   xmlns:se="http://www.opengis.net/se" version="1.1.0"
   xmlns:ogc="http://www.opengis.net/ogc">
   <NamedLayer>
-    <se:Name>Hoogspanning</se:Name>
+    <se:Name>spoorwegen-trace</se:Name>
     <UserStyle>
-      <se:Name>Hoogspanning</se:Name>
+      <se:Name>spoorwegen-trace</se:Name>
       <se:FeatureTypeStyle>
         <se:Rule>
           <se:Name>All</se:Name>

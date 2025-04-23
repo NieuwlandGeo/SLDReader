@@ -54,26 +54,21 @@ export function getStyle(layer, name) {
 
 /**
  * get rules for specific feature after applying filters
- * @example
+ * @private
  * const style = getStyle(sldLayer, stylename);
  * getRules(style.featuretypestyles['0'], geojson, resolution);
  * @param  {FeatureTypeStyle} featureTypeStyle
  * @param  {object} feature geojson
- * @param  {number} resolution m/px
- * @param  {Function} options.getProperty An optional function with parameters (feature, propertyName)
- * that can be used to extract a property value from a feature.
- * When not given, properties are read from feature.properties directly.Error
- * @param  {Function} options.getFeatureId An optional function to extract the feature id from a feature.Error
- * When not given, feature id is read from feature.id.
+ * @param {EvaluationContext} context Evaluation context.
  * @return {Rule[]}
  */
-export function getRules(featureTypeStyle, feature, resolution, options = {}) {
+export function getRules(featureTypeStyle, feature, context) {
   const validRules = [];
   let elseFilterCount = 0;
   for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
     const rule = featureTypeStyle.rules[j];
     // Only keep rules that pass the rule's min/max scale denominator checks.
-    if (scaleSelector(rule, resolution)) {
+    if (scaleSelector(rule, context.resolution)) {
       if (rule.elsefilter) {
         // In the first rule selection step, keep all rules with an ElseFilter.
         validRules.push(rule);
@@ -81,7 +76,7 @@ export function getRules(featureTypeStyle, feature, resolution, options = {}) {
       } else if (!rule.filter) {
         // Rules without filter always apply.
         validRules.push(rule);
-      } else if (filterSelector(rule.filter, feature, options)) {
+      } else if (filterSelector(rule.filter, feature, context)) {
         // If a rule has a filter, only keep it if the feature passes the filter.
         validRules.push(rule);
       }

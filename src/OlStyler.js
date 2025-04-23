@@ -12,6 +12,15 @@ import getPolygonPointStyle from './styles/polygonPointStyle';
 const defaultStyles = [defaultPointStyle];
 
 /**
+ * Evaluation context for style functions.
+ * @private
+ * @typedef {object} EvaluationContext
+ * @property {Function} getProperty A function (feature, propertyName) -> value that returns the value of the property of a feature.
+ * @property {Function} getId A function feature -> any that gets the id of a feature.
+ * @property {number} resolution The current resolution in ground units in meters / pixel.
+ */
+
+/**
  * @private
  * Convert symbolizers together with the feature to OL style objects and append them to the OL styles array.
  * @example appendStyles(styles, point[j], feature, getPointStyle);
@@ -19,17 +28,11 @@ const defaultStyles = [defaultPointStyle];
  * @param {Array<object>} symbolizers Array of feature symbolizers.
  * @param {ol/feature} feature OpenLayers feature.
  * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+ * @param {EvaluationContext} context Evaluation context.
  */
-function appendStyles(
-  styles,
-  symbolizers,
-  feature,
-  styleFunction,
-  getProperty
-) {
+function appendStyles(styles, symbolizers, feature, styleFunction, context) {
   (symbolizers || []).forEach(symbolizer => {
-    const olStyle = styleFunction(symbolizer, feature, getProperty);
+    const olStyle = styleFunction(symbolizer, feature, context);
     if (olStyle) {
       styles.push(olStyle);
     }
@@ -38,11 +41,12 @@ function appendStyles(
 
 /**
  * Create openlayers style
+ * @private
  * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
  * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
  * @param {object|Feature} feature {@link http://geojson.org|geojson}
  *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
- * @param {Function} getProperty A property getter: (feature, propertyName) => property value.
+ * @param {EvaluationContext} context Evaluation context.
  * @param {object} [options] Optional options object.
  * @param {boolean} [options.strictGeometryMatch] Default false. When true, only apply symbolizers to the corresponding geometry type.
  * E.g. point symbolizers will not be applied to lines and polygons. Default false (according to SLD spec).
@@ -52,7 +56,7 @@ function appendStyles(
 export default function OlStyler(
   categorizedSymbolizers,
   feature,
-  getProperty,
+  context,
   options = {}
 ) {
   const {
@@ -78,29 +82,23 @@ export default function OlStyler(
   switch (geometryType) {
     case 'Point':
     case 'MultiPoint':
-      appendStyles(
-        styles,
-        pointSymbolizers,
-        feature,
-        getPointStyle,
-        getProperty
-      );
-      appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
+      appendStyles(styles, pointSymbolizers, feature, getPointStyle, context);
+      appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
       break;
 
     case 'LineString':
     case 'MultiLineString':
-      appendStyles(styles, lineSymbolizers, feature, getLineStyle, getProperty);
+      appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
       if (!styleOptions.strictGeometryMatch) {
         appendStyles(
           styles,
           pointSymbolizers,
           feature,
           getLinePointStyle,
-          getProperty
+          context
         );
       }
-      appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
+      appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
       break;
 
     case 'Polygon':
@@ -110,25 +108,19 @@ export default function OlStyler(
         polygonSymbolizers,
         feature,
         getPolygonStyle,
-        getProperty
+        context
       );
       if (!styleOptions.strictGeometryMatch) {
-        appendStyles(
-          styles,
-          lineSymbolizers,
-          feature,
-          getLineStyle,
-          getProperty
-        );
+        appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
       }
       appendStyles(
         styles,
         pointSymbolizers,
         feature,
         getPolygonPointStyle,
-        getProperty
+        context
       );
-      appendStyles(styles, textSymbolizers, feature, getTextStyle, getProperty);
+      appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
       break;
 
     default:
@@ -170,6 +162,7 @@ function getOlFeatureProperty(feature, propertyName) {
  * **Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
  * inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
  * image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
+ * @public
  * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
  * @param {object} options Options
  * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
@@ -189,23 +182,27 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
   // Keep track of whether a callback has been registered per image url.
   const callbackRef = {};
 
+  // Evaluation context.
+  const context = {};
+
+  context.getProperty =
+    typeof options.getProperty === 'function'
+      ? options.getProperty
+      : getOlFeatureProperty;
+
+  context.getId = getOlFeatureId;
+
   return (feature, mapResolution) => {
     // Determine resolution in meters/pixel.
-    const resolution =
+    const groundResolution =
       typeof options.convertResolution === 'function'
         ? options.convertResolution(mapResolution)
         : mapResolution;
 
-    const getProperty =
-      typeof options.getProperty === 'function'
-        ? options.getProperty
-        : getOlFeatureProperty;
+    context.resolution = groundResolution;
 
     // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
-    const rules = getRules(featureTypeStyle, feature, resolution, {
-      getProperty,
-      getFeatureId: getOlFeatureId,
-    });
+    const rules = getRules(featureTypeStyle, feature, context);
 
     // Start loading images for external graphic symbolizers and when loaded:
     // * update symbolizers to use the cached image.
@@ -221,7 +218,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
     const categorizedSymbolizers = categorizeSymbolizers(rules);
 
     // Determine style rule array.
-    const olStyles = OlStyler(categorizedSymbolizers, feature, getProperty);
+    const olStyles = OlStyler(categorizedSymbolizers, feature, context);
 
     return olStyles;
   };
@@ -232,6 +229,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
  * Since this function creates a static OpenLayers style and not a style function,
  * usage of this function is only suitable for simple symbolizers that do not depend on feature properties
  * and do not contain external graphics. External graphic marks will be shown as a grey circle instead.
+ * @public
  * @param {StyleRule} styleRule Feature Type Style Rule object.
  * @param {string} geometryType One of 'Point', 'LineString' or 'Polygon'
  * @returns {Array<ol.Style>} An array of OpenLayers style instances.

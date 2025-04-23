@@ -1,5 +1,5 @@
 import { DEVICE_PIXEL_RATIO } from 'ol/has';
-import { Fill } from 'ol/style';
+import Fill from 'ol/style/Fill';
 
 const dense1Pixels = [[1, 1]];
 const dense2Pixels = [

@@ -1,4 +1,4 @@
-import { Style } from 'ol/style';
+import Style from 'ol/style/Style';
 
 import { memoizeStyleFunction } from './styleUtils';
 import { getSimpleStroke } from './simpleStyles';
@@ -11,12 +11,12 @@ import { applyDynamicStrokeStyling } from './dynamicStyles';
  * @return {object} OpenLayers style instance corresponding to the stroke of the given symbolizer.
  */
 function lineStyle(symbolizer) {
-  if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+  if (symbolizer?.stroke?.graphicstroke) {
     return getGraphicStrokeStyle(symbolizer);
   }
 
   return new Style({
-    stroke: getSimpleStroke(symbolizer.stroke),
+    stroke: getSimpleStroke(symbolizer?.stroke),
   });
 }
 
@@ -26,13 +26,15 @@ const cachedLineStyle = memoizeStyleFunction(lineStyle);
  * @private
  * Get an OL line style instance for a feature according to a symbolizer.
  * @param {object} symbolizer SLD symbolizer object.
+ * @param {ol/Feature} feature OpenLayers Feature.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getLineStyle(symbolizer, feature, getProperty) {
+function getLineStyle(symbolizer, feature, context) {
   const olStyle = cachedLineStyle(symbolizer);
 
   // Apply dynamic properties.
-  applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+  applyDynamicStrokeStyling(olStyle, symbolizer, feature, context);
 
   return olStyle;
 }

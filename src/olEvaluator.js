@@ -1,6 +1,12 @@
 // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
 // Constant expressions are returned as-is.
 
+/**
+ * @module
+ * @private
+ */
+
+import { METRES_PER_FOOT, UOM_FOOT, UOM_METRE } from './constants';
 import { getFunction } from './functions';
 
 /**
@@ -10,6 +16,14 @@ import { getFunction } from './functions';
  * @returns {bool} Returns true if the expression depends on feature properties.
  */
 export function isDynamicExpression(expression) {
+  // Expressions whose pixel value changes with resolution are dynamic by definition.
+  if (
+    expression &&
+    (expression.uom === UOM_METRE || expression.uom === UOM_FOOT)
+  ) {
+    return true;
+  }
+
   switch ((expression || {}).type) {
     case 'expression':
       // Expressions with all literal child values are already concatenated into a static string,
@@ -37,14 +51,14 @@ export function isDynamicExpression(expression) {
  * Constant expressions are returned as-is.
  * @param {Expression} expression SLD object expression.
  * @param {ol/feature} feature OpenLayers feature instance.
- * @param {function} getProperty A function to get a specific property value from a feature.
+ * @param {EvaluationContext} context Evaluation context.
  * @param {any} defaultValue Optional default value to use when feature is null.
  * Signature (feature, propertyName) => property value.
  */
 export default function evaluate(
   expression,
   feature,
-  getProperty,
+  context,
   defaultValue = null
 ) {
   // Determine the value of the expression.
@@ -75,7 +89,7 @@ export default function evaluate(
       ) {
         value = feature.getGeometry();
       } else {
-        value = getProperty(feature, propertyName);
+        value = context.getProperty(feature, propertyName);
       }
     } else {
       value = defaultValue;
@@ -83,12 +97,7 @@ export default function evaluate(
   } else if (expression.type === 'expression') {
     // Expression value is the concatenation of all child expession values.
     if (expression.children.length === 1) {
-      value = evaluate(
-        expression.children[0],
-        feature,
-        getProperty,
-        defaultValue
-      );
+      value = evaluate(expression.children[0], feature, context, defaultValue);
     } else {
       // In case of multiple child expressions, concatenate the evaluated child results.
       const childValues = [];
@@ -96,7 +105,7 @@ export default function evaluate(
         childValues.push(
           // Do not use default values when evaluating children. Only apply default is
           // the concatenated result is empty.
-          evaluate(expression.children[k], feature, getProperty, null)
+          evaluate(expression.children[k], feature, context, null)
         );
       }
       value = childValues.join('');
@@ -109,10 +118,10 @@ export default function evaluate(
       try {
         // evaluate parameter expressions.
         const paramValues = expression.params.map(paramExpression =>
-          evaluate(paramExpression, feature, getProperty)
+          evaluate(paramExpression, feature, context)
         );
         value = func(...paramValues);
-      } catch (e) {
+      } catch {
         value = expression.fallbackValue;
       }
     }
@@ -130,14 +139,26 @@ export default function evaluate(
     value === '' ||
     Number.isNaN(value)
   ) {
-    return defaultValue;
+    value = defaultValue;
   }
 
-  // Convert value to number if expression is flagged as numeric.
-  if (expression && expression.typeHint === 'number') {
-    value = Number(value);
-    if (Number.isNaN(value)) {
-      return defaultValue;
+  if (expression) {
+    // Convert value to number if expression is flagged as numeric.
+    if (expression.typeHint === 'number') {
+      value = Number(value);
+      if (Number.isNaN(value)) {
+        value = defaultValue;
+      }
+    }
+    // Convert value to pixels in case of uom = metre or feet.
+    if (expression.uom === UOM_FOOT) {
+      // Convert feet to metres.
+      value *= METRES_PER_FOOT;
+    }
+    if (expression.uom === UOM_METRE || expression.uom === UOM_FOOT) {
+      // Convert metres to pixels.
+      const scaleFactor = context ? context.resolution : 1;
+      value /= scaleFactor;
     }
   }
 

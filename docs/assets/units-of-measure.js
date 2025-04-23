@@ -8,16 +8,19 @@ const editor = CodeMirror.fromTextArea(document.getElementById('sld'), {
 
 const vectorSource = new ol.source.Vector({
   format: new ol.format.GeoJSON(),
-  url: 'assets/provincies.json',
-  strategy: ol.loadingstrategy.bbox,
+  url: 'assets/bomen-wageningen-centrum.json',
+  strategy: ol.loadingstrategy.all,
 });
 
 const vector = new ol.layer.Vector({
   source: vectorSource,
   style: new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'rgba(0, 0, 255, 1.0)',
-      width: 2,
+    image: new ol.style.Circle({
+      radius: 8,
+      fill: new ol.style.Fill({
+        color: '#808080',
+        fillOpacity: 0.7,
+      }),
     }),
   }),
 });
@@ -31,9 +34,9 @@ const map = new ol.Map({
   ],
   target: document.getElementById('olmap'),
   view: new ol.View({
-    center: [626172, 6845800],
-    maxZoom: 19,
-    zoom: 8,
+    center: [630300, 6793900],
+    maxZoom: 20,
+    zoom: 16,
   }),
 });
 map.addControl(new ol.control.MousePosition());
@@ -45,27 +48,24 @@ map.addControl(new ol.control.MousePosition());
  */
 function applySLD(vectorLayer, text) {
   const sldObject = SLDReader.Reader(text);
+  // for debugging
   window.sldObject = sldObject;
   const sldLayer = SLDReader.getLayer(sldObject);
   const style = SLDReader.getStyle(sldLayer);
   const featureTypeStyle = style.featuretypestyles[0];
 
-  const viewProjection = map.getView().getProjection();
   vectorLayer.setStyle(
     SLDReader.createOlStyleFunction(featureTypeStyle, {
-      convertResolution: viewResolution => {
-        const viewCenter = map.getView().getCenter();
-        return ol.proj.getPointResolution(
-          viewProjection,
-          viewResolution,
-          viewCenter
-        );
+      imageLoadedCallback: () => {
+        // Signal OpenLayers to redraw the layer when an image icon has loaded.
+        // On redraw, the updated symbolizer with the correct image scale will be used to draw the icon.
+        vectorLayer.changed();
       },
     })
   );
 }
 
-fetch('assets/sld-provincies.xml')
+fetch('assets/sld-units-of-measure.xml')
   .then(response => response.text())
   .then(text => editor.setValue(text));
 

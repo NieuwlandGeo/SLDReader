@@ -1,5 +1,4 @@
 /* global describe it expect before beforeEach */
-import Reader from '../src/Reader';
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
 import { dynamicSld } from './data/dynamic.sld';
@@ -10,6 +9,13 @@ import { multipleSymbolizersSld } from './data/multiple-symbolizers.sld';
 import { staticPolygonSymbolizerSld } from './data/static-polygon-symbolizer.sld';
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
 import { graphicStrokeVendorOption } from './data/graphicstroke-vendoroption.sld';
+import { qgisParametricSvg } from './data/qgis-parametric-svg.sld';
+import { sldWithUom } from './data/sld-with-uom';
+
+import { UOM_METRE } from '../src/constants';
+
+import Reader from '../src/Reader';
+import { validateObjectProperties } from './test-helpers';
 
 let result;
 
@@ -249,7 +255,7 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('returns object for the layers', () => {
     expect(result.layers).to.have.length(1);
-    expect(result.layers['0'].name).to.equal('Hoogspanning');
+    expect(result.layers['0'].name).to.equal('spoorwegen-trace');
   });
   it('has styles', () => {
     const { styles } = result.layers['0'];
@@ -526,6 +532,194 @@ describe('SVG style parameters', () => {
     });
     it('Stroke width should be number', () => {
       expect(strokeStyle.strokeWidth.typeHint).to.equal('number');
+    });
+  });
+
+  describe('Parse QGIS export with parametric SVG', () => {
+    let style;
+    let graphic;
+    beforeEach(() => {
+      const parsedSld = Reader(qgisParametricSvg);
+      [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      graphic = style.rules[0].pointsymbolizer[0].graphic;
+    });
+
+    it('Skip mark element when ExternalGraphic has already been encountered', () => {
+      // Mark element should be skipped.
+      expect(graphic.mark).to.be.undefined;
+    });
+
+    it('Parse ExternalGraphic format', () => {
+      // Mark element should be skipped.
+      expect(graphic.externalgraphic.format).to.equal('image/svg+xml');
+    });
+
+    it('Turn base64: prefix into a full data url prefix with format', () => {
+      expect(
+        graphic.externalgraphic.onlineresource.indexOf(
+          'data:image/svg+xml;base64,'
+        )
+      ).to.equal(0);
+    });
+
+    it('Removes query string from encoded image url', () => {
+      const base64String = graphic.externalgraphic.onlineresource.replace(
+        'data:image/svg+xml;base64,',
+        ''
+      );
+      // URL should not contain a parameter array anymore.
+      expect(/\?/.test(base64String)).to.be.false;
+    });
+
+    it('Replace param(...) expressions in svg', () => {
+      const base64String = graphic.externalgraphic.onlineresource.replace(
+        'data:image/svg+xml;base64,',
+        ''
+      );
+      const svg = window.atob(base64String);
+      // Parameters (param(...) expressions) should have been replaced.
+      expect(/param\(([^)]*)\)/.test(svg)).to.be.false;
+    });
+  });
+
+  describe('Parse units of measure', () => {
+    let parsedSld;
+    let pointSymbolizer;
+    let lineSymbolizer;
+    let polygonSymbolizer;
+    let textSymbolizer;
+    beforeEach(() => {
+      parsedSld = Reader(sldWithUom);
+      const fts = parsedSld.layers[0].styles[0].featuretypestyles[0];
+      pointSymbolizer = fts.rules[0].pointsymbolizer[0];
+      textSymbolizer = fts.rules[0].textsymbolizer[0];
+      lineSymbolizer = fts.rules[1].linesymbolizer[0];
+      polygonSymbolizer = fts.rules[2].polygonsymbolizer[0];
+    });
+
+    it('Parse uom attribute for symbolizer elements', () => {
+      expect(pointSymbolizer.uom).to.equal(UOM_METRE);
+      expect(textSymbolizer.uom).to.equal(UOM_METRE);
+      expect(lineSymbolizer.uom).to.equal(UOM_METRE);
+      expect(polygonSymbolizer.uom).to.equal(UOM_METRE);
+    });
+
+    it('Has no unnecessary uom attributes', () => {
+      const invalidUoms = validateObjectProperties(
+        parsedSld,
+        'parsedSld',
+        (node, nodeName) => {
+          if (node && typeof node === 'object') {
+            if (
+              node.uom &&
+              (node.type === 'literal' || node.type === 'propertyname')
+            ) {
+              if (node.typeHint !== 'number') {
+                throw new Error(
+                  `Found uom on non-numeric literal [${nodeName}].`
+                );
+              }
+            } else if (node.uom && node.type !== 'symbolizer') {
+              throw new Error(
+                `Found uom on non-symbolizer object [${nodeName}].`
+              );
+            }
+          }
+        }
+      );
+      expect(invalidUoms).to.deep.equal([]);
+    });
+
+    it('PointSymbolizer size in metres', () => {
+      expect(pointSymbolizer.graphic.size).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 10,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('PointSymbolizer stroke width overrides uom by appending px', () => {
+      expect(pointSymbolizer.graphic.mark.stroke.styling.strokeWidth).to.equal(
+        2
+      );
+    });
+
+    it('Opacity is always a dimensionless number', () => {
+      expect(pointSymbolizer.graphic.mark.fill.styling.fillOpacity).to.equal(
+        0.8
+      );
+    });
+
+    it('LineSymbolizer stroke width as PropertyName inherits uom', () => {
+      expect(lineSymbolizer.stroke.styling.strokeWidth).to.deep.equal({
+        type: 'propertyname',
+        typeHint: 'number',
+        value: 'width_m',
+        uom: UOM_METRE,
+      });
+    });
+
+    it('LineSymbolizer graphic stroke gap inherits uom', () => {
+      expect(lineSymbolizer.graphicstroke.gap).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 12,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('LineSymbolizer graphic stroke mark size inherits uom', () => {
+      const { graphic } = lineSymbolizer.graphicstroke;
+      expect(graphic.size).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 4,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('LineSymbolizer graphic stroke mark stroke width inherits uom', () => {
+      const { mark } = lineSymbolizer.graphicstroke.graphic;
+      expect(mark.stroke.styling.strokeWidth).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 2,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('Text symbolizer font size uom', () => {
+      expect(textSymbolizer.font.styling.fontSize).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 13,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('Text symbolizer halo radius uom', () => {
+      expect(textSymbolizer.halo.radius).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 2,
+        uom: 'metre',
+      });
+    });
+
+    it('Text symbolizer anchor point X/Y always a dimensionless number', () => {
+      const { anchorpoint } = textSymbolizer.labelplacement.pointplacement;
+      expect(anchorpoint.anchorpointx).to.equal(0.5);
+      expect(anchorpoint.anchorpointy).to.equal(0.5);
+    });
+
+    it('Polygon graphic fill mark size always pixel', () => {
+      expect(polygonSymbolizer.fill.graphicfill.graphic.size).to.equal(8);
+    });
+
+    it('Polygon graphic fill stroke width always pixel', () => {
+      const graphicFillMark = polygonSymbolizer.fill.graphicfill.graphic.mark;
+      expect(graphicFillMark.stroke.styling.strokeWidth).to.equal(1);
     });
   });
 });

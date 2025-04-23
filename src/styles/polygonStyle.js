@@ -1,8 +1,10 @@
-/* eslint-disable function-call-argument-newline */
 import { toContext } from 'ol/render';
-import { Style, Fill } from 'ol/style';
-import { Point, Polygon, MultiPolygon } from 'ol/geom';
 import { DEVICE_PIXEL_RATIO } from 'ol/has';
+import Style from 'ol/style/Style';
+import Fill from 'ol/style/Fill';
+import Point from 'ol/geom/Point';
+import Polygon from 'ol/geom/Polygon';
+import MultiPolygon from 'ol/geom/MultiPolygon';
 
 import {
   IMAGE_LOADING,
@@ -14,7 +16,10 @@ import { memoizeStyleFunction } from './styleUtils';
 import { getCachedImage, getImageLoadingState } from '../imageCache';
 import { imageLoadingPolygonStyle, imageErrorPolygonStyle } from './static';
 import { getSimpleStroke, getSimpleFill } from './simpleStyles';
-import { applyDynamicFillStyling, applyDynamicStrokeStyling } from './dynamicStyles';
+import {
+  applyDynamicFillStyling,
+  applyDynamicStrokeStyling,
+} from './dynamicStyles';
 import { getGraphicStrokeRenderer } from './graphicStrokeStyle';
 import getPointStyle from './pointStyle';
 import getQGISBrushFill from './qgisBrushFill';
@@ -215,7 +220,7 @@ function getMarkGraphicFill(symbolizer) {
     fill = new Fill({
       color: pattern,
     });
-  } catch (e) {
+  } catch {
     // Default black fill as backup plan.
     fill = new Fill({
       color: '#000000',
@@ -227,17 +232,8 @@ function getMarkGraphicFill(symbolizer) {
 
 function polygonStyle(symbolizer) {
   const fillImageUrl =
-    symbolizer.fill &&
-    symbolizer.fill.graphicfill &&
-    symbolizer.fill.graphicfill.graphic &&
-    symbolizer.fill.graphicfill.graphic.externalgraphic &&
-    symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
-
-  const fillMark =
-    symbolizer.fill &&
-    symbolizer.fill.graphicfill &&
-    symbolizer.fill.graphicfill.graphic &&
-    symbolizer.fill.graphicfill.graphic.mark;
+    symbolizer?.fill?.graphicfill?.graphic?.externalgraphic?.onlineresource;
+  const fillMark = symbolizer?.fill?.graphicfill?.graphic?.mark;
 
   let polygonFill = null;
   if (fillImageUrl) {
@@ -251,7 +247,7 @@ function polygonStyle(symbolizer) {
   // When a polygon has a GraphicStroke, use a custom renderer to combine
   // GraphicStroke with fill. This is needed because a custom renderer
   // ignores any stroke, fill and image present in the style.
-  if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+  if (symbolizer?.stroke?.graphicstroke) {
     const renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
     return new Style({
       renderer: (pixelCoords, renderState) => {
@@ -288,14 +284,16 @@ const cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
  * @private
  * Get an OL line style instance for a feature according to a symbolizer.
  * @param {object} symbolizer SLD symbolizer object.
+ * @param {ol/Feature} feature OpenLayers Feature.
+ * @param {EvaluationContext} context Evaluation context.
  * @returns {ol/Style} OpenLayers style instance.
  */
-function getPolygonStyle(symbolizer, feature, getProperty) {
+function getPolygonStyle(symbolizer, feature, context) {
   const olStyle = cachedPolygonStyle(symbolizer);
 
   // Apply dynamic properties.
-  applyDynamicFillStyling(olStyle, symbolizer, feature, getProperty);
-  applyDynamicStrokeStyling(olStyle, symbolizer, feature, getProperty);
+  applyDynamicFillStyling(olStyle, symbolizer, feature, context);
+  applyDynamicStrokeStyling(olStyle, symbolizer, feature, context);
 
   return olStyle;
 }

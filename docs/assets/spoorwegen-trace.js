@@ -9,7 +9,7 @@ const editor = CodeMirror.fromTextArea(document.getElementById('sld'), {
 
 const vectorSource = new ol.source.Vector({
   format: new ol.format.GeoJSON(),
-  url: 'assets/hoogspanning.json',
+  url: 'assets/spoorwegen-trace.json',
   strategy: ol.loadingstrategy.bbox,
 });
 
@@ -52,17 +52,23 @@ function applySLD(vectorLayer, text) {
   const featureTypeStyle = style.featuretypestyles[0];
 
   const viewProjection = map.getView().getProjection();
-  vectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
-    convertResolution: viewResolution => {
-      const viewCenter = map.getView().getCenter();
-      return ol.proj.getPointResolution(viewProjection, viewResolution, viewCenter);
-    },
-    imageLoadedCallback: () => {
-      // Signal OpenLayers to redraw the layer when an image icon has loaded.
-      // On redraw, the updated symbolizer with the correct image scale will be used to draw the icon.
-      vectorLayer.changed();
-    },
-  }));
+  vectorLayer.setStyle(
+    SLDReader.createOlStyleFunction(featureTypeStyle, {
+      convertResolution: viewResolution => {
+        const viewCenter = map.getView().getCenter();
+        return ol.proj.getPointResolution(
+          viewProjection,
+          viewResolution,
+          viewCenter
+        );
+      },
+      imageLoadedCallback: () => {
+        // Signal OpenLayers to redraw the layer when an image icon has loaded.
+        // On redraw, the updated symbolizer with the correct image scale will be used to draw the icon.
+        vectorLayer.changed();
+      },
+    })
+  );
 }
 
 function loadSld(mode) {
@@ -70,7 +76,7 @@ function loadSld(mode) {
 
   switch (mode) {
     case 'DEMO_MARK':
-      sldUrl = 'assets/sld-hoogspanning.xml';
+      sldUrl = 'assets/sld-spoorwegen-trace.xml';
       break;
     case 'DEMO_EXTERNALGRAPHIC':
       sldUrl = 'assets/sld-external-graphic-mark.xml';
@@ -104,9 +110,14 @@ editor.on('change', cm => {
 
 // SLD switch handlers.
 const optionMark = document.querySelector('#option-mark').parentElement;
-const optionExternalGraphic = document.querySelector('#option-exgraphic').parentElement;
-const optionPointPlacement = document.querySelector('#option-pointplacement').parentElement;
-const optionAlternatingGraphicStroke = document.querySelector('#option-alternating-graphicstroke').parentElement;
+const optionExternalGraphic =
+  document.querySelector('#option-exgraphic').parentElement;
+const optionPointPlacement = document.querySelector(
+  '#option-pointplacement'
+).parentElement;
+const optionAlternatingGraphicStroke = document.querySelector(
+  '#option-alternating-graphicstroke'
+).parentElement;
 
 document.querySelectorAll('.option-input input').forEach(inputNode => {
   inputNode.addEventListener('change', evt => {
