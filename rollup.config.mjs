@@ -1,4 +1,4 @@
-import babel from '@rollup/plugin-babel'
+import babel from '@rollup/plugin-babel';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 export default {
@@ -28,4 +28,5 @@ export default {
     },
   },
   plugins: [babel({ babelHelpers: 'bundled' }), nodeResolve()],
+  strictDeprecations: true,
 };
