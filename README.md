@@ -304,27 +304,11 @@ The registered function will be called with the value of its child expressions a
 - Make your functions as lenient as possible regarding possible inputs. Do not throw errors, but try to return a value that makes sense in that case. If you return `null` from a function implementation, the function fallback value will be used if one is specified in the SLD.
   - `<Function name="someFunction" fallbackValue="42">`
 
-## Supported OpenLayers version
-
-The SLDReader has a peer dependency on OpenLayers version 5.3.0. Because there are no backwards incompatible changes between v7+ and v5.3, it is possible to use this library in a project that uses a later (v8+) version of OpenLayers.
-
-This may change in the future if the newest version of OpenLayers stops being backwards compatible with this library, or when a juicy new must-have feature is introduced. When that happens, SLDReader will be based on that OpenLayers version.
-
-## Old Browsers
-
-Some older browsers need polyfills to use this library. E.g. [es6.array.find](https://www.npmjs.com/package/core-js#ecmascript-6-array). When using the OpenLayers style converter, OpenLayers' own [browser restrictions](https://openlayers.org/en/latest/doc/tutorials/background.html) have to be taken into account as well.
-
 ## Contributing
 
 ### Creating an issue
 
 Please include an example sld and if possible an example feature as GeoJSON.
-
-### Development dependencies
-
-- node (v14.18+) & npm
-- git
-- docker (optional, for running the live examples yourself)
 
 ### Pull requests
 
