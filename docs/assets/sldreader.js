@@ -32,6 +32,7 @@
    * Factory methods for filterelements
    * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
    *
+   * @private
    * @module
    */
 
@@ -271,6 +272,7 @@
    * @property {string} [name] Required for function expressions. Contains the function name.
    * @property {any} [fallbackValue] Optional fallback value when function evaluation returns null.
    * @property {Array<Expression>} [params] Required array of function parameters for function expressions.
+   * @property {string} [uom] One of 'metre', 'foot', 'pixel' or 'none'. Only used for type 'literal' or 'propertyname'.
    */
 
   /**
@@ -341,6 +343,7 @@
 
   /**
    * Parse symbolizer element and extract units of measure attribute.
+   * @private
    * @param {Element} node the xml element to parse
    * @param {object} obj  the object to modify
    * @param {string} prop key on obj to hold array
@@ -968,6 +971,7 @@
    * @name Rule
    * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
    * @property {string} name rule name
+   * @property {string} [title] Optional title.
    * @property {Filter} [filter] Optional filter expression for the rule.
    * @property {boolean} [elsefilter] Set this to true when rule has no filter expression
    * to catch everything not passing any other filter.
@@ -1015,6 +1019,7 @@
    * @property {Object} graphic
    * @property {Object} graphic.externalgraphic
    * @property {string} graphic.externalgraphic.onlineresource
+   * @property {string} graphic.externalgraphic.format
    * @property {Object} graphic.mark
    * @property {string} graphic.mark.wellknownname
    * @property {Object} graphic.mark.fill
@@ -1607,7 +1612,7 @@
 
   /**
    * get rules for specific feature after applying filters
-   * @example
+   * @private
    * const style = getStyle(sldLayer, stylename);
    * getRules(style.featuretypestyles['0'], geojson, resolution);
    * @param  {FeatureTypeStyle} featureTypeStyle
@@ -1699,6 +1704,7 @@
 
   /**
    * Get styling from rules per geometry type
+   * @private
    * @param  {Rule[]} rules [description]
    * @return {CategorizedSymbolizers}
    */
@@ -3847,6 +3853,7 @@
 
   /**
    * Evaluation context for style functions.
+   * @private
    * @typedef {object} EvaluationContext
    * @property {Function} getProperty A function (feature, propertyName) -> value that returns the value of the property of a feature.
    * @property {Function} getId A function feature -> any that gets the id of a feature.
@@ -3874,6 +3881,7 @@
 
   /**
    * Create openlayers style
+   * @private
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
    * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
    * @param {object|Feature} feature {@link http://geojson.org|geojson}
@@ -3994,6 +4002,7 @@
    * **Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
    * inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
    * image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
+   * @public
    * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
    * @param {object} options Options
    * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
@@ -4062,6 +4071,7 @@
    * Since this function creates a static OpenLayers style and not a style function,
    * usage of this function is only suitable for simple symbolizers that do not depend on feature properties
    * and do not contain external graphics. External graphic marks will be shown as a grey circle instead.
+   * @public
    * @param {StyleRule} styleRule Feature Type Style Rule object.
    * @param {string} geometryType One of 'Point', 'LineString' or 'Polygon'
    * @returns {Array<ol.Style>} An array of OpenLayers style instances.
@@ -4113,6 +4123,11 @@
   // https://docs.geoserver.org/latest/en/user/filter/function_reference.html#string-functions
   // Note: implementation details may be different from Geoserver implementations.
   // SLDReader function parameters are not strictly typed and will convert inputs in a sensible manner.
+
+  /**
+   * @module
+   * @private
+   */
 
   /**
    * Converts the text representation of the input value to lower case.

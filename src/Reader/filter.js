@@ -2,6 +2,7 @@
  * Factory methods for filterelements
  * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
  *
+ * @private
  * @module
  */
 
@@ -245,6 +246,7 @@ export default function createFilter(element, addParameterValueProp) {
  * @property {string} [name] Required for function expressions. Contains the function name.
  * @property {any} [fallbackValue] Optional fallback value when function evaluation returns null.
  * @property {Array<Expression>} [params] Required array of function parameters for function expressions.
+ * @property {string} [uom] One of 'metre', 'foot', 'pixel' or 'none'. Only used for type 'literal' or 'propertyname'.
  */
 
 /**

@@ -7,6 +7,11 @@ import { registerFunction } from '../index';
 // SLDReader function parameters are not strictly typed and will convert inputs in a sensible manner.
 
 /**
+ * @module
+ * @private
+ */
+
+/**
  * Converts the text representation of the input value to lower case.
  * @private
  * @param {any} input Input value.

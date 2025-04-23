@@ -13,6 +13,7 @@ const defaultStyles = [defaultPointStyle];
 
 /**
  * Evaluation context for style functions.
+ * @private
  * @typedef {object} EvaluationContext
  * @property {Function} getProperty A function (feature, propertyName) -> value that returns the value of the property of a feature.
  * @property {Function} getId A function feature -> any that gets the id of a feature.
@@ -40,6 +41,7 @@ function appendStyles(styles, symbolizers, feature, styleFunction, context) {
 
 /**
  * Create openlayers style
+ * @private
  * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
  * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
  * @param {object|Feature} feature {@link http://geojson.org|geojson}
@@ -160,6 +162,7 @@ function getOlFeatureProperty(feature, propertyName) {
  * **Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
  * inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
  * image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
+ * @public
  * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
  * @param {object} options Options
  * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
@@ -226,6 +229,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
  * Since this function creates a static OpenLayers style and not a style function,
  * usage of this function is only suitable for simple symbolizers that do not depend on feature properties
  * and do not contain external graphics. External graphic marks will be shown as a grey circle instead.
+ * @public
  * @param {StyleRule} styleRule Feature Type Style Rule object.
  * @param {string} geometryType One of 'Point', 'LineString' or 'Polygon'
  * @returns {Array<ol.Style>} An array of OpenLayers style instances.

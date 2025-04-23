@@ -45,7 +45,7 @@
     "eslint": "^8.34.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.31.0",
-    "jsdoc-to-markdown": "^8.0.3",
+    "jsdoc-to-markdown": "^9.1.1",
     "karma": "^6.4.4",
     "karma-chai": "^0.1.0",
     "karma-firefox-launcher": "^2.1.3",

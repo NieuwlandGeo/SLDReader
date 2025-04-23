@@ -37,6 +37,7 @@ function addPropArray(node, obj, prop, options) {
 
 /**
  * Parse symbolizer element and extract units of measure attribute.
+ * @private
  * @param {Element} node the xml element to parse
  * @param {object} obj  the object to modify
  * @param {string} prop key on obj to hold array
@@ -677,6 +678,7 @@ export default function Reader(sld) {
  * @name Rule
  * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
  * @property {string} name rule name
+ * @property {string} [title] Optional title.
  * @property {Filter} [filter] Optional filter expression for the rule.
  * @property {boolean} [elsefilter] Set this to true when rule has no filter expression
  * to catch everything not passing any other filter.
@@ -724,6 +726,7 @@ export default function Reader(sld) {
  * @property {Object} graphic
  * @property {Object} graphic.externalgraphic
  * @property {string} graphic.externalgraphic.onlineresource
+ * @property {string} graphic.externalgraphic.format
  * @property {Object} graphic.mark
  * @property {string} graphic.mark.wellknownname
  * @property {Object} graphic.mark.fill
