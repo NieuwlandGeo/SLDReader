@@ -9,6 +9,14 @@
 
 <script src="assets/sldreader.min.js"></script>
 
+<!-- Hack version number into page title -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const titleLink = document.querySelector('.site-title');
+    titleLink.innerText = `SLDReader ${SLDReader.version}`;
+});
+</script>
+
 <style>
     html,
     body {
