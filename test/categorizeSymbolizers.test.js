@@ -4,31 +4,37 @@ import categorizeSymbolizers from '../src/categorizeSymbolizers';
 describe('create geometrystyles from rules array', () => {
   const rules = [
     {
-      polygonsymbolizer: {
-        fill: {
-          styling: {
-            fill: 'blue',
-            fillOpacity: '1.0',
+      polygonsymbolizer: [
+        {
+          type: 'symbolizer',
+          fill: {
+            styling: {
+              fill: 'blue',
+              fillOpacity: '1.0',
+            },
+          },
+          stroke: {
+            styling: {
+              stroke: '#C0C0C0',
+              strokeLinecap: 'butt',
+              strokeLinejoin: 'miter',
+              strokeOpacity: '1',
+              strokeWidth: '1',
+              strokeDashoffset: '0',
+            },
           },
         },
-        stroke: {
-          styling: {
-            stroke: '#C0C0C0',
-            strokeLinecap: 'butt',
-            strokeLinejoin: 'miter',
-            strokeOpacity: '1',
-            strokeWidth: '1',
-            strokeDashoffset: '0',
+      ],
+      pointsymbolizer: [
+        {
+          type: 'symbolizer',
+          graphic: {
+            externalgraphic: {
+              onlineresource: 'img.png',
+            },
           },
         },
-      },
-      pointsymbolizer: {
-        graphic: {
-          externalgraphic: {
-            onlineresource: 'img.png',
-          },
-        },
-      },
+      ],
     },
   ];
 
