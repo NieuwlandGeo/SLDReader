@@ -5,7 +5,6 @@
  * It will always return a valid string and return an empty string for null and undefined values.
  * Other types of input will be returned as their type name.
  */
-// eslint-disable-next-line import/prefer-default-export
 export function asString(input) {
   if (input === null) {
     return '';

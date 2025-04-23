@@ -4,60 +4,48 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SLDReader = {}, global.ol.style.Style, global.ol.style.Icon, global.ol.style.Fill, global.ol.style.Stroke, global.ol.style.Circle, global.ol.style.RegularShape, global.ol.render, global.ol.geom.Point, global.ol.geom.LineString, global.ol.extent, global.ol.has, global.ol.geom.Polygon, global.ol.geom.MultiPolygon, global.ol.style.Text, global.ol.geom.MultiPoint));
 })(this, (function (exports, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) { 'use strict';
 
-  var IMAGE_LOADING = 'IMAGE_LOADING';
-  var IMAGE_LOADED = 'IMAGE_LOADED';
-  var IMAGE_ERROR = 'IMAGE_ERROR';
+  const IMAGE_LOADING = 'IMAGE_LOADING';
+  const IMAGE_LOADED = 'IMAGE_LOADED';
+  const IMAGE_ERROR = 'IMAGE_ERROR';
 
   // SLD Spec: Default size for Marks without Size should be 6 pixels.
-  var DEFAULT_MARK_SIZE = 6; // pixels
+  const DEFAULT_MARK_SIZE = 6; // pixels
   // SLD Spec: Default size for ExternalGraphic with an unknown native size,
   // like SVG without dimensions, should be 16 pixels.
-  var DEFAULT_EXTERNALGRAPHIC_SIZE = 16; // pixels
+  const DEFAULT_EXTERNALGRAPHIC_SIZE = 16; // pixels
 
   // QGIS Graphic stroke placement options
-  var PLACEMENT_DEFAULT = 'PLACEMENT_DEFAULT';
-  var PLACEMENT_FIRSTPOINT = 'PLACEMENT_FIRSTPOINT';
-  var PLACEMENT_LASTPOINT = 'PLACEMENT_LASTPOINT';
+  const PLACEMENT_DEFAULT = 'PLACEMENT_DEFAULT';
+  const PLACEMENT_FIRSTPOINT = 'PLACEMENT_FIRSTPOINT';
+  const PLACEMENT_LASTPOINT = 'PLACEMENT_LASTPOINT';
 
   // Supported units of measure
-  var UOM_METRE = 'metre';
-  var UOM_FOOT = 'foot';
-  var UOM_PIXEL = 'pixel';
+  const UOM_METRE = 'metre';
+  const UOM_FOOT = 'foot';
+  const UOM_PIXEL = 'pixel';
   // None = number is dimensionless.
-  var UOM_NONE = 'none';
-
-  var METRES_PER_FOOT = 0.3048;
+  const UOM_NONE = 'none';
+  const METRES_PER_FOOT = 0.3048;
 
   /**
    * Factory methods for filterelements
    * @see http://schemas.opengis.net/filter/1.0.0/filter.xsd
    *
+   * @private
    * @module
    */
 
-  var TYPE_COMPARISON = 'comparison';
+  const TYPE_COMPARISON = 'comparison';
 
   /**
    * @var string[] element names of binary comparison
    * @private
    */
-  var BINARY_COMPARISON_NAMES = [
-    'PropertyIsEqualTo',
-    'PropertyIsNotEqualTo',
-    'PropertyIsLessThan',
-    'PropertyIsLessThanOrEqualTo',
-    'PropertyIsGreaterThan',
-    'PropertyIsGreaterThanOrEqualTo' ];
-
-  var COMPARISON_NAMES = BINARY_COMPARISON_NAMES.concat([
-    'PropertyIsLike',
-    'PropertyIsNull',
-    'PropertyIsBetween' ]);
-
+  const BINARY_COMPARISON_NAMES = ['PropertyIsEqualTo', 'PropertyIsNotEqualTo', 'PropertyIsLessThan', 'PropertyIsLessThanOrEqualTo', 'PropertyIsGreaterThan', 'PropertyIsGreaterThanOrEqualTo'];
+  const COMPARISON_NAMES = BINARY_COMPARISON_NAMES.concat(['PropertyIsLike', 'PropertyIsNull', 'PropertyIsBetween']);
   function isComparison(element) {
     return COMPARISON_NAMES.includes(element.localName);
   }
-
   function isBinary(element) {
     return ['or', 'and'].includes(element.localName.toLowerCase());
   }
@@ -82,7 +70,7 @@
     if (element.localName === 'PropertyIsLike') {
       return createIsLikeComparison(element, addParameterValueProp);
     }
-    throw new Error(("Unknown comparison element " + (element.localName)));
+    throw new Error(`Unknown comparison element ${element.localName}`);
   }
 
   /**
@@ -93,24 +81,22 @@
    * @return {object}
    */
   function createBinaryFilterComparison(element, addParameterValueProp) {
-    var obj = {
+    const obj = {
       type: TYPE_COMPARISON,
       operator: element.localName.toLowerCase(),
       // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
-      matchcase: element.getAttribute('matchCase') !== 'false',
+      matchcase: element.getAttribute('matchCase') !== 'false'
     };
 
     // Parse child expressions, and add them to the comparison object.
-    var parsed = {};
+    const parsed = {};
     addParameterValueProp(element, parsed, 'expressions', {
-      concatenateLiterals: false,
+      concatenateLiterals: false
     });
-
     if (parsed.expressions && parsed.expressions.children) {
       obj.expression1 = parsed.expressions.children[0];
       obj.expression2 = parsed.expressions.children[1];
     }
-
     return obj;
   }
 
@@ -123,11 +109,13 @@
    */
   function createIsLikeComparison(element, addParameterValueProp) {
     // A like comparison is a binary comparison expression, with extra attributes.
-    var obj = createBinaryFilterComparison(element, addParameterValueProp);
-    return Object.assign({}, obj,
-      {wildcard: element.getAttribute('wildCard'),
+    const obj = createBinaryFilterComparison(element, addParameterValueProp);
+    return {
+      ...obj,
+      wildcard: element.getAttribute('wildCard'),
       singlechar: element.getAttribute('singleChar'),
-      escapechar: element.getAttribute('escapeChar')});
+      escapechar: element.getAttribute('escapeChar')
+    };
   }
 
   /**
@@ -138,15 +126,14 @@
    * @return {object}
    */
   function createIsNullComparison(element, addParameterValueProp) {
-    var parsed = {};
+    const parsed = {};
     addParameterValueProp(element, parsed, 'expressions', {
-      concatenateLiterals: false,
+      concatenateLiterals: false
     });
-
     return {
       type: TYPE_COMPARISON,
       operator: element.localName.toLowerCase(),
-      expression: parsed.expressions,
+      expression: parsed.expressions
     };
   }
   /**
@@ -157,26 +144,24 @@
    * @return {object}
    */
   function createIsBetweenComparison(element, addParameterValueProp) {
-    var obj = {
+    const obj = {
       type: TYPE_COMPARISON,
       operator: element.localName.toLowerCase(),
       // Match case attribute is true by default, so only make it false if the attribute value equals 'false'.
-      matchcase: element.getAttribute('matchCase') !== 'false',
+      matchcase: element.getAttribute('matchCase') !== 'false'
     };
 
     // Parse child expressions, and add them to the comparison object.
-    var parsed = {};
+    const parsed = {};
     addParameterValueProp(element, parsed, 'expressions', {
-      concatenateLiterals: false,
+      concatenateLiterals: false
     });
-
     if (parsed.expressions && parsed.expressions.children) {
       // According to spec, the child elements should be expression, lower boundary, upper boundary.
       obj.expression = parsed.expressions.children[0];
       obj.lowerboundary = parsed.expressions.children[1];
       obj.upperboundary = parsed.expressions.children[2];
     }
-
     return obj;
   }
 
@@ -188,8 +173,8 @@
    * @return {object}
    */
   function createBinaryLogic(element, addParameterValueProp) {
-    var predicates = [];
-    for (var n = element.firstElementChild; n; n = n.nextElementSibling) {
+    const predicates = [];
+    for (let n = element.firstElementChild; n; n = n.nextElementSibling) {
       if (n && isComparison(n)) {
         predicates.push(createComparison(n, addParameterValueProp));
       }
@@ -202,7 +187,7 @@
     }
     return {
       type: element.localName.toLowerCase(),
-      predicates: predicates,
+      predicates
     };
   }
 
@@ -214,8 +199,8 @@
    * @return {object}
    */
   function createUnaryLogic(element, addParameterValueProp) {
-    var predicate = null;
-    var childElement = element.firstElementChild;
+    let predicate = null;
+    const childElement = element.firstElementChild;
     if (childElement && isComparison(childElement)) {
       predicate = createComparison(childElement, addParameterValueProp);
     }
@@ -227,7 +212,7 @@
     }
     return {
       type: element.localName.toLowerCase(),
-      predicate: predicate,
+      predicate
     };
   }
 
@@ -238,8 +223,8 @@
    * @return {Filter}
    */
   function createFilter(element, addParameterValueProp) {
-    var filter = {};
-    for (var n = element.firstElementChild; n; n = n.nextElementSibling) {
+    let filter = {};
+    for (let n = element.firstElementChild; n; n = n.nextElementSibling) {
       if (isComparison(n)) {
         filter = createComparison(n, addParameterValueProp);
       }
@@ -271,6 +256,7 @@
    * @property {string} [name] Required for function expressions. Contains the function name.
    * @property {any} [fallbackValue] Optional fallback value when function evaluation returns null.
    * @property {Array<Expression>} [params] Required array of function parameters for function expressions.
+   * @property {string} [uom] One of 'metre', 'foot', 'pixel' or 'none'. Only used for type 'literal' or 'propertyname'.
    */
 
   /**
@@ -310,17 +296,10 @@
    * @module
    */
 
-  var numericSvgProps = new Set([
-    'strokeWidth',
-    'strokeOpacity',
-    'strokeDashoffset',
-    'fillOpacity',
-    'fontSize' ]);
-
-  var dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
-
-  var parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
-  var paramReplacerRegex = /param\(([^)]*)\)/g;
+  const numericSvgProps = new Set(['strokeWidth', 'strokeOpacity', 'strokeDashoffset', 'fillOpacity', 'fontSize']);
+  const dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
+  const parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
+  const paramReplacerRegex = /param\(([^)]*)\)/g;
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -332,27 +311,30 @@
    * @param {object} options Parse options.
    */
   function addPropArray(node, obj, prop, options) {
-    var property = prop.toLowerCase();
+    const property = prop.toLowerCase();
     obj[property] = obj[property] || [];
-    var item = {};
+    const item = {};
     readNode(node, item, options);
     obj[property].push(item);
   }
 
   /**
    * Parse symbolizer element and extract units of measure attribute.
+   * @private
    * @param {Element} node the xml element to parse
    * @param {object} obj  the object to modify
    * @param {string} prop key on obj to hold array
    */
   function addSymbolizer(node, obj, prop) {
-    var property = prop.toLowerCase();
+    const property = prop.toLowerCase();
     obj[property] = obj[property] || [];
-    var item = { type: 'symbolizer' };
+    const item = {
+      type: 'symbolizer'
+    };
 
     // Check and add if symbolizer node has uom attribute.
     // If there is no uom attribute, default to pixel.
-    var uom = node.getAttribute('uom');
+    const uom = node.getAttribute('uom');
     if (uom) {
       switch (uom) {
         // From symbology encoding spec:
@@ -367,18 +349,16 @@
           item.uom = UOM_PIXEL;
           break;
         default:
-          // eslint-disable-next-line no-console
-          console.warn(
-            'Unsupported uom attribute found, one of http://www.opengeospatial.org/se/units/(metre|feet|pixel) expected.'
-          );
+          console.warn('Unsupported uom attribute found, one of http://www.opengeospatial.org/se/units/(metre|feet|pixel) expected.');
           item.uom = UOM_PIXEL;
           break;
       }
     } else {
       item.uom = UOM_PIXEL;
     }
-
-    readNode(node, item, { uom: item.uom });
+    readNode(node, item, {
+      uom: item.uom
+    });
     obj[property].push(item);
   }
 
@@ -392,59 +372,46 @@
    * @param {object} options Parse options.
    */
   function addProp(node, obj, prop, options) {
-    var property = prop.toLowerCase();
+    const property = prop.toLowerCase();
     obj[property] = {};
     readNode(node, obj[property], options);
   }
-
   function addGraphicProp(node, obj, prop, options) {
-    var property = prop.toLowerCase();
+    const property = prop.toLowerCase();
     obj[property] = {};
     readGraphicNode(node, obj[property], options);
   }
-
   function addExternalGraphicProp(node, obj, prop, options) {
-    var property = prop.toLowerCase();
+    const property = prop.toLowerCase();
     obj[property] = {};
     readNode(node, obj[property], options);
-
-    var externalgraphic = obj[property];
+    const externalgraphic = obj[property];
     if (externalgraphic.onlineresource) {
       // Trim url.
       externalgraphic.onlineresource = externalgraphic.onlineresource.trim();
 
       // QGIS fix: if onlineresource starts with 'base64:', repair it into a valid data url using the externalgraphic Format element.
-      if (
-        /^base64:/.test(externalgraphic.onlineresource) &&
-        externalgraphic.format
-      ) {
-        var fixedPrefix = "data:" + (externalgraphic.format || '') + ";base64,";
-        var base64Data = externalgraphic.onlineresource.replace(/^base64:/, '');
-        externalgraphic.onlineresource = "" + fixedPrefix + base64Data;
+      if (/^base64:/.test(externalgraphic.onlineresource) && externalgraphic.format) {
+        const fixedPrefix = `data:${externalgraphic.format || ''};base64,`;
+        const base64Data = externalgraphic.onlineresource.replace(/^base64:/, '');
+        externalgraphic.onlineresource = `${fixedPrefix}${base64Data}`;
       }
 
       // Test if onlineresource is a parametric SVG (QGIS export).
       if (parametricSvgRegex.test(externalgraphic.onlineresource)) {
         try {
           // Parametric (embedded) SVG is exported by QGIS as <base64data>?<query parameter list>;
-          var ref =
-            externalgraphic.onlineresource.match(parametricSvgRegex);
-          var base64SvgXML = ref[1];
-          var queryString = ref[2];
-          var svgXml = window.atob(base64SvgXML);
-          var svgParams = new URLSearchParams(queryString);
+          const [, base64SvgXML, queryString] = externalgraphic.onlineresource.match(parametricSvgRegex);
+          const svgXml = window.atob(base64SvgXML);
+          const svgParams = new URLSearchParams(queryString);
 
           // Replace all 'param(name)' strings in the SVG with the value of 'name'.
-          var replacedSvgXml = svgXml.replace(
-            paramReplacerRegex,
-            function (_, paramName) { return svgParams.get(paramName) || ''; }
-          );
+          const replacedSvgXml = svgXml.replace(paramReplacerRegex, (_, paramName) => svgParams.get(paramName) || '');
 
           // Encode fixed SVG back to base64 and assemble a new data: url.
-          var fixedBase64SvgXml = window.btoa(replacedSvgXml);
-          externalgraphic.onlineresource = "data:" + (externalgraphic.format || '') + ";base64," + fixedBase64SvgXml;
+          const fixedBase64SvgXml = window.btoa(replacedSvgXml);
+          externalgraphic.onlineresource = `data:${externalgraphic.format || ''};base64,${fixedBase64SvgXml}`;
         } catch (e) {
-          // eslint-disable-next-line no-console
           console.error('Error converting parametric SVG: ', e);
         }
       }
@@ -461,7 +428,7 @@
    * @param {bool} [options.trimText] Trim whitespace from text content (default false).
    */
   function addPropWithTextContent(node, obj, prop, options) {
-    var property = prop.toLowerCase();
+    const property = prop.toLowerCase();
     if (options && options.trimText) {
       obj[property] = node.textContent.trim();
     } else {
@@ -479,8 +446,8 @@
    * @param {string} prop The property name.
    */
   function addNumericProp(node, obj, prop) {
-    var property = prop.toLowerCase();
-    var value = parseFloat(node.textContent.trim());
+    const property = prop.toLowerCase();
+    const value = parseFloat(node.textContent.trim());
     obj[property] = value;
   }
 
@@ -496,34 +463,22 @@
    * @param {string} uom Unit of measure.
    * @return {Array<OGCExpression>|OGCExpression|string} Simplified version of the expression array.
    */
-  function simplifyChildExpressions(
-    expressions,
-    typeHint,
-    concatenateLiterals,
-    uom
-  ) {
+  function simplifyChildExpressions(expressions, typeHint, concatenateLiterals, uom) {
     if (!Array.isArray(expressions)) {
       return expressions;
     }
 
     // Replace each literal expression with its value, unless it has units of measure that are not pixels.
-    var simplifiedExpressions = expressions
-      .map(function (expression) {
-        if (
-          expression.type === 'literal' &&
-          !(expression.uom === UOM_METRE || expression.uom === UOM_FOOT)
-        ) {
-          return expression.value;
-        }
-        return expression;
-      })
-      .filter(function (expression) { return expression !== ''; });
+    const simplifiedExpressions = expressions.map(expression => {
+      if (expression.type === 'literal' && !(expression.uom === UOM_METRE || expression.uom === UOM_FOOT)) {
+        return expression.value;
+      }
+      return expression;
+    }).filter(expression => expression !== '');
 
     // If expression children are all literals, concatenate them into a string.
     if (concatenateLiterals) {
-      var allLiteral = simplifiedExpressions.every(
-        function (expr) { return typeof expr !== 'object' || expr === null; }
-      );
+      const allLiteral = simplifiedExpressions.every(expr => typeof expr !== 'object' || expr === null);
       if (allLiteral) {
         return simplifiedExpressions.join('');
       }
@@ -533,12 +488,11 @@
     if (simplifiedExpressions.length === 1) {
       return simplifiedExpressions[0];
     }
-
     return {
       type: 'expression',
-      typeHint: typeHint,
-      uom: uom,
-      children: simplifiedExpressions,
+      typeHint,
+      uom,
+      children: simplifiedExpressions
     };
   }
 
@@ -570,54 +524,45 @@
    * @param {string} [options.uom] Unit of measure.
    * concatenate all literal expressions into a single string.
    */
-  function addParameterValueProp(node, obj, prop, options) {
-    if ( options === void 0 ) options = {};
-
-    var defaultParseOptions = {
+  function addParameterValueProp(node, obj, prop) {
+    let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    const defaultParseOptions = {
       skipEmptyNodes: true,
       forceLowerCase: true,
       typeHint: 'string',
       concatenateLiterals: true,
-      uom: UOM_NONE,
+      uom: UOM_NONE
     };
-
-    var parseOptions = Object.assign({}, defaultParseOptions,
-      options);
-
-    var childExpressions = [];
-
-    for (var k = 0; k < node.childNodes.length; k += 1) {
-      var childNode = node.childNodes[k];
-      var childExpression = {};
-      if (
-        childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
-        childNode.localName === 'PropertyName'
-      ) {
+    const parseOptions = {
+      ...defaultParseOptions,
+      ...options
+    };
+    const childExpressions = [];
+    for (let k = 0; k < node.childNodes.length; k += 1) {
+      const childNode = node.childNodes[k];
+      const childExpression = {};
+      if (childNode.namespaceURI === 'http://www.opengis.net/ogc' && childNode.localName === 'PropertyName') {
         // Add ogc:PropertyName elements as type:propertyname.
         childExpression.type = 'propertyname';
         childExpression.typeHint = parseOptions.typeHint;
         childExpression.value = childNode.textContent.trim();
-        if (
-          childExpression.typeHint === 'number' &&
-          (parseOptions.uom === UOM_METRE || parseOptions.uom === UOM_FOOT)
-        ) {
+        if (childExpression.typeHint === 'number' && (parseOptions.uom === UOM_METRE || parseOptions.uom === UOM_FOOT)) {
           childExpression.uom = parseOptions.uom;
         }
-      } else if (
-        childNode.namespaceURI === 'http://www.opengis.net/ogc' &&
-        childNode.localName === 'Function'
-      ) {
-        var functionName = childNode.getAttribute('name');
-        var fallbackValue = childNode.getAttribute('fallbackValue') || null;
+      } else if (childNode.namespaceURI === 'http://www.opengis.net/ogc' && childNode.localName === 'Function') {
+        const functionName = childNode.getAttribute('name');
+        const fallbackValue = childNode.getAttribute('fallbackValue') || null;
         childExpression.type = 'function';
         childExpression.name = functionName;
         childExpression.fallbackValue = fallbackValue;
 
         // Parse function parameters.
         // Parse child expressions, and add them to the comparison object.
-        var parsed = {};
-        addParameterValueProp(childNode, parsed, 'params', Object.assign({}, parseOptions,
-          {concatenateLiterals: false}));
+        const parsed = {};
+        addParameterValueProp(childNode, parsed, 'params', {
+          ...parseOptions,
+          concatenateLiterals: false
+        });
         if (Array.isArray(parsed.params.children)) {
           // Case 0 or more than 1 children.
           childExpression.params = parsed.params.children;
@@ -626,28 +571,25 @@
           // An array containing one expression is simplified into the expression itself.
           childExpression.params = [parsed.params];
         }
-      } else if (
-        childNode.localName === 'Add' ||
-        childNode.localName === 'Sub' ||
-        childNode.localName === 'Mul' ||
-        childNode.localName === 'Div'
-      ) {
+      } else if (childNode.localName === 'Add' || childNode.localName === 'Sub' || childNode.localName === 'Mul' || childNode.localName === 'Div') {
         // Convert mathematical operators to builtin function expressions.
         childExpression.type = 'function';
-        childExpression.name = "__fe:" + (childNode.localName) + "__";
+        childExpression.name = `__fe:${childNode.localName}__`;
         childExpression.typeHint = 'number';
         // Parse function parameters.
         // Parse child expressions, and add them to the comparison object.
-        var parsed$1 = {};
-        addParameterValueProp(childNode, parsed$1, 'params', Object.assign({}, parseOptions,
-          {concatenateLiterals: false}));
-        if (Array.isArray(parsed$1.params.children)) {
+        const parsed = {};
+        addParameterValueProp(childNode, parsed, 'params', {
+          ...parseOptions,
+          concatenateLiterals: false
+        });
+        if (Array.isArray(parsed.params.children)) {
           // Case 0 or more than 1 children.
-          childExpression.params = parsed$1.params.children;
+          childExpression.params = parsed.params.children;
         } else {
           // Special case of 1 parameter.
           // An array containing one expression is simplified into the expression itself.
-          childExpression.params = [parsed$1.params];
+          childExpression.params = [parsed.params];
         }
       } else if (childNode.nodeName === '#cdata-section') {
         // Add CDATA section text content untrimmed.
@@ -660,7 +602,6 @@
         childExpression.typeHint = parseOptions.typeHint;
         childExpression.value = childNode.textContent.trim();
       }
-
       if (childExpression.type === 'literal' && parseOptions.skipEmptyNodes) {
         if (childExpression.value.trim()) {
           childExpressions.push(childExpression);
@@ -669,59 +610,44 @@
         childExpressions.push(childExpression);
       }
     }
-
-    var propertyName = parseOptions.forceLowerCase ? prop.toLowerCase() : prop;
+    const propertyName = parseOptions.forceLowerCase ? prop.toLowerCase() : prop;
 
     // Simplify child expressions.
     // For example: if they are all literals --> concatenate into string.
-    var simplifiedValue = simplifyChildExpressions(
-      childExpressions,
-      parseOptions.typeHint,
-      parseOptions.concatenateLiterals,
-      parseOptions.uom
-    );
+    let simplifiedValue = simplifyChildExpressions(childExpressions, parseOptions.typeHint, parseOptions.concatenateLiterals, parseOptions.uom);
 
     // Convert simple string value to number if type hint is number.
     // Keep full literal expression if unit of measure is in metre or foot.
-    if (
-      typeof simplifiedValue === 'string' &&
-      parseOptions.typeHint === 'number'
-    ) {
+    if (typeof simplifiedValue === 'string' && parseOptions.typeHint === 'number') {
       // If numbers are written with 'px' at the end, they override the symbolizer's own uom.
-      var uom =
-        simplifiedValue.indexOf('px') > -1 ? UOM_PIXEL : parseOptions.uom;
+      const uom = simplifiedValue.indexOf('px') > -1 ? UOM_PIXEL : parseOptions.uom;
       if (uom === UOM_METRE || uom === UOM_FOOT) {
         simplifiedValue = {
           type: 'literal',
           typeHint: 'number',
           value: parseFloat(simplifiedValue),
-          uom: uom,
+          uom
         };
       } else {
         simplifiedValue = parseFloat(simplifiedValue);
       }
     }
-
     obj[propertyName] = simplifiedValue;
   }
-
-  function addNumericParameterValueProp(node, obj, prop, options) {
-    if ( options === void 0 ) options = {};
-
-    addParameterValueProp(node, obj, prop, Object.assign({}, options, {typeHint: 'number'}));
+  function addNumericParameterValueProp(node, obj, prop) {
+    let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    addParameterValueProp(node, obj, prop, {
+      ...options,
+      typeHint: 'number'
+    });
   }
-
-  function addDimensionlessNumericParameterValueProp(
-    node,
-    obj,
-    prop,
-    options
-  ) {
-    if ( options === void 0 ) options = {};
-
-    addParameterValueProp(node, obj, prop, Object.assign({}, options,
-      {typeHint: 'number',
-      uom: UOM_NONE}));
+  function addDimensionlessNumericParameterValueProp(node, obj, prop) {
+    let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    addParameterValueProp(node, obj, prop, {
+      ...options,
+      typeHint: 'number',
+      uom: UOM_NONE
+    });
   }
 
   /**
@@ -732,10 +658,7 @@
    * @return {boolean}
    */
   function getBool(element, tagName) {
-    var collection = element.getElementsByTagNameNS(
-      'http://www.opengis.net/sld',
-      tagName
-    );
+    const collection = element.getElementsByTagNameNS('http://www.opengis.net/sld', tagName);
     if (collection.length) {
       return Boolean(collection.item(0).textContent);
     }
@@ -752,18 +675,16 @@
    * @param  {object} options Parse options.
    */
   function addParameterValue(element, obj, prop, parameterGroup, options) {
-    var parseOptions = Object.assign({}, options);
-
+    const parseOptions = {
+      ...options
+    };
     obj[parameterGroup] = obj[parameterGroup] || {};
-    var name = element
-      .getAttribute('name')
-      .toLowerCase()
-      .replace(/-(.)/g, function (match, group1) { return group1.toUpperCase(); });
+    const name = element.getAttribute('name').toLowerCase().replace(/-(.)/g, (match, group1) => group1.toUpperCase());
 
     // Flag certain SVG parameters as numeric.
     // Some SVG parameters are always dimensionless (like opacity).
-    var typeHint = 'string';
-    var uom = parseOptions.uom;
+    let typeHint = 'string';
+    let uom = parseOptions.uom;
     if (parameterGroup === 'styling') {
       if (numericSvgProps.has(name)) {
         typeHint = 'number';
@@ -772,24 +693,23 @@
         uom = UOM_NONE;
       }
     }
-
-    addParameterValueProp(element, obj[parameterGroup], name, Object.assign({}, options,
-      {skipEmptyNodes: true,
+    addParameterValueProp(element, obj[parameterGroup], name, {
+      ...options,
+      skipEmptyNodes: true,
       forceLowerCase: false,
-      typeHint: typeHint,
-      uom: uom}));
+      typeHint,
+      uom
+    });
   }
-
-  var FilterParsers = {
-    Filter: function (element, obj) {
+  const FilterParsers = {
+    Filter: (element, obj) => {
       obj.filter = createFilter(element, addParameterValueProp);
     },
-    ElseFilter: function (element, obj) {
+    ElseFilter: (element, obj) => {
       obj.elsefilter = true;
-    },
+    }
   };
-
-  var SymbParsers = {
+  const SymbParsers = {
     PolygonSymbolizer: addSymbolizer,
     LineSymbolizer: addSymbolizer,
     PointSymbolizer: addSymbolizer,
@@ -797,15 +717,20 @@
     Fill: addProp,
     Stroke: addProp,
     GraphicStroke: addProp,
-    GraphicFill: function (node, obj, prop, options) { return addProp(node, obj, prop, Object.assign({}, options, {uom: UOM_PIXEL})); },
+    GraphicFill: (node, obj, prop, options) => addProp(node, obj, prop, {
+      ...options,
+      uom: UOM_PIXEL
+    }),
     Graphic: addGraphicProp,
     ExternalGraphic: addExternalGraphicProp,
     Format: addPropWithTextContent,
     Gap: addNumericParameterValueProp,
     InitialGap: addNumericParameterValueProp,
     Mark: addProp,
-    Label: function (node, obj, prop, options) { return addParameterValueProp(node, obj, prop, Object.assign({}, options,
-        {skipEmptyNodes: false})); },
+    Label: (node, obj, prop, options) => addParameterValueProp(node, obj, prop, {
+      ...options,
+      skipEmptyNodes: false
+    }),
     Halo: addProp,
     Font: addProp,
     Radius: addNumericParameterValueProp,
@@ -824,12 +749,12 @@
     Size: addNumericParameterValueProp,
     WellKnownName: addPropWithTextContent,
     MarkIndex: addNumericProp,
-    VendorOption: function (element, obj, prop, options) { return addParameterValue(element, obj, prop, 'vendoroptions', options); },
-    OnlineResource: function (element, obj) {
+    VendorOption: (element, obj, prop, options) => addParameterValue(element, obj, prop, 'vendoroptions', options),
+    OnlineResource: (element, obj) => {
       obj.onlineresource = element.getAttribute('xlink:href');
     },
-    CssParameter: function (element, obj, prop, options) { return addParameterValue(element, obj, prop, 'styling', options); },
-    SvgParameter: function (element, obj, prop, options) { return addParameterValue(element, obj, prop, 'styling', options); },
+    CssParameter: (element, obj, prop, options) => addParameterValue(element, obj, prop, 'styling', options),
+    SvgParameter: (element, obj, prop, options) => addParameterValue(element, obj, prop, 'styling', options)
   };
 
   /**
@@ -837,31 +762,32 @@
    * @private
    * @type {Object}
    */
-  var parsers = Object.assign({}, {NamedLayer: function (element, obj) {
+  const parsers = {
+    NamedLayer: (element, obj) => {
       addPropArray(element, obj, 'layers');
     },
-    UserLayer: function (element, obj) {
+    UserLayer: (element, obj) => {
       addPropArray(element, obj, 'layers');
     },
-    UserStyle: function (element, obj) {
+    UserStyle: (element, obj) => {
       obj.styles = obj.styles || [];
-      var style = {
+      const style = {
         default: getBool(element, 'IsDefault'),
-        featuretypestyles: [],
+        featuretypestyles: []
       };
       readNode(element, style);
       obj.styles.push(style);
     },
-    FeatureTypeStyle: function (element, obj) {
+    FeatureTypeStyle: (element, obj) => {
       obj.featuretypestyle = obj.featuretypestyle || [];
-      var featuretypestyle = {
-        rules: [],
+      const featuretypestyle = {
+        rules: []
       };
       readNode(element, featuretypestyle);
       obj.featuretypestyles.push(featuretypestyle);
     },
-    Rule: function (element, obj) {
-      var rule = {};
+    Rule: (element, obj) => {
+      const rule = {};
       readNode(element, rule);
       obj.rules.push(rule);
     },
@@ -870,9 +796,10 @@
     Abstract: addPropWithTextContent,
     Description: readNode,
     MaxScaleDenominator: addNumericProp,
-    MinScaleDenominator: addNumericProp},
-    FilterParsers,
-    SymbParsers);
+    MinScaleDenominator: addNumericProp,
+    ...FilterParsers,
+    ...SymbParsers
+  };
 
   /**
    * walks over xml nodes
@@ -883,7 +810,7 @@
    * @return {void}
    */
   function readNode(node, obj, options) {
-    for (var n = node.firstElementChild; n; n = n.nextElementSibling) {
+    for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
       if (parsers[n.localName]) {
         parsers[n.localName](n, obj, n.localName, options);
       }
@@ -900,14 +827,10 @@
    * @return {void}
    */
   function readGraphicNode(node, obj, options) {
-    var hasMarkOrExternalGraphic = false;
-    for (var n = node.firstElementChild; n; n = n.nextElementSibling) {
+    let hasMarkOrExternalGraphic = false;
+    for (let n = node.firstElementChild; n; n = n.nextElementSibling) {
       // Skip Mark or ExternalGraphic if another one has already been parsed.
-      if (
-        hasMarkOrExternalGraphic &&
-        (n.localName === 'Mark' || n.localName === 'ExternalGraphic')
-      ) {
-        // eslint-disable-next-line no-continue
+      if (hasMarkOrExternalGraphic && (n.localName === 'Mark' || n.localName === 'ExternalGraphic')) {
         continue;
       }
       if (parsers[n.localName]) {
@@ -925,14 +848,12 @@
    * @return {StyledLayerDescriptor}  object representing sld style
    */
   function Reader(sld) {
-    var result = {};
-    var parser = new DOMParser();
-    var doc = parser.parseFromString(sld, 'application/xml');
-
-    var rootNode = doc.documentElement;
+    const result = {};
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sld, 'application/xml');
+    const rootNode = doc.documentElement;
     result.version = rootNode.getAttribute('version');
     readNode(rootNode, result);
-
     return result;
   }
 
@@ -968,6 +889,7 @@
    * @name Rule
    * @description a typedef for Rule to match a feature: {@link http://schemas.opengis.net/se/1.1.0/FeatureStyle.xsd xsd}
    * @property {string} name rule name
+   * @property {string} [title] Optional title.
    * @property {Filter} [filter] Optional filter expression for the rule.
    * @property {boolean} [elsefilter] Set this to true when rule has no filter expression
    * to catch everything not passing any other filter.
@@ -1015,6 +937,7 @@
    * @property {Object} graphic
    * @property {Object} graphic.externalgraphic
    * @property {string} graphic.externalgraphic.onlineresource
+   * @property {string} graphic.externalgraphic.format
    * @property {Object} graphic.mark
    * @property {string} graphic.mark.wellknownname
    * @property {Object} graphic.mark.fill
@@ -1027,7 +950,7 @@
   // This module contains a global registry of function implementations,
   // and functions to register new function implementations.
 
-  var FunctionCache = new Map();
+  const FunctionCache = new Map();
 
   /**
    * Register a function implementation by name. When evaluating the function, it will be called
@@ -1072,13 +995,9 @@
    */
   function isDynamicExpression(expression) {
     // Expressions whose pixel value changes with resolution are dynamic by definition.
-    if (
-      expression &&
-      (expression.uom === UOM_METRE || expression.uom === UOM_FOOT)
-    ) {
+    if (expression && (expression.uom === UOM_METRE || expression.uom === UOM_FOOT)) {
       return true;
     }
-
     switch ((expression || {}).type) {
       case 'expression':
         // Expressions with all literal child values are already concatenated into a static string,
@@ -1110,25 +1029,12 @@
    * @param {any} defaultValue Optional default value to use when feature is null.
    * Signature (feature, propertyName) => property value.
    */
-  function evaluate(
-    expression,
-    feature,
-    context,
-    defaultValue
-  ) {
-    if ( defaultValue === void 0 ) defaultValue = null;
-
+  function evaluate(expression, feature, context) {
+    let defaultValue = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
     // Determine the value of the expression.
-    var value = null;
-
-    var jsType = typeof expression;
-    if (
-      jsType === 'string' ||
-      jsType === 'number' ||
-      jsType === 'undefined' ||
-      jsType === 'boolean' ||
-      expression === null
-    ) {
+    let value = null;
+    const jsType = typeof expression;
+    if (jsType === 'string' || jsType === 'number' || jsType === 'undefined' || jsType === 'boolean' || expression === null) {
       // Expression value equals the expression itself if it's a native javascript type.
       value = expression;
     } else if (expression.type === 'literal') {
@@ -1137,13 +1043,10 @@
     } else if (expression.type === 'propertyname') {
       // Expression value is taken from input feature.
       // If feature is null/undefined, use default value instead.
-      var propertyName = expression.value;
+      const propertyName = expression.value;
       if (feature) {
         // If the property name equals the geometry field name, return the feature geometry.
-        if (
-          typeof feature.getGeometryName === 'function' &&
-          propertyName === feature.getGeometryName()
-        ) {
+        if (typeof feature.getGeometryName === 'function' && propertyName === feature.getGeometryName()) {
           value = feature.getGeometry();
         } else {
           value = context.getProperty(feature, propertyName);
@@ -1157,27 +1060,25 @@
         value = evaluate(expression.children[0], feature, context, defaultValue);
       } else {
         // In case of multiple child expressions, concatenate the evaluated child results.
-        var childValues = [];
-        for (var k = 0; k < expression.children.length; k += 1) {
+        const childValues = [];
+        for (let k = 0; k < expression.children.length; k += 1) {
           childValues.push(
-            // Do not use default values when evaluating children. Only apply default is
-            // the concatenated result is empty.
-            evaluate(expression.children[k], feature, context, null)
-          );
+          // Do not use default values when evaluating children. Only apply default is
+          // the concatenated result is empty.
+          evaluate(expression.children[k], feature, context, null));
         }
         value = childValues.join('');
       }
     } else if (expression.type === 'function') {
-      var func = getFunction(expression.name);
+      const func = getFunction(expression.name);
       if (!func) {
         value = expression.fallbackValue;
       } else {
         try {
           // evaluate parameter expressions.
-          var paramValues = expression.params.map(function (paramExpression) { return evaluate(paramExpression, feature, context); }
-          );
-          value = func.apply(void 0, paramValues);
-        } catch (e) {
+          const paramValues = expression.params.map(paramExpression => evaluate(paramExpression, feature, context));
+          value = func(...paramValues);
+        } catch {
           value = expression.fallbackValue;
         }
       }
@@ -1189,15 +1090,9 @@
     }
 
     // Check if value is empty/null. If so, return default value.
-    if (
-      value === null ||
-      typeof value === 'undefined' ||
-      value === '' ||
-      Number.isNaN(value)
-    ) {
+    if (value === null || typeof value === 'undefined' || value === '' || Number.isNaN(value)) {
       value = defaultValue;
     }
-
     if (expression) {
       // Convert value to number if expression is flagged as numeric.
       if (expression.typeHint === 'number') {
@@ -1213,19 +1108,16 @@
       }
       if (expression.uom === UOM_METRE || expression.uom === UOM_FOOT) {
         // Convert metres to pixels.
-        var scaleFactor = context ? context.resolution : 1;
+        const scaleFactor = context ? context.resolution : 1;
         value /= scaleFactor;
       }
     }
-
     return value;
   }
 
   function isNullOrUndefined(value) {
-    /* eslint-disable-next-line eqeqeq */
     return value == null;
   }
-
   function compareNumbers(a, b) {
     if (a < b) {
       return -1;
@@ -1235,24 +1127,22 @@
     }
     return 1;
   }
-
   function toNumber(text) {
     if (text === '') {
       return NaN;
     }
     return Number(text);
   }
-
   function compare(a, b, matchcase) {
-    var aNumber = toNumber(a);
-    var bNumber = toNumber(b);
+    const aNumber = toNumber(a);
+    const bNumber = toNumber(b);
     if (!(Number.isNaN(aNumber) || Number.isNaN(bNumber))) {
       return compareNumbers(aNumber, bNumber);
     }
 
     // If a and/or b is non-numeric, compare both values as strings.
-    var aString = a.toString();
-    var bString = b.toString();
+    const aString = a.toString();
+    const bString = b.toString();
 
     // Note: using locale compare with sensitivity option fails the CI test, while it works on my PC.
     // So, case insensitive comparison is done in a more brute-force way by using lower case comparison.
@@ -1262,92 +1152,61 @@
     if (matchcase) {
       return aString.localeCompare(bString);
     }
-
     return aString.toLowerCase().localeCompare(bString.toLowerCase());
   }
-
   function propertyIsNull(comparison, feature, context) {
-    var value = evaluate(comparison.expression, feature, context);
+    const value = evaluate(comparison.expression, feature, context);
     return isNullOrUndefined(value);
   }
-
   function propertyIsLessThan(comparison, feature, context) {
-    var value1 = evaluate(comparison.expression1, feature, context);
+    const value1 = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value1)) {
       return false;
     }
-
-    var value2 = evaluate(comparison.expression2, feature, context);
+    const value2 = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(value2)) {
       return false;
     }
-
     return compare(value1, value2) < 0;
   }
-
   function propertyIsGreaterThan(comparison, feature, context) {
-    var value1 = evaluate(comparison.expression1, feature, context);
+    const value1 = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value1)) {
       return false;
     }
-
-    var value2 = evaluate(comparison.expression2, feature, context);
+    const value2 = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(value2)) {
       return false;
     }
-
     return compare(value1, value2) > 0;
   }
-
   function propertyIsBetween(comparison, feature, context) {
-    var value = evaluate(comparison.expression, feature, context);
+    const value = evaluate(comparison.expression, feature, context);
     if (isNullOrUndefined(value)) {
       return false;
     }
-
-    var lowerBoundary = evaluate(
-      comparison.lowerboundary,
-      feature,
-      context
-    );
+    const lowerBoundary = evaluate(comparison.lowerboundary, feature, context);
     if (isNullOrUndefined(lowerBoundary)) {
       return false;
     }
-
-    var upperBoundary = evaluate(
-      comparison.upperboundary,
-      feature,
-      context
-    );
+    const upperBoundary = evaluate(comparison.upperboundary, feature, context);
     if (isNullOrUndefined(upperBoundary)) {
       return false;
     }
-
-    return (
-      compare(lowerBoundary, value) <= 0 && compare(upperBoundary, value) >= 0
-    );
+    return compare(lowerBoundary, value) <= 0 && compare(upperBoundary, value) >= 0;
   }
-
   function propertyIsEqualTo(comparison, feature, context) {
-    var value1 = evaluate(comparison.expression1, feature, context);
+    const value1 = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value1)) {
       return false;
     }
-
-    var value2 = evaluate(comparison.expression2, feature, context);
+    const value2 = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(value2)) {
       return false;
     }
-
-    if (
-      !comparison.matchcase ||
-      typeof value1 === 'boolean' ||
-      typeof value2 === 'boolean'
-    ) {
+    if (!comparison.matchcase || typeof value1 === 'boolean' || typeof value2 === 'boolean') {
       return compare(value1, value2, false) === 0;
     }
-
-    /* eslint-disable-next-line eqeqeq */
     return value1 == value2;
   }
 
@@ -1355,16 +1214,14 @@
   // just like in databases.
   // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
   function propertyIsNotEqualTo(comparison, feature, context) {
-    var value1 = evaluate(comparison.expression1, feature, context);
+    const value1 = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value1)) {
       return false;
     }
-
-    var value2 = evaluate(comparison.expression2, feature, context);
+    const value2 = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(value2)) {
       return false;
     }
-
     return !propertyIsEqualTo(comparison, feature, context);
   }
 
@@ -1377,46 +1234,37 @@
    * the value of a property from a feature.
    */
   function propertyIsLike(comparison, feature, context) {
-    var value = evaluate(comparison.expression1, feature, context);
+    const value = evaluate(comparison.expression1, feature, context);
     if (isNullOrUndefined(value)) {
       return false;
     }
-
-    var pattern = evaluate(comparison.expression2, feature, context);
+    const pattern = evaluate(comparison.expression2, feature, context);
     if (isNullOrUndefined(pattern)) {
       return false;
     }
 
     // Create regex string from match pattern.
-    var wildcard = comparison.wildcard;
-    var singlechar = comparison.singlechar;
-    var escapechar = comparison.escapechar;
-    var matchcase = comparison.matchcase;
+    const {
+      wildcard,
+      singlechar,
+      escapechar,
+      matchcase
+    } = comparison;
 
     // Replace wildcard by '.*'
-    var patternAsRegex = pattern.replace(new RegExp(("[" + wildcard + "]"), 'g'), '.*');
+    let patternAsRegex = pattern.replace(new RegExp(`[${wildcard}]`, 'g'), '.*');
 
     // Replace single char match by '.'
-    patternAsRegex = patternAsRegex.replace(
-      new RegExp(("[" + singlechar + "]"), 'g'),
-      '.'
-    );
+    patternAsRegex = patternAsRegex.replace(new RegExp(`[${singlechar}]`, 'g'), '.');
 
     // Replace escape char by '\' if escape char is not already '\'.
     if (escapechar !== '\\') {
-      patternAsRegex = patternAsRegex.replace(
-        new RegExp(("[" + escapechar + "]"), 'g'),
-        '\\'
-      );
+      patternAsRegex = patternAsRegex.replace(new RegExp(`[${escapechar}]`, 'g'), '\\');
     }
 
     // Bookend the regular expression.
-    patternAsRegex = "^" + patternAsRegex + "$";
-
-    var rex =
-      matchcase === false
-        ? new RegExp(patternAsRegex, 'i')
-        : new RegExp(patternAsRegex);
+    patternAsRegex = `^${patternAsRegex}$`;
+    const rex = matchcase === false ? new RegExp(patternAsRegex, 'i') : new RegExp(patternAsRegex);
     return rex.test(value);
   }
 
@@ -1435,19 +1283,13 @@
       case 'propertyisequalto':
         return propertyIsEqualTo(comparison, feature, context);
       case 'propertyislessthanorequalto':
-        return (
-          propertyIsEqualTo(comparison, feature, context) ||
-          propertyIsLessThan(comparison, feature, context)
-        );
+        return propertyIsEqualTo(comparison, feature, context) || propertyIsLessThan(comparison, feature, context);
       case 'propertyisnotequalto':
         return propertyIsNotEqualTo(comparison, feature, context);
       case 'propertyisgreaterthan':
         return propertyIsGreaterThan(comparison, feature, context);
       case 'propertyisgreaterthanorequalto':
-        return (
-          propertyIsEqualTo(comparison, feature, context) ||
-          propertyIsGreaterThan(comparison, feature, context)
-        );
+        return propertyIsEqualTo(comparison, feature, context) || propertyIsGreaterThan(comparison, feature, context);
       case 'propertyisbetween':
         return propertyIsBetween(comparison, feature, context);
       case 'propertyisnull':
@@ -1455,17 +1297,15 @@
       case 'propertyislike':
         return propertyIsLike(comparison, feature, context);
       default:
-        throw new Error(("Unkown comparison operator " + (comparison.operator)));
+        throw new Error(`Unkown comparison operator ${comparison.operator}`);
     }
   }
-
   function doFIDFilter(fids, featureId) {
-    for (var i = 0; i < fids.length; i += 1) {
+    for (let i = 0; i < fids.length; i += 1) {
       if (fids[i] === featureId) {
         return true;
       }
     }
-
     return false;
   }
 
@@ -1479,47 +1319,42 @@
    * @return {boolean} True if the feature passes the conditions described by the filter object.
    */
   function filterSelector(filter, feature, context) {
-    var type = filter.type;
+    const {
+      type
+    } = filter;
     switch (type) {
       case 'featureid':
         return doFIDFilter(filter.fids, context.getId(feature));
-
       case 'comparison':
         return doComparison(filter, feature, context);
+      case 'and':
+        {
+          if (!filter.predicates) {
+            throw new Error('And filter must have predicates array.');
+          }
 
-      case 'and': {
-        if (!filter.predicates) {
-          throw new Error('And filter must have predicates array.');
+          // And without predicates should return false.
+          if (filter.predicates.length === 0) {
+            return false;
+          }
+          return filter.predicates.every(predicate => filterSelector(predicate, feature, context));
         }
-
-        // And without predicates should return false.
-        if (filter.predicates.length === 0) {
-          return false;
+      case 'or':
+        {
+          if (!filter.predicates) {
+            throw new Error('Or filter must have predicates array.');
+          }
+          return filter.predicates.some(predicate => filterSelector(predicate, feature, context));
         }
-
-        return filter.predicates.every(function (predicate) { return filterSelector(predicate, feature, context); }
-        );
-      }
-
-      case 'or': {
-        if (!filter.predicates) {
-          throw new Error('Or filter must have predicates array.');
+      case 'not':
+        {
+          if (!filter.predicate) {
+            throw new Error('Not filter must have predicate.');
+          }
+          return !filterSelector(filter.predicate, feature, context);
         }
-
-        return filter.predicates.some(function (predicate) { return filterSelector(predicate, feature, context); }
-        );
-      }
-
-      case 'not': {
-        if (!filter.predicate) {
-          throw new Error('Not filter must have predicate.');
-        }
-
-        return !filterSelector(filter.predicate, feature, context);
-      }
-
       default:
-        throw new Error(("Unknown filter type: " + type));
+        throw new Error(`Unknown filter type: ${type}`);
     }
   }
 
@@ -1532,14 +1367,8 @@
    * @return {boolean}
    */
   function scaleSelector(rule, resolution) {
-    if (
-      rule.maxscaledenominator !== undefined &&
-      rule.minscaledenominator !== undefined
-    ) {
-      if (
-        resolution / 0.00028 < rule.maxscaledenominator &&
-        resolution / 0.00028 > rule.minscaledenominator
-      ) {
+    if (rule.maxscaledenominator !== undefined && rule.minscaledenominator !== undefined) {
+      if (resolution / 0.00028 < rule.maxscaledenominator && resolution / 0.00028 > rule.minscaledenominator) {
         return true;
       }
       return false;
@@ -1559,7 +1388,7 @@
    * @return {string[]} registered layernames
    */
   function getLayerNames(sld) {
-    return sld.layers.map(function (l) { return l.name; });
+    return sld.layers.map(l => l.name);
   }
 
   /**
@@ -1572,7 +1401,7 @@
     if (!layername) {
       return sld.layers['0'];
     }
-    return sld.layers.find(function (l) { return l.name === layername; });
+    return sld.layers.find(l => l.name === layername);
   }
 
   /**
@@ -1581,7 +1410,7 @@
    * @return {string[]}       [description]
    */
   function getStyleNames(layer) {
-    return layer.styles.map(function (s) { return s.name; });
+    return layer.styles.map(s => s.name);
   }
 
   /**
@@ -1594,20 +1423,18 @@
    */
   function getStyle(layer, name) {
     if (name) {
-      return layer.styles.find(function (s) { return s.name === name; });
+      return layer.styles.find(s => s.name === name);
     }
-
-    var defaultStyle = layer.styles.find(function (s) { return s.default; });
+    const defaultStyle = layer.styles.find(s => s.default);
     if (defaultStyle) {
       return defaultStyle;
     }
-
     return layer.styles[0];
   }
 
   /**
    * get rules for specific feature after applying filters
-   * @example
+   * @private
    * const style = getStyle(sldLayer, stylename);
    * getRules(style.featuretypestyles['0'], geojson, resolution);
    * @param  {FeatureTypeStyle} featureTypeStyle
@@ -1616,10 +1443,10 @@
    * @return {Rule[]}
    */
   function getRules(featureTypeStyle, feature, context) {
-    var validRules = [];
-    var elseFilterCount = 0;
-    for (var j = 0; j < featureTypeStyle.rules.length; j += 1) {
-      var rule = featureTypeStyle.rules[j];
+    const validRules = [];
+    let elseFilterCount = 0;
+    for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
+      const rule = featureTypeStyle.rules[j];
       // Only keep rules that pass the rule's min/max scale denominator checks.
       if (scaleSelector(rule, context.resolution)) {
         if (rule.elsefilter) {
@@ -1645,7 +1472,7 @@
     }
 
     // If a mix of rules with and without ElseFilter remains, only keep rules without ElseFilter.
-    return validRules.filter(function (rule) { return !rule.elsefilter; });
+    return validRules.filter(rule => !rule.elsefilter);
   }
 
   /**
@@ -1655,10 +1482,7 @@
    * @returns {Array<object>} Array of all symbolizers in a rule.
    */
   function getRuleSymbolizers(rule) {
-    var allSymbolizers = (rule.polygonsymbolizer || []).concat( (rule.linesymbolizer || []),
-      (rule.pointsymbolizer || []),
-      (rule.textsymbolizer || []) );
-
+    const allSymbolizers = [...(rule.polygonsymbolizer || []), ...(rule.linesymbolizer || []), ...(rule.pointsymbolizer || []), ...(rule.textsymbolizer || [])];
     return allSymbolizers;
   }
 
@@ -1681,50 +1505,48 @@
     }
 
     // Start from the given object.
-    var value = obj;
+    let value = obj;
 
     // Walk the object property path.
-    var fragments = (path || '').split('.');
-    for (var k = 0; k < fragments.length; k += 1) {
-      var fragment = fragments[k];
+    const fragments = (path || '').split('.');
+    for (let k = 0; k < fragments.length; k += 1) {
+      const fragment = fragments[k];
       // Return undefined if any partial path does not exist in the object.
       if (!(fragment in value)) {
         return undefined;
       }
       value = value[fragment];
     }
-
     return value;
   }
 
   /**
    * Get styling from rules per geometry type
+   * @private
    * @param  {Rule[]} rules [description]
    * @return {CategorizedSymbolizers}
    */
   function categorizeSymbolizers(rules) {
-    var result = {
+    const result = {
       polygonSymbolizers: [],
       lineSymbolizers: [],
       pointSymbolizers: [],
-      textSymbolizers: [],
+      textSymbolizers: []
     };
-
-    (rules || []).forEach(function (rule) {
+    (rules || []).forEach(rule => {
       if (rule.polygonsymbolizer) {
-        result.polygonSymbolizers = ( result.polygonSymbolizers ).concat( rule.polygonsymbolizer );
+        result.polygonSymbolizers = [...result.polygonSymbolizers, ...rule.polygonsymbolizer];
       }
       if (rule.linesymbolizer) {
-        result.lineSymbolizers = ( result.lineSymbolizers ).concat( rule.linesymbolizer );
+        result.lineSymbolizers = [...result.lineSymbolizers, ...rule.linesymbolizer];
       }
       if (rule.pointsymbolizer) {
-        result.pointSymbolizers = ( result.pointSymbolizers ).concat( rule.pointsymbolizer );
+        result.pointSymbolizers = [...result.pointSymbolizers, ...rule.pointsymbolizer];
       }
       if (rule.textsymbolizer) {
-        result.textSymbolizers = ( result.textSymbolizers ).concat( rule.textsymbolizer );
+        result.textSymbolizers = [...result.textSymbolizers, ...rule.textsymbolizer];
       }
     });
-
     return result;
   }
 
@@ -1738,13 +1560,8 @@
    * @property {TextSymbolizer[]} textSymbolizers  textsymbolizers
    */
 
-  /* eslint-disable no-continue */
-
   // These are possible locations for an external graphic inside a symbolizer.
-  var externalGraphicPaths = [
-    'graphic.externalgraphic',
-    'stroke.graphicstroke.graphic.externalgraphic',
-    'fill.graphicfill.graphic.externalgraphic' ];
+  const externalGraphicPaths = ['graphic.externalgraphic', 'stroke.graphicstroke.graphic.externalgraphic', 'fill.graphicfill.graphic.externalgraphic'];
 
   /**
    * @private
@@ -1755,7 +1572,7 @@
    *   height: image height in pixels
    * }
    */
-  var imageCache = {};
+  const imageCache = {};
   function setCachedImage(url, imageData) {
     imageCache[url] = imageData;
   }
@@ -1768,7 +1585,7 @@
    * Global image loading state cache.
    * A map of image Url -> one of 'IMAGE_LOADING', 'IMAGE_LOADED', 'IMAGE_ERROR'
    */
-  var imageLoadingStateCache = {};
+  const imageLoadingStateCache = {};
   function setImageLoadingState(url, loadingState) {
     imageLoadingStateCache[url] = loadingState;
   }
@@ -1782,21 +1599,20 @@
    * A map of image Url -> Promise
    * This used to prevent duplicate loading when a style references an image that's already being loaded.
    */
-  var _imageLoaderCache = {};
+  const _imageLoaderCache = {};
   function getImageLoader(url) {
     return _imageLoaderCache[url];
   }
   function setImageLoader(url, loaderPromise) {
     _imageLoaderCache[url] = loaderPromise;
   }
-
   function invalidateExternalGraphicSymbolizers(symbolizer, imageUrl) {
     // Look at all possible paths where an externalgraphic may be present within a symbolizer.
     // When such an externalgraphic has been found, and its url equals imageUrl, invalidate the symbolizer.
-    for (var k = 0; k < externalGraphicPaths.length; k += 1) {
+    for (let k = 0; k < externalGraphicPaths.length; k += 1) {
       // Note: this process assumes that each symbolizer has at most one external graphic element.
-      var path = externalGraphicPaths[k];
-      var externalgraphic = getByPath(symbolizer, path);
+      const path = externalGraphicPaths[k];
+      const externalgraphic = getByPath(symbolizer, path);
       if (externalgraphic && externalgraphic.onlineresource === imageUrl) {
         symbolizer.__invalidated = true;
         // If the symbolizer contains a graphic stroke symbolizer,
@@ -1807,7 +1623,6 @@
       }
     }
   }
-
   function updateSymbolizerInvalidatedState(ruleSymbolizer, imageUrl) {
     if (!ruleSymbolizer) {
       return;
@@ -1818,7 +1633,7 @@
     if (!Array.isArray(ruleSymbolizer)) {
       invalidateExternalGraphicSymbolizers(ruleSymbolizer, imageUrl);
     } else {
-      for (var k = 0; k < ruleSymbolizer.length; k += 1) {
+      for (let k = 0; k < ruleSymbolizer.length; k += 1) {
         invalidateExternalGraphicSymbolizers(ruleSymbolizer[k], imageUrl);
       }
     }
@@ -1834,8 +1649,7 @@
     if (!featureTypeStyle.rules) {
       return;
     }
-
-    featureTypeStyle.rules.forEach(function (rule) {
+    featureTypeStyle.rules.forEach(rule => {
       updateSymbolizerInvalidatedState(rule.pointsymbolizer, imageUrl);
       updateSymbolizerInvalidatedState(rule.linesymbolizer, imageUrl);
       updateSymbolizerInvalidatedState(rule.polygonsymbolizer, imageUrl);
@@ -1854,31 +1668,28 @@
   function getCachingImageLoader(imageUrl) {
     // Check of a load is already in progress for an image.
     // If so, return the loader.
-    var loader = getImageLoader(imageUrl);
+    let loader = getImageLoader(imageUrl);
     if (loader) {
       return loader;
     }
 
     // If no load is in progress, create a new loader and store it in the image loader cache before returning it.
-    loader = new Promise(function (resolve, reject) {
-      var image = new Image();
-
-      image.onload = function () {
+    loader = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
         setCachedImage(imageUrl, {
           url: imageUrl,
-          image: image,
+          image,
           width: image.naturalWidth,
-          height: image.naturalHeight,
+          height: image.naturalHeight
         });
         setImageLoadingState(imageUrl, IMAGE_LOADED);
         resolve(imageUrl);
       };
-
-      image.onerror = function () {
+      image.onerror = () => {
         setImageLoadingState(imageUrl, IMAGE_ERROR);
         reject();
       };
-
       image.src = imageUrl;
     });
 
@@ -1898,25 +1709,19 @@
    * @param {Function} imageLoadedCallback Will be called with the image url when image
    * has loaded. Will be called with undefined if the loading the image resulted in an error.
    */
-  function loadExternalGraphic(
-    imageUrl,
-    featureTypeStyle,
-    imageLoadedCallback
-  ) {
+  function loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback) {
     invalidateExternalGraphics(featureTypeStyle, imageUrl);
-    getCachingImageLoader(imageUrl)
-      .then(function () {
-        invalidateExternalGraphics(featureTypeStyle, imageUrl);
-        if (typeof imageLoadedCallback === 'function') {
-          imageLoadedCallback(imageUrl);
-        }
-      })
-      .catch(function () {
-        invalidateExternalGraphics(featureTypeStyle, imageUrl);
-        if (typeof imageLoadedCallback === 'function') {
-          imageLoadedCallback();
-        }
-      });
+    getCachingImageLoader(imageUrl).then(() => {
+      invalidateExternalGraphics(featureTypeStyle, imageUrl);
+      if (typeof imageLoadedCallback === 'function') {
+        imageLoadedCallback(imageUrl);
+      }
+    }).catch(() => {
+      invalidateExternalGraphics(featureTypeStyle, imageUrl);
+      if (typeof imageLoadedCallback === 'function') {
+        imageLoadedCallback();
+      }
+    });
   }
 
   /**
@@ -1926,26 +1731,21 @@
    * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
    * @param {Function} imageLoadedCallback Function to call when an image has loaded.
    */
-  function processExternalGraphicSymbolizers(
-    rules,
-    featureTypeStyle,
-    imageLoadedCallback,
-    callbackRef
-  ) {
+  function processExternalGraphicSymbolizers(rules, featureTypeStyle, imageLoadedCallback, callbackRef) {
     // Walk over all symbolizers inside all given rules.
     // Dive into the symbolizers to find ExternalGraphic elements and for each ExternalGraphic,
     // check if the image url has been encountered before.
     // If not -> start loading the image into the global image cache.
-    rules.forEach(function (rule) {
-      var allSymbolizers = getRuleSymbolizers(rule);
-      allSymbolizers.forEach(function (symbolizer) {
-        externalGraphicPaths.forEach(function (path) {
-          var exgraphic = getByPath(symbolizer, path);
+    rules.forEach(rule => {
+      const allSymbolizers = getRuleSymbolizers(rule);
+      allSymbolizers.forEach(symbolizer => {
+        externalGraphicPaths.forEach(path => {
+          const exgraphic = getByPath(symbolizer, path);
           if (!exgraphic) {
             return;
           }
-          var imageUrl = exgraphic.onlineresource;
-          var imageLoadingState = getImageLoadingState(imageUrl);
+          const imageUrl = exgraphic.onlineresource;
+          const imageLoadingState = getImageLoadingState(imageUrl);
           if (!imageLoadingState || imageLoadingState === IMAGE_LOADING) {
             // Prevent adding imageLoadedCallback more than once per image per created style function
             // by inspecting the callbackRef object passed by the style function creator function.
@@ -1954,11 +1754,7 @@
               callbackRef[imageUrl] = true;
               // Load image and when loaded, invalidate all symbolizers referencing the image
               // and invoke the imageLoadedCallback.
-              loadExternalGraphic(
-                imageUrl,
-                featureTypeStyle,
-                imageLoadedCallback
-              );
+              loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
             }
           }
         });
@@ -1974,83 +1770,78 @@
    * @param {number} size Requested size in pixels.
    * @param {number} [rotationDegrees] Image rotation in degrees (clockwise). Default 0.
    */
-  function createCachedImageStyle(imageUrl, size, rotationDegrees) {
-    if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
-
-    var ref = getCachedImage(imageUrl);
-    var image = ref.image;
-    var width = ref.width;
-    var height = ref.height;
+  function createCachedImageStyle(imageUrl, size) {
+    let rotationDegrees = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0.0;
+    const {
+      image,
+      width,
+      height
+    } = getCachedImage(imageUrl);
     return new Style({
       image: new Icon({
         img: image,
         imgSize: [width, height],
         // According to SLD spec, if size is given, image height should equal the given size.
         scale: size / height || 1,
-        rotation: (Math.PI * rotationDegrees) / 180.0,
-      }),
+        rotation: Math.PI * rotationDegrees / 180.0
+      })
     });
   }
 
-  var emptyStyle = new Style({});
-
-  var defaultPointStyle = new Style({
+  const emptyStyle = new Style({});
+  const defaultPointStyle = new Style({
     image: new Circle({
       radius: 8,
       fill: new Fill({
         color: 'blue',
-        fillOpacity: 0.7,
-      }),
-    }),
+        fillOpacity: 0.7
+      })
+    })
   });
-
-  var imageLoadingPointStyle = new Style({
+  const imageLoadingPointStyle = new Style({
     image: new Circle({
       radius: 5,
       fill: new Fill({
-        color: '#DDDDDD',
+        color: '#DDDDDD'
       }),
       stroke: new Stroke({
         width: 1,
-        color: '#888888',
-      }),
-    }),
+        color: '#888888'
+      })
+    })
   });
-
-  var imageLoadingPolygonStyle = new Style({
+  const imageLoadingPolygonStyle = new Style({
     fill: new Fill({
-      color: '#DDDDDD',
+      color: '#DDDDDD'
     }),
     stroke: new Stroke({
       color: '#888888',
-      width: 1,
-    }),
+      width: 1
+    })
   });
-
-  var imageErrorPointStyle = new Style({
+  const imageErrorPointStyle = new Style({
     image: new RegularShape({
       angle: Math.PI / 4,
       fill: new Fill({
-        color: 'red',
+        color: 'red'
       }),
       points: 4,
       radius: 8,
       radius2: 0,
       stroke: new Stroke({
         color: 'red',
-        width: 4,
-      }),
-    }),
+        width: 4
+      })
+    })
   });
-
-  var imageErrorPolygonStyle = new Style({
+  const imageErrorPolygonStyle = new Style({
     fill: new Fill({
-      color: 'red',
+      color: 'red'
     }),
     stroke: new Stroke({
       color: 'red',
-      width: 1,
-    }),
+      width: 1
+    })
   });
 
   /**
@@ -2063,10 +1854,9 @@
    * @returns {Function} The memoized function of the style conversion function.
    */
   function memoizeStyleFunction(styleFunction) {
-    var styleCache = new WeakMap();
-
-    return function (symbolizer) {
-      var olStyle = styleCache.get(symbolizer);
+    const styleCache = new WeakMap();
+    return symbolizer => {
+      let olStyle = styleCache.get(symbolizer);
 
       // Create a new style if no style has been created yet, or when symbolizer has been invalidated.
       if (!olStyle || symbolizer.__invalidated) {
@@ -2075,7 +1865,6 @@
         symbolizer.__invalidated = false;
         styleCache.set(symbolizer, olStyle);
       }
-
       return olStyle;
     };
   }
@@ -2088,13 +1877,13 @@
    * @return {string}       rgba(0,0,0,0)
    */
   function hexToRGB(hex, alpha) {
-    var r = parseInt(hex.slice(1, 3), 16);
-    var g = parseInt(hex.slice(3, 5), 16);
-    var b = parseInt(hex.slice(5, 7), 16);
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
     if (alpha || alpha === 0) {
-      return ("rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")");
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
-    return ("rgb(" + r + ", " + g + ", " + b + ")");
+    return `rgb(${r}, ${g}, ${b})`;
   }
 
   /**
@@ -2120,9 +1909,10 @@
    * @returns {number} Center-to-center distance for graphics along a line.
    */
   function calculateGraphicSpacing(lineSymbolizer, graphicWidth) {
-    var ref = lineSymbolizer.stroke;
-    var graphicstroke = ref.graphicstroke;
-    var styling = ref.styling;
+    const {
+      graphicstroke,
+      styling
+    } = lineSymbolizer.stroke;
     if ('gap' in graphicstroke) {
       // Note: gap should be a numeric property after parsing (check reader.test).
       return graphicstroke.gap + graphicWidth;
@@ -2131,9 +1921,9 @@
     // If gap is not given, use strokeDasharray to space graphics.
     // First digit represents size of graphic, second the relative space, e.g.
     // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
-    var multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
+    let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
     if (styling && styling.strokeDasharray) {
-      var dash = styling.strokeDasharray.split(' ');
+      const dash = styling.strokeDasharray.split(' ');
       if (dash.length >= 2 && dash[0] !== 0) {
         multiplier = dash[1] / dash[0] + 1;
       }
@@ -2148,8 +1938,9 @@
    * @returns {number} Inital gap size. Defaults to 0 if not present.
    */
   function getInitialGapSize(lineSymbolizer) {
-    var ref = lineSymbolizer.stroke;
-    var graphicstroke = ref.graphicstroke;
+    const {
+      graphicstroke
+    } = lineSymbolizer.stroke;
     return graphicstroke.initialgap || 0.0;
   }
 
@@ -2163,175 +1954,144 @@
    * @param {ol/style/fill} fill OpenLayers Fill instance.
    * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
    */
-  function getWellKnownSymbol(
-    wellKnownName,
-    size,
-    stroke,
-    fill,
-    rotationDegrees
-  ) {
-    if ( rotationDegrees === void 0 ) rotationDegrees = 0.0;
-
-    var radius = size / 2;
-    var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
-
-    var fillColor;
+  function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
+    let rotationDegrees = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0.0;
+    const radius = size / 2;
+    const rotationRadians = Math.PI * rotationDegrees / 180.0;
+    let fillColor;
     if (fill && fill.getColor()) {
       fillColor = fill.getColor();
     }
-
     switch (wellKnownName) {
       case 'circle':
         return new Circle({
-          fill: fill,
-          radius: radius,
-          stroke: stroke,
+          fill,
+          radius,
+          stroke
         });
-
       case 'triangle':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 3,
-          radius: radius,
-          stroke: stroke,
-          rotation: rotationRadians,
+          radius,
+          stroke,
+          rotation: rotationRadians
         });
-
       case 'star':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 5,
-          radius: radius,
+          radius,
           radius2: radius / 2.5,
-          stroke: stroke,
-          rotation: rotationRadians,
+          stroke,
+          rotation: rotationRadians
         });
-
       case 'cross':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 4,
-          radius: radius,
+          radius,
           radius2: 0,
-          stroke:
-            stroke ||
-            new Stroke({
-              color: fillColor,
-              width: radius / 2,
-            }),
-          rotation: rotationRadians,
+          stroke: stroke || new Stroke({
+            color: fillColor,
+            width: radius / 2
+          }),
+          rotation: rotationRadians
         });
-
       case 'hexagon':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 6,
-          radius: radius,
-          stroke:
-            stroke ||
-            new Stroke({
-              color: fillColor,
-              width: radius / 2,
-            }),
-          rotation: rotationRadians,
+          radius,
+          stroke: stroke || new Stroke({
+            color: fillColor,
+            width: radius / 2
+          }),
+          rotation: rotationRadians
         });
-
       case 'octagon':
         return new RegularShape({
           angle: Math.PI / 8,
-          fill: fill,
+          fill,
           points: 8,
           radius: radius / Math.cos(Math.PI / 8),
-          stroke:
-            stroke ||
-            new Stroke({
-              color: fillColor,
-              width: radius / 2,
-            }),
-          rotation: rotationRadians,
+          stroke: stroke || new Stroke({
+            color: fillColor,
+            width: radius / 2
+          }),
+          rotation: rotationRadians
         });
-
       case 'cross2': // cross2 is used by QGIS for the x symbol.
       case 'x':
         return new RegularShape({
           angle: Math.PI / 4,
-          fill: fill,
+          fill,
           points: 4,
           radius: Math.sqrt(2.0) * radius,
           radius2: 0,
-          stroke:
-            stroke ||
-            new Stroke({
-              color: fillColor,
-              width: radius / 2,
-            }),
-          rotation: rotationRadians,
+          stroke: stroke || new Stroke({
+            color: fillColor,
+            width: radius / 2
+          }),
+          rotation: rotationRadians
         });
-
       case 'diamond':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 4,
-          radius: radius,
-          stroke: stroke,
-          rotation: rotationRadians,
+          radius,
+          stroke,
+          rotation: rotationRadians
         });
-
       case 'horline':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 2,
-          radius: radius,
+          radius,
           angle: Math.PI / 2,
-          stroke: stroke,
-          rotation: rotationRadians,
+          stroke,
+          rotation: rotationRadians
         });
-
       case 'line':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 2,
-          radius: radius,
+          radius,
           angle: 0,
-          stroke: stroke,
-          rotation: rotationRadians,
+          stroke,
+          rotation: rotationRadians
         });
-
       case 'backslash':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 2,
           radius: radius * Math.sqrt(2),
           angle: -Math.PI / 4,
-          stroke: stroke,
-          rotation: rotationRadians,
+          stroke,
+          rotation: rotationRadians
         });
-
       case 'slash':
         return new RegularShape({
-          fill: fill,
+          fill,
           points: 2,
           radius: radius * Math.sqrt(2),
           angle: Math.PI / 4,
-          stroke: stroke,
-          rotation: rotationRadians,
+          stroke,
+          rotation: rotationRadians
         });
-
       default:
         // Default is `square`
         return new RegularShape({
           angle: Math.PI / 4,
-          fill: fill,
+          fill,
           points: 4,
           // For square, scale radius so the height of the square equals the given size.
           radius: radius * Math.sqrt(2.0),
-          stroke: stroke,
-          rotation: rotationRadians,
+          stroke,
+          rotation: rotationRadians
         });
     }
   }
-
-  /* eslint-disable import/prefer-default-export */
 
   /**
    * Get an OL style/Stroke instance from the css/svg properties of the .stroke property
@@ -2346,45 +2106,32 @@
     if (!stroke) {
       return undefined;
     }
-
-    var styleParams = stroke.styling || {};
+    const styleParams = stroke.styling || {};
 
     // Options that have a default value.
-    var strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
-
-    var strokeOpacity = evaluate(styleParams.strokeOpacity, null, null, 1.0);
-
-    var strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
-
-    var strokeLineDashOffset = evaluate(
-      styleParams.strokeDashoffset,
-      null,
-      null,
-      0.0
-    );
-
-    var strokeOptions = {
+    const strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
+    const strokeOpacity = evaluate(styleParams.strokeOpacity, null, null, 1.0);
+    const strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
+    const strokeLineDashOffset = evaluate(styleParams.strokeDashoffset, null, null, 0.0);
+    const strokeOptions = {
       color: getOLColorString(strokeColor, strokeOpacity),
       width: strokeWidth,
-      lineDashOffset: strokeLineDashOffset,
+      lineDashOffset: strokeLineDashOffset
     };
 
     // Optional parameters that will be added to stroke options when present in SLD.
-    var strokeLineJoin = evaluate(styleParams.strokeLinejoin, null, null);
+    const strokeLineJoin = evaluate(styleParams.strokeLinejoin, null, null);
     if (strokeLineJoin !== null) {
       strokeOptions.lineJoin = strokeLineJoin;
     }
-
-    var strokeLineCap = evaluate(styleParams.strokeLinecap, null, null);
+    const strokeLineCap = evaluate(styleParams.strokeLinecap, null, null);
     if (strokeLineCap !== null) {
       strokeOptions.lineCap = strokeLineCap;
     }
-
-    var strokeDashArray = evaluate(styleParams.strokeDasharray, null, null);
+    const strokeDashArray = evaluate(styleParams.strokeDasharray, null, null);
     if (strokeDashArray !== null) {
       strokeOptions.lineDash = strokeDashArray.split(' ');
     }
-
     return new Stroke(strokeOptions);
   }
 
@@ -2401,14 +2148,12 @@
     if (!fill) {
       return undefined;
     }
-
-    var styleParams = fill.styling || {};
-
-    var fillColor = evaluate(styleParams.fill, null, null, '#808080');
-
-    var fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
-
-    return new Fill({ color: getOLColorString(fillColor, fillOpacity) });
+    const styleParams = fill.styling || {};
+    const fillColor = evaluate(styleParams.fill, null, null, '#808080');
+    const fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
+    return new Fill({
+      color: getOLColorString(fillColor, fillOpacity)
+    });
   }
 
   /**
@@ -2422,31 +2167,24 @@
    * @returns {bool} Returns true if any property-dependent fill style changes have been made.
    */
   function applyDynamicFillStyling(olStyle, symbolizer, feature, context) {
-    var olFill = olStyle.getFill();
+    const olFill = olStyle.getFill();
     if (!olFill) {
       return false;
     }
-
     if (!context) {
       return false;
     }
-
-    var somethingChanged = false;
-
-    var fill = symbolizer.fill || {};
-    var styling = fill.styling || {};
+    let somethingChanged = false;
+    const fill = symbolizer.fill || {};
+    const styling = fill.styling || {};
 
     // Change fill color if either color or opacity is property based.
-    if (
-      isDynamicExpression(styling.fill) ||
-      isDynamicExpression(styling.fillOpacity)
-    ) {
-      var fillColor = evaluate(styling.fill, feature, context, '#808080');
-      var fillOpacity = evaluate(styling.fillOpacity, feature, context, 1.0);
+    if (isDynamicExpression(styling.fill) || isDynamicExpression(styling.fillOpacity)) {
+      const fillColor = evaluate(styling.fill, feature, context, '#808080');
+      const fillOpacity = evaluate(styling.fillOpacity, feature, context, 1.0);
       olFill.setColor(getOLColorString(fillColor, fillOpacity));
       somethingChanged = true;
     }
-
     return somethingChanged;
   }
 
@@ -2460,49 +2198,32 @@
    * @param {EvaluationContext} context Evaluation context.
    * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
    */
-  function applyDynamicStrokeStyling(
-    olStyle,
-    symbolizer,
-    feature,
-    context
-  ) {
-    var olStroke = olStyle.getStroke();
+  function applyDynamicStrokeStyling(olStyle, symbolizer, feature, context) {
+    const olStroke = olStyle.getStroke();
     if (!olStroke) {
       return false;
     }
-
     if (!context) {
       return false;
     }
-
-    var somethingChanged = false;
-
-    var stroke = symbolizer.stroke || {};
-    var styling = stroke.styling || {};
+    let somethingChanged = false;
+    const stroke = symbolizer.stroke || {};
+    const styling = stroke.styling || {};
 
     // Change stroke width if it's property based.
     if (isDynamicExpression(styling.strokeWidth)) {
-      var strokeWidth = evaluate(styling.strokeWidth, feature, context, 1.0);
+      const strokeWidth = evaluate(styling.strokeWidth, feature, context, 1.0);
       olStroke.setWidth(strokeWidth);
       somethingChanged = true;
     }
 
     // Change stroke color if either color or opacity is property based.
-    if (
-      isDynamicExpression(styling.stroke) ||
-      isDynamicExpression(styling.strokeOpacity)
-    ) {
-      var strokeColor = evaluate(styling.stroke, feature, context, '#000000');
-      var strokeOpacity = evaluate(
-        styling.strokeOpacity,
-        feature,
-        context,
-        1.0
-      );
+    if (isDynamicExpression(styling.stroke) || isDynamicExpression(styling.strokeOpacity)) {
+      const strokeColor = evaluate(styling.stroke, feature, context, '#000000');
+      const strokeOpacity = evaluate(styling.strokeOpacity, feature, context, 1.0);
       olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
       somethingChanged = true;
     }
-
     return somethingChanged;
   }
 
@@ -2517,62 +2238,54 @@
    * @returns {bool} Returns true if any property-dependent stroke style changes have been made.
    */
   function applyDynamicTextStyling(olStyle, symbolizer, feature, context) {
-    var olText = olStyle.getText();
+    const olText = olStyle.getText();
     if (!olText) {
       return false;
     }
-
     if (!context) {
       return false;
     }
 
     // Text fill style has to be applied to text color, so it has to be set as olText stroke.
-    if (
-      symbolizer.fill &&
-      symbolizer.fill.styling &&
-      (isDynamicExpression(symbolizer.fill.styling.fill) ||
-        isDynamicExpression(symbolizer.fill.styling.fillOpacity))
-    ) {
-      var textStrokeSymbolizer = {
+    if (symbolizer.fill && symbolizer.fill.styling && (isDynamicExpression(symbolizer.fill.styling.fill) || isDynamicExpression(symbolizer.fill.styling.fillOpacity))) {
+      const textStrokeSymbolizer = {
         stroke: {
           styling: {
             stroke: symbolizer.fill.styling.fill,
-            strokeOpacity: symbolizer.fill.styling.fillOpacity,
-          },
-        },
+            strokeOpacity: symbolizer.fill.styling.fillOpacity
+          }
+        }
       };
       applyDynamicStrokeStyling(olText, textStrokeSymbolizer, feature, context);
     }
 
     // Halo fill has to be applied as olText fill.
-    if (
-      symbolizer.halo &&
-      symbolizer.halo.fill &&
-      symbolizer.halo.fill.styling &&
-      (isDynamicExpression(symbolizer.halo.fill.styling.fill) ||
-        isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))
-    ) {
+    if (symbolizer.halo && symbolizer.halo.fill && symbolizer.halo.fill.styling && (isDynamicExpression(symbolizer.halo.fill.styling.fill) || isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))) {
       applyDynamicFillStyling(olText, symbolizer.halo, feature, context);
     }
 
     // Halo radius has to be applied as olText.stroke width.
     if (symbolizer.halo && isDynamicExpression(symbolizer.halo.radius)) {
-      var haloRadius = evaluate(symbolizer.halo.radius, feature, context, 1.0);
-      var olStroke = olText.getStroke();
+      const haloRadius = evaluate(symbolizer.halo.radius, feature, context, 1.0);
+      const olStroke = olText.getStroke();
       if (olStroke) {
-        var haloStrokeWidth =
-          (haloRadius === 2 || haloRadius === 4
-            ? haloRadius - 0.00001
-            : haloRadius) * 2;
+        const haloStrokeWidth = (haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius) * 2;
         olStroke.setWidth(haloStrokeWidth);
       }
     }
-
     return false;
   }
 
-  var defaultMarkFill = getSimpleFill({ styling: { fill: '#888888' } });
-  var defaultMarkStroke = getSimpleStroke({ styling: { stroke: {} } });
+  const defaultMarkFill = getSimpleFill({
+    styling: {
+      fill: '#888888'
+    }
+  });
+  const defaultMarkStroke = getSimpleStroke({
+    styling: {
+      stroke: {}
+    }
+  });
 
   /**
    * @private
@@ -2580,31 +2293,27 @@
    * @return {object} openlayers style
    */
   function pointStyle(pointsymbolizer) {
-    var style = pointsymbolizer.graphic;
+    const {
+      graphic: style
+    } = pointsymbolizer;
 
     // If the point size is a dynamic expression, use the default point size and update in-place later.
-    var pointSizeValue = evaluate(style.size, null, null, DEFAULT_MARK_SIZE);
+    let pointSizeValue = evaluate(style.size, null, null, DEFAULT_MARK_SIZE);
 
     // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
-    var rotationDegrees = evaluate(style.rotation, null, null, 0.0);
-
+    const rotationDegrees = evaluate(style.rotation, null, null, 0.0);
     if (style.externalgraphic && style.externalgraphic.onlineresource) {
       // For external graphics: the default size is the native image size.
       // In that case, set pointSizeValue to null, so no scaling is calculated for the image.
       if (!style.size) {
         pointSizeValue = null;
       }
-
-      var imageUrl = style.externalgraphic.onlineresource;
+      const imageUrl = style.externalgraphic.onlineresource;
 
       // Use fallback point styles when image hasn't been loaded yet.
       switch (getImageLoadingState(imageUrl)) {
         case IMAGE_LOADED:
-          return createCachedImageStyle(
-            imageUrl,
-            pointSizeValue,
-            rotationDegrees
-          );
+          return createCachedImageStyle(imageUrl, pointSizeValue, rotationDegrees);
         case IMAGE_LOADING:
           return imageLoadingPointStyle;
         case IMAGE_ERROR:
@@ -2614,39 +2323,25 @@
           return imageLoadingPointStyle;
       }
     }
-
     if (style.mark) {
-      var ref = style.mark;
-      var wellknownname = ref.wellknownname;
-      var olFill = getSimpleFill(style.mark.fill);
-      var olStroke = getSimpleStroke(style.mark.stroke);
-
+      const {
+        wellknownname
+      } = style.mark;
+      const olFill = getSimpleFill(style.mark.fill);
+      const olStroke = getSimpleStroke(style.mark.stroke);
       return new Style({
         // Note: size will be set dynamically later.
-        image: getWellKnownSymbol(
-          wellknownname,
-          pointSizeValue,
-          olStroke,
-          olFill,
-          rotationDegrees
-        ),
+        image: getWellKnownSymbol(wellknownname, pointSizeValue, olStroke, olFill, rotationDegrees)
       });
     }
 
     // SLD spec: when no ExternalGraphic or Mark is specified,
     // use a square of 6 pixels with 50% gray fill and a black outline.
     return new Style({
-      image: getWellKnownSymbol(
-        'square',
-        pointSizeValue,
-        defaultMarkStroke,
-        defaultMarkFill,
-        rotationDegrees
-      ),
+      image: getWellKnownSymbol('square', pointSizeValue, defaultMarkStroke, defaultMarkFill, rotationDegrees)
     });
   }
-
-  var cachedPointStyle = memoizeStyleFunction(pointStyle);
+  const cachedPointStyle = memoizeStyleFunction(pointStyle);
 
   /**
    * @private
@@ -2661,50 +2356,40 @@
     if (!(symbolizer && symbolizer.graphic)) {
       return emptyStyle;
     }
-
-    var olStyle = cachedPointStyle(symbolizer);
+    const olStyle = cachedPointStyle(symbolizer);
 
     // Reset previous calculated point geometry left by evaluating point style for a line or polygon feature.
     olStyle.setGeometry(null);
-
-    var olImage = olStyle.getImage();
+    let olImage = olStyle.getImage();
 
     // Apply dynamic values to the cached OL style instance before returning it.
 
-    var graphic = symbolizer.graphic;
+    const {
+      graphic
+    } = symbolizer;
 
     // Calculate size and rotation values first.
-    var size = graphic.size;
-    var rotation = graphic.rotation;
-    var sizeValue =
-      Number(evaluate(size, feature, context)) || DEFAULT_MARK_SIZE;
-    var rotationDegrees = Number(evaluate(rotation, feature, context)) || 0.0;
+    const {
+      size,
+      rotation
+    } = graphic;
+    const sizeValue = Number(evaluate(size, feature, context)) || DEFAULT_MARK_SIZE;
+    const rotationDegrees = Number(evaluate(rotation, feature, context)) || 0.0;
 
     // --- Update dynamic rotation ---
     if (isDynamicExpression(rotation)) {
       // Note: OL angles are in radians.
-      var rotationRadians = (Math.PI * rotationDegrees) / 180.0;
+      const rotationRadians = Math.PI * rotationDegrees / 180.0;
       olImage.setRotation(rotationRadians);
     }
 
     // --- Update stroke and fill ---
     if (graphic.mark) {
-      var strokeChanged = applyDynamicStrokeStyling(
-        olImage,
-        graphic.mark,
-        feature,
-        context
-      );
+      const strokeChanged = applyDynamicStrokeStyling(olImage, graphic.mark, feature, context);
       if (strokeChanged) {
         olImage.setStroke(olImage.getStroke());
       }
-
-      var fillChanged = applyDynamicFillStyling(
-        olImage,
-        graphic.mark,
-        feature,
-        context
-      );
+      const fillChanged = applyDynamicFillStyling(olImage, graphic.mark, feature, context);
       if (fillChanged) {
         olImage.setFill(olImage.getFill());
       }
@@ -2713,57 +2398,51 @@
     // --- Update dynamic size ---
     if (isDynamicExpression(size)) {
       if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
-        var height = olImage.getSize()[1];
-        var scale = sizeValue / height || 1;
+        const height = olImage.getSize()[1];
+        const scale = sizeValue / height || 1;
         olImage.setScale(scale);
       } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
         // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
         olImage.setRadius(sizeValue * 0.5);
       } else {
         // For a non-Circle RegularShape, create a new olImage in order to update the size.
-        olImage = getWellKnownSymbol(
-          (graphic.mark && graphic.mark.wellknownname) || 'square',
-          sizeValue,
-          // Note: re-use stroke and fill instances for a (small?) performance gain.
-          olImage.getStroke(),
-          olImage.getFill(),
-          rotationDegrees
-        );
+        olImage = getWellKnownSymbol(graphic.mark && graphic.mark.wellknownname || 'square', sizeValue,
+        // Note: re-use stroke and fill instances for a (small?) performance gain.
+        olImage.getStroke(), olImage.getFill(), rotationDegrees);
         olStyle.setImage(olImage);
       }
     }
 
     // Update displacement
-    var displacement = graphic.displacement;
+    const {
+      displacement
+    } = graphic;
     if (displacement) {
-      var displacementx = displacement.displacementx;
-      var displacementy = displacement.displacementy;
-      if (
-        typeof displacementx !== 'undefined' ||
-        typeof displacementy !== 'undefined'
-      ) {
-        var dx = evaluate(displacementx, feature, context) || 0.0;
-        var dy = evaluate(displacementy, feature, context) || 0.0;
+      const {
+        displacementx,
+        displacementy
+      } = displacement;
+      if (typeof displacementx !== 'undefined' || typeof displacementy !== 'undefined') {
+        const dx = evaluate(displacementx, feature, context) || 0.0;
+        const dy = evaluate(displacementy, feature, context) || 0.0;
         if (dx !== 0.0 || dy !== 0.0) {
           olImage.setDisplacement([dx, dy]);
         }
       }
     }
-
     return olStyle;
   }
 
   function calculatePointsDistance(coord1, coord2) {
-    var dx = coord1[0] - coord2[0];
-    var dy = coord1[1] - coord2[1];
+    const dx = coord1[0] - coord2[0];
+    const dy = coord1[1] - coord2[1];
     return Math.sqrt(dx * dx + dy * dy);
   }
-
   function calculateSplitPointCoords(startCoord, endCoord, distanceFromStart) {
-    var distanceBetweenNodes = calculatePointsDistance(startCoord, endCoord);
-    var d = distanceFromStart / distanceBetweenNodes;
-    var x = startCoord[0] + (endCoord[0] - startCoord[0]) * d;
-    var y = startCoord[1] + (endCoord[1] - startCoord[1]) * d;
+    const distanceBetweenNodes = calculatePointsDistance(startCoord, endCoord);
+    const d = distanceFromStart / distanceBetweenNodes;
+    const x = startCoord[0] + (endCoord[0] - startCoord[0]) * d;
+    const y = startCoord[1] + (endCoord[1] - startCoord[1]) * d;
     return [x, y];
   }
 
@@ -2777,23 +2456,18 @@
    * @returns {number} Angle in radians, clockwise from the positive x-axis.
    */
   function calculateAngle(p1, p2, invertY) {
-    var dX = p2[0] - p1[0];
-    var dY = p2[1] - p1[1];
-    var angle = -Math.atan2(invertY ? -dY : dY, dX);
+    const dX = p2[0] - p1[0];
+    const dY = p2[1] - p1[1];
+    const angle = -Math.atan2(invertY ? -dY : dY, dX);
     return angle;
   }
-
-  // eslint-disable-next-line import/prefer-default-export
-  function splitLineString(geometry, graphicSpacing, _options) {
-    if ( _options === void 0 ) _options = {};
-
-    var defaultOptions = {
-      minimumGraphicSpacing: 0,
+  function splitLineString(geometry, graphicSpacing) {
+    let _options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    const defaultOptions = {
+      minimumGraphicSpacing: 0
     };
-
-    var splitOptions = Object.assign(defaultOptions, _options);
-
-    var coords = geometry.getCoordinates();
+    const splitOptions = Object.assign(defaultOptions, _options);
+    const coords = geometry.getCoordinates();
 
     // Handle degenerate cases.
     // LineString without points
@@ -2803,44 +2477,39 @@
 
     // LineString containing only one point.
     if (coords.length === 1) {
-      return [( coords[0] ).concat( [0])];
+      return [[...coords[0], 0]];
     }
 
     // Handle first point placement case.
     if (splitOptions.placement === PLACEMENT_FIRSTPOINT) {
-      var p1 = coords[0];
-      var p2 = coords[1];
+      const p1 = coords[0];
+      const p2 = coords[1];
       return [[p1[0], p1[1], calculateAngle(p1, p2, splitOptions.invertY)]];
     }
 
     // Handle last point placement case.
     if (splitOptions.placement === PLACEMENT_LASTPOINT) {
-      var p1$1 = coords[coords.length - 2];
-      var p2$1 = coords[coords.length - 1];
-      return [[p2$1[0], p2$1[1], calculateAngle(p1$1, p2$1, splitOptions.invertY)]];
+      const p1 = coords[coords.length - 2];
+      const p2 = coords[coords.length - 1];
+      return [[p2[0], p2[1], calculateAngle(p1, p2, splitOptions.invertY)]];
     }
-
-    var totalLength = geometry.getLength();
-    var gapSize = Math.max(graphicSpacing, splitOptions.minimumGraphicSpacing);
+    const totalLength = geometry.getLength();
+    const gapSize = Math.max(graphicSpacing, splitOptions.minimumGraphicSpacing);
 
     // Measure along line to place the next point.
     // Can start at a nonzero value if initialGap is used.
-    var nextPointMeasure = splitOptions.initialGap || 0.0;
-    var pointIndex = 0;
-    var currentSegmentStart = [].concat( coords[0] );
-    var currentSegmentEnd = [].concat( coords[1] );
+    let nextPointMeasure = splitOptions.initialGap || 0.0;
+    let pointIndex = 0;
+    const currentSegmentStart = [...coords[0]];
+    const currentSegmentEnd = [...coords[1]];
 
     // Cumulative measure of the line where each segment's length is added in succession.
-    var cumulativeMeasure = 0;
-
-    var splitPoints = [];
+    let cumulativeMeasure = 0;
+    const splitPoints = [];
 
     // Keep adding points until the next point measure lies beyond the line length.
     while (nextPointMeasure <= totalLength) {
-      var currentSegmentLength = calculatePointsDistance(
-        currentSegmentStart,
-        currentSegmentEnd
-      );
+      const currentSegmentLength = calculatePointsDistance(currentSegmentStart, currentSegmentEnd);
       if (cumulativeMeasure + currentSegmentLength < nextPointMeasure) {
         // If the current segment is too short to reach the next point, go to the next segment.
         if (pointIndex === coords.length - 2) {
@@ -2856,28 +2525,16 @@
       } else {
         // Next point lies on the current segment.
         // Calculate its position and increase next point measure by gap size.
-        var distanceFromSegmentStart = nextPointMeasure - cumulativeMeasure;
-        var splitPointCoords = calculateSplitPointCoords(
-          currentSegmentStart,
-          currentSegmentEnd,
-          distanceFromSegmentStart
-        );
-        var angle = calculateAngle(
-          currentSegmentStart,
-          currentSegmentEnd,
-          splitOptions.invertY
-        );
-        if (
-          !splitOptions.extent ||
-          extent.containsCoordinate(splitOptions.extent, splitPointCoords)
-        ) {
+        const distanceFromSegmentStart = nextPointMeasure - cumulativeMeasure;
+        const splitPointCoords = calculateSplitPointCoords(currentSegmentStart, currentSegmentEnd, distanceFromSegmentStart);
+        const angle = calculateAngle(currentSegmentStart, currentSegmentEnd, splitOptions.invertY);
+        if (!splitOptions.extent || extent.containsCoordinate(splitOptions.extent, splitPointCoords)) {
           splitPointCoords.push(angle);
           splitPoints.push(splitPointCoords);
         }
         nextPointMeasure += gapSize;
       }
     }
-
     return splitPoints;
   }
 
@@ -2891,15 +2548,13 @@
     // Use the splitpoints routine to distribute points over the line with
     // a point-to-point distance along the line equal to half line length.
     // This results in three points. Take the middle point.
-    var splitPoints = splitLineString(geometry, geometry.getLength() / 2);
-    var ref = splitPoints[1];
-    var x = ref[0];
-    var y = ref[1];
+    const splitPoints = splitLineString(geometry, geometry.getLength() / 2);
+    const [x, y] = splitPoints[1];
     return [x, y];
   }
 
   // A flag to prevent multiple renderer patches.
-  var rendererPatched = false;
+  let rendererPatched = false;
   function patchRenderer(renderer) {
     if (rendererPatched) {
       return;
@@ -2909,8 +2564,7 @@
     // to a given value instead of taking it from imageStyle.getRotation().
     // This fixes a problem with re-use of the (cached) image style instance when drawing
     // many points inside a single line feature that are aligned according to line segment direction.
-    var rendererProto = Object.getPrototypeOf(renderer);
-    // eslint-disable-next-line
+    const rendererProto = Object.getPrototypeOf(renderer);
     rendererProto.setImageStyle2 = function (imageStyle, rotation) {
       // First call the original setImageStyle method.
       rendererProto.setImageStyle.call(this, imageStyle);
@@ -2922,7 +2576,6 @@
         this.imageRotation_ = rotation;
       }
     };
-
     rendererPatched = true;
   }
 
@@ -2936,14 +2589,7 @@
    * @param {number} pixelRatio Ratio of device pixels to css pixels.
    * @returns {void}
    */
-  function renderStrokeMarks(
-    render,
-    pixelCoords,
-    graphicSpacing,
-    pointStyle,
-    pixelRatio,
-    options
-  ) {
+  function renderStrokeMarks(render, pixelCoords, graphicSpacing, pointStyle, pixelRatio, options) {
     if (!pixelCoords) {
       return;
     }
@@ -2952,15 +2598,8 @@
     // If it's an array instead, then we're dealing with a multiline or (multi)polygon.
     // In that case, recursively call renderStrokeMarks for each child coordinate array.
     if (Array.isArray(pixelCoords[0][0])) {
-      pixelCoords.forEach(function (pixelCoordsChildArray) {
-        renderStrokeMarks(
-          render,
-          pixelCoordsChildArray,
-          graphicSpacing,
-          pointStyle,
-          pixelRatio,
-          options
-        );
+      pixelCoords.forEach(pixelCoordsChildArray => {
+        renderStrokeMarks(render, pixelCoordsChildArray, graphicSpacing, pointStyle, pixelRatio, options);
       });
       return;
     }
@@ -2971,26 +2610,21 @@
     }
 
     // Don't render anything when the pointStyle has no image.
-    var image = pointStyle.getImage();
+    const image = pointStyle.getImage();
     if (!image) {
       return;
     }
-
-    var splitPoints = splitLineString(
-      new LineString(pixelCoords),
-      graphicSpacing * pixelRatio,
-      {
-        invertY: true, // Pixel y-coordinates increase downwards in screen space.
-        extent: render.extent_,
-        placement: options.placement,
-        initialGap: options.initialGap,
-        // Use graphic spacing of at least 0.1 px to prevent an infinite number of split points happening by accident.
-        minimumGraphicSpacing: 0.1,
-      }
-    );
-
-    splitPoints.forEach(function (point) {
-      var splitPointAngle = image.getRotation() + point[2];
+    const splitPoints = splitLineString(new LineString(pixelCoords), graphicSpacing * pixelRatio, {
+      invertY: true,
+      // Pixel y-coordinates increase downwards in screen space.
+      extent: render.extent_,
+      placement: options.placement,
+      initialGap: options.initialGap,
+      // Use graphic spacing of at least 0.1 px to prevent an infinite number of split points happening by accident.
+      minimumGraphicSpacing: 0.1
+    });
+    splitPoints.forEach(point => {
+      const splitPointAngle = image.getRotation() + point[2];
       render.setImageStyle2(image, splitPointAngle);
       render.drawPoint(new Point([point[0] / pixelRatio, point[1] / pixelRatio]));
     });
@@ -3005,16 +2639,13 @@
    */
   function getGraphicStrokeRenderer(linesymbolizer) {
     if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
-      throw new Error(
-        'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
-      );
+      throw new Error('getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.');
     }
-
-    var ref = linesymbolizer.stroke;
-    var graphicstroke = ref.graphicstroke;
-
-    var options = {
-      placement: PLACEMENT_DEFAULT,
+    const {
+      graphicstroke
+    } = linesymbolizer.stroke;
+    const options = {
+      placement: PLACEMENT_DEFAULT
     };
 
     // QGIS vendor options to override graphicstroke symbol placement.
@@ -3025,57 +2656,31 @@
         options.placement = PLACEMENT_LASTPOINT;
       }
     }
-
-    return function (pixelCoords, renderState) {
+    return (pixelCoords, renderState) => {
       // Abort when feature geometry is (Multi)Point.
-      var geometryType = renderState.feature.getGeometry().getType();
+      const geometryType = renderState.feature.getGeometry().getType();
       if (geometryType === 'Point' || geometryType === 'MultiPoint') {
         return;
       }
-
-      var pixelRatio = renderState.pixelRatio || 1.0;
+      const pixelRatio = renderState.pixelRatio || 1.0;
 
       // TODO: Error handling, alternatives, etc.
-      var render$1 = render.toContext(renderState.context);
+      const render$1 = render.toContext(renderState.context);
       patchRenderer(render$1);
-
-      var defaultGraphicSize = DEFAULT_MARK_SIZE;
+      let defaultGraphicSize = DEFAULT_MARK_SIZE;
       if (graphicstroke.graphic && graphicstroke.graphic.externalgraphic) {
         defaultGraphicSize = DEFAULT_EXTERNALGRAPHIC_SIZE;
       }
-
-      var pointStyle = getPointStyle(
-        graphicstroke,
-        renderState.feature,
-        null
-      );
+      const pointStyle = getPointStyle(graphicstroke, renderState.feature, null);
 
       // Calculate graphic spacing.
       // Graphic spacing equals the center-to-center distance of graphics along the line.
       // If there's no gap, segment length will be equal to graphic size.
-      var graphicSizeExpression =
-        (graphicstroke.graphic && graphicstroke.graphic.size) ||
-        defaultGraphicSize;
-      var graphicSize = Number(
-        evaluate(
-          graphicSizeExpression,
-          renderState.feature,
-          null,
-          defaultGraphicSize
-        )
-      );
-
-      var graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
+      const graphicSizeExpression = graphicstroke.graphic && graphicstroke.graphic.size || defaultGraphicSize;
+      const graphicSize = Number(evaluate(graphicSizeExpression, renderState.feature, null, defaultGraphicSize));
+      const graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
       options.initialGap = getInitialGapSize(linesymbolizer);
-
-      renderStrokeMarks(
-        render$1,
-        pixelCoords,
-        graphicSpacing,
-        pointStyle,
-        pixelRatio,
-        options
-      );
+      renderStrokeMarks(render$1, pixelCoords, graphicSpacing, pointStyle, pixelRatio, options);
     };
   }
 
@@ -3087,13 +2692,10 @@
    */
   function getGraphicStrokeStyle(linesymbolizer) {
     if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
-      throw new Error(
-        'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
-      );
+      throw new Error('getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.');
     }
-
     return new Style({
-      renderer: getGraphicStrokeRenderer(linesymbolizer),
+      renderer: getGraphicStrokeRenderer(linesymbolizer)
     });
   }
 
@@ -3106,13 +2708,11 @@
     if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
       return getGraphicStrokeStyle(symbolizer);
     }
-
     return new Style({
-      stroke: getSimpleStroke(symbolizer.stroke),
+      stroke: getSimpleStroke(symbolizer.stroke)
     });
   }
-
-  var cachedLineStyle = memoizeStyleFunction(lineStyle);
+  const cachedLineStyle = memoizeStyleFunction(lineStyle);
 
   /**
    * @private
@@ -3123,168 +2723,121 @@
    * @returns {ol/Style} OpenLayers style instance.
    */
   function getLineStyle(symbolizer, feature, context) {
-    var olStyle = cachedLineStyle(symbolizer);
+    const olStyle = cachedLineStyle(symbolizer);
 
     // Apply dynamic properties.
     applyDynamicStrokeStyling(olStyle, symbolizer, feature, context);
-
     return olStyle;
   }
 
-  var dense1Pixels = [[1, 1]];
-  var dense2Pixels = [
-    [0, 0],
-    [2, 2] ];
-  var dense3Pixels = [
-    [0, 0],
-    [1, 1],
-    [2, 2],
-    [3, 3],
-    [2, 0],
-    [0, 2] ];
-  var dense4Pixels = [
-    [0, 0],
-    [1, 1] ];
-
+  const dense1Pixels = [[1, 1]];
+  const dense2Pixels = [[0, 0], [2, 2]];
+  const dense3Pixels = [[0, 0], [1, 1], [2, 2], [3, 3], [2, 0], [0, 2]];
+  const dense4Pixels = [[0, 0], [1, 1]];
   function fillPixels(context, xyCoords) {
-    xyCoords.forEach(function (ref) {
-      var x = ref[0];
-      var y = ref[1];
-
+    xyCoords.forEach(_ref => {
+      let [x, y] = _ref;
       context.fillRect(x, y, 1, 1);
     });
   }
-
   function clearPixels(context, xyCoords) {
-    xyCoords.forEach(function (ref) {
-      var x = ref[0];
-      var y = ref[1];
-
+    xyCoords.forEach(_ref2 => {
+      let [x, y] = _ref2;
       context.clearRect(x, y, 1, 1);
     });
   }
-
   function createCanvasPattern(canvas) {
-    var context = canvas.getContext('2d');
+    const context = canvas.getContext('2d');
 
     // Scale pixel pattern according to device pixel ratio if necessary.
     if (has.DEVICE_PIXEL_RATIO === 1) {
       return context.createPattern(canvas, 'repeat');
     }
-
-    var scaledCanvas = document.createElement('canvas');
+    const scaledCanvas = document.createElement('canvas');
     scaledCanvas.width = canvas.width * has.DEVICE_PIXEL_RATIO;
     scaledCanvas.height = canvas.height * has.DEVICE_PIXEL_RATIO;
-
-    var scaledContext = scaledCanvas.getContext('2d');
+    const scaledContext = scaledCanvas.getContext('2d');
     scaledContext.imageSmoothingEnabled = false;
-    scaledContext.drawImage(
-      canvas,
-      0,
-      0,
-      canvas.width,
-      canvas.height,
-      0,
-      0,
-      scaledCanvas.width,
-      scaledCanvas.height
-    );
-
+    scaledContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, scaledCanvas.width, scaledCanvas.height);
     return scaledContext.createPattern(scaledCanvas, 'repeat');
   }
-
   function createPixelPattern(size, color, pixels) {
-    var canvas = document.createElement('canvas');
+    const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
-    var context = canvas.getContext('2d');
-
+    const context = canvas.getContext('2d');
     context.fillStyle = color;
     fillPixels(context, pixels);
-
     return createCanvasPattern(canvas);
   }
-
   function createInversePixelPattern(size, color, pixels) {
-    var canvas = document.createElement('canvas');
+    const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
-    var context = canvas.getContext('2d');
-
+    const context = canvas.getContext('2d');
     context.fillStyle = color;
     context.fillRect(0, 0, size, size);
     clearPixels(context, pixels);
-
     return createCanvasPattern(canvas);
   }
-
   function getQGISBrushFill(brushName, fillColor) {
-    var fill = null;
+    let fill = null;
     switch (brushName) {
       case 'brush://dense1':
         fill = new Fill({
-          color: createInversePixelPattern(4, fillColor, dense1Pixels),
+          color: createInversePixelPattern(4, fillColor, dense1Pixels)
         });
         break;
-
       case 'brush://dense2':
         fill = new Fill({
-          color: createInversePixelPattern(4, fillColor, dense2Pixels),
+          color: createInversePixelPattern(4, fillColor, dense2Pixels)
         });
         break;
-
       case 'brush://dense3':
         fill = new Fill({
-          color: createInversePixelPattern(4, fillColor, dense3Pixels),
+          color: createInversePixelPattern(4, fillColor, dense3Pixels)
         });
         break;
-
       case 'brush://dense4':
         fill = new Fill({
-          color: createPixelPattern(2, fillColor, dense4Pixels),
+          color: createPixelPattern(2, fillColor, dense4Pixels)
         });
         break;
-
       case 'brush://dense5':
         fill = new Fill({
-          color: createPixelPattern(4, fillColor, dense3Pixels),
+          color: createPixelPattern(4, fillColor, dense3Pixels)
         });
         break;
-
       case 'brush://dense6':
         fill = new Fill({
-          color: createPixelPattern(4, fillColor, dense2Pixels),
+          color: createPixelPattern(4, fillColor, dense2Pixels)
         });
         break;
-
       case 'brush://dense7':
         fill = new Fill({
-          color: createPixelPattern(4, fillColor, dense1Pixels),
+          color: createPixelPattern(4, fillColor, dense1Pixels)
         });
         break;
-
       default:
-        fill = new Fill({ color: fillColor });
+        fill = new Fill({
+          color: fillColor
+        });
         break;
     }
-
     return fill;
   }
 
-  /* eslint-disable function-call-argument-newline */
-
   function createPattern(graphic) {
-    var ref = getCachedImage(
-      graphic.externalgraphic.onlineresource
-    );
-    var image = ref.image;
-    var width = ref.width;
-    var height = ref.height;
-    var cnv = document.createElement('canvas');
-    var ctx = cnv.getContext('2d');
+    const {
+      image,
+      width,
+      height
+    } = getCachedImage(graphic.externalgraphic.onlineresource);
+    const cnv = document.createElement('canvas');
+    const ctx = cnv.getContext('2d');
 
     // Calculate image scale factor.
-    var imageRatio = has.DEVICE_PIXEL_RATIO;
+    let imageRatio = has.DEVICE_PIXEL_RATIO;
     if (graphic.size && height !== graphic.size) {
       imageRatio *= graphic.size / height;
     }
@@ -3295,30 +2848,25 @@
     }
 
     // Scale the image by drawing onto a temp canvas.
-    var tempCanvas = document.createElement('canvas');
-    var tCtx = tempCanvas.getContext('2d');
+    const tempCanvas = document.createElement('canvas');
+    const tCtx = tempCanvas.getContext('2d');
     tempCanvas.width = width * imageRatio;
     tempCanvas.height = height * imageRatio;
     // prettier-ignore
-    tCtx.drawImage(
-      image,
-      0, 0, width, height,
-      0, 0, width * imageRatio, height * imageRatio
-    );
-
+    tCtx.drawImage(image, 0, 0, width, height, 0, 0, width * imageRatio, height * imageRatio);
     return ctx.createPattern(tempCanvas, 'repeat');
   }
-
   function getExternalGraphicFill(symbolizer) {
-    var ref = symbolizer.fill.graphicfill;
-    var graphic = ref.graphic;
-    var fillImageUrl = graphic.externalgraphic.onlineresource;
+    const {
+      graphic
+    } = symbolizer.fill.graphicfill;
+    const fillImageUrl = graphic.externalgraphic.onlineresource;
 
     // Use fallback style when graphicfill image hasn't been loaded yet.
     switch (getImageLoadingState(fillImageUrl)) {
       case IMAGE_LOADED:
         return new Fill({
-          color: createPattern(symbolizer.fill.graphicfill.graphic),
+          color: createPattern(symbolizer.fill.graphicfill.graphic)
         });
       case IMAGE_LOADING:
         return imageLoadingPolygonStyle.getFill();
@@ -3344,48 +2892,54 @@
     }
 
     // Create a deep clone of the original symbolizer.
-    var newFill = JSON.parse(JSON.stringify(graphicfill));
-    var graphic = newFill.graphic;
-    var oriSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
+    const newFill = JSON.parse(JSON.stringify(graphicfill));
+    const {
+      graphic
+    } = newFill;
+    const oriSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
     graphic.size = scaleFactor * oriSize;
-    var mark = graphic.mark;
+    const {
+      mark
+    } = graphic;
     if (mark && mark.stroke) {
       // Apply SLD defaults to stroke parameters.
       // Todo: do this at the SLDReader parsing stage already.
       if (!mark.stroke.styling) {
         mark.stroke.styling = {
           stroke: '#000000',
-          strokeWidth: 1.0,
+          strokeWidth: 1.0
         };
       }
-
       if (!mark.stroke.styling.strokeWidth) {
-        mark.stroke.styling.strokeWidth =
-          Number(mark.stroke.styling.strokeWidth) || 1;
+        mark.stroke.styling.strokeWidth = Number(mark.stroke.styling.strokeWidth) || 1;
       }
 
       // If original stroke width is 1 or less, do not scale it.
       // This gives better visual results than using a stroke width of 2 and downsizing.
-      var oriStrokeWidth = mark.stroke.styling.strokeWidth;
+      const oriStrokeWidth = mark.stroke.styling.strokeWidth;
       if (oriStrokeWidth > 1) {
         mark.stroke.styling.strokeWidth = scaleFactor * oriStrokeWidth;
       }
     }
-
     return newFill;
   }
-
   function getMarkGraphicFill(symbolizer) {
-    var ref = symbolizer.fill;
-    var graphicfill = ref.graphicfill;
-    var graphic = graphicfill.graphic;
-    var mark = graphic.mark;
-    var ref$1 = mark || {};
-    var wellknownname = ref$1.wellknownname;
+    const {
+      graphicfill
+    } = symbolizer.fill;
+    const {
+      graphic
+    } = graphicfill;
+    const {
+      mark
+    } = graphic;
+    const {
+      wellknownname
+    } = mark || {};
 
     // If it's a QGIS brush fill, use direct pixel manipulation to create the fill.
     if (wellknownname && wellknownname.indexOf('brush://') === 0) {
-      var brushFillColor = '#000000';
+      let brushFillColor = '#000000';
       if (mark.fill && mark.fill.styling && mark.fill.styling.fill) {
         brushFillColor = mark.fill.styling.fill;
       }
@@ -3393,30 +2947,29 @@
     }
 
     // Create mark graphic fill by drawing a single mark on a square canvas.
-    var graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
-    var canvasSize = graphicSize * has.DEVICE_PIXEL_RATIO;
-    var fill = null;
+    const graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
+    const canvasSize = graphicSize * has.DEVICE_PIXEL_RATIO;
+    let fill = null;
 
     // The graphic symbol will be rendered at a larger size and then scaled back to the graphic size.
     // This is done to mitigate visual artifacts that occur when drawing between pixels.
-    var scaleFactor = 2.0;
-
+    const scaleFactor = 2.0;
     try {
-      var scaledCanvas = document.createElement('canvas');
+      const scaledCanvas = document.createElement('canvas');
       scaledCanvas.width = canvasSize * scaleFactor;
       scaledCanvas.height = canvasSize * scaleFactor;
-      var context = scaledCanvas.getContext('2d');
+      const context = scaledCanvas.getContext('2d');
 
       // Point symbolizer function expects an object with a .graphic property.
       // The point symbolizer is stored as graphicfill in the polygon symbolizer.
-      var scaledGraphicFill = scaleMarkGraphicFill(graphicfill, scaleFactor);
-      var pointStyle = getPointStyle(scaledGraphicFill);
+      const scaledGraphicFill = scaleMarkGraphicFill(graphicfill, scaleFactor);
+      const pointStyle = getPointStyle(scaledGraphicFill);
 
       // Let OpenLayers draw a point with the given point style on the temp canvas.
       // Note: OL rendering context size params are always in css pixels, while the temp canvas may
       // be larger depending on the device pixel ratio.
-      var olContext = render.toContext(context, {
-        size: [graphicSize * scaleFactor, graphicSize * scaleFactor],
+      const olContext = render.toContext(context, {
+        size: [graphicSize * scaleFactor, graphicSize * scaleFactor]
       });
 
       // Disable image smoothing to ensure crisp graphic fill pattern.
@@ -3424,9 +2977,8 @@
 
       // Let OpenLayers draw the symbol to the canvas directly.
       olContext.setStyle(pointStyle);
-
-      var centerX = scaleFactor * (graphicSize / 2);
-      var centerY = scaleFactor * (graphicSize / 2);
+      const centerX = scaleFactor * (graphicSize / 2);
+      const centerY = scaleFactor * (graphicSize / 2);
       olContext.drawGeometry(new Point([centerX, centerY]));
 
       // For (back)slash marks, draw extra copies to the sides to ensure complete tiling coverage when used as a pattern.
@@ -3439,67 +2991,36 @@
       //     | C |
       //     +---+
       if (wellknownname && wellknownname.indexOf('slash') > -1) {
-        olContext.drawGeometry(
-          new Point([centerX - scaleFactor * graphicSize, centerY])
-        );
-        olContext.drawGeometry(
-          new Point([centerX + scaleFactor * graphicSize, centerY])
-        );
-        olContext.drawGeometry(
-          new Point([centerX, centerY - scaleFactor * graphicSize])
-        );
-        olContext.drawGeometry(
-          new Point([centerX, centerY + scaleFactor * graphicSize])
-        );
+        olContext.drawGeometry(new Point([centerX - scaleFactor * graphicSize, centerY]));
+        olContext.drawGeometry(new Point([centerX + scaleFactor * graphicSize, centerY]));
+        olContext.drawGeometry(new Point([centerX, centerY - scaleFactor * graphicSize]));
+        olContext.drawGeometry(new Point([centerX, centerY + scaleFactor * graphicSize]));
       }
 
       // Downscale the drawn mark back to original graphic size.
-      var patternCanvas = document.createElement('canvas');
+      const patternCanvas = document.createElement('canvas');
       patternCanvas.width = canvasSize;
       patternCanvas.height = canvasSize;
-      var patternContext = patternCanvas.getContext('2d');
-      patternContext.drawImage(
-        scaledCanvas,
-        0,
-        0,
-        canvasSize * scaleFactor,
-        canvasSize * scaleFactor,
-        0,
-        0,
-        canvasSize,
-        canvasSize
-      );
+      const patternContext = patternCanvas.getContext('2d');
+      patternContext.drawImage(scaledCanvas, 0, 0, canvasSize * scaleFactor, canvasSize * scaleFactor, 0, 0, canvasSize, canvasSize);
 
       // Turn the generated image into a repeating pattern, just like a regular image fill.
-      var pattern = patternContext.createPattern(patternCanvas, 'repeat');
+      const pattern = patternContext.createPattern(patternCanvas, 'repeat');
       fill = new Fill({
-        color: pattern,
+        color: pattern
       });
-    } catch (e) {
+    } catch {
       // Default black fill as backup plan.
       fill = new Fill({
-        color: '#000000',
+        color: '#000000'
       });
     }
-
     return fill;
   }
-
   function polygonStyle(symbolizer) {
-    var fillImageUrl =
-      symbolizer.fill &&
-      symbolizer.fill.graphicfill &&
-      symbolizer.fill.graphicfill.graphic &&
-      symbolizer.fill.graphicfill.graphic.externalgraphic &&
-      symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
-
-    var fillMark =
-      symbolizer.fill &&
-      symbolizer.fill.graphicfill &&
-      symbolizer.fill.graphicfill.graphic &&
-      symbolizer.fill.graphicfill.graphic.mark;
-
-    var polygonFill = null;
+    const fillImageUrl = symbolizer.fill && symbolizer.fill.graphicfill && symbolizer.fill.graphicfill.graphic && symbolizer.fill.graphicfill.graphic.externalgraphic && symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
+    const fillMark = symbolizer.fill && symbolizer.fill.graphicfill && symbolizer.fill.graphicfill.graphic && symbolizer.fill.graphicfill.graphic.mark;
+    let polygonFill = null;
     if (fillImageUrl) {
       polygonFill = getExternalGraphicFill(symbolizer);
     } else if (fillMark) {
@@ -3512,16 +3033,18 @@
     // GraphicStroke with fill. This is needed because a custom renderer
     // ignores any stroke, fill and image present in the style.
     if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
-      var renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
+      const renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
       return new Style({
-        renderer: function (pixelCoords, renderState) {
+        renderer: (pixelCoords, renderState) => {
           // First render the fill (if any).
           if (polygonFill) {
-            var feature = renderState.feature;
-            var context = renderState.context;
-            var render$1 = render.toContext(context);
+            const {
+              feature,
+              context
+            } = renderState;
+            const render$1 = render.toContext(context);
             render$1.setFillStrokeStyle(polygonFill, undefined);
-            var geometryType = feature.getGeometry().getType();
+            const geometryType = feature.getGeometry().getType();
             if (geometryType === 'Polygon') {
               render$1.drawPolygon(new Polygon(pixelCoords));
             } else if (geometryType === 'MultiPolygon') {
@@ -3531,19 +3054,16 @@
 
           // Then, render the graphic stroke.
           renderGraphicStroke(pixelCoords, renderState);
-        },
+        }
       });
     }
-
-    var polygonStroke = getSimpleStroke(symbolizer.stroke);
-
+    const polygonStroke = getSimpleStroke(symbolizer.stroke);
     return new Style({
       fill: polygonFill,
-      stroke: polygonStroke,
+      stroke: polygonStroke
     });
   }
-
-  var cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
+  const cachedPolygonStyle = memoizeStyleFunction(polygonStyle);
 
   /**
    * @private
@@ -3554,12 +3074,11 @@
    * @returns {ol/Style} OpenLayers style instance.
    */
   function getPolygonStyle(symbolizer, feature, context) {
-    var olStyle = cachedPolygonStyle(symbolizer);
+    const olStyle = cachedPolygonStyle(symbolizer);
 
     // Apply dynamic properties.
     applyDynamicFillStyling(olStyle, symbolizer, feature, context);
     applyDynamicStrokeStyling(olStyle, symbolizer, feature, context);
-
     return olStyle;
   }
 
@@ -3577,102 +3096,73 @@
 
     // If the label is dynamic, set text to empty string.
     // In that case, text will be set at runtime.
-    var labelText = evaluate(textsymbolizer.label, null, null, '');
-
-    var fontStyling = textsymbolizer.font
-      ? textsymbolizer.font.styling || {}
-      : {};
-    var fontFamily = evaluate(fontStyling.fontFamily, null, null, 'sans-serif');
-    var fontSize = evaluate(fontStyling.fontSize, null, null, 10);
-    var fontStyle = evaluate(fontStyling.fontStyle, null, null, '');
-    var fontWeight = evaluate(fontStyling.fontWeight, null, null, '');
-    var olFontString = fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily;
-
-    var pointplacement =
-      textsymbolizer &&
-      textsymbolizer.labelplacement &&
-      textsymbolizer.labelplacement.pointplacement
-        ? textsymbolizer.labelplacement.pointplacement
-        : {};
+    const labelText = evaluate(textsymbolizer.label, null, null, '');
+    const fontStyling = textsymbolizer.font ? textsymbolizer.font.styling || {} : {};
+    const fontFamily = evaluate(fontStyling.fontFamily, null, null, 'sans-serif');
+    const fontSize = evaluate(fontStyling.fontSize, null, null, 10);
+    const fontStyle = evaluate(fontStyling.fontStyle, null, null, '');
+    const fontWeight = evaluate(fontStyling.fontWeight, null, null, '');
+    const olFontString = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+    const pointplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.pointplacement ? textsymbolizer.labelplacement.pointplacement : {};
 
     // If rotation is dynamic, default to 0. Rotation will be set at runtime.
-    var labelRotationDegrees = evaluate(
-      pointplacement.rotation,
-      null,
-      null,
-      0.0
-    );
-
-    var displacement =
-      pointplacement && pointplacement.displacement
-        ? pointplacement.displacement
-        : {};
-    var offsetX = evaluate(displacement.displacementx, null, null, 0.0);
+    const labelRotationDegrees = evaluate(pointplacement.rotation, null, null, 0.0);
+    const displacement = pointplacement && pointplacement.displacement ? pointplacement.displacement : {};
+    const offsetX = evaluate(displacement.displacementx, null, null, 0.0);
     // Positive offsetY shifts the label downwards. Positive displacementY in SLD means shift upwards.
-    var offsetY = -evaluate(displacement.displacementy, null, null, 0.0);
+    const offsetY = -evaluate(displacement.displacementy, null, null, 0.0);
 
     // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
-    var anchorpoint = (pointplacement && pointplacement.anchorpoint) || {};
-
-    var textAlign = 'center';
-    var anchorPointX = evaluate(anchorpoint.anchorpointx, null, null, NaN);
+    const anchorpoint = pointplacement && pointplacement.anchorpoint || {};
+    let textAlign = 'center';
+    const anchorPointX = evaluate(anchorpoint.anchorpointx, null, null, NaN);
     if (anchorPointX < 0.25) {
       textAlign = 'left';
     } else if (anchorPointX > 0.75) {
       textAlign = 'right';
     }
-
-    var textBaseline = 'middle';
-    var anchorPointY = evaluate(anchorpoint.anchorpointy, null, null, NaN);
+    let textBaseline = 'middle';
+    const anchorPointY = evaluate(anchorpoint.anchorpointy, null, null, NaN);
     if (anchorPointY < 0.25) {
       textBaseline = 'bottom';
     } else if (anchorPointY > 0.75) {
       textBaseline = 'top';
     }
-
-    var fillStyling = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
-    var textFillColor = evaluate(fillStyling.fill, null, null, '#000000');
-    var textFillOpacity = evaluate(fillStyling.fillOpacity, null, null, 1.0);
+    const fillStyling = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
+    const textFillColor = evaluate(fillStyling.fill, null, null, '#000000');
+    const textFillOpacity = evaluate(fillStyling.fillOpacity, null, null, 1.0);
 
     // Assemble text style options.
-    var textStyleOptions = {
+    const textStyleOptions = {
       text: labelText,
       font: olFontString,
-      offsetX: offsetX,
-      offsetY: offsetY,
-      rotation: (Math.PI * labelRotationDegrees) / 180.0,
-      textAlign: textAlign,
-      textBaseline: textBaseline,
+      offsetX,
+      offsetY,
+      rotation: Math.PI * labelRotationDegrees / 180.0,
+      textAlign,
+      textBaseline,
       fill: new Fill({
-        color: getOLColorString(textFillColor, textFillOpacity),
-      }),
+        color: getOLColorString(textFillColor, textFillOpacity)
+      })
     };
 
     // Convert SLD halo to text symbol stroke.
     if (textsymbolizer.halo) {
-      var haloStyling =
-        textsymbolizer.halo && textsymbolizer.halo.fill
-          ? textsymbolizer.halo.fill.styling
-          : {};
-      var haloFillColor = evaluate(haloStyling.fill, null, null, '#FFFFFF');
-      var haloFillOpacity = evaluate(haloStyling.fillOpacity, null, null, 1.0);
-      var haloRadius = evaluate(textsymbolizer.halo.radius, null, null, 1.0);
+      const haloStyling = textsymbolizer.halo && textsymbolizer.halo.fill ? textsymbolizer.halo.fill.styling : {};
+      const haloFillColor = evaluate(haloStyling.fill, null, null, '#FFFFFF');
+      const haloFillOpacity = evaluate(haloStyling.fillOpacity, null, null, 1.0);
+      const haloRadius = evaluate(textsymbolizer.halo.radius, null, null, 1.0);
       textStyleOptions.stroke = new Stroke({
         color: getOLColorString(haloFillColor, haloFillOpacity),
         // wrong position width radius equal to 2 or 4
-        width:
-          (haloRadius === 2 || haloRadius === 4
-            ? haloRadius - 0.00001
-            : haloRadius) * 2,
+        width: (haloRadius === 2 || haloRadius === 4 ? haloRadius - 0.00001 : haloRadius) * 2
       });
     }
-
     return new Style({
-      text: new Text(textStyleOptions),
+      text: new Text(textStyleOptions)
     });
   }
-
-  var cachedTextStyle = memoizeStyleFunction(textStyle);
+  const cachedTextStyle = memoizeStyleFunction(textStyle);
 
   /**
    * @private
@@ -3683,53 +3173,39 @@
    * @returns {ol/Style} OpenLayers style instance.
    */
   function getTextStyle(symbolizer, feature, context) {
-    var olStyle = cachedTextStyle(symbolizer);
-    var olText = olStyle.getText();
+    const olStyle = cachedTextStyle(symbolizer);
+    const olText = olStyle.getText();
     if (!olText) {
       return olStyle;
     }
 
     // Read text from feature and set it on the text style instance.
-    var label = symbolizer.label;
-    var labelplacement = symbolizer.labelplacement;
+    const {
+      label,
+      labelplacement
+    } = symbolizer;
 
     // Set text only if the label expression is dynamic.
     if (isDynamicExpression(label)) {
-      var labelText = evaluate(label, feature, context, '');
+      const labelText = evaluate(label, feature, context, '');
       // Important! OpenLayers expects the text property to always be a string.
       olText.setText(labelText.toString());
     }
 
     // Set rotation if expression is dynamic.
     if (labelplacement) {
-      var pointPlacementRotation =
-        (labelplacement.pointplacement &&
-          labelplacement.pointplacement.rotation) ||
-        0.0;
+      const pointPlacementRotation = labelplacement.pointplacement && labelplacement.pointplacement.rotation || 0.0;
       if (isDynamicExpression(pointPlacementRotation)) {
-        var labelRotationDegrees = evaluate(
-          pointPlacementRotation,
-          feature,
-          context,
-          0.0
-        );
-        olText.setRotation((Math.PI * labelRotationDegrees) / 180.0); // OL rotation is in radians.
+        const labelRotationDegrees = evaluate(pointPlacementRotation, feature, context, 0.0);
+        olText.setRotation(Math.PI * labelRotationDegrees / 180.0); // OL rotation is in radians.
       }
     }
 
     // Set line or point placement according to geometry type.
-    var geometry = feature.getGeometry
-      ? feature.getGeometry()
-      : feature.geometry;
-    var geometryType = geometry.getType ? geometry.getType() : geometry.type;
-    var lineplacement =
-      symbolizer &&
-      symbolizer.labelplacement &&
-      symbolizer.labelplacement.lineplacement
-        ? symbolizer.labelplacement.lineplacement
-        : null;
-    var placement =
-      geometryType !== 'point' && lineplacement ? 'line' : 'point';
+    const geometry = feature.getGeometry ? feature.getGeometry() : feature.geometry;
+    const geometryType = geometry.getType ? geometry.getType() : geometry.type;
+    const lineplacement = symbolizer && symbolizer.labelplacement && symbolizer.labelplacement.lineplacement ? symbolizer.labelplacement.lineplacement : null;
+    const placement = geometryType !== 'point' && lineplacement ? 'line' : 'point';
     olText.setPlacement(placement);
 
     // Apply dynamic style properties.
@@ -3737,27 +3213,16 @@
 
     // Adjust font if one or more font svgparameters are dynamic.
     if (symbolizer.font && symbolizer.font.styling) {
-      var fontStyling = symbolizer.font.styling || {};
-      if (
-        isDynamicExpression(fontStyling.fontFamily) ||
-        isDynamicExpression(fontStyling.fontStyle) ||
-        isDynamicExpression(fontStyling.fontWeight) ||
-        isDynamicExpression(fontStyling.fontSize)
-      ) {
-        var fontFamily = evaluate(
-          fontStyling.fontFamily,
-          feature,
-          context,
-          'sans-serif'
-        );
-        var fontStyle = evaluate(fontStyling.fontStyle, feature, context, '');
-        var fontWeight = evaluate(fontStyling.fontWeight, feature, context, '');
-        var fontSize = evaluate(fontStyling.fontSize, feature, context, 10);
-        var olFontString = fontStyle + " " + fontWeight + " " + fontSize + "px " + fontFamily;
+      const fontStyling = symbolizer.font.styling || {};
+      if (isDynamicExpression(fontStyling.fontFamily) || isDynamicExpression(fontStyling.fontStyle) || isDynamicExpression(fontStyling.fontWeight) || isDynamicExpression(fontStyling.fontSize)) {
+        const fontFamily = evaluate(fontStyling.fontFamily, feature, context, 'sans-serif');
+        const fontStyle = evaluate(fontStyling.fontStyle, feature, context, '');
+        const fontWeight = evaluate(fontStyling.fontWeight, feature, context, '');
+        const fontSize = evaluate(fontStyling.fontSize, feature, context, 10);
+        const olFontString = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
         olText.setFont(olFontString);
       }
     }
-
     return olStyle;
   }
 
@@ -3774,24 +3239,21 @@
     if (typeof feature.getGeometry !== 'function') {
       return null;
     }
-
-    var geom = feature.getGeometry();
+    const geom = feature.getGeometry();
     if (!geom) {
       return null;
     }
-
-    var pointStyle = null;
-    var geomType = geom.getType();
+    let pointStyle = null;
+    const geomType = geom.getType();
     if (geomType === 'LineString') {
       pointStyle = getPointStyle(symbolizer, feature, context);
       pointStyle.setGeometry(new Point(getLineMidpoint(geom)));
     } else if (geomType === 'MultiLineString') {
-      var lineStrings = geom.getLineStrings();
-      var multiPointCoords = lineStrings.map(getLineMidpoint);
+      const lineStrings = geom.getLineStrings();
+      const multiPointCoords = lineStrings.map(getLineMidpoint);
       pointStyle = getPointStyle(symbolizer, feature, context);
       pointStyle.setGeometry(new MultiPoint(multiPointCoords));
     }
-
     return pointStyle;
   }
 
@@ -3803,9 +3265,7 @@
    */
   function getInteriorPoint(geometry) {
     // Use OpenLayers getInteriorPoint method to get a 'good' interior point.
-    var ref = geometry.getInteriorPoint().getCoordinates();
-    var x = ref[0];
-    var y = ref[1];
+    const [x, y] = geometry.getInteriorPoint().getCoordinates();
     return [x, y];
   }
 
@@ -3822,31 +3282,29 @@
     if (typeof feature.getGeometry !== 'function') {
       return null;
     }
-
-    var geom = feature.getGeometry();
+    const geom = feature.getGeometry();
     if (!geom) {
       return null;
     }
-
-    var pointStyle = null;
-    var geomType = geom.getType();
+    let pointStyle = null;
+    const geomType = geom.getType();
     if (geomType === 'Polygon') {
       pointStyle = getPointStyle(symbolizer, feature, context);
       pointStyle.setGeometry(new Point(getInteriorPoint(geom)));
     } else if (geomType === 'MultiPolygon') {
-      var polygons = geom.getPolygons();
-      var multiPointCoords = polygons.map(getInteriorPoint);
+      const polygons = geom.getPolygons();
+      const multiPointCoords = polygons.map(getInteriorPoint);
       pointStyle = getPointStyle(symbolizer, feature, context);
       pointStyle.setGeometry(new MultiPoint(multiPointCoords));
     }
-
     return pointStyle;
   }
 
-  var defaultStyles = [defaultPointStyle];
+  const defaultStyles = [defaultPointStyle];
 
   /**
    * Evaluation context for style functions.
+   * @private
    * @typedef {object} EvaluationContext
    * @property {Function} getProperty A function (feature, propertyName) -> value that returns the value of the property of a feature.
    * @property {Function} getId A function feature -> any that gets the id of a feature.
@@ -3864,8 +3322,8 @@
    * @param {EvaluationContext} context Evaluation context.
    */
   function appendStyles(styles, symbolizers, feature, styleFunction, context) {
-    (symbolizers || []).forEach(function (symbolizer) {
-      var olStyle = styleFunction(symbolizer, feature, context);
+    (symbolizers || []).forEach(symbolizer => {
+      const olStyle = styleFunction(symbolizer, feature, context);
       if (olStyle) {
         styles.push(olStyle);
       }
@@ -3874,6 +3332,7 @@
 
   /**
    * Create openlayers style
+   * @private
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
    * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
    * @param {object|Feature} feature {@link http://geojson.org|geojson}
@@ -3885,76 +3344,48 @@
    * @param {boolean} [options.useFallbackStyles] Default true. When true, provides default OL styles as fallback for unknown geometry types.
    * @return ol.style.Style or array of it
    */
-  function OlStyler(
-    categorizedSymbolizers,
-    feature,
-    context,
-    options
-  ) {
-    if ( options === void 0 ) options = {};
-
-    var polygonSymbolizers = categorizedSymbolizers.polygonSymbolizers;
-    var lineSymbolizers = categorizedSymbolizers.lineSymbolizers;
-    var pointSymbolizers = categorizedSymbolizers.pointSymbolizers;
-    var textSymbolizers = categorizedSymbolizers.textSymbolizers;
-
-    var defaultOptions = {
+  function OlStyler(categorizedSymbolizers, feature, context) {
+    let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    const {
+      polygonSymbolizers,
+      lineSymbolizers,
+      pointSymbolizers,
+      textSymbolizers
+    } = categorizedSymbolizers;
+    const defaultOptions = {
       strictGeometryMatch: false,
-      useFallbackStyles: true,
+      useFallbackStyles: true
     };
-
-    var styleOptions = Object.assign({}, defaultOptions, options);
-
-    var geometry = feature.getGeometry
-      ? feature.getGeometry()
-      : feature.geometry;
-    var geometryType = geometry.getType ? geometry.getType() : geometry.type;
-
-    var styles = [];
+    const styleOptions = {
+      ...defaultOptions,
+      ...options
+    };
+    const geometry = feature.getGeometry ? feature.getGeometry() : feature.geometry;
+    const geometryType = geometry.getType ? geometry.getType() : geometry.type;
+    let styles = [];
     switch (geometryType) {
       case 'Point':
       case 'MultiPoint':
         appendStyles(styles, pointSymbolizers, feature, getPointStyle, context);
         appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
         break;
-
       case 'LineString':
       case 'MultiLineString':
         appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
         if (!styleOptions.strictGeometryMatch) {
-          appendStyles(
-            styles,
-            pointSymbolizers,
-            feature,
-            getLinePointStyle,
-            context
-          );
+          appendStyles(styles, pointSymbolizers, feature, getLinePointStyle, context);
         }
         appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
         break;
-
       case 'Polygon':
       case 'MultiPolygon':
-        appendStyles(
-          styles,
-          polygonSymbolizers,
-          feature,
-          getPolygonStyle,
-          context
-        );
+        appendStyles(styles, polygonSymbolizers, feature, getPolygonStyle, context);
         if (!styleOptions.strictGeometryMatch) {
           appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
         }
-        appendStyles(
-          styles,
-          pointSymbolizers,
-          feature,
-          getPolygonPointStyle,
-          context
-        );
+        appendStyles(styles, pointSymbolizers, feature, getPolygonPointStyle, context);
         appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
         break;
-
       default:
         if (styleOptions.useFallbackStyles) {
           styles = defaultStyles;
@@ -3962,8 +3393,7 @@
     }
 
     // Set z-index of styles explicitly to fix a bug where GraphicStroke is always rendered above a line symbolizer.
-    styles.forEach(function (style, index) { return style.setZIndex(index); });
-
+    styles.forEach((style, index) => style.setZIndex(index));
     return styles;
   }
 
@@ -3994,6 +3424,7 @@
    * **Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
    * inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
    * image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
+   * @public
    * @param {FeatureTypeStyle} featureTypeStyle Feature Type Style object.
    * @param {object} options Options
    * @param {function} options.convertResolution An optional function to convert the resolution in map units/pixel to resolution in meters/pixel.
@@ -4007,52 +3438,35 @@
    *   imageLoadedCallback: () => { myOlVectorLayer.changed(); }
    * }));
    */
-  function createOlStyleFunction(featureTypeStyle, options) {
-    if ( options === void 0 ) options = {};
-
-    var imageLoadedCallback = options.imageLoadedCallback || (function () {});
+  function createOlStyleFunction(featureTypeStyle) {
+    let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    const imageLoadedCallback = options.imageLoadedCallback || (() => {});
 
     // Keep track of whether a callback has been registered per image url.
-    var callbackRef = {};
+    const callbackRef = {};
 
     // Evaluation context.
-    var context = {};
-
-    context.getProperty =
-      typeof options.getProperty === 'function'
-        ? options.getProperty
-        : getOlFeatureProperty;
-
+    const context = {};
+    context.getProperty = typeof options.getProperty === 'function' ? options.getProperty : getOlFeatureProperty;
     context.getId = getOlFeatureId;
-
-    return function (feature, mapResolution) {
+    return (feature, mapResolution) => {
       // Determine resolution in meters/pixel.
-      var groundResolution =
-        typeof options.convertResolution === 'function'
-          ? options.convertResolution(mapResolution)
-          : mapResolution;
-
+      const groundResolution = typeof options.convertResolution === 'function' ? options.convertResolution(mapResolution) : mapResolution;
       context.resolution = groundResolution;
 
       // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
-      var rules = getRules(featureTypeStyle, feature, context);
+      const rules = getRules(featureTypeStyle, feature, context);
 
       // Start loading images for external graphic symbolizers and when loaded:
       // * update symbolizers to use the cached image.
       // * call imageLoadedCallback with the image url.
-      processExternalGraphicSymbolizers(
-        rules,
-        featureTypeStyle,
-        imageLoadedCallback,
-        callbackRef
-      );
+      processExternalGraphicSymbolizers(rules, featureTypeStyle, imageLoadedCallback, callbackRef);
 
       // Convert style rules to style rule lookup categorized by geometry type.
-      var categorizedSymbolizers = categorizeSymbolizers(rules);
+      const categorizedSymbolizers = categorizeSymbolizers(rules);
 
       // Determine style rule array.
-      var olStyles = OlStyler(categorizedSymbolizers, feature, context);
-
+      const olStyles = OlStyler(categorizedSymbolizers, feature, context);
       return olStyles;
     };
   }
@@ -4062,6 +3476,7 @@
    * Since this function creates a static OpenLayers style and not a style function,
    * usage of this function is only suitable for simple symbolizers that do not depend on feature properties
    * and do not contain external graphics. External graphic marks will be shown as a grey circle instead.
+   * @public
    * @param {StyleRule} styleRule Feature Type Style Rule object.
    * @param {string} geometryType One of 'Point', 'LineString' or 'Polygon'
    * @returns {Array<ol.Style>} An array of OpenLayers style instances.
@@ -4069,16 +3484,16 @@
    * myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
    */
   function createOlStyle(styleRule, geometryType) {
-    var categorizedSymbolizers = categorizeSymbolizers([styleRule]);
-
-    var olStyles = OlStyler(
-      categorizedSymbolizers,
-      { geometry: { type: geometryType } },
-      function () { return null; },
-      { strictGeometryMatch: true, useFallbackStyles: false }
-    );
-
-    return olStyles.filter(function (style) { return style !== null; });
+    const categorizedSymbolizers = categorizeSymbolizers([styleRule]);
+    const olStyles = OlStyler(categorizedSymbolizers, {
+      geometry: {
+        type: geometryType
+      }
+    }, () => null, {
+      strictGeometryMatch: true,
+      useFallbackStyles: false
+    });
+    return olStyles.filter(style => style !== null);
   }
 
   /**
@@ -4088,12 +3503,11 @@
    * It will always return a valid string and return an empty string for null and undefined values.
    * Other types of input will be returned as their type name.
    */
-  // eslint-disable-next-line import/prefer-default-export
   function asString(input) {
     if (input === null) {
       return '';
     }
-    var inputType = typeof input;
+    const inputType = typeof input;
     switch (inputType) {
       case 'string':
         return input;
@@ -4113,6 +3527,11 @@
   // https://docs.geoserver.org/latest/en/user/filter/function_reference.html#string-functions
   // Note: implementation details may be different from Geoserver implementations.
   // SLDReader function parameters are not strictly typed and will convert inputs in a sensible manner.
+
+  /**
+   * @module
+   * @private
+   */
 
   /**
    * Converts the text representation of the input value to lower case.
@@ -4148,39 +3567,35 @@
    * * qgisSubstr('HELLO WORLD', -5) --> 'WORLD'.
    */
   function qgisSubstr(input, start, length) {
-    var startIndex = Number(start);
-    var lengthInt = Number(length);
+    const startIndex = Number(start);
+    const lengthInt = Number(length);
     if (Number.isNaN(startIndex)) {
       return '';
     }
 
     // Note: implementation specification taken from https://docs.qgis.org/3.28/en/docs/user_manual/expressions/functions_list.html#substr
-    var text = asString(input);
+    const text = asString(input);
     if (Number.isNaN(lengthInt)) {
       if (startIndex > 0) {
         return text.slice(startIndex - 1);
       }
       return text.slice(startIndex);
     }
-
     if (lengthInt === 0) {
       return '';
     }
-
     if (startIndex > 0) {
       if (lengthInt > 0) {
         return text.slice(startIndex - 1, startIndex - 1 + lengthInt);
       }
       return text.slice(startIndex - 1, lengthInt);
     }
-
     if (lengthInt > 0) {
       if (startIndex + lengthInt < 0) {
         return text.slice(startIndex, startIndex + lengthInt);
       }
       return text.slice(startIndex);
     }
-
     return text.slice(startIndex, lengthInt);
   }
 
@@ -4196,13 +3611,12 @@
    * * strSubstring('HELLO', 2, 4) --> 'LL'.
    */
   function strSubstring(input, begin, end) {
-    var text = asString(input);
-    var beginIndex = Number(begin);
-    var endIndex = Number(end);
+    const text = asString(input);
+    const beginIndex = Number(begin);
+    const endIndex = Number(end);
     if (Number.isNaN(beginIndex) || Number.isNaN(endIndex)) {
       return '';
     }
-
     return text.slice(beginIndex, endIndex);
   }
 
@@ -4218,12 +3632,11 @@
    * * strSubstringStart('HELLO', -2) --> 'LO'.
    */
   function strSubstringStart(input, begin) {
-    var text = asString(input);
-    var beginIndex = Number(begin);
+    const text = asString(input);
+    const beginIndex = Number(begin);
     if (Number.isNaN(beginIndex)) {
       return '';
     }
-
     return text.slice(beginIndex);
   }
 
@@ -4240,7 +3653,6 @@
     if (olGeometry && typeof olGeometry.getType === 'function') {
       return olGeometry.getType();
     }
-
     return 'Unknown';
   }
 
@@ -4301,14 +3713,13 @@
    * using string-based comparison.
    */
   function stringIn() {
-    var inputArgs = [], len = arguments.length;
-    while ( len-- ) inputArgs[ len ] = arguments[ len ];
-
-    var test = inputArgs[0];
-    var candidates = inputArgs.slice(1);
+    for (var _len = arguments.length, inputArgs = new Array(_len), _key = 0; _key < _len; _key++) {
+      inputArgs[_key] = arguments[_key];
+    }
+    const [test, ...candidates] = inputArgs;
     // Compare test with candidates as string.
-    var testString = asString(test);
-    return candidates.some(function (candidate) { return asString(candidate) === testString; });
+    const testString = asString(test);
+    return candidates.some(candidate => asString(candidate) === testString);
   }
 
   /**
@@ -4333,15 +3744,15 @@
     // Also register in2/in10 as alias for the in function.
     // This is done for backwards compatibility with older geoservers, which have explicit 'in'
     // function versions for 2 to 10 parameters.
-    for (var k = 2; k <= 10; k += 1) {
-      registerFunction(("in" + k), stringIn);
+    for (let k = 2; k <= 10; k += 1) {
+      registerFunction(`in${k}`, stringIn);
     }
 
     // Math operators as functions
-    registerFunction('__fe:Add__', function (a, b) { return Number(a) + Number(b); });
-    registerFunction('__fe:Sub__', function (a, b) { return Number(a) - Number(b); });
-    registerFunction('__fe:Mul__', function (a, b) { return Number(a) * Number(b); });
-    registerFunction('__fe:Div__', function (a, b) { return Number(a) / Number(b); });
+    registerFunction('__fe:Add__', (a, b) => Number(a) + Number(b));
+    registerFunction('__fe:Sub__', (a, b) => Number(a) - Number(b));
+    registerFunction('__fe:Mul__', (a, b) => Number(a) * Number(b));
+    registerFunction('__fe:Div__', (a, b) => Number(a) / Number(b));
   }
 
   // Add support for a handful of built-in SLD function implementations.

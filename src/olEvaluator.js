@@ -1,6 +1,11 @@
 // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
 // Constant expressions are returned as-is.
 
+/**
+ * @module
+ * @private
+ */
+
 import { METRES_PER_FOOT, UOM_FOOT, UOM_METRE } from './constants';
 import { getFunction } from './functions';
 
@@ -116,7 +121,7 @@ export default function evaluate(
           evaluate(paramExpression, feature, context)
         );
         value = func(...paramValues);
-      } catch (e) {
+      } catch {
         value = expression.fallbackValue;
       }
     }

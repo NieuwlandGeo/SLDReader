@@ -1,5 +1,6 @@
 /**
  * Get styling from rules per geometry type
+ * @private
  * @param  {Rule[]} rules [description]
  * @return {CategorizedSymbolizers}
  */

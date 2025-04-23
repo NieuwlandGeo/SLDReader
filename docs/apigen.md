@@ -1,9 +1,6 @@
 ## Modules
 
 <dl>
-<dt><a href="#module_Reader/filter">Reader/filter</a></dt>
-<dd><p>Factory methods for filterelements</p>
-</dd>
 <dt><a href="#module_Reader/index">Reader/index</a></dt>
 <dd></dd>
 </dl>
@@ -11,9 +8,6 @@
 ## Functions
 
 <dl>
-<dt><a href="#categorizeSymbolizers">categorizeSymbolizers(rules)</a> ⇒ <code><a href="#CategorizedSymbolizers">CategorizedSymbolizers</a></code></dt>
-<dd><p>Get styling from rules per geometry type</p>
-</dd>
 <dt><a href="#registerFunction">registerFunction(functionName, implementation)</a></dt>
 <dd><p>Register a function implementation by name. When evaluating the function, it will be called
 with the values of the parameter elements evaluated for a single feature.
@@ -57,9 +51,6 @@ and do not contain external graphics. External graphic marks will be shown as a 
 <dt><a href="#getStyle">getStyle(layer, [name])</a> ⇒ <code>object</code></dt>
 <dd><p>get style from array layer.styles, if name is undefined it returns default style.
 null is no style found</p>
-</dd>
-<dt><a href="#getRules">getRules(featureTypeStyle, feature, resolution)</a> ⇒ <code><a href="#Rule">Array.&lt;Rule&gt;</a></code></dt>
-<dd><p>get rules for specific feature after applying filters</p>
 </dd>
 <dt><a href="#getRuleSymbolizers">getRuleSymbolizers(rule)</a> ⇒ <code>Array.&lt;object&gt;</code></dt>
 <dd><p>Get all symbolizers inside a given rule.
@@ -107,23 +98,6 @@ Can be either a primitive value (string,integer,boolean), or an object with thes
 </dd>
 </dl>
 
-<a name="module_Reader/filter"></a>
-
-## Reader/filter
-Factory methods for filterelements
-
-**See**: http://schemas.opengis.net/filter/1.0.0/filter.xsd  
-<a name="exp_module_Reader/filter--module.exports"></a>
-
-### module.exports(element) ⇒ [<code>Filter</code>](#Filter) ⏏
-Factory root filter element
-
-**Kind**: Exported function  
-
-| Param | Type |
-| --- | --- |
-| element | <code>Element</code> | 
-
 <a name="module_Reader/index"></a>
 
 ## Reader/index
@@ -138,17 +112,6 @@ Creates a object from an sld xml string,
 | Param | Type | Description |
 | --- | --- | --- |
 | sld | <code>string</code> | xml string |
-
-<a name="categorizeSymbolizers"></a>
-
-## categorizeSymbolizers(rules) ⇒ [<code>CategorizedSymbolizers</code>](#CategorizedSymbolizers)
-Get styling from rules per geometry type
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| rules | [<code>Array.&lt;Rule&gt;</code>](#Rule) | [description] |
 
 <a name="registerFunction"></a>
 
@@ -187,6 +150,7 @@ Create an OpenLayers style function from a FeatureTypeStyle object extracted fro
 
 **Kind**: global function  
 **Returns**: <code>function</code> - A function that can be set as style function on an OpenLayers vector style layer.  
+**Access**: public  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -207,6 +171,7 @@ Create an array of OpenLayers style instances for features with the chosen geome
 
 **Kind**: global function  
 **Returns**: <code>Array.&lt;ol.Style&gt;</code> - An array of OpenLayers style instances.  
+**Access**: public  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -267,25 +232,6 @@ get style from array layer.styles, if name is undefined it returns default style
 | layer | [<code>Layer</code>](#Layer) | [description] |
 | [name] | <code>string</code> | of style. If not given, the style marked as default will be returned. If there is no default style, the first one will be returned. |
 
-<a name="getRules"></a>
-
-## getRules(featureTypeStyle, feature, resolution) ⇒ [<code>Array.&lt;Rule&gt;</code>](#Rule)
-get rules for specific feature after applying filters
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| featureTypeStyle | [<code>FeatureTypeStyle</code>](#FeatureTypeStyle) |  |
-| feature | <code>object</code> | geojson |
-| resolution | <code>number</code> | m/px |
-| options.getProperty | <code>function</code> | An optional function with parameters (feature, propertyName) that can be used to extract a property value from a feature. When not given, properties are read from feature.properties directly.Error |
-| options.getFeatureId | <code>function</code> | An optional function to extract the feature id from a feature.Error When not given, feature id is read from feature.id. |
-
-**Example**  
-```js
-const style = getStyle(sldLayer, stylename);getRules(style.featuretypestyles['0'], geojson, resolution);
-```
 <a name="getRuleSymbolizers"></a>
 
 ## getRuleSymbolizers(rule) ⇒ <code>Array.&lt;object&gt;</code>
@@ -329,6 +275,7 @@ Modeled after [SvgParameterType](https://schemas.opengis.net/se/1.1.0/Symbolizer
 | [name] | <code>string</code> | Required for function expressions. Contains the function name. |
 | [fallbackValue] | <code>any</code> | Optional fallback value when function evaluation returns null. |
 | [params] | [<code>Array.&lt;Expression&gt;</code>](#Expression) | Required array of function parameters for function expressions. |
+| [uom] | <code>string</code> | One of 'metre', 'foot', 'pixel' or 'none'. Only used for type 'literal' or 'propertyname'. |
 
 <a name="Filter"></a>
 
@@ -406,6 +353,7 @@ a typedef for Rule to match a feature: [xsd](http://schemas.opengis.net/se/1.1.0
 | Name | Type | Description |
 | --- | --- | --- |
 | name | <code>string</code> | rule name |
+| [title] | <code>string</code> | Optional title. |
 | [filter] | [<code>Filter</code>](#Filter) | Optional filter expression for the rule. |
 | [elsefilter] | <code>boolean</code> | Set this to true when rule has no filter expression to catch everything not passing any other filter. |
 | [minscaledenominator] | <code>integer</code> |  |
@@ -464,6 +412,7 @@ a typedef for PointSymbolizer [xsd](http://schemas.opengis.net/se/1.1.0/Symboliz
 | graphic | <code>Object</code> | 
 | graphic.externalgraphic | <code>Object</code> | 
 | graphic.externalgraphic.onlineresource | <code>string</code> | 
+| graphic.externalgraphic.format | <code>string</code> | 
 | graphic.mark | <code>Object</code> | 
 | graphic.mark.wellknownname | <code>string</code> | 
 | graphic.mark.fill | <code>Object</code> | 

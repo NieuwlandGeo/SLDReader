@@ -1,4 +1,4 @@
-import buble from '@rollup/plugin-buble';
+import babel from '@rollup/plugin-babel';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 export default {
@@ -27,5 +27,6 @@ export default {
       'ol/geom/MultiPolygon': 'ol.geom.MultiPolygon',
     },
   },
-  plugins: [buble({ objectAssign: true }), nodeResolve()],
+  plugins: [babel({ babelHelpers: 'bundled' }), nodeResolve()],
+  strictDeprecations: true,
 };

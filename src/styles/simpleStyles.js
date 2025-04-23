@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
 

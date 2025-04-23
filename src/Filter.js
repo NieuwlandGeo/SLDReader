@@ -1,7 +1,6 @@
 import evaluate from './olEvaluator';
 
 function isNullOrUndefined(value) {
-  /* eslint-disable-next-line eqeqeq */
   return value == null;
 }
 
@@ -84,20 +83,12 @@ function propertyIsBetween(comparison, feature, context) {
     return false;
   }
 
-  const lowerBoundary = evaluate(
-    comparison.lowerboundary,
-    feature,
-    context
-  );
+  const lowerBoundary = evaluate(comparison.lowerboundary, feature, context);
   if (isNullOrUndefined(lowerBoundary)) {
     return false;
   }
 
-  const upperBoundary = evaluate(
-    comparison.upperboundary,
-    feature,
-    context
-  );
+  const upperBoundary = evaluate(comparison.upperboundary, feature, context);
   if (isNullOrUndefined(upperBoundary)) {
     return false;
   }
@@ -126,7 +117,6 @@ function propertyIsEqualTo(comparison, feature, context) {
     return compare(value1, value2, false) === 0;
   }
 
-  /* eslint-disable-next-line eqeqeq */
   return value1 == value2;
 }
 

@@ -1,4 +1,4 @@
-const buble = require('@rollup/plugin-buble');
+const babel = require('@rollup/plugin-babel');
 const { nodeResolve } = require('@rollup/plugin-node-resolve');
 // Karma configuration
 // Generated on Thu Jun 15 2017 14:53:58 GMT+0200 (CEST)
@@ -14,9 +14,8 @@ module.exports = function kc(config) {
 
     // list of files / patterns to load in the browser, includes polyfill
     files: [
-      'node_modules/core-js/client/shim.min.js',
       {
-        pattern: 'test/**/*.test.js',
+        pattern: 'test/*.test.js',
         watched: false,
       },
     ],
@@ -27,12 +26,13 @@ module.exports = function kc(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/**/*test.js': ['rollup'],
+      'test/*.test.js': ['rollup'],
     },
 
     rollupPreprocessor: {
-      plugins: [buble({ objectAssign: true }), nodeResolve()],
+      plugins: [babel({ babelHelpers: 'bundled' }), nodeResolve()],
       output: {
+        dir: 'test/transpiled',
         format: 'iife', // Helps prevent naming collisions.
         name: 'SLDReader', // Required for 'iife' format.
         sourcemap: 'inline', // Sensible for testing.
