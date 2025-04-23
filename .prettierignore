@@ -1,3 +1,4 @@
+*.min.js
 package.json
 bs-config.js
 docs/assets/sldreader.js
