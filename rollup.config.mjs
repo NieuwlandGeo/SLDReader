@@ -1,3 +1,4 @@
+import versionInjector from 'rollup-plugin-version-injector';
 import terser from '@rollup/plugin-terser';
 import babel from '@rollup/plugin-babel';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
@@ -51,9 +52,13 @@ export default {
         'ol/geom/Polygon': 'ol.geom.Polygon',
         'ol/geom/MultiPolygon': 'ol.geom.MultiPolygon',
       },
-      plugins: [terser()]
+      plugins: [terser()],
     },
   ],
-  plugins: [babel({ babelHelpers: 'bundled' }), nodeResolve()],
+  plugins: [
+    versionInjector(),
+    babel({ babelHelpers: 'bundled' }),
+    nodeResolve(),
+  ],
   strictDeprecations: true,
 };
