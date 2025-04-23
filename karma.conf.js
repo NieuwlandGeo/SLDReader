@@ -14,7 +14,6 @@ module.exports = function kc(config) {
 
     // list of files / patterns to load in the browser, includes polyfill
     files: [
-      'node_modules/core-js/client/shim.min.js',
       {
         pattern: 'test/**/*.test.js',
         watched: false,
