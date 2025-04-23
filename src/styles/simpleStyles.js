@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
-import { Stroke, Fill } from 'ol/style';
+import Stroke from 'ol/style/Stroke';
+import Fill from 'ol/style/Fill';
 
 import { getOLColorString } from './styleUtils';
 import evaluate from '../olEvaluator';

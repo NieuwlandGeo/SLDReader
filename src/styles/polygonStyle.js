@@ -1,8 +1,11 @@
 /* eslint-disable function-call-argument-newline */
 import { toContext } from 'ol/render';
-import { Style, Fill } from 'ol/style';
-import { Point, Polygon, MultiPolygon } from 'ol/geom';
 import { DEVICE_PIXEL_RATIO } from 'ol/has';
+import Style from 'ol/style/Style';
+import Fill from 'ol/style/Fill';
+import Point from 'ol/geom/Point';
+import Polygon from 'ol/geom/Polygon';
+import MultiPolygon from 'ol/geom/MultiPolygon';
 
 import {
   IMAGE_LOADING,

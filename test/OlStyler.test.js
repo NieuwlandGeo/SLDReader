@@ -1,5 +1,6 @@
 /* global describe it expect before beforeEach */
-import { Style, Circle } from 'ol/style';
+import Style from 'ol/style/Style';
+import Circle from 'ol/style/Circle';
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
 import Reader from '../src/Reader';

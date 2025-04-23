@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style'), require('ol/render'), require('ol/geom'), require('ol/extent'), require('ol/has')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'ol/style', 'ol/render', 'ol/geom', 'ol/extent', 'ol/has'], factory) :
-  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SLDReader = {}, global.ol.style, global.ol.render, global.ol.geom, global.ol.extent, global.ol.has));
-})(this, (function (exports, style, render, geom, extent, has) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('ol/style/Style'), require('ol/style/Icon'), require('ol/style/Fill'), require('ol/style/Stroke'), require('ol/style/Circle'), require('ol/style/RegularShape'), require('ol/render'), require('ol/geom/Point'), require('ol/geom/LineString'), require('ol/extent'), require('ol/has'), require('ol/geom/Polygon'), require('ol/geom/MultiPolygon'), require('ol/style/Text'), require('ol/geom/MultiPoint')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'ol/style/Style', 'ol/style/Icon', 'ol/style/Fill', 'ol/style/Stroke', 'ol/style/Circle', 'ol/style/RegularShape', 'ol/render', 'ol/geom/Point', 'ol/geom/LineString', 'ol/extent', 'ol/has', 'ol/geom/Polygon', 'ol/geom/MultiPolygon', 'ol/style/Text', 'ol/geom/MultiPoint'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.SLDReader = {}, global.ol.style.Style, global.ol.style.Icon, global.ol.style.Fill, global.ol.style.Stroke, global.ol.style.Circle, global.ol.style.RegularShape, global.ol.render, global.ol.geom.Point, global.ol.geom.LineString, global.ol.extent, global.ol.has, global.ol.geom.Polygon, global.ol.geom.MultiPolygon, global.ol.style.Text, global.ol.geom.MultiPoint));
+})(this, (function (exports, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) { 'use strict';
 
   var IMAGE_LOADING = 'IMAGE_LOADING';
   var IMAGE_LOADED = 'IMAGE_LOADED';
@@ -1981,8 +1981,8 @@
     var image = ref.image;
     var width = ref.width;
     var height = ref.height;
-    return new style.Style({
-      image: new style.Icon({
+    return new Style({
+      image: new Icon({
         img: image,
         imgSize: [width, height],
         // According to SLD spec, if size is given, image height should equal the given size.
@@ -1992,62 +1992,62 @@
     });
   }
 
-  var emptyStyle = new style.Style({});
+  var emptyStyle = new Style({});
 
-  var defaultPointStyle = new style.Style({
-    image: new style.Circle({
+  var defaultPointStyle = new Style({
+    image: new Circle({
       radius: 8,
-      fill: new style.Fill({
+      fill: new Fill({
         color: 'blue',
         fillOpacity: 0.7,
       }),
     }),
   });
 
-  var imageLoadingPointStyle = new style.Style({
-    image: new style.Circle({
+  var imageLoadingPointStyle = new Style({
+    image: new Circle({
       radius: 5,
-      fill: new style.Fill({
+      fill: new Fill({
         color: '#DDDDDD',
       }),
-      stroke: new style.Stroke({
+      stroke: new Stroke({
         width: 1,
         color: '#888888',
       }),
     }),
   });
 
-  var imageLoadingPolygonStyle = new style.Style({
-    fill: new style.Fill({
+  var imageLoadingPolygonStyle = new Style({
+    fill: new Fill({
       color: '#DDDDDD',
     }),
-    stroke: new style.Stroke({
+    stroke: new Stroke({
       color: '#888888',
       width: 1,
     }),
   });
 
-  var imageErrorPointStyle = new style.Style({
-    image: new style.RegularShape({
+  var imageErrorPointStyle = new Style({
+    image: new RegularShape({
       angle: Math.PI / 4,
-      fill: new style.Fill({
+      fill: new Fill({
         color: 'red',
       }),
       points: 4,
       radius: 8,
       radius2: 0,
-      stroke: new style.Stroke({
+      stroke: new Stroke({
         color: 'red',
         width: 4,
       }),
     }),
   });
 
-  var imageErrorPolygonStyle = new style.Style({
-    fill: new style.Fill({
+  var imageErrorPolygonStyle = new Style({
+    fill: new Fill({
       color: 'red',
     }),
-    stroke: new style.Stroke({
+    stroke: new Stroke({
       color: 'red',
       width: 1,
     }),
@@ -2182,14 +2182,14 @@
 
     switch (wellKnownName) {
       case 'circle':
-        return new style.Circle({
+        return new Circle({
           fill: fill,
           radius: radius,
           stroke: stroke,
         });
 
       case 'triangle':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 3,
           radius: radius,
@@ -2198,7 +2198,7 @@
         });
 
       case 'star':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 5,
           radius: radius,
@@ -2208,14 +2208,14 @@
         });
 
       case 'cross':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 4,
           radius: radius,
           radius2: 0,
           stroke:
             stroke ||
-            new style.Stroke({
+            new Stroke({
               color: fillColor,
               width: radius / 2,
             }),
@@ -2223,13 +2223,13 @@
         });
 
       case 'hexagon':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 6,
           radius: radius,
           stroke:
             stroke ||
-            new style.Stroke({
+            new Stroke({
               color: fillColor,
               width: radius / 2,
             }),
@@ -2237,14 +2237,14 @@
         });
 
       case 'octagon':
-        return new style.RegularShape({
+        return new RegularShape({
           angle: Math.PI / 8,
           fill: fill,
           points: 8,
           radius: radius / Math.cos(Math.PI / 8),
           stroke:
             stroke ||
-            new style.Stroke({
+            new Stroke({
               color: fillColor,
               width: radius / 2,
             }),
@@ -2253,7 +2253,7 @@
 
       case 'cross2': // cross2 is used by QGIS for the x symbol.
       case 'x':
-        return new style.RegularShape({
+        return new RegularShape({
           angle: Math.PI / 4,
           fill: fill,
           points: 4,
@@ -2261,7 +2261,7 @@
           radius2: 0,
           stroke:
             stroke ||
-            new style.Stroke({
+            new Stroke({
               color: fillColor,
               width: radius / 2,
             }),
@@ -2269,7 +2269,7 @@
         });
 
       case 'diamond':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 4,
           radius: radius,
@@ -2278,7 +2278,7 @@
         });
 
       case 'horline':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 2,
           radius: radius,
@@ -2288,7 +2288,7 @@
         });
 
       case 'line':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 2,
           radius: radius,
@@ -2298,7 +2298,7 @@
         });
 
       case 'backslash':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 2,
           radius: radius * Math.sqrt(2),
@@ -2308,7 +2308,7 @@
         });
 
       case 'slash':
-        return new style.RegularShape({
+        return new RegularShape({
           fill: fill,
           points: 2,
           radius: radius * Math.sqrt(2),
@@ -2319,7 +2319,7 @@
 
       default:
         // Default is `square`
-        return new style.RegularShape({
+        return new RegularShape({
           angle: Math.PI / 4,
           fill: fill,
           points: 4,
@@ -2385,7 +2385,7 @@
       strokeOptions.lineDash = strokeDashArray.split(' ');
     }
 
-    return new style.Stroke(strokeOptions);
+    return new Stroke(strokeOptions);
   }
 
   /**
@@ -2408,7 +2408,7 @@
 
     var fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
 
-    return new style.Fill({ color: getOLColorString(fillColor, fillOpacity) });
+    return new Fill({ color: getOLColorString(fillColor, fillOpacity) });
   }
 
   /**
@@ -2580,22 +2580,22 @@
    * @return {object} openlayers style
    */
   function pointStyle(pointsymbolizer) {
-    var style$1 = pointsymbolizer.graphic;
+    var style = pointsymbolizer.graphic;
 
     // If the point size is a dynamic expression, use the default point size and update in-place later.
-    var pointSizeValue = evaluate(style$1.size, null, null, DEFAULT_MARK_SIZE);
+    var pointSizeValue = evaluate(style.size, null, null, DEFAULT_MARK_SIZE);
 
     // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
-    var rotationDegrees = evaluate(style$1.rotation, null, null, 0.0);
+    var rotationDegrees = evaluate(style.rotation, null, null, 0.0);
 
-    if (style$1.externalgraphic && style$1.externalgraphic.onlineresource) {
+    if (style.externalgraphic && style.externalgraphic.onlineresource) {
       // For external graphics: the default size is the native image size.
       // In that case, set pointSizeValue to null, so no scaling is calculated for the image.
-      if (!style$1.size) {
+      if (!style.size) {
         pointSizeValue = null;
       }
 
-      var imageUrl = style$1.externalgraphic.onlineresource;
+      var imageUrl = style.externalgraphic.onlineresource;
 
       // Use fallback point styles when image hasn't been loaded yet.
       switch (getImageLoadingState(imageUrl)) {
@@ -2615,13 +2615,13 @@
       }
     }
 
-    if (style$1.mark) {
-      var ref = style$1.mark;
+    if (style.mark) {
+      var ref = style.mark;
       var wellknownname = ref.wellknownname;
-      var olFill = getSimpleFill(style$1.mark.fill);
-      var olStroke = getSimpleStroke(style$1.mark.stroke);
+      var olFill = getSimpleFill(style.mark.fill);
+      var olStroke = getSimpleStroke(style.mark.stroke);
 
-      return new style.Style({
+      return new Style({
         // Note: size will be set dynamically later.
         image: getWellKnownSymbol(
           wellknownname,
@@ -2635,7 +2635,7 @@
 
     // SLD spec: when no ExternalGraphic or Mark is specified,
     // use a square of 6 pixels with 50% gray fill and a black outline.
-    return new style.Style({
+    return new Style({
       image: getWellKnownSymbol(
         'square',
         pointSizeValue,
@@ -2977,7 +2977,7 @@
     }
 
     var splitPoints = splitLineString(
-      new geom.LineString(pixelCoords),
+      new LineString(pixelCoords),
       graphicSpacing * pixelRatio,
       {
         invertY: true, // Pixel y-coordinates increase downwards in screen space.
@@ -2992,7 +2992,7 @@
     splitPoints.forEach(function (point) {
       var splitPointAngle = image.getRotation() + point[2];
       render.setImageStyle2(image, splitPointAngle);
-      render.drawPoint(new geom.Point([point[0] / pixelRatio, point[1] / pixelRatio]));
+      render.drawPoint(new Point([point[0] / pixelRatio, point[1] / pixelRatio]));
     });
   }
 
@@ -3092,7 +3092,7 @@
       );
     }
 
-    return new style.Style({
+    return new Style({
       renderer: getGraphicStrokeRenderer(linesymbolizer),
     });
   }
@@ -3107,7 +3107,7 @@
       return getGraphicStrokeStyle(symbolizer);
     }
 
-    return new style.Style({
+    return new Style({
       stroke: getSimpleStroke(symbolizer.stroke),
     });
   }
@@ -3222,49 +3222,49 @@
     var fill = null;
     switch (brushName) {
       case 'brush://dense1':
-        fill = new style.Fill({
+        fill = new Fill({
           color: createInversePixelPattern(4, fillColor, dense1Pixels),
         });
         break;
 
       case 'brush://dense2':
-        fill = new style.Fill({
+        fill = new Fill({
           color: createInversePixelPattern(4, fillColor, dense2Pixels),
         });
         break;
 
       case 'brush://dense3':
-        fill = new style.Fill({
+        fill = new Fill({
           color: createInversePixelPattern(4, fillColor, dense3Pixels),
         });
         break;
 
       case 'brush://dense4':
-        fill = new style.Fill({
+        fill = new Fill({
           color: createPixelPattern(2, fillColor, dense4Pixels),
         });
         break;
 
       case 'brush://dense5':
-        fill = new style.Fill({
+        fill = new Fill({
           color: createPixelPattern(4, fillColor, dense3Pixels),
         });
         break;
 
       case 'brush://dense6':
-        fill = new style.Fill({
+        fill = new Fill({
           color: createPixelPattern(4, fillColor, dense2Pixels),
         });
         break;
 
       case 'brush://dense7':
-        fill = new style.Fill({
+        fill = new Fill({
           color: createPixelPattern(4, fillColor, dense1Pixels),
         });
         break;
 
       default:
-        fill = new style.Fill({ color: fillColor });
+        fill = new Fill({ color: fillColor });
         break;
     }
 
@@ -3317,7 +3317,7 @@
     // Use fallback style when graphicfill image hasn't been loaded yet.
     switch (getImageLoadingState(fillImageUrl)) {
       case IMAGE_LOADED:
-        return new style.Fill({
+        return new Fill({
           color: createPattern(symbolizer.fill.graphicfill.graphic),
         });
       case IMAGE_LOADING:
@@ -3427,7 +3427,7 @@
 
       var centerX = scaleFactor * (graphicSize / 2);
       var centerY = scaleFactor * (graphicSize / 2);
-      olContext.drawGeometry(new geom.Point([centerX, centerY]));
+      olContext.drawGeometry(new Point([centerX, centerY]));
 
       // For (back)slash marks, draw extra copies to the sides to ensure complete tiling coverage when used as a pattern.
       // S = symbol, C = copy.
@@ -3440,16 +3440,16 @@
       //     +---+
       if (wellknownname && wellknownname.indexOf('slash') > -1) {
         olContext.drawGeometry(
-          new geom.Point([centerX - scaleFactor * graphicSize, centerY])
+          new Point([centerX - scaleFactor * graphicSize, centerY])
         );
         olContext.drawGeometry(
-          new geom.Point([centerX + scaleFactor * graphicSize, centerY])
+          new Point([centerX + scaleFactor * graphicSize, centerY])
         );
         olContext.drawGeometry(
-          new geom.Point([centerX, centerY - scaleFactor * graphicSize])
+          new Point([centerX, centerY - scaleFactor * graphicSize])
         );
         olContext.drawGeometry(
-          new geom.Point([centerX, centerY + scaleFactor * graphicSize])
+          new Point([centerX, centerY + scaleFactor * graphicSize])
         );
       }
 
@@ -3472,12 +3472,12 @@
 
       // Turn the generated image into a repeating pattern, just like a regular image fill.
       var pattern = patternContext.createPattern(patternCanvas, 'repeat');
-      fill = new style.Fill({
+      fill = new Fill({
         color: pattern,
       });
     } catch (e) {
       // Default black fill as backup plan.
-      fill = new style.Fill({
+      fill = new Fill({
         color: '#000000',
       });
     }
@@ -3513,7 +3513,7 @@
     // ignores any stroke, fill and image present in the style.
     if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
       var renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
-      return new style.Style({
+      return new Style({
         renderer: function (pixelCoords, renderState) {
           // First render the fill (if any).
           if (polygonFill) {
@@ -3523,9 +3523,9 @@
             render$1.setFillStrokeStyle(polygonFill, undefined);
             var geometryType = feature.getGeometry().getType();
             if (geometryType === 'Polygon') {
-              render$1.drawPolygon(new geom.Polygon(pixelCoords));
+              render$1.drawPolygon(new Polygon(pixelCoords));
             } else if (geometryType === 'MultiPolygon') {
-              render$1.drawMultiPolygon(new geom.MultiPolygon(pixelCoords));
+              render$1.drawMultiPolygon(new MultiPolygon(pixelCoords));
             }
           }
 
@@ -3537,7 +3537,7 @@
 
     var polygonStroke = getSimpleStroke(symbolizer.stroke);
 
-    return new style.Style({
+    return new Style({
       fill: polygonFill,
       stroke: polygonStroke,
     });
@@ -3643,7 +3643,7 @@
       rotation: (Math.PI * labelRotationDegrees) / 180.0,
       textAlign: textAlign,
       textBaseline: textBaseline,
-      fill: new style.Fill({
+      fill: new Fill({
         color: getOLColorString(textFillColor, textFillOpacity),
       }),
     };
@@ -3657,7 +3657,7 @@
       var haloFillColor = evaluate(haloStyling.fill, null, null, '#FFFFFF');
       var haloFillOpacity = evaluate(haloStyling.fillOpacity, null, null, 1.0);
       var haloRadius = evaluate(textsymbolizer.halo.radius, null, null, 1.0);
-      textStyleOptions.stroke = new style.Stroke({
+      textStyleOptions.stroke = new Stroke({
         color: getOLColorString(haloFillColor, haloFillOpacity),
         // wrong position width radius equal to 2 or 4
         width:
@@ -3667,8 +3667,8 @@
       });
     }
 
-    return new style.Style({
-      text: new style.Text(textStyleOptions),
+    return new Style({
+      text: new Text(textStyleOptions),
     });
   }
 
@@ -3775,21 +3775,21 @@
       return null;
     }
 
-    var geom$1 = feature.getGeometry();
-    if (!geom$1) {
+    var geom = feature.getGeometry();
+    if (!geom) {
       return null;
     }
 
     var pointStyle = null;
-    var geomType = geom$1.getType();
+    var geomType = geom.getType();
     if (geomType === 'LineString') {
       pointStyle = getPointStyle(symbolizer, feature, context);
-      pointStyle.setGeometry(new geom.Point(getLineMidpoint(geom$1)));
+      pointStyle.setGeometry(new Point(getLineMidpoint(geom)));
     } else if (geomType === 'MultiLineString') {
-      var lineStrings = geom$1.getLineStrings();
+      var lineStrings = geom.getLineStrings();
       var multiPointCoords = lineStrings.map(getLineMidpoint);
       pointStyle = getPointStyle(symbolizer, feature, context);
-      pointStyle.setGeometry(new geom.MultiPoint(multiPointCoords));
+      pointStyle.setGeometry(new MultiPoint(multiPointCoords));
     }
 
     return pointStyle;
@@ -3823,21 +3823,21 @@
       return null;
     }
 
-    var geom$1 = feature.getGeometry();
-    if (!geom$1) {
+    var geom = feature.getGeometry();
+    if (!geom) {
       return null;
     }
 
     var pointStyle = null;
-    var geomType = geom$1.getType();
+    var geomType = geom.getType();
     if (geomType === 'Polygon') {
       pointStyle = getPointStyle(symbolizer, feature, context);
-      pointStyle.setGeometry(new geom.Point(getInteriorPoint(geom$1)));
+      pointStyle.setGeometry(new Point(getInteriorPoint(geom)));
     } else if (geomType === 'MultiPolygon') {
-      var polygons = geom$1.getPolygons();
+      var polygons = geom.getPolygons();
       var multiPointCoords = polygons.map(getInteriorPoint);
       pointStyle = getPointStyle(symbolizer, feature, context);
-      pointStyle.setGeometry(new geom.MultiPoint(multiPointCoords));
+      pointStyle.setGeometry(new MultiPoint(multiPointCoords));
     }
 
     return pointStyle;

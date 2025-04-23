@@ -1,4 +1,8 @@
-import { Style, Fill, Stroke, Text } from 'ol/style';
+import Style from 'ol/style/Style';
+import Fill from 'ol/style/Fill';
+import Stroke from 'ol/style/Stroke';
+import Text from 'ol/style/Text';
+
 import { getOLColorString, memoizeStyleFunction } from './styleUtils';
 import evaluate, { isDynamicExpression } from '../olEvaluator';
 import { emptyStyle } from './static';

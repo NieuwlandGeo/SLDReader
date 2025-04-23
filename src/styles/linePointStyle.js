@@ -1,4 +1,5 @@
-import { MultiPoint, Point } from 'ol/geom';
+import Point from 'ol/geom/Point';
+import MultiPoint from 'ol/geom/MultiPoint';
 
 import getPointStyle from './pointStyle';
 import { getLineMidpoint } from './geometryCalcs';

@@ -1,4 +1,4 @@
-import { Style } from 'ol/style';
+import Style from 'ol/style/Style';
 
 import { memoizeStyleFunction } from './styleUtils';
 import { getSimpleStroke } from './simpleStyles';

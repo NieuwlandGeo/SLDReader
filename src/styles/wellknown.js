@@ -1,4 +1,6 @@
-import { Stroke, Circle, RegularShape } from 'ol/style';
+import Stroke from 'ol/style/Stroke';
+import Circle from 'ol/style/Circle';
+import RegularShape from 'ol/style/RegularShape';
 
 /**
  * @private

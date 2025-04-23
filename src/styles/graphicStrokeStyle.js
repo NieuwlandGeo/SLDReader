@@ -1,6 +1,7 @@
-import { Style } from 'ol/style';
+import Style from 'ol/style/Style';
 import { toContext } from 'ol/render';
-import { Point, LineString } from 'ol/geom';
+import Point from 'ol/geom/Point';
+import LineString from 'ol/geom/LineString';
 
 import {
   DEFAULT_MARK_SIZE,

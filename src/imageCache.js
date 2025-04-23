@@ -1,5 +1,6 @@
 /* eslint-disable no-continue */
-import { Style, Icon } from 'ol/style';
+import Style from 'ol/style/Style';
+import Icon from 'ol/style/Icon';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
 import { getRuleSymbolizers, getByPath } from './Utils';
