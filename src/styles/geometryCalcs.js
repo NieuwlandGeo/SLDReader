@@ -32,7 +32,6 @@ function calculateAngle(p1, p2, invertY) {
   return angle;
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export function splitLineString(geometry, graphicSpacing, _options = {}) {
   const defaultOptions = {
     minimumGraphicSpacing: 0,

@@ -50,7 +50,6 @@ function _validateObjectProperties(prop, propName, path, validateFn, errors) {
  * @param {Function} validateFn Function that tests an object (or property thereof)
  * and throws an error if the test fails.
  */
-// eslint-disable-next-line import/prefer-default-export
 export function validateObjectProperties(obj, rootName, validateFn) {
   const errors = [];
   _validateObjectProperties(obj, rootName, '', validateFn, errors);

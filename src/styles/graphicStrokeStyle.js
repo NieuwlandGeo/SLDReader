@@ -27,7 +27,6 @@ function patchRenderer(renderer) {
   // This fixes a problem with re-use of the (cached) image style instance when drawing
   // many points inside a single line feature that are aligned according to line segment direction.
   const rendererProto = Object.getPrototypeOf(renderer);
-  // eslint-disable-next-line
   rendererProto.setImageStyle2 = function (imageStyle, rotation) {
     // First call the original setImageStyle method.
     rendererProto.setImageStyle.call(this, imageStyle);
@@ -160,11 +159,7 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
       defaultGraphicSize = DEFAULT_EXTERNALGRAPHIC_SIZE;
     }
 
-    const pointStyle = getPointStyle(
-      graphicstroke,
-      renderState.feature,
-      null
-    );
+    const pointStyle = getPointStyle(graphicstroke, renderState.feature, null);
 
     // Calculate graphic spacing.
     // Graphic spacing equals the center-to-center distance of graphics along the line.

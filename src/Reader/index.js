@@ -64,7 +64,6 @@ function addSymbolizer(node, obj, prop) {
         item.uom = UOM_PIXEL;
         break;
       default:
-        // eslint-disable-next-line no-console
         console.warn(
           'Unsupported uom attribute found, one of http://www.opengeospatial.org/se/units/(metre|feet|pixel) expected.'
         );
@@ -141,7 +140,6 @@ function addExternalGraphicProp(node, obj, prop, options) {
           externalgraphic.format || ''
         };base64,${fixedBase64SvgXml}`;
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.error('Error converting parametric SVG: ', e);
       }
     }
@@ -617,7 +615,6 @@ function readGraphicNode(node, obj, options) {
       hasMarkOrExternalGraphic &&
       (n.localName === 'Mark' || n.localName === 'ExternalGraphic')
     ) {
-      // eslint-disable-next-line no-continue
       continue;
     }
     if (parsers[n.localName]) {

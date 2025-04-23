@@ -1,4 +1,3 @@
-/* eslint-disable no-continue */
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
 

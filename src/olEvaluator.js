@@ -121,7 +121,7 @@ export default function evaluate(
           evaluate(paramExpression, feature, context)
         );
         value = func(...paramValues);
-      } catch (e) {
+      } catch {
         value = expression.fallbackValue;
       }
     }

@@ -1,4 +1,3 @@
-/* eslint-disable function-call-argument-newline */
 import { toContext } from 'ol/render';
 import { DEVICE_PIXEL_RATIO } from 'ol/has';
 import Style from 'ol/style/Style';
@@ -221,7 +220,7 @@ function getMarkGraphicFill(symbolizer) {
     fill = new Fill({
       color: pattern,
     });
-  } catch (e) {
+  } catch {
     // Default black fill as backup plan.
     fill = new Fill({
       color: '#000000',
