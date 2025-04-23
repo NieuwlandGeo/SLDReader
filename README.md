@@ -31,6 +31,13 @@ npm start
 
 [Api docs](https://nieuwlandgeo.github.io/SLDReader/api.html)
 
+## Requirements
+
+- OpenLayers version 6.15 or higher.
+- An up-to date browser. If you need to support older browsers, you have to compile SLDReader yourself with a different `browserslist` setting in `package.json`.
+  - The browsers supported by SLDReader can be found here: https://browsersl.ist/#q=defaults .
+- If you want to build and/or run SLDReader, NodeJS v18.18 or higher is required.
+
 ## Restrictions on supported SLD Features
 
 The SLDReader library can read both SLD v1.0 and SLD v1.1 documents, but not every part of the SLD standard is (or can be) implemented by the SLDReader and OpenLayers style converter (yet).
@@ -46,6 +53,11 @@ Two custom marks are also supported: `horline` for a horizontal line through the
 Wellknown names that reference a symbol library, like `ttf://CustomFont#42` are not supported. The Size and Rotation elements may be dynamic by using the PropertyName element.
 
 Only one Graphic per PointSymbolizer is supported. Each Graphic can only have one Mark or one ExternalGraphic.
+
+#### QGIS parametric SVG support (experimental)
+SLD's with parametric embedded SVG's exported by QGIS should be able to be used in SLDReader.
+
+Support for this functionality is quite hacky and experimental, but appears to work for simple examples.
 
 #### LineSymbolizer
 
@@ -171,6 +183,12 @@ Values can be forced to pixels by appending px:
 - Units of measure are not supported on `stroke-dasharray`.
 - Units of measure are not supported within or as return value of `Function` elements. The return type of `Functions` is always treated as dimensionless or pixels, depending on context.
 - Values will always be treated as pixels where units of measure are not supported.
+
+#### Important remark about resolution
+
+When converting metres (or feet) to pixels, SLDReader assumes that the resolution passed to the style function by OpenLayers is in `metres/pixel`. This is only true for some map projections. If you care about (approximately) correct sizes in metres, you have to pass a function that calculate the true point resolution in metres per pixel from the view resolution.
+
+See the `convertResolution` option in the API example [here](https://nieuwlandgeo.github.io/SLDReader/api.html#applying-an-sld-to-a-layer-as-a-style-function).
 
 ### Geometry element
 
