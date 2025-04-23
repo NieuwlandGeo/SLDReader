@@ -67,11 +67,10 @@ export function applyDynamicStrokeStyling(
 
   let somethingChanged = false;
 
-  const stroke = symbolizer.stroke || {};
-  const styling = stroke.styling || {};
+  const styling = symbolizer?.stroke?.styling;
 
   // Change stroke width if it's property based.
-  if (isDynamicExpression(styling.strokeWidth)) {
+  if (isDynamicExpression(styling?.strokeWidth)) {
     const strokeWidth = evaluate(styling.strokeWidth, feature, context, 1.0);
     olStroke.setWidth(strokeWidth);
     somethingChanged = true;
@@ -79,8 +78,8 @@ export function applyDynamicStrokeStyling(
 
   // Change stroke color if either color or opacity is property based.
   if (
-    isDynamicExpression(styling.stroke) ||
-    isDynamicExpression(styling.strokeOpacity)
+    isDynamicExpression(styling?.stroke) ||
+    isDynamicExpression(styling?.strokeOpacity)
   ) {
     const strokeColor = evaluate(styling.stroke, feature, context, '#000000');
     const strokeOpacity = evaluate(
@@ -118,16 +117,14 @@ export function applyDynamicTextStyling(olStyle, symbolizer, feature, context) {
 
   // Text fill style has to be applied to text color, so it has to be set as olText stroke.
   if (
-    symbolizer.fill &&
-    symbolizer.fill.styling &&
-    (isDynamicExpression(symbolizer.fill.styling.fill) ||
-      isDynamicExpression(symbolizer.fill.styling.fillOpacity))
+    isDynamicExpression(symbolizer?.fill?.styling?.fill) ||
+    isDynamicExpression(symbolizer?.fill?.styling?.fillOpacity)
   ) {
     const textStrokeSymbolizer = {
       stroke: {
         styling: {
-          stroke: symbolizer.fill.styling.fill,
-          strokeOpacity: symbolizer.fill.styling.fillOpacity,
+          stroke: symbolizer?.fill?.styling?.fill,
+          strokeOpacity: symbolizer?.fill?.styling?.fillOpacity,
         },
       },
     };
@@ -136,17 +133,14 @@ export function applyDynamicTextStyling(olStyle, symbolizer, feature, context) {
 
   // Halo fill has to be applied as olText fill.
   if (
-    symbolizer.halo &&
-    symbolizer.halo.fill &&
-    symbolizer.halo.fill.styling &&
-    (isDynamicExpression(symbolizer.halo.fill.styling.fill) ||
-      isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))
+    isDynamicExpression(symbolizer?.halo?.fill?.styling?.fill) ||
+    isDynamicExpression(symbolizer?.halo?.fill?.styling?.fillOpacity)
   ) {
     applyDynamicFillStyling(olText, symbolizer.halo, feature, context);
   }
 
   // Halo radius has to be applied as olText.stroke width.
-  if (symbolizer.halo && isDynamicExpression(symbolizer.halo.radius)) {
+  if (isDynamicExpression(symbolizer?.halo?.radius)) {
     const haloRadius = evaluate(symbolizer.halo.radius, feature, context, 1.0);
     const olStroke = olText.getStroke();
     if (olStroke) {

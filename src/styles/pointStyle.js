@@ -38,7 +38,7 @@ function pointStyle(pointsymbolizer) {
   // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
   const rotationDegrees = evaluate(style.rotation, null, null, 0.0);
 
-  if (style.externalgraphic && style.externalgraphic.onlineresource) {
+  if (style?.externalgraphic?.onlineresource) {
     // For external graphics: the default size is the native image size.
     // In that case, set pointSizeValue to null, so no scaling is calculated for the image.
     if (!style.size) {
@@ -67,8 +67,8 @@ function pointStyle(pointsymbolizer) {
 
   if (style.mark) {
     const { wellknownname } = style.mark;
-    const olFill = getSimpleFill(style.mark.fill);
-    const olStroke = getSimpleStroke(style.mark.stroke);
+    const olFill = getSimpleFill(style?.mark?.fill);
+    const olStroke = getSimpleStroke(style?.mark?.stroke);
 
     return new Style({
       // Note: size will be set dynamically later.
@@ -107,7 +107,7 @@ const cachedPointStyle = memoizeStyleFunction(pointStyle);
  */
 function getPointStyle(symbolizer, feature, context) {
   // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
-  if (!(symbolizer && symbolizer.graphic)) {
+  if (!symbolizer?.graphic) {
     return emptyStyle;
   }
 
@@ -160,17 +160,17 @@ function getPointStyle(symbolizer, feature, context) {
 
   // --- Update dynamic size ---
   if (isDynamicExpression(size)) {
-    if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
+    if (graphic?.externalgraphic?.onlineresource) {
       const height = olImage.getSize()[1];
       const scale = sizeValue / height || 1;
       olImage.setScale(scale);
-    } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
+    } else if (graphic?.mark?.wellknownname === 'circle') {
       // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
       olImage.setRadius(sizeValue * 0.5);
     } else {
       // For a non-Circle RegularShape, create a new olImage in order to update the size.
       olImage = getWellKnownSymbol(
-        (graphic.mark && graphic.mark.wellknownname) || 'square',
+        graphic?.mark?.wellknownname ?? 'square',
         sizeValue,
         // Note: re-use stroke and fill instances for a (small?) performance gain.
         olImage.getStroke(),

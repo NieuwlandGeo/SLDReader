@@ -120,7 +120,7 @@ function renderStrokeMarks(
  * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
  */
 export function getGraphicStrokeRenderer(linesymbolizer) {
-  if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+  if (!linesymbolizer?.stroke?.graphicstroke) {
     throw new Error(
       'getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.'
     );
@@ -165,8 +165,7 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
     // Graphic spacing equals the center-to-center distance of graphics along the line.
     // If there's no gap, segment length will be equal to graphic size.
     const graphicSizeExpression =
-      (graphicstroke.graphic && graphicstroke.graphic.size) ||
-      defaultGraphicSize;
+      graphicstroke?.graphic?.size || defaultGraphicSize;
     const graphicSize = Number(
       evaluate(
         graphicSizeExpression,
@@ -197,7 +196,7 @@ export function getGraphicStrokeRenderer(linesymbolizer) {
  * @returns {ol/style/Style} An OpenLayers style instance.
  */
 function getGraphicStrokeStyle(linesymbolizer) {
-  if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+  if (!linesymbolizer?.stroke?.graphicstroke) {
     throw new Error(
       'getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.'
     );

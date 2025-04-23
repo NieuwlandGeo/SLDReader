@@ -11,12 +11,12 @@ import { applyDynamicStrokeStyling } from './dynamicStyles';
  * @return {object} OpenLayers style instance corresponding to the stroke of the given symbolizer.
  */
 function lineStyle(symbolizer) {
-  if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+  if (symbolizer?.stroke?.graphicstroke) {
     return getGraphicStrokeStyle(symbolizer);
   }
 
   return new Style({
-    stroke: getSimpleStroke(symbolizer.stroke),
+    stroke: getSimpleStroke(symbolizer?.stroke),
   });
 }
 

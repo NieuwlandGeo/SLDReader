@@ -2106,13 +2106,13 @@
     if (!stroke) {
       return undefined;
     }
-    const styleParams = stroke.styling || {};
+    const styleParams = stroke?.styling;
 
     // Options that have a default value.
-    const strokeColor = evaluate(styleParams.stroke, null, null, '#000000');
-    const strokeOpacity = evaluate(styleParams.strokeOpacity, null, null, 1.0);
-    const strokeWidth = evaluate(styleParams.strokeWidth, null, null, 1.0);
-    const strokeLineDashOffset = evaluate(styleParams.strokeDashoffset, null, null, 0.0);
+    const strokeColor = evaluate(styleParams?.stroke, null, null, '#000000');
+    const strokeOpacity = evaluate(styleParams?.strokeOpacity, null, null, 1.0);
+    const strokeWidth = evaluate(styleParams?.strokeWidth, null, null, 1.0);
+    const strokeLineDashOffset = evaluate(styleParams?.strokeDashoffset, null, null, 0.0);
     const strokeOptions = {
       color: getOLColorString(strokeColor, strokeOpacity),
       width: strokeWidth,
@@ -2120,15 +2120,15 @@
     };
 
     // Optional parameters that will be added to stroke options when present in SLD.
-    const strokeLineJoin = evaluate(styleParams.strokeLinejoin, null, null);
+    const strokeLineJoin = evaluate(styleParams?.strokeLinejoin, null, null);
     if (strokeLineJoin !== null) {
       strokeOptions.lineJoin = strokeLineJoin;
     }
-    const strokeLineCap = evaluate(styleParams.strokeLinecap, null, null);
+    const strokeLineCap = evaluate(styleParams?.strokeLinecap, null, null);
     if (strokeLineCap !== null) {
       strokeOptions.lineCap = strokeLineCap;
     }
-    const strokeDashArray = evaluate(styleParams.strokeDasharray, null, null);
+    const strokeDashArray = evaluate(styleParams?.strokeDasharray, null, null);
     if (strokeDashArray !== null) {
       strokeOptions.lineDash = strokeDashArray.split(' ');
     }
@@ -2148,9 +2148,9 @@
     if (!fill) {
       return undefined;
     }
-    const styleParams = fill.styling || {};
-    const fillColor = evaluate(styleParams.fill, null, null, '#808080');
-    const fillOpacity = evaluate(styleParams.fillOpacity, null, null, 1.0);
+    const styleParams = fill?.styling;
+    const fillColor = evaluate(styleParams?.fill, null, null, '#808080');
+    const fillOpacity = evaluate(styleParams?.fillOpacity, null, null, 1.0);
     return new Fill({
       color: getOLColorString(fillColor, fillOpacity)
     });
@@ -2207,18 +2207,17 @@
       return false;
     }
     let somethingChanged = false;
-    const stroke = symbolizer.stroke || {};
-    const styling = stroke.styling || {};
+    const styling = symbolizer?.stroke?.styling;
 
     // Change stroke width if it's property based.
-    if (isDynamicExpression(styling.strokeWidth)) {
+    if (isDynamicExpression(styling?.strokeWidth)) {
       const strokeWidth = evaluate(styling.strokeWidth, feature, context, 1.0);
       olStroke.setWidth(strokeWidth);
       somethingChanged = true;
     }
 
     // Change stroke color if either color or opacity is property based.
-    if (isDynamicExpression(styling.stroke) || isDynamicExpression(styling.strokeOpacity)) {
+    if (isDynamicExpression(styling?.stroke) || isDynamicExpression(styling?.strokeOpacity)) {
       const strokeColor = evaluate(styling.stroke, feature, context, '#000000');
       const strokeOpacity = evaluate(styling.strokeOpacity, feature, context, 1.0);
       olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
@@ -2247,12 +2246,12 @@
     }
 
     // Text fill style has to be applied to text color, so it has to be set as olText stroke.
-    if (symbolizer.fill && symbolizer.fill.styling && (isDynamicExpression(symbolizer.fill.styling.fill) || isDynamicExpression(symbolizer.fill.styling.fillOpacity))) {
+    if (isDynamicExpression(symbolizer?.fill?.styling?.fill) || isDynamicExpression(symbolizer?.fill?.styling?.fillOpacity)) {
       const textStrokeSymbolizer = {
         stroke: {
           styling: {
-            stroke: symbolizer.fill.styling.fill,
-            strokeOpacity: symbolizer.fill.styling.fillOpacity
+            stroke: symbolizer?.fill?.styling?.fill,
+            strokeOpacity: symbolizer?.fill?.styling?.fillOpacity
           }
         }
       };
@@ -2260,12 +2259,12 @@
     }
 
     // Halo fill has to be applied as olText fill.
-    if (symbolizer.halo && symbolizer.halo.fill && symbolizer.halo.fill.styling && (isDynamicExpression(symbolizer.halo.fill.styling.fill) || isDynamicExpression(symbolizer.halo.fill.styling.fillOpacity))) {
+    if (isDynamicExpression(symbolizer?.halo?.fill?.styling?.fill) || isDynamicExpression(symbolizer?.halo?.fill?.styling?.fillOpacity)) {
       applyDynamicFillStyling(olText, symbolizer.halo, feature, context);
     }
 
     // Halo radius has to be applied as olText.stroke width.
-    if (symbolizer.halo && isDynamicExpression(symbolizer.halo.radius)) {
+    if (isDynamicExpression(symbolizer?.halo?.radius)) {
       const haloRadius = evaluate(symbolizer.halo.radius, feature, context, 1.0);
       const olStroke = olText.getStroke();
       if (olStroke) {
@@ -2302,7 +2301,7 @@
 
     // If the point rotation is a dynamic expression, use 0 as default rotation and update in-place later.
     const rotationDegrees = evaluate(style.rotation, null, null, 0.0);
-    if (style.externalgraphic && style.externalgraphic.onlineresource) {
+    if (style?.externalgraphic?.onlineresource) {
       // For external graphics: the default size is the native image size.
       // In that case, set pointSizeValue to null, so no scaling is calculated for the image.
       if (!style.size) {
@@ -2327,8 +2326,8 @@
       const {
         wellknownname
       } = style.mark;
-      const olFill = getSimpleFill(style.mark.fill);
-      const olStroke = getSimpleStroke(style.mark.stroke);
+      const olFill = getSimpleFill(style?.mark?.fill);
+      const olStroke = getSimpleStroke(style?.mark?.stroke);
       return new Style({
         // Note: size will be set dynamically later.
         image: getWellKnownSymbol(wellknownname, pointSizeValue, olStroke, olFill, rotationDegrees)
@@ -2353,7 +2352,7 @@
    */
   function getPointStyle(symbolizer, feature, context) {
     // According to SLD spec, when a point symbolizer has no Graphic, nothing will be rendered.
-    if (!(symbolizer && symbolizer.graphic)) {
+    if (!symbolizer?.graphic) {
       return emptyStyle;
     }
     const olStyle = cachedPointStyle(symbolizer);
@@ -2397,16 +2396,16 @@
 
     // --- Update dynamic size ---
     if (isDynamicExpression(size)) {
-      if (graphic.externalgraphic && graphic.externalgraphic.onlineresource) {
+      if (graphic?.externalgraphic?.onlineresource) {
         const height = olImage.getSize()[1];
         const scale = sizeValue / height || 1;
         olImage.setScale(scale);
-      } else if (graphic.mark && graphic.mark.wellknownname === 'circle') {
+      } else if (graphic?.mark?.wellknownname === 'circle') {
         // Note: only ol/style/Circle has a setter for radius. RegularShape does not.
         olImage.setRadius(sizeValue * 0.5);
       } else {
         // For a non-Circle RegularShape, create a new olImage in order to update the size.
-        olImage = getWellKnownSymbol(graphic.mark && graphic.mark.wellknownname || 'square', sizeValue,
+        olImage = getWellKnownSymbol(graphic?.mark?.wellknownname ?? 'square', sizeValue,
         // Note: re-use stroke and fill instances for a (small?) performance gain.
         olImage.getStroke(), olImage.getFill(), rotationDegrees);
         olStyle.setImage(olImage);
@@ -2638,7 +2637,7 @@
    * @returns {ol/style/Style~RenderFunction} A style renderer function (pixelCoords, renderState) => void.
    */
   function getGraphicStrokeRenderer(linesymbolizer) {
-    if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+    if (!linesymbolizer?.stroke?.graphicstroke) {
       throw new Error('getGraphicStrokeRenderer error: symbolizer.stroke.graphicstroke null or undefined.');
     }
     const {
@@ -2676,7 +2675,7 @@
       // Calculate graphic spacing.
       // Graphic spacing equals the center-to-center distance of graphics along the line.
       // If there's no gap, segment length will be equal to graphic size.
-      const graphicSizeExpression = graphicstroke.graphic && graphicstroke.graphic.size || defaultGraphicSize;
+      const graphicSizeExpression = graphicstroke?.graphic?.size || defaultGraphicSize;
       const graphicSize = Number(evaluate(graphicSizeExpression, renderState.feature, null, defaultGraphicSize));
       const graphicSpacing = calculateGraphicSpacing(linesymbolizer, graphicSize);
       options.initialGap = getInitialGapSize(linesymbolizer);
@@ -2691,7 +2690,7 @@
    * @returns {ol/style/Style} An OpenLayers style instance.
    */
   function getGraphicStrokeStyle(linesymbolizer) {
-    if (!(linesymbolizer.stroke && linesymbolizer.stroke.graphicstroke)) {
+    if (!linesymbolizer?.stroke?.graphicstroke) {
       throw new Error('getGraphicStrokeStyle error: linesymbolizer.stroke.graphicstroke null or undefined.');
     }
     return new Style({
@@ -2705,11 +2704,11 @@
    * @return {object} OpenLayers style instance corresponding to the stroke of the given symbolizer.
    */
   function lineStyle(symbolizer) {
-    if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+    if (symbolizer?.stroke?.graphicstroke) {
       return getGraphicStrokeStyle(symbolizer);
     }
     return new Style({
-      stroke: getSimpleStroke(symbolizer.stroke)
+      stroke: getSimpleStroke(symbolizer?.stroke)
     });
   }
   const cachedLineStyle = memoizeStyleFunction(lineStyle);
@@ -3018,8 +3017,8 @@
     return fill;
   }
   function polygonStyle(symbolizer) {
-    const fillImageUrl = symbolizer.fill && symbolizer.fill.graphicfill && symbolizer.fill.graphicfill.graphic && symbolizer.fill.graphicfill.graphic.externalgraphic && symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
-    const fillMark = symbolizer.fill && symbolizer.fill.graphicfill && symbolizer.fill.graphicfill.graphic && symbolizer.fill.graphicfill.graphic.mark;
+    const fillImageUrl = symbolizer?.fill?.graphicfill?.graphic?.externalgraphic?.onlineresource;
+    const fillMark = symbolizer?.fill?.graphicfill?.graphic?.mark;
     let polygonFill = null;
     if (fillImageUrl) {
       polygonFill = getExternalGraphicFill(symbolizer);
@@ -3032,7 +3031,7 @@
     // When a polygon has a GraphicStroke, use a custom renderer to combine
     // GraphicStroke with fill. This is needed because a custom renderer
     // ignores any stroke, fill and image present in the style.
-    if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+    if (symbolizer?.stroke?.graphicstroke) {
       const renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
       return new Style({
         renderer: (pixelCoords, renderState) => {
@@ -3090,47 +3089,47 @@
    * @return {object} openlayers style
    */
   function textStyle(textsymbolizer) {
-    if (!(textsymbolizer && textsymbolizer.label)) {
+    if (!textsymbolizer?.label) {
       return emptyStyle;
     }
 
     // If the label is dynamic, set text to empty string.
     // In that case, text will be set at runtime.
     const labelText = evaluate(textsymbolizer.label, null, null, '');
-    const fontStyling = textsymbolizer.font ? textsymbolizer.font.styling || {} : {};
-    const fontFamily = evaluate(fontStyling.fontFamily, null, null, 'sans-serif');
-    const fontSize = evaluate(fontStyling.fontSize, null, null, 10);
-    const fontStyle = evaluate(fontStyling.fontStyle, null, null, '');
-    const fontWeight = evaluate(fontStyling.fontWeight, null, null, '');
+    const fontStyling = textsymbolizer?.font?.styling;
+    const fontFamily = evaluate(fontStyling?.fontFamily, null, null, 'sans-serif');
+    const fontSize = evaluate(fontStyling?.fontSize, null, null, 10);
+    const fontStyle = evaluate(fontStyling?.fontStyle, null, null, '');
+    const fontWeight = evaluate(fontStyling?.fontWeight, null, null, '');
     const olFontString = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-    const pointplacement = textsymbolizer && textsymbolizer.labelplacement && textsymbolizer.labelplacement.pointplacement ? textsymbolizer.labelplacement.pointplacement : {};
+    const pointplacement = textsymbolizer?.labelplacement?.pointplacement;
 
     // If rotation is dynamic, default to 0. Rotation will be set at runtime.
-    const labelRotationDegrees = evaluate(pointplacement.rotation, null, null, 0.0);
-    const displacement = pointplacement && pointplacement.displacement ? pointplacement.displacement : {};
-    const offsetX = evaluate(displacement.displacementx, null, null, 0.0);
+    const labelRotationDegrees = evaluate(pointplacement?.rotation, null, null, 0.0);
+    const displacement = pointplacement?.displacement;
+    const offsetX = evaluate(displacement?.displacementx, null, null, 0.0);
     // Positive offsetY shifts the label downwards. Positive displacementY in SLD means shift upwards.
-    const offsetY = -evaluate(displacement.displacementy, null, null, 0.0);
+    const offsetY = -evaluate(displacement?.displacementy, null, null, 0.0);
 
     // OpenLayers does not support fractional alignment, so snap the anchor to the most suitable option.
-    const anchorpoint = pointplacement && pointplacement.anchorpoint || {};
+    const anchorpoint = pointplacement?.anchorpoint;
     let textAlign = 'center';
-    const anchorPointX = evaluate(anchorpoint.anchorpointx, null, null, NaN);
+    const anchorPointX = evaluate(anchorpoint?.anchorpointx, null, null, NaN);
     if (anchorPointX < 0.25) {
       textAlign = 'left';
     } else if (anchorPointX > 0.75) {
       textAlign = 'right';
     }
     let textBaseline = 'middle';
-    const anchorPointY = evaluate(anchorpoint.anchorpointy, null, null, NaN);
+    const anchorPointY = evaluate(anchorpoint?.anchorpointy, null, null, NaN);
     if (anchorPointY < 0.25) {
       textBaseline = 'bottom';
     } else if (anchorPointY > 0.75) {
       textBaseline = 'top';
     }
-    const fillStyling = textsymbolizer.fill ? textsymbolizer.fill.styling : {};
-    const textFillColor = evaluate(fillStyling.fill, null, null, '#000000');
-    const textFillOpacity = evaluate(fillStyling.fillOpacity, null, null, 1.0);
+    const fillStyling = textsymbolizer?.fill?.styling;
+    const textFillColor = evaluate(fillStyling?.fill, null, null, '#000000');
+    const textFillOpacity = evaluate(fillStyling?.fillOpacity, null, null, 1.0);
 
     // Assemble text style options.
     const textStyleOptions = {
@@ -3148,10 +3147,10 @@
 
     // Convert SLD halo to text symbol stroke.
     if (textsymbolizer.halo) {
-      const haloStyling = textsymbolizer.halo && textsymbolizer.halo.fill ? textsymbolizer.halo.fill.styling : {};
-      const haloFillColor = evaluate(haloStyling.fill, null, null, '#FFFFFF');
-      const haloFillOpacity = evaluate(haloStyling.fillOpacity, null, null, 1.0);
-      const haloRadius = evaluate(textsymbolizer.halo.radius, null, null, 1.0);
+      const haloStyling = textsymbolizer?.halo?.fill?.styling;
+      const haloFillColor = evaluate(haloStyling?.fill, null, null, '#FFFFFF');
+      const haloFillOpacity = evaluate(haloStyling?.fillOpacity, null, null, 1.0);
+      const haloRadius = evaluate(textsymbolizer?.halo?.radius, null, null, 1.0);
       textStyleOptions.stroke = new Stroke({
         color: getOLColorString(haloFillColor, haloFillOpacity),
         // wrong position width radius equal to 2 or 4
@@ -3194,7 +3193,7 @@
 
     // Set rotation if expression is dynamic.
     if (labelplacement) {
-      const pointPlacementRotation = labelplacement.pointplacement && labelplacement.pointplacement.rotation || 0.0;
+      const pointPlacementRotation = labelplacement?.pointplacement?.rotation ?? 0.0;
       if (isDynamicExpression(pointPlacementRotation)) {
         const labelRotationDegrees = evaluate(pointPlacementRotation, feature, context, 0.0);
         olText.setRotation(Math.PI * labelRotationDegrees / 180.0); // OL rotation is in radians.
@@ -3204,7 +3203,7 @@
     // Set line or point placement according to geometry type.
     const geometry = feature.getGeometry ? feature.getGeometry() : feature.geometry;
     const geometryType = geometry.getType ? geometry.getType() : geometry.type;
-    const lineplacement = symbolizer && symbolizer.labelplacement && symbolizer.labelplacement.lineplacement ? symbolizer.labelplacement.lineplacement : null;
+    const lineplacement = symbolizer?.labelplacement?.lineplacement;
     const placement = geometryType !== 'point' && lineplacement ? 'line' : 'point';
     olText.setPlacement(placement);
 
@@ -3212,13 +3211,13 @@
     applyDynamicTextStyling(olStyle, symbolizer, feature, context);
 
     // Adjust font if one or more font svgparameters are dynamic.
-    if (symbolizer.font && symbolizer.font.styling) {
-      const fontStyling = symbolizer.font.styling || {};
-      if (isDynamicExpression(fontStyling.fontFamily) || isDynamicExpression(fontStyling.fontStyle) || isDynamicExpression(fontStyling.fontWeight) || isDynamicExpression(fontStyling.fontSize)) {
-        const fontFamily = evaluate(fontStyling.fontFamily, feature, context, 'sans-serif');
-        const fontStyle = evaluate(fontStyling.fontStyle, feature, context, '');
-        const fontWeight = evaluate(fontStyling.fontWeight, feature, context, '');
-        const fontSize = evaluate(fontStyling.fontSize, feature, context, 10);
+    const fontStyling = symbolizer?.font?.styling;
+    if (fontStyling) {
+      if (isDynamicExpression(fontStyling?.fontFamily) || isDynamicExpression(fontStyling?.fontStyle) || isDynamicExpression(fontStyling?.fontWeight) || isDynamicExpression(fontStyling?.fontSize)) {
+        const fontFamily = evaluate(fontStyling?.fontFamily, feature, context, 'sans-serif');
+        const fontStyle = evaluate(fontStyling?.fontStyle, feature, context, '');
+        const fontWeight = evaluate(fontStyling?.fontWeight, feature, context, '');
+        const fontSize = evaluate(fontStyling?.fontSize, feature, context, 10);
         const olFontString = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
         olText.setFont(olFontString);
       }

@@ -232,17 +232,8 @@ function getMarkGraphicFill(symbolizer) {
 
 function polygonStyle(symbolizer) {
   const fillImageUrl =
-    symbolizer.fill &&
-    symbolizer.fill.graphicfill &&
-    symbolizer.fill.graphicfill.graphic &&
-    symbolizer.fill.graphicfill.graphic.externalgraphic &&
-    symbolizer.fill.graphicfill.graphic.externalgraphic.onlineresource;
-
-  const fillMark =
-    symbolizer.fill &&
-    symbolizer.fill.graphicfill &&
-    symbolizer.fill.graphicfill.graphic &&
-    symbolizer.fill.graphicfill.graphic.mark;
+    symbolizer?.fill?.graphicfill?.graphic?.externalgraphic?.onlineresource;
+  const fillMark = symbolizer?.fill?.graphicfill?.graphic?.mark;
 
   let polygonFill = null;
   if (fillImageUrl) {
@@ -256,7 +247,7 @@ function polygonStyle(symbolizer) {
   // When a polygon has a GraphicStroke, use a custom renderer to combine
   // GraphicStroke with fill. This is needed because a custom renderer
   // ignores any stroke, fill and image present in the style.
-  if (symbolizer.stroke && symbolizer.stroke.graphicstroke) {
+  if (symbolizer?.stroke?.graphicstroke) {
     const renderGraphicStroke = getGraphicStrokeRenderer(symbolizer);
     return new Style({
       renderer: (pixelCoords, renderState) => {
