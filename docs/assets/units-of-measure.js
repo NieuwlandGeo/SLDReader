@@ -54,13 +54,15 @@ function applySLD(vectorLayer, text) {
   const style = SLDReader.getStyle(sldLayer);
   const featureTypeStyle = style.featuretypestyles[0];
 
-  vectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
-    imageLoadedCallback: () => {
-      // Signal OpenLayers to redraw the layer when an image icon has loaded.
-      // On redraw, the updated symbolizer with the correct image scale will be used to draw the icon.
-      vectorLayer.changed();
-    },
-  }));
+  vectorLayer.setStyle(
+    SLDReader.createOlStyleFunction(featureTypeStyle, {
+      imageLoadedCallback: () => {
+        // Signal OpenLayers to redraw the layer when an image icon has loaded.
+        // On redraw, the updated symbolizer with the correct image scale will be used to draw the icon.
+        vectorLayer.changed();
+      },
+    })
+  );
 }
 
 fetch('assets/sld-units-of-measure.xml')

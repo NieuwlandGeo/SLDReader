@@ -51,12 +51,18 @@ function applySLD(vectorLayer, text) {
   const featureTypeStyle = style.featuretypestyles[0];
 
   const viewProjection = map.getView().getProjection();
-  vectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
-    convertResolution: viewResolution => {
-      const viewCenter = map.getView().getCenter();
-      return ol.proj.getPointResolution(viewProjection, viewResolution, viewCenter);
-    },
-  }));
+  vectorLayer.setStyle(
+    SLDReader.createOlStyleFunction(featureTypeStyle, {
+      convertResolution: viewResolution => {
+        const viewCenter = map.getView().getCenter();
+        return ol.proj.getPointResolution(
+          viewProjection,
+          viewResolution,
+          viewCenter
+        );
+      },
+    })
+  );
 }
 
 fetch('assets/sld-provincies.xml')
