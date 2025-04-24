@@ -1,4 +1,4 @@
-/* Version: 0.5.0 - April 24, 2025 11:27:04 */
+/* Version: 0.6.0 - April 24, 2025 11:41:50 */
 var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -3752,7 +3752,7 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
     registerFunction('__fe:Div__', (a, b) => Number(a) / Number(b));
   }
 
-  const version = '0.5.0';
+  const version = '0.6.0';
 
   // Add support for a handful of built-in SLD function implementations.
   addBuiltInFunctions();
