@@ -2,25 +2,26 @@
   "name": "@nieuwlandgeo/sldreader",
   "version": "0.5.0",
   "description": "SLD reader and formatter for openlayers",
-  "main": "dist/sldreader.min.js",
+  "main": "dist/sldreader.js",
   "keywords": [
     "openlayers"
   ],
   "scripts": {
-    "build": "rollup -c",
+    "build:bundle": "rollup --config rollup.config.mjs",
+    "build:docs": "rollup --config rollup.docs.config.mjs",
+    "build": "npm-run-all build:*",
     "docker": "docker-compose up -d",
     "docs:build": "jsdoc2md 'src/**/*.js' > docs/apigen.md",
-    "docs": "npm-run-all build docs:build && cp dist/sldreader.min.js docs/assets/sldreader.min.js",
+    "docs": "npm-run-all build:docs docs:build",
     "lint": "eslint src/ test/",
     "lint:win": "eslint src/ test/ --rule \"linebreak-style: off\"",
     "postversion": "git push --tags && npm publish && git rm -r dist && git commit -m 'remove dist' && git push",
     "start": "npm-run-all -p start:* docker",
-    "start:watch": "rollup -c -w --file docs/assets/sldreader.min.js",
+    "start:watch": "rollup --watch --config rollup.docs.config.mjs",
     "start:sync": "browser-sync start --config bs-config.js",
     "test:watch": "karma start --no-single-run karma.conf.js",
-    "test": "karma  start karma.conf.js",
-    "version": "npm run build && git add -Af dist",
-    "watch": "rollup -c -w"
+    "test": "karma start karma.conf.js",
+    "version": "npm run build && git add -Af dist"
   },
   "bugs": {
     "url": "https://github.com/NieuwlandGeo/SLDReader/issues"

@@ -1,5 +1,5 @@
 /**
- *
+ * @private
  * @param {any} input Input value.
  * @returns The string representation of the input value.
  * It will always return a valid string and return an empty string for null and undefined values.

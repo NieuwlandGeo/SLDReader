@@ -116,7 +116,16 @@ Creates a object from an sld xml string,
 <a name="registerFunction"></a>
 
 ## registerFunction(functionName, implementation)
-Register a function implementation by name. When evaluating the function, it will be calledwith the values of the parameter elements evaluated for a single feature.If the function returns null, the fallback value given in the SLD function element will be used instead.Note: take care of these possible gotcha's in the function implementation.* The function will be called with the number of parameters given in the SLD function element.  This number can be different from the expected number of arguments.* Try to avoid throwing errors from the function implementation and return null if possible.* Literal values will always be provided as strings. Convert numeric parameters to numbers yourself.* Geometry valued parameters will be provided as OpenLayers geometry instances. Do not mutate these!
+Register a function implementation by name. When evaluating the function, it will be called
+with the values of the parameter elements evaluated for a single feature.
+If the function returns null, the fallback value given in the SLD function element will be used instead.
+
+Note: take care of these possible gotcha's in the function implementation.
+* The function will be called with the number of parameters given in the SLD function element.
+  This number can be different from the expected number of arguments.
+* Try to avoid throwing errors from the function implementation and return null if possible.
+* Literal values will always be provided as strings. Convert numeric parameters to numbers yourself.
+* Geometry valued parameters will be provided as OpenLayers geometry instances. Do not mutate these!
 
 **Kind**: global function  
 
@@ -131,7 +140,8 @@ Register a function implementation by name. When evaluating the function, it wil
 Get a function implementation by name.
 
 **Kind**: global function  
-**Returns**: <code>function</code> - The function implementation, or null if no function with the givenname has been registered yet.  
+**Returns**: <code>function</code> - The function implementation, or null if no function with the given
+name has been registered yet.  
 
 | Param | Type | Description |
 | --- | --- | --- |
