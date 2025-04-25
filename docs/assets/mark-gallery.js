@@ -1,17 +1,30 @@
 /* global ol SLDReader */
-const BOX_SIZE = 92; // px
+const BOX_SIZE = 84; // px
 
 let styleFunction = null; // Style that maps a feature with a wellknownname property to a mark symbolizer.
 
-// prettier-ignore
-const wellknownnames = [
-  'square', 'circle', 'triangle', 'star', 'cross', 'hexagon', 'octagon',
-  'cross2', 'x', 'diamond', 'horline', 'line', 'backslash', 'slash',
+const wellknownNames = [
+  {
+    category: 'sld',
+    names: ['square', 'circle', 'triangle', 'star', 'cross', 'x'],
+  },
+  {
+    category: 'qgis',
+    names: ['diamond', 'hexagon', 'octagon', 'cross2', 'line'],
+  },
+  {
+    category: 'other',
+    names: ['horline', 'backslash', 'slash'],
+  },
 ];
 
 function createFeatureTypeStyle() {
+  let allWellknownNames = [];
+  wellknownNames.forEach(batch => {
+    allWellknownNames = allWellknownNames.concat(batch.names);
+  });
   const featureTypeStyle = {
-    rules: wellknownnames.map(wellknownname => ({
+    rules: allWellknownNames.map(wellknownname => ({
       filter: {
         type: 'comparison',
         operator: 'propertyisequalto',
@@ -88,16 +101,23 @@ function getOlMarkStyle(wellknownname) {
   return style;
 }
 
-function prepareGallery(options) {
+function prepareGallery(batch, options) {
   const defaultOptions = {
     showOutlines: false,
   };
 
   const galleryOptions = Object.assign(defaultOptions, options);
 
-  const galleryContainer = document.querySelector('#mark-gallery');
+  const galleryContainer = document.querySelector(
+    `#mark-gallery-${batch.category}`
+  );
+  if (!galleryContainer) {
+    console.warn('NO GALLERY CONTAINER: ', `#mark-gallery-${batch.category}`);
+    return;
+  }
+
   galleryContainer.innerHTML = '';
-  wellknownnames.forEach(wellknownname => {
+  batch.names.forEach(wellknownname => {
     const markCard = document.createElement('div');
     markCard.classList.add('mark-card');
     galleryContainer.appendChild(markCard);
@@ -151,13 +171,19 @@ function prepareGallery(options) {
   });
 }
 
+function prepareGalleries(options) {
+  wellknownNames.forEach(batch => {
+    prepareGallery(batch, options);
+  });
+}
+
 function init() {
-  prepareGallery();
+  prepareGalleries();
 
   document
     .getElementById('chk-show-outline')
     .addEventListener('change', evt => {
-      prepareGallery({ showOutlines: evt.target.checked });
+      prepareGalleries({ showOutlines: evt.target.checked });
     });
   window.meep = prepareGallery;
 }
