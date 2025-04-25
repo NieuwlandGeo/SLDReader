@@ -1,4 +1,4 @@
-/* Version: 0.6.0 - April 24, 2025 11:41:50 */
+/* Version: 0.6.0 - April 25, 2025 09:52:37 */
 var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 

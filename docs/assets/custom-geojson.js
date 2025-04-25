@@ -26,6 +26,20 @@ map.addControl(new ol.control.MousePosition());
 
 const geojsonInput = document.getElementById('custom-geojson');
 
+function scaleExtent(extent, scale) {
+  const [xmin, ymin, xmax, ymax] = extent;
+  const width = xmax - xmin;
+  const height = ymax - ymin;
+  const centerX = (xmin + xmax) / 2;
+  const centerY = (ymin + ymax) / 2;
+  return [
+    centerX - scale * (width / 2),
+    centerY - scale * (height / 2),
+    centerX + scale * (width / 2),
+    centerY + scale * (height / 2),
+  ];
+}
+
 function showGeoJSON() {
   const geoJSON = geojsonInput.value;
   try {
@@ -35,7 +49,8 @@ function showGeoJSON() {
     vector.getSource().clear();
     vector.getSource().addFeatures(features);
     const extent = vector.getSource().getExtent();
-    map.getView().fit(extent);
+    const slightlyBiggerExtent = scaleExtent(extent, 1.2);
+    map.getView().fit(slightlyBiggerExtent);
   } catch (e) {
     console.error('GeoJSON parse error: ', e);
   }
@@ -78,4 +93,23 @@ fetch('assets/sld-custom-geojson.xml')
  */
 editor.on('change', cm => {
   applySLD(vector, cm.getValue());
+});
+
+document.getElementById('random-points').addEventListener('click', () => {
+  geojsonInput.value = JSON.stringify(window.createRandomFeatures('Point', 15));
+  showGeoJSON();
+});
+
+document.getElementById('random-lines').addEventListener('click', () => {
+  geojsonInput.value = JSON.stringify(
+    window.createRandomFeatures('LineString', 10)
+  );
+  showGeoJSON();
+});
+
+document.getElementById('random-polygons').addEventListener('click', () => {
+  geojsonInput.value = JSON.stringify(
+    window.createRandomFeatures('Polygon', 10)
+  );
+  showGeoJSON();
 });

@@ -17,7 +17,6 @@ const weightedRandomColor = (r, g, b) => {
   const rr = Math.floor((256 * Math.random() + r) / 2);
   const rg = Math.floor((256 * Math.random() + g) / 2);
   const rb = Math.floor((256 * Math.random() + b) / 2);
-  // eslint-disable-next-line no-bitwise
   const colorInt = rb + (rg << 8) + (rr << 16);
   return `#${colorInt.toString(16)}`;
 };
