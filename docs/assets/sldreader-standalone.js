@@ -1,5 +1,5 @@
-/* Version: 0.6.0 - May 14, 2025 09:47:02 */
-var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, RenderFeature, MultiPoint) {
+/* Version: 0.6.0 - May 14, 2025 09:57:38 */
+var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
   const IMAGE_LOADING = 'IMAGE_LOADING';
@@ -981,6 +981,58 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
     return FunctionCache[functionName] || null;
   }
 
+  /**
+   * @private
+   * @param {any} input Input value.
+   * @returns The string representation of the input value.
+   * It will always return a valid string and return an empty string for null and undefined values.
+   * Other types of input will be returned as their type name.
+   */
+  function asString(input) {
+    if (input === null) {
+      return '';
+    }
+    const inputType = typeof input;
+    switch (inputType) {
+      case 'string':
+        return input;
+      case 'number':
+      case 'bigint':
+      case 'boolean':
+        return input.toString();
+      case 'undefined':
+        return '';
+      default:
+        // object, function, symbol, bigint, boolean, other?
+        return inputType;
+    }
+  }
+
+  /**
+   * Maps geometry type string to the dimension of a geometry.
+   * Multipart geometries will return the dimension of their separate parts.
+   * @private
+   * @param {string} geometryType OpenLayers Geometry type name.
+   * @returns {number} The dimension of the geometry. Will return -1 for GeometryCollection or unknown type.
+   */
+  function dimensionFromGeometryType(geometryType) {
+    switch (geometryType) {
+      case 'Point':
+      case 'MultiPoint':
+        return 0;
+      case 'LineString':
+      case 'LinearRing':
+      case 'Circle':
+      case 'MultiLineString':
+        return 1;
+      case 'Polygon':
+      case 'MultiPolygon':
+        return 2;
+      default:
+        return -1;
+    }
+  }
+
   // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
   // Constant expressions are returned as-is.
 
@@ -1067,6 +1119,10 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
         }
         value = childValues.join('');
       }
+    } else if (expression.type === 'function' && expression.name === 'dimension' && feature instanceof RenderFeature) {
+      // Special shortcut for the dimension function when used on a RenderFeature (vector tiles),
+      // which ignores the geometry name parameter and directly outputs the dimension.
+      value = dimensionFromGeometryType(feature.getType());
     } else if (expression.type === 'function') {
       const func = getFunction(expression.name);
       if (!func) {
@@ -3499,33 +3555,6 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
     return olStyles.filter(style => style !== null);
   }
 
-  /**
-   * @private
-   * @param {any} input Input value.
-   * @returns The string representation of the input value.
-   * It will always return a valid string and return an empty string for null and undefined values.
-   * Other types of input will be returned as their type name.
-   */
-  function asString(input) {
-    if (input === null) {
-      return '';
-    }
-    const inputType = typeof input;
-    switch (inputType) {
-      case 'string':
-        return input;
-      case 'number':
-      case 'bigint':
-      case 'boolean':
-        return input.toString();
-      case 'undefined':
-        return '';
-      default:
-        // object, function, symbol, bigint, boolean, other?
-        return inputType;
-    }
-  }
-
   // The functions below are taken from the Geoserver function list.
   // https://docs.geoserver.org/latest/en/user/filter/function_reference.html#string-functions
   // Note: implementation details may be different from Geoserver implementations.
@@ -3666,21 +3695,10 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
    * @returns {number} The dimension of the geometry. Will return -1 for GeometryCollection or unknown type.
    */
   function dimension(olGeometry) {
-    switch (geometryType(olGeometry)) {
-      case 'Point':
-      case 'MultiPoint':
-        return 0;
-      case 'LineString':
-      case 'LinearRing':
-      case 'Circle':
-      case 'MultiLineString':
-        return 1;
-      case 'Polygon':
-      case 'MultiPolygon':
-        return 2;
-      default:
-        return -1;
+    if (!olGeometry) {
+      return -1;
     }
+    return dimensionFromGeometryType(olGeometry.getType());
   }
 
   /**
@@ -3781,4 +3799,4 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
 
   return exports;
 
-})({}, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.render.Feature, ol.geom.MultiPoint);
+})({}, ol.render.Feature, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.geom.MultiPoint);

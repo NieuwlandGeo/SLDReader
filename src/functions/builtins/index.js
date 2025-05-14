@@ -1,4 +1,4 @@
-import { asString } from '../helpers';
+import { asString, dimensionFromGeometryType } from '../helpers';
 import { registerFunction } from '../index';
 
 // The functions below are taken from the Geoserver function list.
@@ -148,21 +148,10 @@ function geometryType(olGeometry) {
  * @returns {number} The dimension of the geometry. Will return -1 for GeometryCollection or unknown type.
  */
 function dimension(olGeometry) {
-  switch (geometryType(olGeometry)) {
-    case 'Point':
-    case 'MultiPoint':
-      return 0;
-    case 'LineString':
-    case 'LinearRing':
-    case 'Circle':
-    case 'MultiLineString':
-      return 1;
-    case 'Polygon':
-    case 'MultiPolygon':
-      return 2;
-    default:
-      return -1;
+  if (!olGeometry) {
+    return -1;
   }
+  return dimensionFromGeometryType(olGeometry.getType());
 }
 
 /**
