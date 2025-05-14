@@ -1,3 +1,5 @@
+import { toGeometry } from 'ol/render/Feature';
+import RenderFeature from 'ol/render/Feature';
 import Point from 'ol/geom/Point';
 import MultiPoint from 'ol/geom/MultiPoint';
 
@@ -18,9 +20,13 @@ function getLinePointStyle(symbolizer, feature, context) {
     return null;
   }
 
-  const geom = feature.getGeometry();
+  let geom = feature.getGeometry();
   if (!geom) {
     return null;
+  }
+
+  if (geom instanceof RenderFeature) {
+    geom = toGeometry(geom);
   }
 
   let pointStyle = null;

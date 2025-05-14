@@ -1,5 +1,5 @@
-/* Version: 0.6.0 - April 25, 2025 14:46:24 */
-var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
+/* Version: 0.6.0 - May 14, 2025 09:35:39 */
+var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, RenderFeature, MultiPoint) {
   'use strict';
 
   const IMAGE_LOADING = 'IMAGE_LOADING';
@@ -1068,6 +1068,7 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
         value = childValues.join('');
       }
     } else if (expression.type === 'function') {
+      //TODO: shortcut maken als function 'dimension' heet en feature een RenderFeature is.
       const func = getFunction(expression.name);
       if (!func) {
         value = expression.fallbackValue;
@@ -3236,9 +3237,12 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
     if (typeof feature.getGeometry !== 'function') {
       return null;
     }
-    const geom = feature.getGeometry();
+    let geom = feature.getGeometry();
     if (!geom) {
       return null;
+    }
+    if (geom instanceof RenderFeature) {
+      geom = RenderFeature.toGeometry(geom);
     }
     let pointStyle = null;
     const geomType = geom.getType();
@@ -3279,9 +3283,12 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
     if (typeof feature.getGeometry !== 'function') {
       return null;
     }
-    const geom = feature.getGeometry();
+    let geom = feature.getGeometry();
     if (!geom) {
       return null;
+    }
+    if (geom instanceof RenderFeature) {
+      geom = RenderFeature.toGeometry(geom);
     }
     let pointStyle = null;
     const geomType = geom.getType();
@@ -3775,4 +3782,4 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
 
   return exports;
 
-})({}, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.geom.MultiPoint);
+})({}, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.render.Feature, ol.geom.MultiPoint);

@@ -2,6 +2,7 @@
 // Make sure to map every ol/something/else used in the source code to the corresponding ol.something.Else standalone version.
 const olGlobals = {
   'ol/render': 'ol.render',
+  'ol/render/Feature': 'ol.render.Feature',
   'ol/extent': 'ol.extent',
   'ol/has': 'ol.has',
   'ol/style/Style': 'ol.style.Style',
