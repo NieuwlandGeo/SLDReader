@@ -225,7 +225,8 @@ SLDReader can parse `<Function>` elements, but the support for functions is vend
 - `dimension(geometry) -> integer`
 
   - Returns the dimension of the input geometry. 0 for points, 1 for lines and 2 for polygons.
-  - Returns 0 for a GeometryCollection.
+  - Returns -1 for GeometryCollection.
+  - Returns -1 for null geometry or unknown geometry type.
   - For a multipart geometry, returns the dimension of the part geometries.
   - See the [dynamic styling](https://nieuwlandgeo.github.io/SLDReader/dynamic-styling.html) demo for an example of dimension-based styling.
 
