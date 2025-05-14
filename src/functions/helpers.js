@@ -24,3 +24,28 @@ export function asString(input) {
       return inputType;
   }
 }
+
+/**
+ * Maps geometry type string to the dimension of a geometry.
+ * Multipart geometries will return the dimension of their separate parts.
+ * @private
+ * @param {string} geometryType OpenLayers Geometry type name.
+ * @returns {number} The dimension of the geometry. Will return -1 for GeometryCollection or unknown type.
+ */
+export function dimensionFromGeometryType(geometryType) {
+  switch (geometryType) {
+    case 'Point':
+    case 'MultiPoint':
+      return 0;
+    case 'LineString':
+    case 'LinearRing':
+    case 'Circle':
+    case 'MultiLineString':
+      return 1;
+    case 'Polygon':
+    case 'MultiPolygon':
+      return 2;
+    default:
+      return -1;
+  }
+}

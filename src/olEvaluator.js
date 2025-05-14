@@ -6,8 +6,10 @@
  * @private
  */
 
+import RenderFeature from 'ol/render/Feature';
 import { METRES_PER_FOOT, UOM_FOOT, UOM_METRE } from './constants';
 import { getFunction } from './functions';
+import { dimensionFromGeometryType } from './functions/helpers';
 
 /**
  * Check if an expression depends on feature properties.
@@ -110,6 +112,14 @@ export default function evaluate(
       }
       value = childValues.join('');
     }
+  } else if (
+    expression.type === 'function' &&
+    expression.name === 'dimension' &&
+    feature instanceof RenderFeature
+  ) {
+    // Special shortcut for the dimension function when used on a RenderFeature (vector tiles),
+    // which ignores the geometry name parameter and directly outputs the dimension.
+    value = dimensionFromGeometryType(feature.getType());
   } else if (expression.type === 'function') {
     const func = getFunction(expression.name);
     if (!func) {
