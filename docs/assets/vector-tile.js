@@ -27,7 +27,7 @@ const map = new ol.Map({
   view: new ol.View({
     center: [632295, 6793980],
     zoom: 17,
-    maxZoom: 17,
+    maxZoom: 22,
     minZoom: 17,
   }),
   controls: ol.control.defaults.defaults({attribution: false}).extend([attribution]),

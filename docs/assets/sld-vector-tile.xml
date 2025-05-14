@@ -59,11 +59,11 @@
           </ogc:Filter>
           <se:PolygonSymbolizer>
             <se:Fill>
-              <se:SvgParameter name="fill">#FFFF00</se:SvgParameter>
+              <se:SvgParameter name="fill">#EEEEFF</se:SvgParameter>
             </se:Fill>
             <se:Stroke>
-              <se:SvgParameter name="stroke">#AA8800</se:SvgParameter>
-              <se:SvgParameter name="stroke-width">2</se:SvgParameter>
+              <se:SvgParameter name="stroke">#8888FF</se:SvgParameter>
+              <se:SvgParameter name="stroke-width">1</se:SvgParameter>
             </se:Stroke>
           </se:PolygonSymbolizer>
         </se:Rule>
