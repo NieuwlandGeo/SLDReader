@@ -1,4 +1,4 @@
-/* Version: 0.6.0 - May 14, 2025 09:35:39 */
+/* Version: 0.6.0 - May 14, 2025 09:47:02 */
 var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, RenderFeature, MultiPoint) {
   'use strict';
 
@@ -1068,7 +1068,6 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
         value = childValues.join('');
       }
     } else if (expression.type === 'function') {
-      //TODO: shortcut maken als function 'dimension' heet en feature een RenderFeature is.
       const func = getFunction(expression.name);
       if (!func) {
         value = expression.fallbackValue;
@@ -3664,7 +3663,7 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
    * Get the dimension of a geometry. Multipart geometries will return the dimension of their separate parts.
    * @private
    * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
-   * @returns {number} The dimension of the geometry. Will return 0 for GeometryCollection or unknown type.
+   * @returns {number} The dimension of the geometry. Will return -1 for GeometryCollection or unknown type.
    */
   function dimension(olGeometry) {
     switch (geometryType(olGeometry)) {
@@ -3680,7 +3679,7 @@ var SLDReader = (function (exports, Style, Icon, Fill, Stroke, Circle, RegularSh
       case 'MultiPolygon':
         return 2;
       default:
-        return 0;
+        return -1;
     }
   }
 

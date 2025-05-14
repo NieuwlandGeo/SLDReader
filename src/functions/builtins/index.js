@@ -145,7 +145,7 @@ function geometryType(olGeometry) {
  * Get the dimension of a geometry. Multipart geometries will return the dimension of their separate parts.
  * @private
  * @param {ol/geom/x} olGeometry OpenLayers Geometry instance.
- * @returns {number} The dimension of the geometry. Will return 0 for GeometryCollection or unknown type.
+ * @returns {number} The dimension of the geometry. Will return -1 for GeometryCollection or unknown type.
  */
 function dimension(olGeometry) {
   switch (geometryType(olGeometry)) {
@@ -161,7 +161,7 @@ function dimension(olGeometry) {
     case 'MultiPolygon':
       return 2;
     default:
-      return 0;
+      return -1;
   }
 }
 
