@@ -148,8 +148,8 @@ function addExternalGraphicProp(node, obj, prop, options) {
       externalgraphic.onlineresource = `data:${externalgraphic.format || ''};base64,${externalgraphic.inlinecontent}`;
       delete externalgraphic.inlinecontent;
     } else if (externalgraphic.encoding?.indexOf('xml') > -1) {
-      const encodedXml = window.btoa(externalgraphic.inlinecontent);
-      externalgraphic.onlineresource = `data:image/svg%2Bxml;base64,${encodedXml}`;
+      const encodedXml = window.encodeURIComponent(externalgraphic.inlinecontent);
+      externalgraphic.onlineresource = `data:image/svg+xml;utf8,${encodedXml}`;
       delete externalgraphic.inlinecontent;
     }
   }

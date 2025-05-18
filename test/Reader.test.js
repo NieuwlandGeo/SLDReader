@@ -603,7 +603,7 @@ describe('SVG style parameters', () => {
         style.rules[1].pointsymbolizer[0].graphic.externalgraphic;
       console.log(externalgraphic.onlineresource);
       expect(externalgraphic.onlineresource).to.equal(
-        'data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAsM2wxMiwzNmgzOGwtMzAsMjJsMTEsMzZsLTMxLTIxbC0zMSwyMWwxMS0zNmwtMzAtMjJoMzh6IiBmaWxsPSIjRkYwIiBzdHJva2U9IiNGQzAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg=='
+        'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Cpath%20d%3D%22M50%2C3l12%2C36h38l-30%2C22l11%2C36l-31-21l-31%2C21l11-36l-30-22h38z%22%20fill%3D%22%23FF0%22%20stroke%3D%22%23FC0%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E'
       );
     });
   });
