@@ -143,6 +143,11 @@ function addExternalGraphicProp(node, obj, prop, options) {
         console.error('Error converting parametric SVG: ', e);
       }
     }
+  } else if (externalgraphic.inlinecontent) {
+    if (externalgraphic.encoding?.indexOf('base64') > -1) {
+      externalgraphic.onlineresource = `data:${externalgraphic.format || ''};base64,${externalgraphic.inlinecontent}`;
+      delete externalgraphic.inlinecontent;
+    }
   }
 }
 
@@ -531,6 +536,10 @@ const SymbParsers = {
     addParameterValue(element, obj, prop, 'vendoroptions', options),
   OnlineResource: (element, obj) => {
     obj.onlineresource = element.getAttribute('xlink:href');
+  },
+  InlineContent: (element, obj) => {
+    obj.inlinecontent = element.textContent.trim();
+    obj.encoding = element.getAttribute('encoding');
   },
   CssParameter: (element, obj, prop, options) =>
     addParameterValue(element, obj, prop, 'styling', options),

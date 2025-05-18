@@ -2,6 +2,7 @@
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
 import { dynamicSld } from './data/dynamic.sld';
+import { externalGraphicInlineContentSld } from './data/externalgraphic-inlinecontent.sld';
 import { graphicstrokeSymbolizerSld } from './data/graphicstrokeSymbolizer.sld';
 import { graphicStrokeWithGap } from './data/graphicstroke-with-gap.sld';
 import { graphicStrokeWithComments } from './data/graphicstroke-with-comments.sld';
@@ -579,6 +580,21 @@ describe('SVG style parameters', () => {
       const svg = window.atob(base64String);
       // Parameters (param(...) expressions) should have been replaced.
       expect(/param\(([^)]*)\)/.test(svg)).to.be.false;
+    });
+  });
+
+  describe('ExternalGraphic with InlineContent', () => {
+    let style;
+    beforeEach(() => {
+      const parsedSld = Reader(externalGraphicInlineContentSld);
+      [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+    });
+
+    it('Base64 inline content is converted to base64 onlineresource', () => {
+      const graphic = style.rules[0].pointsymbolizer[0].graphic;
+      expect(graphic.externalgraphic.onlineresource).to.equal(
+        'data:image/png;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
+      );
     });
   });
 
