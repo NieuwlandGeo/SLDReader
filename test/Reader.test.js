@@ -591,9 +591,19 @@ describe('SVG style parameters', () => {
     });
 
     it('Base64 inline content is converted to base64 onlineresource', () => {
-      const graphic = style.rules[0].pointsymbolizer[0].graphic;
-      expect(graphic.externalgraphic.onlineresource).to.equal(
+      const externalgraphic =
+        style.rules[0].pointsymbolizer[0].graphic.externalgraphic;
+      expect(externalgraphic.onlineresource).to.equal(
         'data:image/png;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
+      );
+    });
+
+    it('SVG xml inline content is converted to base64 onlineresource', () => {
+      const externalgraphic =
+        style.rules[1].pointsymbolizer[0].graphic.externalgraphic;
+      console.log(externalgraphic.onlineresource);
+      expect(externalgraphic.onlineresource).to.equal(
+        'data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAsM2wxMiwzNmgzOGwtMzAsMjJsMTEsMzZsLTMxLTIxbC0zMSwyMWwxMS0zNmwtMzAtMjJoMzh6IiBmaWxsPSIjRkYwIiBzdHJva2U9IiNGQzAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg=='
       );
     });
   });

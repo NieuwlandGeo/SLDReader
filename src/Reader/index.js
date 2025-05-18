@@ -147,6 +147,10 @@ function addExternalGraphicProp(node, obj, prop, options) {
     if (externalgraphic.encoding?.indexOf('base64') > -1) {
       externalgraphic.onlineresource = `data:${externalgraphic.format || ''};base64,${externalgraphic.inlinecontent}`;
       delete externalgraphic.inlinecontent;
+    } else if (externalgraphic.encoding?.indexOf('xml') > -1) {
+      const encodedXml = window.btoa(externalgraphic.inlinecontent);
+      externalgraphic.onlineresource = `data:image/svg%2Bxml;base64,${encodedXml}`;
+      delete externalgraphic.inlinecontent;
     }
   }
 }
@@ -538,8 +542,12 @@ const SymbParsers = {
     obj.onlineresource = element.getAttribute('xlink:href');
   },
   InlineContent: (element, obj) => {
-    obj.inlinecontent = element.textContent.trim();
     obj.encoding = element.getAttribute('encoding');
+    if (obj.encoding?.indexOf('base64') > -1) {
+      obj.inlinecontent = element.textContent?.trim();
+    } else if (obj.encoding?.indexOf('xml') > -1) {
+      obj.inlinecontent = element.innerHTML?.trim();
+    }
   },
   CssParameter: (element, obj, prop, options) =>
     addParameterValue(element, obj, prop, 'styling', options),
