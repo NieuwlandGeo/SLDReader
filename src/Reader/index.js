@@ -143,6 +143,15 @@ function addExternalGraphicProp(node, obj, prop, options) {
         console.error('Error converting parametric SVG: ', e);
       }
     }
+  } else if (externalgraphic.inlinecontent) {
+    if (externalgraphic.encoding?.indexOf('base64') > -1) {
+      externalgraphic.onlineresource = `data:${externalgraphic.format || ''};base64,${externalgraphic.inlinecontent}`;
+      delete externalgraphic.inlinecontent;
+    } else if (externalgraphic.encoding?.indexOf('xml') > -1) {
+      const encodedXml = window.encodeURIComponent(externalgraphic.inlinecontent);
+      externalgraphic.onlineresource = `data:image/svg+xml;utf8,${encodedXml}`;
+      delete externalgraphic.inlinecontent;
+    }
   }
 }
 
@@ -531,6 +540,14 @@ const SymbParsers = {
     addParameterValue(element, obj, prop, 'vendoroptions', options),
   OnlineResource: (element, obj) => {
     obj.onlineresource = element.getAttribute('xlink:href');
+  },
+  InlineContent: (element, obj) => {
+    obj.encoding = element.getAttribute('encoding');
+    if (obj.encoding?.indexOf('base64') > -1) {
+      obj.inlinecontent = element.textContent?.trim();
+    } else if (obj.encoding?.indexOf('xml') > -1) {
+      obj.inlinecontent = element.innerHTML?.trim();
+    }
   },
   CssParameter: (element, obj, prop, options) =>
     addParameterValue(element, obj, prop, 'styling', options),

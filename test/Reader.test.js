@@ -2,6 +2,7 @@
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
 import { dynamicSld } from './data/dynamic.sld';
+import { externalGraphicInlineContentSld } from './data/externalgraphic-inlinecontent.sld';
 import { graphicstrokeSymbolizerSld } from './data/graphicstrokeSymbolizer.sld';
 import { graphicStrokeWithGap } from './data/graphicstroke-with-gap.sld';
 import { graphicStrokeWithComments } from './data/graphicstroke-with-comments.sld';
@@ -579,6 +580,31 @@ describe('SVG style parameters', () => {
       const svg = window.atob(base64String);
       // Parameters (param(...) expressions) should have been replaced.
       expect(/param\(([^)]*)\)/.test(svg)).to.be.false;
+    });
+  });
+
+  describe('ExternalGraphic with InlineContent', () => {
+    let style;
+    beforeEach(() => {
+      const parsedSld = Reader(externalGraphicInlineContentSld);
+      [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+    });
+
+    it('Base64 inline content is converted to base64 onlineresource', () => {
+      const externalgraphic =
+        style.rules[0].pointsymbolizer[0].graphic.externalgraphic;
+      expect(externalgraphic.onlineresource).to.equal(
+        'data:image/png;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
+      );
+    });
+
+    it('SVG xml inline content is converted to base64 onlineresource', () => {
+      const externalgraphic =
+        style.rules[1].pointsymbolizer[0].graphic.externalgraphic;
+      console.log(externalgraphic.onlineresource);
+      expect(externalgraphic.onlineresource).to.equal(
+        'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Cpath%20d%3D%22M50%2C3l12%2C36h38l-30%2C22l11%2C36l-31-21l-31%2C21l11-36l-30-22h38z%22%20fill%3D%22%23FF0%22%20stroke%3D%22%23FC0%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E'
+      );
     });
   });
 
