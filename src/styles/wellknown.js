@@ -7,6 +7,64 @@ import RadialShape from './RadialShape';
 const RADIAL_SHAPE_SUPPORTED = true;
 
 /**
+ * Approximate a partial circle as a radial shape.
+ * @private
+ * @param {object} options Options.
+ * @param {number} startAngle Start angle in radians.
+ * @param {number} endAngle End angle in radians.
+ * @param {number} radius Symbol radius.
+ * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
+ * @param {ol/style/fill} fill OpenLayers Fill instance.
+ * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
+ * @returns {RadialShape} A RadialShape instance.
+ */
+function createPartialCircleRadialShape({
+  startAngle,
+  endAngle,
+  radius,
+  stroke,
+  fill,
+  rotationRadians,
+}) {
+  // Return a square if radial shape is not supported.
+  if (!RADIAL_SHAPE_SUPPORTED) {
+    return new RegularShape({
+      angle: Math.PI / 4,
+      fill,
+      points: 4,
+      // For square, scale radius so the height of the square equals the given size.
+      radius: radius * Math.sqrt(2.0),
+      stroke,
+      rotation: rotationRadians,
+    });
+  }
+
+  let a1 = startAngle;
+  let a2 = endAngle;
+  if (a2 < a1) {
+    [a2, a1] = [a1, a2];
+  }
+
+  const RESOLUTION = 96; // Number of points for a half circle.
+  const numPoints = Math.ceil((RESOLUTION * (endAngle - startAngle)) / Math.PI);
+  const radii = [0];
+  const angles = [0];
+  for (let k = 0; k <= numPoints; k += 1) {
+    const deltaAngle = (endAngle - startAngle) / numPoints;
+    radii.push(radius);
+    angles.push(startAngle + k * deltaAngle);
+  }
+
+  return new RadialShape({
+    radii,
+    angles,
+    stroke,
+    fill,
+    rotation: rotationRadians ?? 0.0,
+  });
+}
+
+/**
  * Create a radial shape from symbol coordinates in the unit square, scaled by radius.
  * @private
  * @param {object} options Options.
@@ -408,6 +466,36 @@ function getWellKnownSymbol(
           [0, -1],
           [1, -1],
         ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'semi_circle':
+      return createPartialCircleRadialShape({
+        startAngle: 0,
+        endAngle: Math.PI,
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'third_circle':
+      return createPartialCircleRadialShape({
+        startAngle: Math.PI / 2,
+        endAngle: 7 * Math.PI / 6,
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'quarter_circle':
+      return createPartialCircleRadialShape({
+        startAngle: Math.PI / 2,
+        endAngle: Math.PI,
         radius,
         stroke,
         fill,

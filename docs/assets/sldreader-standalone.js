@@ -1,4 +1,4 @@
-/* Version: 0.6.2 - May 20, 2025 16:21:43 */
+/* Version: 0.6.2 - May 20, 2025 16:38:43 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2591,6 +2591,45 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   }
 
   /**
+   * Approximate a partial circle as a radial shape.
+   * @private
+   * @param {object} options Options.
+   * @param {number} startAngle Start angle in radians.
+   * @param {number} endAngle End angle in radians.
+   * @param {number} radius Symbol radius.
+   * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
+   * @param {ol/style/fill} fill OpenLayers Fill instance.
+   * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
+   * @returns {RadialShape} A RadialShape instance.
+   */
+  function createPartialCircleRadialShape(_ref) {
+    let {
+      startAngle,
+      endAngle,
+      radius,
+      stroke,
+      fill,
+      rotationRadians
+    } = _ref;
+    const RESOLUTION = 96; // Number of points for a half circle.
+    const numPoints = Math.ceil(RESOLUTION * (endAngle - startAngle) / Math.PI);
+    const radii = [0];
+    const angles = [0];
+    for (let k = 0; k <= numPoints; k += 1) {
+      const deltaAngle = (endAngle - startAngle) / numPoints;
+      radii.push(radius);
+      angles.push(startAngle + k * deltaAngle);
+    }
+    return new RadialShape({
+      radii,
+      angles,
+      stroke,
+      fill,
+      rotation: rotationRadians ?? 0.0
+    });
+  }
+
+  /**
    * Create a radial shape from symbol coordinates in the unit square, scaled by radius.
    * @private
    * @param {object} options Options.
@@ -2601,20 +2640,20 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
    * @returns {RadialShape} A RadialShape instance.
    */
-  function radialShapeFromUnitCoordinates(_ref) {
+  function radialShapeFromUnitCoordinates(_ref2) {
     let {
       coordinates,
       radius,
       stroke,
       fill,
       rotationRadians
-    } = _ref;
+    } = _ref2;
 
     // Convert unit coordinates and radius to polar coordinate representation.
     const radii = [];
     const angles = [];
-    coordinates.forEach(_ref2 => {
-      let [x, y] = _ref2;
+    coordinates.forEach(_ref3 => {
+      let [x, y] = _ref3;
       const polarRadius = radius * Math.sqrt(x * x + y * y);
       let polarAngle = Math.atan2(y, x);
       if (polarAngle < 2) {
@@ -2859,6 +2898,27 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       case 'left_half_triangle':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 1], [0, -1], [1, -1]],
+          radius,
+          stroke,
+          fill});
+      case 'semi_circle':
+        return createPartialCircleRadialShape({
+          startAngle: 0,
+          endAngle: Math.PI,
+          radius,
+          stroke,
+          fill});
+      case 'third_circle':
+        return createPartialCircleRadialShape({
+          startAngle: Math.PI / 2,
+          endAngle: 7 * Math.PI / 6,
+          radius,
+          stroke,
+          fill});
+      case 'quarter_circle':
+        return createPartialCircleRadialShape({
+          startAngle: Math.PI / 2,
+          endAngle: Math.PI,
           radius,
           stroke,
           fill});
