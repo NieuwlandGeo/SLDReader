@@ -9,8 +9,28 @@ const wellknownNames = [
     names: ['square', 'circle', 'triangle', 'star', 'cross', 'x'],
   },
   {
+    category: 'geoserver',
+    names: [
+      'shape://vertline',
+      'shape://horline',
+      'shape://slash',
+      'shape://backslash',
+      'shape://dot',
+      'shape://plus',
+      'shape://times',
+    ],
+  },
+  {
     category: 'qgis',
-    names: ['diamond', 'hexagon', 'octagon', 'cross2', 'line'],
+    names: [
+      'equilateral_triangle',
+      'diamond',
+      'pentagon',
+      'hexagon',
+      'octagon',
+      'cross2',
+      'line',
+    ],
   },
   {
     category: 'other',
@@ -166,7 +186,21 @@ function prepareGallery(batch, options) {
 
     const markTitle = document.createElement('div');
     markTitle.classList.add('mark-title');
-    markTitle.textContent = wellknownname;
+
+    // Perform shenanigans to make long underscored symbol names fit.
+    const index = wellknownname.lastIndexOf('_') > -1;
+    if (wellknownname.length > 10 && index > -1) {
+      const formattedName = wellknownname.replace(/(_)[^_]+$/, stuff => {
+        return stuff.replace('_', '_<br>');
+      });
+      markTitle.style.fontSize = '12px';
+      if (wellknownname === 'diagonal_half_square') {
+        markTitle.style.fontSize = '11px';
+      }
+      markTitle.innerHTML = formattedName;
+    } else {
+      markTitle.textContent = wellknownname;
+    }
     markCard.appendChild(markTitle);
   });
 }

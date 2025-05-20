@@ -35,6 +35,14 @@ function getWellKnownSymbol(
         stroke,
       });
 
+    case 'shape://dot':
+      return new Circle({
+        fill,
+        radius: radius / 8,
+        stroke,
+      });
+
+    case 'equilateral_triangle':
     case 'triangle':
       return new RegularShape({
         fill,
@@ -54,12 +62,27 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'shape://plus':
     case 'cross':
       return new RegularShape({
         fill,
         points: 4,
         radius,
         radius2: 0,
+        stroke:
+          stroke ||
+          new Stroke({
+            color: fillColor,
+            width: radius / 2,
+          }),
+        rotation: rotationRadians,
+      });
+
+    case 'pentagon':
+      return new RegularShape({
+        fill,
+        points: 5,
+        radius,
         stroke:
           stroke ||
           new Stroke({
@@ -98,6 +121,7 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'shape://times':
     case 'cross2': // cross2 is used by QGIS for the x symbol.
     case 'x':
       return new RegularShape({
@@ -124,6 +148,7 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'shape://horline':
     case 'horline':
       return new RegularShape({
         fill,
@@ -134,6 +159,7 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'shape://vertline':
     case 'line':
       return new RegularShape({
         fill,
@@ -144,6 +170,7 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'shape://backslash':
     case 'backslash':
       return new RegularShape({
         fill,
@@ -154,6 +181,7 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'shape://slash':
     case 'slash':
       return new RegularShape({
         fill,
