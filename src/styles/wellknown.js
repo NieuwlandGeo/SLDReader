@@ -35,6 +35,13 @@ function getWellKnownSymbol(
         stroke,
       });
 
+    case 'shape://dot':
+      return new Circle({
+        fill,
+        radius: radius / 8,
+        stroke,
+      });
+
     case 'triangle':
       return new RegularShape({
         fill,

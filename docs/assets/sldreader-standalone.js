@@ -1,4 +1,4 @@
-/* Version: 0.6.1 - May 19, 2025 12:07:05 */
+/* Version: 0.6.1 - May 20, 2025 09:21:12 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2038,6 +2038,12 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         return new Circle({
           fill,
           radius,
+          stroke
+        });
+      case 'shape://dot':
+        return new Circle({
+          fill,
+          radius: radius / 8,
           stroke
         });
       case 'triangle':
