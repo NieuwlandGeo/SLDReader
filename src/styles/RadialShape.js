@@ -38,11 +38,8 @@ export const defaultStrokeStyle = '#000';
  * Specify radius for regular polygons, or both radius and radius2 for stars.
  * @typedef {Object} Options
  * @property {import("./Fill.js").default} [fill] Fill style.
- * @property {number} points Number of points for stars and regular polygons. In case of a polygon, the number of points
- * is the number of sides.
- * @property {number} radius Radius of a regular polygon.
- * @property {number} [radius2] Second radius to make a star instead of a regular polygon.
- * @property {number} [angle=0] Shape's angle in radians. A value of 0 will have one of the shape's points facing up.
+ * @property {Array<number>} radii Array of radii.
+ * @property {Array<number>} angles Angles in radians.
  * @property {Array<number>} [displacement=[0, 0]] Displacement of the shape in pixels.
  * Positive values will shift the shape right and up.
  * @property {import("./Stroke.js").default} [stroke] Stroke style.
@@ -107,28 +104,16 @@ class RadialShape extends ImageStyle {
     this.origin_ = [0, 0];
 
     /**
-     * @private
-     * @type {number}
-     */
-    this.points_ = options.points;
-
-    /**
      * @protected
-     * @type {number}
+     * @type {Array<number>}
      */
-    this.radius = options.radius;
+    this.radii_ = [...options.radii]; // Clone input array to prevent accidents when the original is mutated.
 
     /**
      * @private
-     * @type {number|undefined}
+     * @type {Array<number>}
      */
-    this.radius2_ = options.radius2;
-
-    /**
-     * @private
-     * @type {number}
-     */
-    this.angle_ = options.angle !== undefined ? options.angle : 0;
+    this.angles_ = [...options.angles]; // Clone input array to prevent accidents when the original is mutated.
 
     /**
      * @private
@@ -172,9 +157,8 @@ class RadialShape extends ImageStyle {
     const style = new RadialShape({
       fill: this.getFill() ? this.getFill().clone() : undefined,
       points: this.getPoints(),
-      radius: this.getRadius(),
-      radius2: this.getRadius2(),
-      angle: this.getAngle(),
+      radii: [...this.getRadii()],
+      angles: [...this.getAngles()],
       stroke: this.getStroke() ? this.getStroke().clone() : undefined,
       rotation: this.getRotation(),
       rotateWithView: this.getRotateWithView(),
@@ -203,15 +187,6 @@ class RadialShape extends ImageStyle {
       size[0] / 2 - displacement[0] / scale[0],
       size[1] / 2 + displacement[1] / scale[1],
     ];
-  }
-
-  /**
-   * Get the angle used in generating the shape.
-   * @return {number} Shape's rotation in radians.
-   * @api
-   */
-  getAngle() {
-    return this.angle_;
   }
 
   /**
@@ -256,7 +231,7 @@ class RadialShape extends ImageStyle {
   getImage(pixelRatio) {
     const fillKey = this.fill_?.getKey();
     const cacheKey =
-      `${pixelRatio},${this.angle_},${this.radius},${this.radius2_},${this.points_},${fillKey}` +
+      `${pixelRatio},${this.angle_},${this.radii_.join()},${this.angles_.join()},${fillKey}` +
       Object.values(this.renderOptions_).join(',');
     let image = /** @type {HTMLCanvasElement} */ (
       iconImageCache.get(cacheKey, null, null)?.getImage(1)
@@ -315,30 +290,21 @@ class RadialShape extends ImageStyle {
   }
 
   /**
-   * Get the number of points for generating the shape.
-   * @return {number} Number of points for stars and regular polygons.
+   * Get the array of radii for the shape.
+   * @return {number} Radii.
    * @api
    */
-  getPoints() {
-    return this.points_;
+  getRadii() {
+    return this.radii_;
   }
 
   /**
-   * Get the (primary) radius for the shape.
-   * @return {number} Radius.
+   * Get the array of angles for the shape.
+   * @return {Array<number>} Angles.
    * @api
    */
-  getRadius() {
-    return this.radius;
-  }
-
-  /**
-   * Get the secondary radius for the shape.
-   * @return {number|undefined} Radius2.
-   * @api
-   */
-  getRadius2() {
-    return this.radius2_;
+  getAngles() {
+    return this.angles_;
   }
 
   /**
@@ -399,13 +365,10 @@ class RadialShape extends ImageStyle {
    * @private
    */
   calculateLineJoinSize_(lineJoin, strokeWidth, miterLimit) {
-    if (
-      strokeWidth === 0 ||
-      this.points_ === Infinity ||
-      (lineJoin !== 'bevel' && lineJoin !== 'miter')
-    ) {
+    if (strokeWidth === 0 || (lineJoin !== 'bevel' && lineJoin !== 'miter')) {
       return strokeWidth;
     }
+
     // m  | ^
     // i  | |\                  .
     // t >|  #\
@@ -428,56 +391,70 @@ class RadialShape extends ImageStyle {
     //      |α                                   .   .
     //       /                                         .   .
     //      ° center
-    let r1 = this.radius;
-    let r2 = this.radius2_ === undefined ? r1 : this.radius2_;
-    if (r1 < r2) {
-      const tmp = r1;
-      r1 = r2;
-      r2 = tmp;
+    let maxBevelAdd = 0;
+    for (let idx = 0; idx < this.radii_.length; idx += 1) {
+      let r1 = this.radii_[idx];
+      let r2 = this.radii_[idx === this.radii_.length - 1 ? 0 : idx + 1];
+      if (r1 < r2) {
+        const tmp = r1;
+        r1 = r2;
+        r2 = tmp;
+      }
+      let alpha;
+      if (idx < this.radii_.length - 1) {
+        alpha = this.angles_[idx + 1] - this.angles_[idx];
+      } else {
+        alpha = 2 * Math.PI - this.angles_[idx] + this.angles_[0];
+      }
+      const a = r2 * Math.sin(alpha);
+      const b = Math.sqrt(r2 * r2 - a * a);
+      const d = r1 - b;
+      const e = Math.sqrt(a * a + d * d);
+      const miterRatio = e / a;
+      if (lineJoin === 'miter' && miterRatio <= miterLimit) {
+        maxBevelAdd = Math.max(maxBevelAdd, miterRatio * strokeWidth);
+        continue;
+      }
+      // Calculate the distance from center to the stroke corner where
+      // it was cut short because of the miter limit.
+      //              l
+      //        ----+---- <= distance from center to here is maxr
+      //       /####|k ##\
+      //      /#####^#####\
+      //     /#### /+\# s #\
+      //    /### h/+++\# t #\
+      //   /### t/+++++\# r #\
+      //  /### a/+++++++\# o #\
+      // /### p/++ fill +\# k #\
+      ///#### /+++++^+++++\# e #\
+      //#####/+++++/+\+++++\#####\
+      const k = strokeWidth / 2 / miterRatio;
+      const l = (strokeWidth / 2) * (d / e);
+      const maxr = Math.sqrt((r1 + k) * (r1 + k) + l * l);
+      const bevelAdd = maxr - r1;
+      if (this.radius2_ === undefined || lineJoin === 'bevel') {
+        maxBevelAdd = Math.max(maxBevelAdd, bevelAdd * 2);
+        continue;
+      }
+      // If outer miter is over the miter limit the inner miter may reach through the
+      // center and be longer than the bevel, same calculation as above but swap r1 / r2.
+      const aa = r1 * Math.sin(alpha);
+      const bb = Math.sqrt(r1 * r1 - aa * aa);
+      const dd = r2 - bb;
+      const ee = Math.sqrt(aa * aa + dd * dd);
+      const innerMiterRatio = ee / aa;
+      if (innerMiterRatio <= miterLimit) {
+        const innerLength = (innerMiterRatio * strokeWidth) / 2 - r2 - r1;
+        maxBevelAdd = Math.max(
+          maxBevelAdd,
+          2 * Math.max(bevelAdd, innerLength)
+        );
+        continue;
+      }
+      maxBevelAdd = Math.max(maxBevelAdd, 2 * bevelAdd);
     }
-    const points =
-      this.radius2_ === undefined ? this.points_ : this.points_ * 2;
-    const alpha = (2 * Math.PI) / points;
-    const a = r2 * Math.sin(alpha);
-    const b = Math.sqrt(r2 * r2 - a * a);
-    const d = r1 - b;
-    const e = Math.sqrt(a * a + d * d);
-    const miterRatio = e / a;
-    if (lineJoin === 'miter' && miterRatio <= miterLimit) {
-      return miterRatio * strokeWidth;
-    }
-    // Calculate the distance from center to the stroke corner where
-    // it was cut short because of the miter limit.
-    //              l
-    //        ----+---- <= distance from center to here is maxr
-    //       /####|k ##\
-    //      /#####^#####\
-    //     /#### /+\# s #\
-    //    /### h/+++\# t #\
-    //   /### t/+++++\# r #\
-    //  /### a/+++++++\# o #\
-    // /### p/++ fill +\# k #\
-    ///#### /+++++^+++++\# e #\
-    //#####/+++++/+\+++++\#####\
-    const k = strokeWidth / 2 / miterRatio;
-    const l = (strokeWidth / 2) * (d / e);
-    const maxr = Math.sqrt((r1 + k) * (r1 + k) + l * l);
-    const bevelAdd = maxr - r1;
-    if (this.radius2_ === undefined || lineJoin === 'bevel') {
-      return bevelAdd * 2;
-    }
-    // If outer miter is over the miter limit the inner miter may reach through the
-    // center and be longer than the bevel, same calculation as above but swap r1 / r2.
-    const aa = r1 * Math.sin(alpha);
-    const bb = Math.sqrt(r1 * r1 - aa * aa);
-    const dd = r2 - bb;
-    const ee = Math.sqrt(aa * aa + dd * dd);
-    const innerMiterRatio = ee / aa;
-    if (innerMiterRatio <= miterLimit) {
-      const innerLength = (innerMiterRatio * strokeWidth) / 2 - r2 - r1;
-      return 2 * Math.max(bevelAdd, innerLength);
-    }
-    return bevelAdd * 2;
+
+    return maxBevelAdd;
   }
 
   /**
@@ -504,7 +481,11 @@ class RadialShape extends ImageStyle {
     }
 
     const add = this.calculateLineJoinSize_(lineJoin, strokeWidth, miterLimit);
-    const maxRadius = Math.max(this.radius, this.radius2_ || 0);
+    
+    let maxRadius = 0;
+    this.radii_.forEach(radius => {
+      maxRadius = Math.max(maxRadius, radius);
+    });
     const size = Math.ceil(2 * maxRadius + add);
 
     return {
@@ -599,24 +580,13 @@ class RadialShape extends ImageStyle {
    * @param {CanvasRenderingContext2D} context The context to draw in.
    */
   createPath_(context) {
-    let points = this.points_;
-    const radius = this.radius;
-    if (points === Infinity) {
-      context.arc(0, 0, radius, 0, 2 * Math.PI);
-    } else {
-      const radius2 = this.radius2_ === undefined ? radius : this.radius2_;
-      if (this.radius2_ !== undefined) {
-        points *= 2;
-      }
-      const startAngle = this.angle_ - Math.PI / 2;
-      const step = (2 * Math.PI) / points;
-      for (let i = 0; i < points; i++) {
-        const angle0 = startAngle + i * step;
-        const radiusC = i % 2 === 0 ? radius : radius2;
-        context.lineTo(radiusC * Math.cos(angle0), radiusC * Math.sin(angle0));
-      }
-      context.closePath();
+    for (let k = 0; k < this.radii_.length; k += 1) {
+      const radius = this.radii_[k];
+      const angle = this.angles_[k];
+      // Watch out: image coordinates have y pointing downwards!
+      context.lineTo(radius * Math.cos(angle), -radius * Math.sin(angle));
     }
+    context.closePath();
   }
 
   /**

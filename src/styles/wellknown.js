@@ -1,6 +1,63 @@
 import Stroke from 'ol/style/Stroke';
 import Circle from 'ol/style/Circle';
 import RegularShape from 'ol/style/RegularShape';
+import RadialShape from './RadialShape';
+
+// Todo: make this a global setting.
+const RADIAL_SHAPE_SUPPORTED = true;
+
+/**
+ * Create a radial shape from symbol coordinates in the unit square, scaled by radius.
+ * @private
+ * @param {object} options Options.
+ * @param {Array<Array<number>>} coordinates Unit coordinates in counter-clockwise order.
+ * @param {number} radius Symbol radius.
+ * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
+ * @param {ol/style/fill} fill OpenLayers Fill instance.
+ * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
+ * @returns {RadialShape} A RadialShape instance.
+ */
+function radialShapeFromUnitCoordinates({
+  coordinates,
+  radius,
+  stroke,
+  fill,
+  rotationRadians,
+}) {
+  // Return a square if radial shape is not supported.
+  if (!RADIAL_SHAPE_SUPPORTED) {
+    return new RegularShape({
+      angle: Math.PI / 4,
+      fill,
+      points: 4,
+      // For square, scale radius so the height of the square equals the given size.
+      radius: radius * Math.sqrt(2.0),
+      stroke,
+      rotation: rotationRadians,
+    });
+  }
+
+  // Convert unit coordinates and radius to polar coordinate representation.
+  const radii = [];
+  const angles = [];
+  coordinates.forEach(([x, y]) => {
+    const polarRadius = radius * Math.sqrt(x * x + y * y);
+    let polarAngle = Math.atan2(y, x);
+    if (polarAngle < 2) {
+      polarAngle += 2 * Math.PI;
+    }
+    radii.push(polarRadius);
+    angles.push(polarAngle);
+  });
+
+  return new RadialShape({
+    radii,
+    angles,
+    stroke,
+    fill,
+    rotation: rotationRadians ?? 0.0,
+  });
+}
 
 /**
  * @private
@@ -192,6 +249,37 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    // Symbols that cannot be represented by RegularShape.
+    // These are implemented by the custom RadialShape class.
+    case 'shape://carrow':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 0],
+          [-1, 0.4],
+          [-1, -0.4],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'shape://oarrow':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 0],
+          [-1, 0.4],
+          [0, 0],
+          [-1, -0.4],
+          [0, 0],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    // Default for unknown wellknownname is a square.
     default:
       // Default is `square`
       return new RegularShape({
