@@ -1,4 +1,4 @@
-/* Version: 0.6.1 - May 20, 2025 09:29:12 */
+/* Version: 0.6.1 - May 20, 2025 09:44:23 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2071,6 +2071,17 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           points: 4,
           radius,
           radius2: 0,
+          stroke: stroke || new Stroke({
+            color: fillColor,
+            width: radius / 2
+          }),
+          rotation: rotationRadians
+        });
+      case 'pentagon':
+        return new RegularShape({
+          fill,
+          points: 5,
+          radius,
           stroke: stroke || new Stroke({
             color: fillColor,
             width: radius / 2

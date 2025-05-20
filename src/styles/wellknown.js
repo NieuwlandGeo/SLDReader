@@ -78,6 +78,20 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'pentagon':
+      return new RegularShape({
+        fill,
+        points: 5,
+        radius,
+        stroke:
+          stroke ||
+          new Stroke({
+            color: fillColor,
+            width: radius / 2,
+          }),
+        rotation: rotationRadians,
+      });
+
     case 'hexagon':
       return new RegularShape({
         fill,
