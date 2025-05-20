@@ -279,6 +279,141 @@ function getWellKnownSymbol(
         rotation: rotationRadians,
       });
 
+    case 'cross_fill':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [1, 0.2],
+          [0.2, 0.2],
+          [0.2, 1],
+          [-0.2, 1],
+          [-0.2, 0.2],
+          [-1, 0.2],
+          [-1, -0.2],
+          [-0.2, -0.2],
+          [-0.2, -1],
+          [0.2, -1],
+          [0.2, -0.2],
+          [1, -0.2],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'arrow':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 1],
+          [-0.5, 0.5],
+          [-0.25, 0.5],
+          [-0.25, -1],
+          [0.25, -1],
+          [0.25, 0.5],
+          [0.5, 0.5],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'filled_arrowhead':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 0],
+          [-1, 1],
+          [-1, -1],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'arrowhead':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 0],
+          [-1, 1],
+          [0, 0],
+          [-1, -1],
+          [0, 0],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'quarter_square':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 0],
+          [0, 1],
+          [-1, 1],
+          [-1, 0],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'half_square':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 1],
+          [-1, 1],
+          [-1, -1],
+          [0, -1],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'diagonal_half_square':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [-1, 1],
+          [-1, -1],
+          [1, -1],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
+    case 'right_half_triangle':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 1],
+          [-1, -1],
+          [0, -1],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
+    case 'left_half_triangle':
+      return radialShapeFromUnitCoordinates({
+        coordinates: [
+          [0, 1],
+          [0, -1],
+          [1, -1],
+        ],
+        radius,
+        stroke,
+        fill,
+        rotation: rotationRadians,
+      });
+
     // Default for unknown wellknownname is a square.
     default:
       // Default is `square`

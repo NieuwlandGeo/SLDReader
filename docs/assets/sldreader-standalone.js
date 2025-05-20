@@ -1,4 +1,4 @@
-/* Version: 0.6.2 - May 20, 2025 15:45:00 */
+/* Version: 0.6.2 - May 20, 2025 16:21:43 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2803,6 +2803,62 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       case 'shape://oarrow':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 0], [-1, 0.4], [0, 0], [-1, -0.4], [0, 0]],
+          radius,
+          stroke,
+          fill});
+      case 'cross_fill':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[1, 0.2], [0.2, 0.2], [0.2, 1], [-0.2, 1], [-0.2, 0.2], [-1, 0.2], [-1, -0.2], [-0.2, -0.2], [-0.2, -1], [0.2, -1], [0.2, -0.2], [1, -0.2]],
+          radius,
+          stroke,
+          fill});
+      case 'arrow':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[0, 1], [-0.5, 0.5], [-0.25, 0.5], [-0.25, -1], [0.25, -1], [0.25, 0.5], [0.5, 0.5]],
+          radius,
+          stroke,
+          fill});
+      case 'filled_arrowhead':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[0, 0], [-1, 1], [-1, -1]],
+          radius,
+          stroke,
+          fill});
+      case 'arrowhead':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[0, 0], [-1, 1], [0, 0], [-1, -1], [0, 0]],
+          radius,
+          stroke,
+          fill});
+      case 'quarter_square':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[0, 0], [0, 1], [-1, 1], [-1, 0]],
+          radius,
+          stroke,
+          fill});
+      case 'half_square':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[0, 1], [-1, 1], [-1, -1], [0, -1]],
+          radius,
+          stroke,
+          fill});
+      case 'diagonal_half_square':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[-1, 1], [-1, -1], [1, -1]],
+          radius,
+          stroke,
+          fill});
+
+      // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
+      case 'right_half_triangle':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[0, 1], [-1, -1], [0, -1]],
+          radius,
+          stroke,
+          fill});
+      case 'left_half_triangle':
+        return radialShapeFromUnitCoordinates({
+          coordinates: [[0, 1], [0, -1], [1, -1]],
           radius,
           stroke,
           fill});
