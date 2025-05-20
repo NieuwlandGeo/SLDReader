@@ -54,7 +54,55 @@ Wellknown names that reference a symbol library, like `ttf://CustomFont#42` are 
 
 Only one Graphic per PointSymbolizer is supported. Each Graphic can only have one Mark or one ExternalGraphic.
 
+#### ExternalGraphic
+
+External graphics can be used with an `OnlineResource` linking to a valid image url.
+
+```xml
+<se:ExternalGraphic>
+  <se:OnlineResource xlink:type="simple" xlink:href="assets/img/flag-nl.png"/>
+  <se:Format>image/png</se:Format>
+</se:ExternalGraphic>
+```
+
+A valid image url can also be a base64 url:
+```xml
+<se:ExternalGraphic>
+  <se:OnlineResource xlink:type="simple" xlink:href="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="/>
+  <se:Format>image/jpeg</se:Format>
+</se:ExternalGraphic>
+```
+
+Instead of using base64 urls inside an `OnlineResource`, external graphics can also be embedded as base64 string using `InlineContent` with `encoding="base64"`.
+
+```xml
+<se:ExternalGraphic>
+  <se:InlineContent encoding="base64">iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==</se:InlineContent>
+  <se:Format>image/jpeg</se:Format>
+</se:ExternalGraphic>
+```
+
+Inline content can also be SVG with `encoding="xml"`.
+
+```xml
+<se:ExternalGraphic>
+  <se:InlineContent encoding="xml">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+      <path d="M50,3l12,36h38l-30,22l11,36l-31-21l-31,21l11-36l-30-22h38z" fill="#0F0" stroke="#040" stroke-width="2"/>
+    </svg>
+  </se:InlineContent>
+  <se:Format>image/svg+xml</se:Format>
+</se:ExternalGraphic>
+```
+
+**Important notes:**
+
+- SLDReader does not support `ColorReplacement` inside `ExternalGraphic`s.
+- Do not include the `<?xml ... ?>` header for inline SVG content.
+- Make sure that inline SVG has `width` and `height` attributes. Without it, (most?) browsers cannot properly load the SVG as an image.
+
 #### QGIS parametric SVG support (experimental)
+
 SLD's with parametric embedded SVG's exported by QGIS should be able to be used in SLDReader.
 
 Support for this functionality is quite hacky and experimental, but appears to work for simple examples.
