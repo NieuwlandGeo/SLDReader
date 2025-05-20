@@ -24,6 +24,10 @@
   font-family: monospace;
 }
 
+.mark-gallery.multiline-titles .mark-title {
+  padding-left: 0.3rem;
+}
+
 .toggle-outline input:hover,
 .toggle-outline label:hover {
   cursor: pointer;
