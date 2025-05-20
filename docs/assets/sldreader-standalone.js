@@ -1,4 +1,4 @@
-/* Version: 0.6.2 - May 20, 2025 16:38:43 */
+/* Version: 0.6.2 - May 20, 2025 17:00:45 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2599,7 +2599,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {number} radius Symbol radius.
    * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
    * @param {ol/style/fill} fill OpenLayers Fill instance.
-   * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
+   * @param {number} rotation Symbol rotation in radians (clockwise). Default 0.
    * @returns {RadialShape} A RadialShape instance.
    */
   function createPartialCircleRadialShape(_ref) {
@@ -2609,7 +2609,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       radius,
       stroke,
       fill,
-      rotationRadians
+      rotation
     } = _ref;
     const RESOLUTION = 96; // Number of points for a half circle.
     const numPoints = Math.ceil(RESOLUTION * (endAngle - startAngle) / Math.PI);
@@ -2625,7 +2625,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       angles,
       stroke,
       fill,
-      rotation: rotationRadians ?? 0.0
+      rotation: rotation ?? 0.0
     });
   }
 
@@ -2637,7 +2637,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {number} radius Symbol radius.
    * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
    * @param {ol/style/fill} fill OpenLayers Fill instance.
-   * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
+   * @param {number} rotation Symbol rotation in radians (clockwise). Default 0.
    * @returns {RadialShape} A RadialShape instance.
    */
   function radialShapeFromUnitCoordinates(_ref2) {
@@ -2646,7 +2646,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       radius,
       stroke,
       fill,
-      rotationRadians
+      rotation
     } = _ref2;
 
     // Convert unit coordinates and radius to polar coordinate representation.
@@ -2667,7 +2667,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       angles,
       stroke,
       fill,
-      rotation: rotationRadians ?? 0.0
+      rotation: rotation ?? 0.0
     });
   }
 
@@ -2838,55 +2838,73 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           coordinates: [[0, 0], [-1, 0.4], [-1, -0.4]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'shape://oarrow':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 0], [-1, 0.4], [0, 0], [-1, -0.4], [0, 0]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'cross_fill':
         return radialShapeFromUnitCoordinates({
           coordinates: [[1, 0.2], [0.2, 0.2], [0.2, 1], [-0.2, 1], [-0.2, 0.2], [-1, 0.2], [-1, -0.2], [-0.2, -0.2], [-0.2, -1], [0.2, -1], [0.2, -0.2], [1, -0.2]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'arrow':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 1], [-0.5, 0.5], [-0.25, 0.5], [-0.25, -1], [0.25, -1], [0.25, 0.5], [0.5, 0.5]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'filled_arrowhead':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 0], [-1, 1], [-1, -1]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'arrowhead':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 0], [-1, 1], [0, 0], [-1, -1], [0, 0]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'quarter_square':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 0], [0, 1], [-1, 1], [-1, 0]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'half_square':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 1], [-1, 1], [-1, -1], [0, -1]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'diagonal_half_square':
         return radialShapeFromUnitCoordinates({
           coordinates: [[-1, 1], [-1, -1], [1, -1]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
 
       // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
       case 'right_half_triangle':
@@ -2894,34 +2912,44 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           coordinates: [[0, 1], [-1, -1], [0, -1]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'left_half_triangle':
         return radialShapeFromUnitCoordinates({
           coordinates: [[0, 1], [0, -1], [1, -1]],
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'semi_circle':
         return createPartialCircleRadialShape({
           startAngle: 0,
           endAngle: Math.PI,
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'third_circle':
         return createPartialCircleRadialShape({
           startAngle: Math.PI / 2,
           endAngle: 7 * Math.PI / 6,
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
       case 'quarter_circle':
         return createPartialCircleRadialShape({
           startAngle: Math.PI / 2,
           endAngle: Math.PI,
           radius,
           stroke,
-          fill});
+          fill,
+          rotation: rotationRadians
+        });
 
       // Default for unknown wellknownname is a square.
       default:

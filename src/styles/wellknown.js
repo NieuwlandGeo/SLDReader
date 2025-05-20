@@ -15,7 +15,7 @@ const RADIAL_SHAPE_SUPPORTED = true;
  * @param {number} radius Symbol radius.
  * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
  * @param {ol/style/fill} fill OpenLayers Fill instance.
- * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
+ * @param {number} rotation Symbol rotation in radians (clockwise). Default 0.
  * @returns {RadialShape} A RadialShape instance.
  */
 function createPartialCircleRadialShape({
@@ -24,7 +24,7 @@ function createPartialCircleRadialShape({
   radius,
   stroke,
   fill,
-  rotationRadians,
+  rotation,
 }) {
   // Return a square if radial shape is not supported.
   if (!RADIAL_SHAPE_SUPPORTED) {
@@ -35,7 +35,7 @@ function createPartialCircleRadialShape({
       // For square, scale radius so the height of the square equals the given size.
       radius: radius * Math.sqrt(2.0),
       stroke,
-      rotation: rotationRadians,
+      rotation: rotation ?? 0.0,
     });
   }
 
@@ -60,7 +60,7 @@ function createPartialCircleRadialShape({
     angles,
     stroke,
     fill,
-    rotation: rotationRadians ?? 0.0,
+    rotation: rotation ?? 0.0,
   });
 }
 
@@ -72,7 +72,7 @@ function createPartialCircleRadialShape({
  * @param {number} radius Symbol radius.
  * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
  * @param {ol/style/fill} fill OpenLayers Fill instance.
- * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
+ * @param {number} rotation Symbol rotation in radians (clockwise). Default 0.
  * @returns {RadialShape} A RadialShape instance.
  */
 function radialShapeFromUnitCoordinates({
@@ -80,7 +80,7 @@ function radialShapeFromUnitCoordinates({
   radius,
   stroke,
   fill,
-  rotationRadians,
+  rotation,
 }) {
   // Return a square if radial shape is not supported.
   if (!RADIAL_SHAPE_SUPPORTED) {
@@ -91,7 +91,7 @@ function radialShapeFromUnitCoordinates({
       // For square, scale radius so the height of the square equals the given size.
       radius: radius * Math.sqrt(2.0),
       stroke,
-      rotation: rotationRadians,
+      rotation: rotation ?? 0.0,
     });
   }
 
@@ -113,7 +113,7 @@ function radialShapeFromUnitCoordinates({
     angles,
     stroke,
     fill,
-    rotation: rotationRadians ?? 0.0,
+    rotation: rotation ?? 0.0,
   });
 }
 
