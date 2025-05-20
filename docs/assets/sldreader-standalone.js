@@ -1,4 +1,4 @@
-/* Version: 0.6.1 - May 20, 2025 09:21:12 */
+/* Version: 0.6.1 - May 20, 2025 09:29:12 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2046,6 +2046,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           radius: radius / 8,
           stroke
         });
+      case 'equilateral_triangle':
       case 'triangle':
         return new RegularShape({
           fill,
@@ -2063,6 +2064,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           stroke,
           rotation: rotationRadians
         });
+      case 'shape://plus':
       case 'cross':
         return new RegularShape({
           fill,
@@ -2098,6 +2100,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           }),
           rotation: rotationRadians
         });
+      case 'shape://times':
       case 'cross2': // cross2 is used by QGIS for the x symbol.
       case 'x':
         return new RegularShape({
@@ -2120,6 +2123,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           stroke,
           rotation: rotationRadians
         });
+      case 'shape://horline':
       case 'horline':
         return new RegularShape({
           fill,
@@ -2129,6 +2133,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           stroke,
           rotation: rotationRadians
         });
+      case 'shape://vertline':
       case 'line':
         return new RegularShape({
           fill,
@@ -2138,6 +2143,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           stroke,
           rotation: rotationRadians
         });
+      case 'shape://backslash':
       case 'backslash':
         return new RegularShape({
           fill,
@@ -2147,6 +2153,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           stroke,
           rotation: rotationRadians
         });
+      case 'shape://slash':
       case 'slash':
         return new RegularShape({
           fill,

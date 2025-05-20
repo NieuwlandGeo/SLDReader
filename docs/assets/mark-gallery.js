@@ -16,6 +16,7 @@ const wellknownNames = [
       'shape://slash',
       'shape://backslash',
       'shape://dot',
+      'shape://plus',
       'shape://times',
       'shape://oarrow',
       'shape://carrow',
