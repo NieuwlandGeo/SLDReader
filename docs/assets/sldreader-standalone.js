@@ -1,4 +1,4 @@
-/* Version: 0.6.2 - May 22, 2025 11:22:48 */
+/* Version: 0.6.2 - May 22, 2025 11:33:23 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2752,278 +2752,229 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     let rotationDegrees = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0.0;
     const radius = size / 2;
     const rotationRadians = Math.PI * rotationDegrees / 180.0;
+    const sharedOptions = {
+      stroke,
+      fill,
+      rotation: rotationRadians
+    };
     switch (wellKnownName) {
       case 'circle':
         return new Circle({
+          stroke,
           fill,
-          radius,
-          stroke
+          radius
         });
       case 'shape://dot':
         return new Circle({
+          stroke,
           fill,
-          radius: radius / 8,
-          stroke
+          radius: radius / 8
         });
       case 'equilateral_triangle':
       case 'triangle':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 3,
-          radius,
-          stroke,
-          rotation: rotationRadians
+          radius
         });
       case 'star':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 5,
           radius,
-          radius2: radius / 2.5,
-          stroke,
-          rotation: rotationRadians
+          radius2: radius / 2.5
         });
       case 'shape://plus':
       case 'cross':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 4,
           radius,
-          radius2: 0,
-          stroke,
-          rotation: rotationRadians
+          radius2: 0
         });
       case 'pentagon':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 5,
-          radius,
-          stroke,
-          rotation: rotationRadians
+          radius
         });
       case 'hexagon':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 6,
-          radius,
-          stroke,
-          rotation: rotationRadians
+          radius
         });
       case 'octagon':
         return new RegularShape({
+          ...sharedOptions,
           angle: Math.PI / 8,
-          fill,
           points: 8,
-          radius: radius / Math.cos(Math.PI / 8),
-          stroke,
-          rotation: rotationRadians
+          radius: radius / Math.cos(Math.PI / 8)
         });
       case 'shape://times':
       case 'cross2': // cross2 is used by QGIS for the x symbol.
       case 'x':
         return new RegularShape({
+          ...sharedOptions,
           angle: Math.PI / 4,
-          fill,
           points: 4,
           radius: Math.sqrt(2.0) * radius,
-          radius2: 0,
-          stroke,
-          rotation: rotationRadians
+          radius2: 0
         });
       case 'diamond':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 4,
-          radius,
-          stroke,
-          rotation: rotationRadians
+          radius
         });
       case 'shape://horline':
       case 'horline':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 2,
           radius,
-          angle: Math.PI / 2,
-          stroke,
-          rotation: rotationRadians
+          angle: Math.PI / 2
         });
       case 'shape://vertline':
       case 'line':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 2,
           radius,
-          angle: 0,
-          stroke,
-          rotation: rotationRadians
+          angle: 0
         });
       case 'shape://backslash':
       case 'backslash':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 2,
           radius: radius * Math.sqrt(2),
-          angle: -Math.PI / 4,
-          stroke,
-          rotation: rotationRadians
+          angle: -Math.PI / 4
         });
       case 'shape://slash':
       case 'slash':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 2,
           radius: radius * Math.sqrt(2),
-          angle: Math.PI / 4,
-          stroke,
-          rotation: rotationRadians
+          angle: Math.PI / 4
         });
 
       // Symbols that cannot be represented by RegularShape.
       // These are implemented by the custom RadialShape class.
       case 'shape://carrow':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 0], [-1, 0.4], [-1, -0.4]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'shape://oarrow':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 0], [-1, 0.4], [0, 0], [-1, -0.4]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'cross_fill':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[1, 0.2], [0.2, 0.2], [0.2, 1], [-0.2, 1], [-0.2, 0.2], [-1, 0.2], [-1, -0.2], [-0.2, -0.2], [-0.2, -1], [0.2, -1], [0.2, -0.2], [1, -0.2]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'arrow':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 1], [-0.5, 0.5], [-0.25, 0.5], [-0.25, -1], [0.25, -1], [0.25, 0.5], [0.5, 0.5]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'filled_arrowhead':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 0], [-1, 1], [-1, -1]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'arrowhead':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 0], [-1, 1], [0, 0], [-1, -1]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'quarter_square':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 0], [0, 1], [-1, 1], [-1, 0]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'half_square':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 1], [-1, 1], [-1, -1], [0, -1]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'diagonal_half_square':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[-1, 1], [-1, -1], [1, -1]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
 
       // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
       case 'right_half_triangle':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 1], [-1, -1], [0, -1]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'left_half_triangle':
         return radialShapeFromUnitCoordinates({
+          ...sharedOptions,
           wellKnownName,
           coordinates: [[0, 1], [0, -1], [1, -1]],
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'semi_circle':
         return createPartialCircleRadialShape({
+          ...sharedOptions,
           wellKnownName,
           startAngle: 0,
           endAngle: Math.PI,
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'third_circle':
         return createPartialCircleRadialShape({
+          ...sharedOptions,
           wellKnownName,
           startAngle: Math.PI / 2,
           endAngle: 7 * Math.PI / 6,
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
       case 'quarter_circle':
         return createPartialCircleRadialShape({
+          ...sharedOptions,
           wellKnownName,
           startAngle: Math.PI / 2,
           endAngle: Math.PI,
-          radius,
-          stroke,
-          fill,
-          rotation: rotationRadians
+          radius
         });
 
       // Default for unknown wellknownname is a square.
       default:
         // Default is `square`
         return new RegularShape({
+          ...sharedOptions,
           angle: Math.PI / 4,
-          fill,
           points: 4,
           // For square, scale radius so the height of the square equals the given size.
-          radius: radius * Math.sqrt(2.0),
-          stroke,
-          rotation: rotationRadians
+          radius: radius * Math.sqrt(2.0)
         });
     }
   }
