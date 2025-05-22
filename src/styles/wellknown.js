@@ -12,6 +12,7 @@ const HALF_CIRCLE_RESOLUTION = 96; // Number of points to approximate half a cir
 
 /**
  * Test render a point with an image style (or subclass). Will throw an error if rendering a point fails.
+ * @private
  * @param {ol/styleImage} olImage OpenLayers Image style (or subclass) instance.
  * @returns {void} Does nothing if render succeeds.
  */

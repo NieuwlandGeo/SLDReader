@@ -3,6 +3,18 @@ const BOX_SIZE = 84; // px
 
 let styleFunction = null; // Style that maps a feature with a wellknownname property to a mark symbolizer.
 
+// Register custom 'crystal' symbol.
+SLDReader.registerCustomSymbol('crystal', [
+  [0.5, 0],
+  [0.75, 0.75],
+  [0, 0.5],
+  [-1, 1],
+  [-0.5, 0],
+  [-0.75, -0.75],
+  [0, -0.5],
+  [1, -1],
+]);
+
 const wellknownNames = [
   {
     category: 'sld',
@@ -48,7 +60,7 @@ const wellknownNames = [
   },
   {
     category: 'other',
-    names: ['horline', 'backslash', 'slash'],
+    names: ['horline', 'backslash', 'slash', 'crystal'],
   },
 ];
 

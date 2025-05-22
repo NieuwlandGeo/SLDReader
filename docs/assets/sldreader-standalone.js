@@ -1,4 +1,4 @@
-/* Version: 0.6.2 - May 22, 2025 11:48:15 */
+/* Version: 0.6.2 - May 22, 2025 12:20:08 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2618,14 +2618,50 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     'shape://carrow': [[0, 0], [-1, 0.4], [-1, -0.4]],
     'shape://oarrow': [[0, 0], [-1, 0.4], [0, 0], [-1, -0.4]]
   };
+
+  /**
+   * Get registered custom symbol coordinate array.
+   * @private
+   * @param {string} name Wellknown symbol name.
+   * @returns {Array<Array<number>>} Custom symbol coordinates inside the [-1,-1,1,1] square.
+   */
   function getCustomSymbolCoordinates(name) {
     return customSymbols[name];
+  }
+
+  /**
+   * Register a custom symbol for use as a graphic.
+   * Custom symbols are referenced by WellKnownName inside a Mark.
+   * Custom symbol coordinates must be entered in counterclockwise order and must all lie within [-1,-1,1,1].
+   * The first and last coordinates must not be equal. The shape will be closed automatically.
+   * @param {string} wellknownname Custom symbol name.
+   * @param {Array<Array<number>>} normalizedCoordinates Array of coordinates.
+   * @returns {void}
+   */
+  function registerCustomSymbol(name, normalizedCoordinates) {
+    // Verify that input coordinates lie outside the expected [-1,-1,1,1] square.
+    const allInside = normalizedCoordinates.every(_ref => {
+      let [x, y] = _ref;
+      return x >= -1 && x <= 1 && y >= -1 && y <= 1;
+    });
+    if (!allInside) {
+      throw new Error('Custom symbol coordinates must lie within [-1,-1,1,1].');
+    }
+
+    // Verify that input shape is not closed.
+    const [x1, y1] = normalizedCoordinates[0];
+    const [xN, yN] = normalizedCoordinates[normalizedCoordinates.length - 1];
+    if (x1 === xN && y1 === yN) {
+      throw new Error('Custom symbol start and end coordinate should not be the same. Custom symbols will close themselves.');
+    }
+    customSymbols[name] = normalizedCoordinates;
   }
 
   const HALF_CIRCLE_RESOLUTION = 96; // Number of points to approximate half a circle as radial shape.
 
   /**
    * Test render a point with an image style (or subclass). Will throw an error if rendering a point fails.
+   * @private
    * @param {ol/styleImage} olImage OpenLayers Image style (or subclass) instance.
    * @returns {void} Does nothing if render succeeds.
    */
@@ -4576,6 +4612,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;
+  exports.registerCustomSymbol = registerCustomSymbol;
   exports.registerFunction = registerFunction;
   exports.version = version;
   exports.warnOnce = warnOnce;
