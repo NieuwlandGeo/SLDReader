@@ -1,4 +1,4 @@
-/* Version: 0.6.2 - May 22, 2025 10:26:25 */
+/* Version: 0.6.2 - May 22, 2025 11:22:48 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2601,6 +2601,8 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     }
   }
 
+  const HALF_CIRCLE_RESOLUTION = 96; // Number of points to approximate half a circle as radial shape.
+
   /**
    * Test render a point with an image style (or subclass). Will throw an error if rendering a point fails.
    * @param {ol/styleImage} olImage OpenLayers Image style (or subclass) instance.
@@ -2641,8 +2643,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       fill,
       rotation
     } = _ref;
-    const RESOLUTION = 96; // Number of points for a half circle.
-    const numPoints = Math.ceil(RESOLUTION * (endAngle - startAngle) / Math.PI);
+    const numPoints = Math.ceil(HALF_CIRCLE_RESOLUTION * (endAngle - startAngle) / Math.PI);
     const radii = [0];
     const angles = [0];
     for (let k = 0; k <= numPoints; k += 1) {
@@ -2751,10 +2752,6 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     let rotationDegrees = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0.0;
     const radius = size / 2;
     const rotationRadians = Math.PI * rotationDegrees / 180.0;
-    let fillColor;
-    if (fill && fill.getColor()) {
-      fillColor = fill.getColor();
-    }
     switch (wellKnownName) {
       case 'circle':
         return new Circle({
@@ -2793,10 +2790,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           points: 4,
           radius,
           radius2: 0,
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
+          stroke,
           rotation: rotationRadians
         });
       case 'pentagon':
@@ -2804,10 +2798,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           fill,
           points: 5,
           radius,
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
+          stroke,
           rotation: rotationRadians
         });
       case 'hexagon':
@@ -2815,10 +2806,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           fill,
           points: 6,
           radius,
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
+          stroke,
           rotation: rotationRadians
         });
       case 'octagon':
@@ -2827,10 +2815,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           fill,
           points: 8,
           radius: radius / Math.cos(Math.PI / 8),
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
+          stroke,
           rotation: rotationRadians
         });
       case 'shape://times':
@@ -2842,10 +2827,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           points: 4,
           radius: Math.sqrt(2.0) * radius,
           radius2: 0,
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
+          stroke,
           rotation: rotationRadians
         });
       case 'diamond':
