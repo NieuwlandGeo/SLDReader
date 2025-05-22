@@ -6,6 +6,7 @@ import RegularShape from 'ol/style/RegularShape';
 import RadialShape from './RadialShape';
 
 import { warnOnce } from '../Utils';
+import { getCustomSymbolCoordinates } from './customSymbols';
 
 const HALF_CIRCLE_RESOLUTION = 96; // Number of points to approximate half a circle as radial shape.
 
@@ -174,6 +175,16 @@ function getWellKnownSymbol(
   const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
   const sharedOptions = { stroke, fill, rotation: rotationRadians };
 
+  const customSymbolCoordinates = getCustomSymbolCoordinates(wellKnownName);
+  if (customSymbolCoordinates) {
+    return radialShapeFromUnitCoordinates({
+      ...sharedOptions,
+      wellKnownName,
+      coordinates: customSymbolCoordinates,
+      radius,
+    });
+  }
+
   switch (wellKnownName) {
     case 'circle':
       return new Circle({
@@ -290,158 +301,7 @@ function getWellKnownSymbol(
         angle: Math.PI / 4,
       });
 
-    // Symbols that cannot be represented by RegularShape.
-    // These are implemented by the custom RadialShape class.
-    case 'shape://carrow':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 0],
-          [-1, 0.4],
-          [-1, -0.4],
-        ],
-        radius,
-      });
-
-    case 'shape://oarrow':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 0],
-          [-1, 0.4],
-          [0, 0],
-          [-1, -0.4],
-        ],
-        radius,
-      });
-
-    case 'cross_fill':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [1, 0.2],
-          [0.2, 0.2],
-          [0.2, 1],
-          [-0.2, 1],
-          [-0.2, 0.2],
-          [-1, 0.2],
-          [-1, -0.2],
-          [-0.2, -0.2],
-          [-0.2, -1],
-          [0.2, -1],
-          [0.2, -0.2],
-          [1, -0.2],
-        ],
-        radius,
-      });
-
-    case 'arrow':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 1],
-          [-0.5, 0.5],
-          [-0.25, 0.5],
-          [-0.25, -1],
-          [0.25, -1],
-          [0.25, 0.5],
-          [0.5, 0.5],
-        ],
-        radius,
-      });
-
-    case 'filled_arrowhead':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 0],
-          [-1, 1],
-          [-1, -1],
-        ],
-        radius,
-      });
-
-    case 'arrowhead':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 0],
-          [-1, 1],
-          [0, 0],
-          [-1, -1],
-        ],
-        radius,
-      });
-
-    case 'quarter_square':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 0],
-          [0, 1],
-          [-1, 1],
-          [-1, 0],
-        ],
-        radius,
-      });
-
-    case 'half_square':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 1],
-          [-1, 1],
-          [-1, -1],
-          [0, -1],
-        ],
-        radius,
-      });
-
-    case 'diagonal_half_square':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [-1, 1],
-          [-1, -1],
-          [1, -1],
-        ],
-        radius,
-      });
-
-    // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
-    case 'right_half_triangle':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 1],
-          [-1, -1],
-          [0, -1],
-        ],
-        radius,
-      });
-
-    case 'left_half_triangle':
-      return radialShapeFromUnitCoordinates({
-        ...sharedOptions,
-        wellKnownName,
-        coordinates: [
-          [0, 1],
-          [0, -1],
-          [1, -1],
-        ],
-        radius,
-      });
-
+    // Symbols that cannot be represented by RegularShape or custom symbols.
     case 'semi_circle':
       return createPartialCircleRadialShape({
         ...sharedOptions,
