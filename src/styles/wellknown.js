@@ -1,10 +1,28 @@
+import { toContext } from 'ol/render';
+import Point from 'ol/geom/Point';
+import Style from 'ol/style/Style';
 import Stroke from 'ol/style/Stroke';
 import Circle from 'ol/style/Circle';
 import RegularShape from 'ol/style/RegularShape';
 import RadialShape from './RadialShape';
 
-// Todo: make this a global setting.
-const RADIAL_SHAPE_SUPPORTED = true;
+import { warnOnce } from '../Utils';
+
+/**
+ * Test render a point with an image style (or subclass). Will throw an error if rendering a point fails.
+ * @param {ol/styleImage} olImage OpenLayers Image style (or subclass) instance.
+ * @returns {void} Does nothing if render succeeds.
+ */
+function testRenderImageMark(olImage) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 32;
+  const context = canvas.getContext('2d');
+  const olContext = toContext(context);
+  const olStyle = new Style({ image: olImage });
+  olContext.setStyle(olStyle);
+  olContext.drawGeometry(new Point([16, 16]));
+}
 
 /**
  * Approximate a partial circle as a radial shape.
@@ -19,6 +37,7 @@ const RADIAL_SHAPE_SUPPORTED = true;
  * @returns {RadialShape} A RadialShape instance.
  */
 function createPartialCircleRadialShape({
+  wellKnownName,
   startAngle,
   endAngle,
   radius,
@@ -26,19 +45,6 @@ function createPartialCircleRadialShape({
   fill,
   rotation,
 }) {
-  // Return a square if radial shape is not supported.
-  if (!RADIAL_SHAPE_SUPPORTED) {
-    return new RegularShape({
-      angle: Math.PI / 4,
-      fill,
-      points: 4,
-      // For square, scale radius so the height of the square equals the given size.
-      radius: radius * Math.sqrt(2.0),
-      stroke,
-      rotation: rotation ?? 0.0,
-    });
-  }
-
   let a1 = startAngle;
   let a2 = endAngle;
   if (a2 < a1) {
@@ -55,13 +61,33 @@ function createPartialCircleRadialShape({
     angles.push(startAngle + k * deltaAngle);
   }
 
-  return new RadialShape({
-    radii,
-    angles,
-    stroke,
-    fill,
-    rotation: rotation ?? 0.0,
-  });
+  try {
+    const olImage = new RadialShape({
+      radii,
+      angles,
+      stroke,
+      fill,
+      rotation: rotation ?? 0.0,
+    });
+    testRenderImageMark(olImage);
+    return olImage;
+  } catch (err) {
+    // Custom radial shapes only work from OL v10.3.0 onwards,
+    // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
+    warnOnce(
+      `Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`
+    );
+    // When creating a radial shape fails, return default square as fallback.
+    return new RegularShape({
+      angle: Math.PI / 4,
+      fill,
+      points: 4,
+      // For square, scale radius so the height of the square equals the given size.
+      radius: radius * Math.sqrt(2.0),
+      stroke,
+      rotation: rotation ?? 0.0,
+    });
+  }
 }
 
 /**
@@ -76,25 +102,13 @@ function createPartialCircleRadialShape({
  * @returns {RadialShape} A RadialShape instance.
  */
 function radialShapeFromUnitCoordinates({
+  wellKnownName,
   coordinates,
   radius,
   stroke,
   fill,
   rotation,
 }) {
-  // Return a square if radial shape is not supported.
-  if (!RADIAL_SHAPE_SUPPORTED) {
-    return new RegularShape({
-      angle: Math.PI / 4,
-      fill,
-      points: 4,
-      // For square, scale radius so the height of the square equals the given size.
-      radius: radius * Math.sqrt(2.0),
-      stroke,
-      rotation: rotation ?? 0.0,
-    });
-  }
-
   // Convert unit coordinates and radius to polar coordinate representation.
   const radii = [];
   const angles = [];
@@ -108,13 +122,33 @@ function radialShapeFromUnitCoordinates({
     angles.push(polarAngle);
   });
 
-  return new RadialShape({
-    radii,
-    angles,
-    stroke,
-    fill,
-    rotation: rotation ?? 0.0,
-  });
+  try {
+    const olImage = new RadialShape({
+      radii,
+      angles,
+      stroke,
+      fill,
+      rotation: rotation ?? 0.0,
+    });
+    testRenderImageMark(olImage);
+    return olImage;
+  } catch (err) {
+    // Custom radial shapes only work from OL v10.3.0 onwards,
+    // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
+    warnOnce(
+      `Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`
+    );
+    // When creating a radial shape fails, return default square as fallback.
+    return new RegularShape({
+      angle: Math.PI / 4,
+      fill,
+      points: 4,
+      // For square, scale radius so the height of the square equals the given size.
+      radius: radius * Math.sqrt(2.0),
+      stroke,
+      rotation: rotation ?? 0.0,
+    });
+  }
 }
 
 /**
@@ -311,6 +345,7 @@ function getWellKnownSymbol(
     // These are implemented by the custom RadialShape class.
     case 'shape://carrow':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 0],
           [-1, 0.4],
@@ -324,6 +359,7 @@ function getWellKnownSymbol(
 
     case 'shape://oarrow':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 0],
           [-1, 0.4],
@@ -338,6 +374,7 @@ function getWellKnownSymbol(
 
     case 'cross_fill':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [1, 0.2],
           [0.2, 0.2],
@@ -360,6 +397,7 @@ function getWellKnownSymbol(
 
     case 'arrow':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 1],
           [-0.5, 0.5],
@@ -377,6 +415,7 @@ function getWellKnownSymbol(
 
     case 'filled_arrowhead':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 0],
           [-1, 1],
@@ -390,6 +429,7 @@ function getWellKnownSymbol(
 
     case 'arrowhead':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 0],
           [-1, 1],
@@ -404,6 +444,7 @@ function getWellKnownSymbol(
 
     case 'quarter_square':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 0],
           [0, 1],
@@ -418,6 +459,7 @@ function getWellKnownSymbol(
 
     case 'half_square':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 1],
           [-1, 1],
@@ -432,6 +474,7 @@ function getWellKnownSymbol(
 
     case 'diagonal_half_square':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [-1, 1],
           [-1, -1],
@@ -446,6 +489,7 @@ function getWellKnownSymbol(
     // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
     case 'right_half_triangle':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 1],
           [-1, -1],
@@ -459,6 +503,7 @@ function getWellKnownSymbol(
 
     case 'left_half_triangle':
       return radialShapeFromUnitCoordinates({
+        wellKnownName,
         coordinates: [
           [0, 1],
           [0, -1],
@@ -472,6 +517,7 @@ function getWellKnownSymbol(
 
     case 'semi_circle':
       return createPartialCircleRadialShape({
+        wellKnownName,
         startAngle: 0,
         endAngle: Math.PI,
         radius,
@@ -482,8 +528,9 @@ function getWellKnownSymbol(
 
     case 'third_circle':
       return createPartialCircleRadialShape({
+        wellKnownName,
         startAngle: Math.PI / 2,
-        endAngle: 7 * Math.PI / 6,
+        endAngle: (7 * Math.PI) / 6,
         radius,
         stroke,
         fill,
@@ -492,6 +539,7 @@ function getWellKnownSymbol(
 
     case 'quarter_circle':
       return createPartialCircleRadialShape({
+        wellKnownName,
         startAngle: Math.PI / 2,
         endAngle: Math.PI,
         radius,

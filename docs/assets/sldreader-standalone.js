@@ -1,5 +1,5 @@
-/* Version: 0.6.2 - May 20, 2025 17:00:45 */
-var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
+/* Version: 0.6.2 - May 22, 2025 10:26:25 */
+var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
   const IMAGE_LOADING = 'IMAGE_LOADING';
@@ -1590,6 +1590,17 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     }
     return value;
   }
+  const warnings = new Set();
+  /**
+   * Display an error message as console.warn, but only once per error message.
+   * @param {string} errMsg Error message.
+   */
+  function warnOnce(errMsg) {
+    if (!warnings.has(errMsg)) {
+      console.warn(errMsg);
+      warnings.add(errMsg);
+    }
+  }
 
   /**
    * Get styling from rules per geometry type
@@ -2591,6 +2602,24 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   }
 
   /**
+   * Test render a point with an image style (or subclass). Will throw an error if rendering a point fails.
+   * @param {ol/styleImage} olImage OpenLayers Image style (or subclass) instance.
+   * @returns {void} Does nothing if render succeeds.
+   */
+  function testRenderImageMark(olImage) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const context = canvas.getContext('2d');
+    const olContext = render.toContext(context);
+    const olStyle = new Style({
+      image: olImage
+    });
+    olContext.setStyle(olStyle);
+    olContext.drawGeometry(new Point([16, 16]));
+  }
+
+  /**
    * Approximate a partial circle as a radial shape.
    * @private
    * @param {object} options Options.
@@ -2604,6 +2633,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    */
   function createPartialCircleRadialShape(_ref) {
     let {
+      wellKnownName,
       startAngle,
       endAngle,
       radius,
@@ -2620,13 +2650,31 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       radii.push(radius);
       angles.push(startAngle + k * deltaAngle);
     }
-    return new RadialShape({
-      radii,
-      angles,
-      stroke,
-      fill,
-      rotation: rotation ?? 0.0
-    });
+    try {
+      const olImage = new RadialShape({
+        radii,
+        angles,
+        stroke,
+        fill,
+        rotation: rotation ?? 0.0
+      });
+      testRenderImageMark(olImage);
+      return olImage;
+    } catch (err) {
+      // Custom radial shapes only work from OL v10.3.0 onwards,
+      // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
+      warnOnce(`Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`);
+      // When creating a radial shape fails, return default square as fallback.
+      return new RegularShape({
+        angle: Math.PI / 4,
+        fill,
+        points: 4,
+        // For square, scale radius so the height of the square equals the given size.
+        radius: radius * Math.sqrt(2.0),
+        stroke,
+        rotation: rotation ?? 0.0
+      });
+    }
   }
 
   /**
@@ -2642,13 +2690,13 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    */
   function radialShapeFromUnitCoordinates(_ref2) {
     let {
+      wellKnownName,
       coordinates,
       radius,
       stroke,
       fill,
       rotation
     } = _ref2;
-
     // Convert unit coordinates and radius to polar coordinate representation.
     const radii = [];
     const angles = [];
@@ -2662,13 +2710,31 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       radii.push(polarRadius);
       angles.push(polarAngle);
     });
-    return new RadialShape({
-      radii,
-      angles,
-      stroke,
-      fill,
-      rotation: rotation ?? 0.0
-    });
+    try {
+      const olImage = new RadialShape({
+        radii,
+        angles,
+        stroke,
+        fill,
+        rotation: rotation ?? 0.0
+      });
+      testRenderImageMark(olImage);
+      return olImage;
+    } catch (err) {
+      // Custom radial shapes only work from OL v10.3.0 onwards,
+      // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
+      warnOnce(`Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`);
+      // When creating a radial shape fails, return default square as fallback.
+      return new RegularShape({
+        angle: Math.PI / 4,
+        fill,
+        points: 4,
+        // For square, scale radius so the height of the square equals the given size.
+        radius: radius * Math.sqrt(2.0),
+        stroke,
+        rotation: rotation ?? 0.0
+      });
+    }
   }
 
   /**
@@ -2835,6 +2901,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       // These are implemented by the custom RadialShape class.
       case 'shape://carrow':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[0, 0], [-1, 0.4], [-1, -0.4]],
           radius,
           stroke,
@@ -2843,7 +2910,8 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'shape://oarrow':
         return radialShapeFromUnitCoordinates({
-          coordinates: [[0, 0], [-1, 0.4], [0, 0], [-1, -0.4], [0, 0]],
+          wellKnownName,
+          coordinates: [[0, 0], [-1, 0.4], [0, 0], [-1, -0.4]],
           radius,
           stroke,
           fill,
@@ -2851,6 +2919,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'cross_fill':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[1, 0.2], [0.2, 0.2], [0.2, 1], [-0.2, 1], [-0.2, 0.2], [-1, 0.2], [-1, -0.2], [-0.2, -0.2], [-0.2, -1], [0.2, -1], [0.2, -0.2], [1, -0.2]],
           radius,
           stroke,
@@ -2859,6 +2928,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'arrow':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[0, 1], [-0.5, 0.5], [-0.25, 0.5], [-0.25, -1], [0.25, -1], [0.25, 0.5], [0.5, 0.5]],
           radius,
           stroke,
@@ -2867,6 +2937,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'filled_arrowhead':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[0, 0], [-1, 1], [-1, -1]],
           radius,
           stroke,
@@ -2875,7 +2946,8 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'arrowhead':
         return radialShapeFromUnitCoordinates({
-          coordinates: [[0, 0], [-1, 1], [0, 0], [-1, -1], [0, 0]],
+          wellKnownName,
+          coordinates: [[0, 0], [-1, 1], [0, 0], [-1, -1]],
           radius,
           stroke,
           fill,
@@ -2883,6 +2955,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'quarter_square':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[0, 0], [0, 1], [-1, 1], [-1, 0]],
           radius,
           stroke,
@@ -2891,6 +2964,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'half_square':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[0, 1], [-1, 1], [-1, -1], [0, -1]],
           radius,
           stroke,
@@ -2899,6 +2973,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'diagonal_half_square':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[-1, 1], [-1, -1], [1, -1]],
           radius,
           stroke,
@@ -2909,6 +2984,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
       case 'right_half_triangle':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[0, 1], [-1, -1], [0, -1]],
           radius,
           stroke,
@@ -2917,6 +2993,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'left_half_triangle':
         return radialShapeFromUnitCoordinates({
+          wellKnownName,
           coordinates: [[0, 1], [0, -1], [1, -1]],
           radius,
           stroke,
@@ -2925,6 +3002,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'semi_circle':
         return createPartialCircleRadialShape({
+          wellKnownName,
           startAngle: 0,
           endAngle: Math.PI,
           radius,
@@ -2934,6 +3012,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'third_circle':
         return createPartialCircleRadialShape({
+          wellKnownName,
           startAngle: Math.PI / 2,
           endAngle: 7 * Math.PI / 6,
           radius,
@@ -2943,6 +3022,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         });
       case 'quarter_circle':
         return createPartialCircleRadialShape({
+          wellKnownName,
           startAngle: Math.PI / 2,
           endAngle: Math.PI,
           radius,
@@ -4615,7 +4695,8 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   exports.getStyleNames = getStyleNames;
   exports.registerFunction = registerFunction;
   exports.version = version;
+  exports.warnOnce = warnOnce;
 
   return exports;
 
-})({}, ol.render.Feature, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.color, ol.colorlike, ol.style.IconImageCache, ol.style.Image, ol.dom, ol.style.IconImage, ol.render, ol.geom.Point, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.geom.MultiPoint);
+})({}, ol.render.Feature, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.color, ol.colorlike, ol.style.IconImageCache, ol.style.Image, ol.dom, ol.style.IconImage, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.geom.MultiPoint);
