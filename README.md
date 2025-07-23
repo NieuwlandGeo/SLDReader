@@ -33,7 +33,9 @@ npm start
 
 ## Requirements
 
-- OpenLayers version 6.15 or higher.
+- Most SLDReader functions work from OpenLayers v6.15 or higher.
+- OpenLayers version 8.3.0 or higher required to use `GraphicStroke` symbolizers without visual artefacts.
+- OpenLayers version 10.3.0 or higher required to support custom `Mark` symbols.
 - An up-to date browser. If you need to support older browsers, you have to compile SLDReader yourself with a different `browserslist` setting in `package.json`.
   - The browsers supported by SLDReader can be found here: https://browsersl.ist/#q=defaults .
 - If you want to build and/or run SLDReader, NodeJS v18.18 or higher is required.
@@ -53,6 +55,8 @@ Two custom marks are also supported: `horline` for a horizontal line through the
 Wellknown names that reference a symbol library, like `ttf://CustomFont#42` are not supported. The Size and Rotation elements may be dynamic by using the PropertyName element.
 
 Only one Graphic per PointSymbolizer is supported. Each Graphic can only have one Mark or one ExternalGraphic.
+
+Some vendor-specific marks (GeoServer, QGIS) are also supported, see the [Mark Gallery demo page](https://nieuwlandgeo.github.io/SLDReader/mark-gallery.html). *Note:* for full custom symbol support you need to use OpenLayers v10.3.0 or higher.
 
 #### ExternalGraphic
 
@@ -106,6 +110,36 @@ Inline content can also be SVG with `encoding="xml"`.
 SLD's with parametric embedded SVG's exported by QGIS should be able to be used in SLDReader.
 
 Support for this functionality is quite hacky and experimental, but appears to work for simple examples.
+
+#### Custom mark symbols
+It's possible to register your own symbols under your own `WellKnownName`.
+
+Custom symbol coordinates must be entered in counterclockwise order and must all lie within a  `[-1, -1, 1, 1]` bounding box.
+The coordinates will be scaled by the symbol `<Size>` parameter.
+
+Example (see the [Mark Gallery demo page](https://nieuwlandgeo.github.io/SLDReader/mark-gallery.html)):
+```javascript
+SLDReader.registerCustomSymbol('crystal', [
+  [0.5, 0],
+  [0.75, 0.75],
+  [0, 0.5],
+  [-1, 1],
+  [-0.5, 0],
+  [-0.75, -0.75],
+  [0, -0.5],
+  [1, -1],
+]);
+```
+
+```xml
+<se:PointSymbolizer>
+  <se:Graphic>
+    <se:Mark>
+      <se:WellKnownName>crystal</se:WellKnownName>
+      <!-- ...etc... -->
+```
+
+Note: OpenLayers v10.3.0 or higher is required to use the custom symbol functionality. On lower versions, a square is displayed instead.
 
 #### LineSymbolizer
 
