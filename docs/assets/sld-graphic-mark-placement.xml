@@ -20,15 +20,15 @@
               <GraphicStroke>
                 <Graphic>
                   <Mark>
-                    <WellKnownName>triangle</WellKnownName>
+                    <WellKnownName>filled_arrowhead</WellKnownName>
                     <Fill>
                       <CssParameter name="fill">#00AA00</CssParameter>
                     </Fill>
                     <Stroke/>
                   </Mark>
-                  <Size>12</Size>
+                  <Size>16</Size>
                   <Rotation>
-                    <ogc:Literal>270</ogc:Literal>
+                    <ogc:Literal>180</ogc:Literal>
                   </Rotation>
                 </Graphic>
               </GraphicStroke>
@@ -40,16 +40,13 @@
               <GraphicStroke>
                 <Graphic>
                   <Mark>
-                    <WellKnownName>triangle</WellKnownName>
+                    <WellKnownName>filled_arrowhead</WellKnownName>
                     <Fill>
                       <CssParameter name="fill">#FF0000</CssParameter>
                     </Fill>
                     <Stroke/>
                   </Mark>
-                  <Size>12</Size>
-                  <Rotation>
-                    <ogc:Literal>90</ogc:Literal>
-                  </Rotation>
+                  <Size>16</Size>
                 </Graphic>
               </GraphicStroke>
             </Stroke>

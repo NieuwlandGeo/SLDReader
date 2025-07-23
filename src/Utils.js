@@ -146,3 +146,15 @@ export function getByPath(obj, path) {
 
   return value;
 }
+
+const warnings = new Set();
+/**
+ * Display an error message as console.warn, but only once per error message.
+ * @param {string} errMsg Error message.
+ */
+export function warnOnce(errMsg) {
+  if (!warnings.has(errMsg)) {
+    console.warn(errMsg);
+    warnings.add(errMsg);
+  }
+}

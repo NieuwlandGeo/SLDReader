@@ -1,5 +1,5 @@
-/* Version: 0.6.2 - May 20, 2025 12:11:31 */
-var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
+/* Version: 0.6.2 - May 22, 2025 12:20:08 */
+var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
   const IMAGE_LOADING = 'IMAGE_LOADING';
@@ -1590,6 +1590,17 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     }
     return value;
   }
+  const warnings = new Set();
+  /**
+   * Display an error message as console.warn, but only once per error message.
+   * @param {string} errMsg Error message.
+   */
+  function warnOnce(errMsg) {
+    if (!warnings.has(errMsg)) {
+      console.warn(errMsg);
+      warnings.add(errMsg);
+    }
+  }
 
   /**
    * Get styling from rules per geometry type
@@ -2016,6 +2027,775 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   }
 
   /**
+   * @module ol/style/RadialShape
+   */
+
+
+  // Parts below are copy-pasted from OpenLayers source, since they are not part of the API and not exported.
+  const ImageState = {
+    LOADING: 1,
+    LOADED: 2};
+  const defaultFillStyle = '#000';
+  const defaultLineCap = 'round';
+  const defaultLineJoin = 'round';
+  const defaultLineWidth = 1;
+  const defaultMiterLimit = 10;
+  const defaultStrokeStyle = '#000';
+
+  /**
+   * @private
+   * Specify radius for regular polygons, or both radius and radius2 for stars.
+   * @typedef {Object} Options
+   * @property {import("./Fill.js").default} [fill] Fill style.
+   * @property {Array<number>} radii Array of radii.
+   * @property {Array<number>} angles Angles in radians.
+   * @property {Array<number>} [displacement=[0, 0]] Displacement of the shape in pixels.
+   * Positive values will shift the shape right and up.
+   * @property {import("./Stroke.js").default} [stroke] Stroke style.
+   * @property {number} [rotation=0] Rotation in radians (positive rotation clockwise).
+   * @property {boolean} [rotateWithView=false] Whether to rotate the shape with the view.
+   * @property {number|import("../size.js").Size} [scale=1] Scale. Unless two dimensional scaling is required a better
+   * result may be obtained with appropriate settings for `radius` and `radius2`.
+   * @property {import('./Style.js').DeclutterMode} [declutterMode] Declutter mode.
+   */
+
+  /**
+   * @private
+   * @typedef {Object} RenderOptions
+   * @property {import("../colorlike.js").ColorLike|undefined} strokeStyle StrokeStyle.
+   * @property {number} strokeWidth StrokeWidth.
+   * @property {number} size Size.
+   * @property {CanvasLineCap} lineCap LineCap.
+   * @property {Array<number>|null} lineDash LineDash.
+   * @property {number} lineDashOffset LineDashOffset.
+   * @property {CanvasLineJoin} lineJoin LineJoin.
+   * @property {number} miterLimit MiterLimit.
+   */
+
+  /**
+   * @classdesc
+   * Set regular shape style for vector features. The resulting shape will be
+   * a polygon given in radial coordinates via two arrays: radii, and angles.
+   * @private
+   */
+  class RadialShape extends ImageStyle {
+    /**
+     * @param {Options} options Options.
+     */
+    constructor(options) {
+      super({
+        opacity: 1,
+        rotateWithView: options.rotateWithView !== undefined ? options.rotateWithView : false,
+        rotation: options.rotation !== undefined ? options.rotation : 0,
+        scale: options.scale !== undefined ? options.scale : 1,
+        displacement: options.displacement !== undefined ? options.displacement : [0, 0],
+        declutterMode: options.declutterMode
+      });
+
+      /**
+       * @private
+       * @type {HTMLCanvasElement|null}
+       */
+      this.hitDetectionCanvas_ = null;
+
+      /**
+       * @private
+       * @type {import("./Fill.js").default|null}
+       */
+      this.fill_ = options.fill !== undefined ? options.fill : null;
+
+      /**
+       * @private
+       * @type {Array<number>}
+       */
+      this.origin_ = [0, 0];
+
+      /**
+       * @protected
+       * @type {Array<number>}
+       */
+      this.radii_ = [...options.radii]; // Clone input array to prevent accidents when the original is mutated.
+
+      /**
+       * @private
+       * @type {Array<number>}
+       */
+      this.angles_ = [...options.angles]; // Clone input array to prevent accidents when the original is mutated.
+
+      /**
+       * @private
+       * @type {import("./Stroke.js").default|null}
+       */
+      this.stroke_ = options.stroke !== undefined ? options.stroke : null;
+
+      /**
+       * @private
+       * @type {import("../size.js").Size}
+       */
+      this.size_;
+
+      /**
+       * @private
+       * @type {RenderOptions}
+       */
+      this.renderOptions_;
+
+      /**
+       * @private
+       */
+      this.imageState_ = this.fill_ && this.fill_.loading() ? ImageState.LOADING : ImageState.LOADED;
+      if (this.imageState_ === ImageState.LOADING) {
+        this.ready().then(() => this.imageState_ = ImageState.LOADED);
+      }
+      this.render();
+    }
+
+    /**
+     * Clones the style.
+     * @return {RadialShape} The cloned style.
+     * @api
+     * @override
+     */
+    clone() {
+      const scale = this.getScale();
+      const style = new RadialShape({
+        fill: this.getFill() ? this.getFill().clone() : undefined,
+        points: this.getPoints(),
+        radii: [...this.getRadii()],
+        angles: [...this.getAngles()],
+        stroke: this.getStroke() ? this.getStroke().clone() : undefined,
+        rotation: this.getRotation(),
+        rotateWithView: this.getRotateWithView(),
+        scale: Array.isArray(scale) ? scale.slice() : scale,
+        displacement: this.getDisplacement().slice(),
+        declutterMode: this.getDeclutterMode()
+      });
+      style.setOpacity(this.getOpacity());
+      return style;
+    }
+
+    /**
+     * Get the anchor point in pixels. The anchor determines the center point for the
+     * symbolizer.
+     * @return {Array<number>} Anchor.
+     * @api
+     * @override
+     */
+    getAnchor() {
+      const size = this.size_;
+      const displacement = this.getDisplacement();
+      const scale = this.getScaleArray();
+      // anchor is scaled by renderer but displacement should not be scaled
+      // so divide by scale here
+      return [size[0] / 2 - displacement[0] / scale[0], size[1] / 2 + displacement[1] / scale[1]];
+    }
+
+    /**
+     * Get the fill style for the shape.
+     * @return {import("./Fill.js").default|null} Fill style.
+     * @api
+     */
+    getFill() {
+      return this.fill_;
+    }
+
+    /**
+     * Set the fill style.
+     * @param {import("./Fill.js").default|null} fill Fill style.
+     * @api
+     */
+    setFill(fill) {
+      this.fill_ = fill;
+      this.render();
+    }
+
+    /**
+     * @return {HTMLCanvasElement} Image element.
+     * @override
+     */
+    getHitDetectionImage() {
+      if (!this.hitDetectionCanvas_) {
+        this.hitDetectionCanvas_ = this.createHitDetectionCanvas_(this.renderOptions_);
+      }
+      return this.hitDetectionCanvas_;
+    }
+
+    /**
+     * Get the image icon.
+     * @param {number} pixelRatio Pixel ratio.
+     * @return {HTMLCanvasElement} Image or Canvas element.
+     * @api
+     * @override
+     */
+    getImage(pixelRatio) {
+      const fillKey = this.fill_?.getKey();
+      const cacheKey = `${pixelRatio},${this.angle_},${this.radii_.join()},${this.angles_.join()},${fillKey}` + Object.values(this.renderOptions_).join(',');
+      let image = /** @type {HTMLCanvasElement} */
+      IconImageCache.shared.get(cacheKey, null, null)?.getImage(1);
+      if (!image) {
+        const renderOptions = this.renderOptions_;
+        const size = Math.ceil(renderOptions.size * pixelRatio);
+        const context = dom.createCanvasContext2D(size, size);
+        this.draw_(renderOptions, context, pixelRatio);
+        image = context.canvas;
+        IconImageCache.shared.set(cacheKey, null, null, new IconImage(image, undefined, null, ImageState.LOADED, null));
+      }
+      return image;
+    }
+
+    /**
+     * Get the image pixel ratio.
+     * @param {number} pixelRatio Pixel ratio.
+     * @return {number} Pixel ratio.
+     * @override
+     */
+    getPixelRatio(pixelRatio) {
+      return pixelRatio;
+    }
+
+    /**
+     * @return {import("../size.js").Size} Image size.
+     * @override
+     */
+    getImageSize() {
+      return this.size_;
+    }
+
+    /**
+     * @return {import("../ImageState.js").default} Image state.
+     * @override
+     */
+    getImageState() {
+      return this.imageState_;
+    }
+
+    /**
+     * Get the origin of the symbolizer.
+     * @return {Array<number>} Origin.
+     * @api
+     * @override
+     */
+    getOrigin() {
+      return this.origin_;
+    }
+
+    /**
+     * Get the array of radii for the shape.
+     * @return {number} Radii.
+     * @api
+     */
+    getRadii() {
+      return this.radii_;
+    }
+
+    /**
+     * Get the array of angles for the shape.
+     * @return {Array<number>} Angles.
+     * @api
+     */
+    getAngles() {
+      return this.angles_;
+    }
+
+    /**
+     * Get the size of the symbolizer (in pixels).
+     * @return {import("../size.js").Size} Size.
+     * @api
+     * @override
+     */
+    getSize() {
+      return this.size_;
+    }
+
+    /**
+     * Get the stroke style for the shape.
+     * @return {import("./Stroke.js").default|null} Stroke style.
+     * @api
+     */
+    getStroke() {
+      return this.stroke_;
+    }
+
+    /**
+     * Set the stroke style.
+     * @param {import("./Stroke.js").default|null} stroke Stroke style.
+     * @api
+     */
+    setStroke(stroke) {
+      this.stroke_ = stroke;
+      this.render();
+    }
+
+    /**
+     * @param {function(import("../events/Event.js").default): void} listener Listener function.
+     * @override
+     */
+    // eslint-disable-next-line no-unused-vars
+    listenImageChange(listener) {}
+
+    /**
+     * Load not yet loaded URI.
+     * @override
+     */
+    load() {}
+
+    /**
+     * @param {function(import("../events/Event.js").default): void} listener Listener function.
+     * @override
+     */
+    // eslint-disable-next-line no-unused-vars
+    unlistenImageChange(listener) {}
+
+    /**
+     * Calculate additional canvas size needed for the miter.
+     * @param {string} lineJoin Line join
+     * @param {number} strokeWidth Stroke width
+     * @param {number} miterLimit Miter limit
+     * @return {number} Additional canvas size needed
+     * @private
+     */
+    calculateLineJoinSize_(lineJoin, strokeWidth, miterLimit) {
+      if (strokeWidth === 0 || lineJoin !== 'bevel' && lineJoin !== 'miter') {
+        return strokeWidth;
+      }
+
+      // m  | ^
+      // i  | |\                  .
+      // t >|  #\
+      // e  | |\ \              .
+      // r      \s\
+      //      |  \t\          .                 .
+      //          \r\                      .   .
+      //      |    \o\      .          .  . . .
+      //          e \k\            .  .    . .
+      //      |      \e\  .    .  .       . .
+      //       d      \ \  .  .          . .
+      //      | _ _a_ _\#  .            . .
+      //   r1          / `             . .
+      //      |                       . .
+      //       b     /               . .
+      //      |                     . .
+      //           / r2            . .
+      //      |                        .   .
+      //         /                           .   .
+      //      |α                                   .   .
+      //       /                                         .   .
+      //      ° center
+      let maxBevelAdd = 0;
+      for (let idx = 0; idx < this.radii_.length; idx += 1) {
+        let r1 = this.radii_[idx];
+        let r2 = this.radii_[idx === this.radii_.length - 1 ? 0 : idx + 1];
+        if (r1 < r2) {
+          const tmp = r1;
+          r1 = r2;
+          r2 = tmp;
+        }
+        let alpha;
+        if (idx < this.radii_.length - 1) {
+          alpha = this.angles_[idx + 1] - this.angles_[idx];
+        } else {
+          alpha = 2 * Math.PI - this.angles_[idx] + this.angles_[0];
+        }
+        const a = r2 * Math.sin(alpha);
+        const b = Math.sqrt(r2 * r2 - a * a);
+        const d = r1 - b;
+        const e = Math.sqrt(a * a + d * d);
+        const miterRatio = e / a;
+        if (lineJoin === 'miter' && miterRatio <= miterLimit) {
+          maxBevelAdd = Math.max(maxBevelAdd, miterRatio * strokeWidth);
+          continue;
+        }
+        // Calculate the distance from center to the stroke corner where
+        // it was cut short because of the miter limit.
+        //              l
+        //        ----+---- <= distance from center to here is maxr
+        //       /####|k ##\
+        //      /#####^#####\
+        //     /#### /+\# s #\
+        //    /### h/+++\# t #\
+        //   /### t/+++++\# r #\
+        //  /### a/+++++++\# o #\
+        // /### p/++ fill +\# k #\
+        ///#### /+++++^+++++\# e #\
+        //#####/+++++/+\+++++\#####\
+        const k = strokeWidth / 2 / miterRatio;
+        const l = strokeWidth / 2 * (d / e);
+        const maxr = Math.sqrt((r1 + k) * (r1 + k) + l * l);
+        const bevelAdd = maxr - r1;
+        if (this.radius2_ === undefined || lineJoin === 'bevel') {
+          maxBevelAdd = Math.max(maxBevelAdd, bevelAdd * 2);
+          continue;
+        }
+        // If outer miter is over the miter limit the inner miter may reach through the
+        // center and be longer than the bevel, same calculation as above but swap r1 / r2.
+        const aa = r1 * Math.sin(alpha);
+        const bb = Math.sqrt(r1 * r1 - aa * aa);
+        const dd = r2 - bb;
+        const ee = Math.sqrt(aa * aa + dd * dd);
+        const innerMiterRatio = ee / aa;
+        if (innerMiterRatio <= miterLimit) {
+          const innerLength = innerMiterRatio * strokeWidth / 2 - r2 - r1;
+          maxBevelAdd = Math.max(maxBevelAdd, 2 * Math.max(bevelAdd, innerLength));
+          continue;
+        }
+        maxBevelAdd = Math.max(maxBevelAdd, 2 * bevelAdd);
+      }
+      return maxBevelAdd;
+    }
+
+    /**
+     * @return {RenderOptions}  The render options
+     * @protected
+     */
+    createRenderOptions() {
+      let lineCap = defaultLineCap;
+      let lineJoin = defaultLineJoin;
+      let miterLimit = 0;
+      let lineDash = null;
+      let lineDashOffset = 0;
+      let strokeStyle;
+      let strokeWidth = 0;
+      if (this.stroke_) {
+        strokeStyle = colorlike.asColorLike(this.stroke_.getColor() ?? defaultStrokeStyle);
+        strokeWidth = this.stroke_.getWidth() ?? defaultLineWidth;
+        lineDash = this.stroke_.getLineDash();
+        lineDashOffset = this.stroke_.getLineDashOffset() ?? 0;
+        lineJoin = this.stroke_.getLineJoin() ?? defaultLineJoin;
+        lineCap = this.stroke_.getLineCap() ?? defaultLineCap;
+        miterLimit = this.stroke_.getMiterLimit() ?? defaultMiterLimit;
+      }
+      const add = this.calculateLineJoinSize_(lineJoin, strokeWidth, miterLimit);
+      let maxRadius = 0;
+      this.radii_.forEach(radius => {
+        maxRadius = Math.max(maxRadius, radius);
+      });
+      const size = Math.ceil(2 * maxRadius + add);
+      return {
+        strokeStyle: strokeStyle,
+        strokeWidth: strokeWidth,
+        size: size,
+        lineCap: lineCap,
+        lineDash: lineDash,
+        lineDashOffset: lineDashOffset,
+        lineJoin: lineJoin,
+        miterLimit: miterLimit
+      };
+    }
+
+    /**
+     * @protected
+     */
+    render() {
+      this.renderOptions_ = this.createRenderOptions();
+      const size = this.renderOptions_.size;
+      this.hitDetectionCanvas_ = null;
+      this.size_ = [size, size];
+    }
+
+    /**
+     * @private
+     * @param {RenderOptions} renderOptions Render options.
+     * @param {CanvasRenderingContext2D} context The rendering context.
+     * @param {number} pixelRatio The pixel ratio.
+     */
+    draw_(renderOptions, context, pixelRatio) {
+      context.scale(pixelRatio, pixelRatio);
+      // set origin to canvas center
+      context.translate(renderOptions.size / 2, renderOptions.size / 2);
+      this.createPath_(context);
+      if (this.fill_) {
+        let color = this.fill_.getColor();
+        if (color === null) {
+          color = defaultFillStyle;
+        }
+        context.fillStyle = colorlike.asColorLike(color);
+        context.fill();
+      }
+      if (renderOptions.strokeStyle) {
+        context.strokeStyle = renderOptions.strokeStyle;
+        context.lineWidth = renderOptions.strokeWidth;
+        if (renderOptions.lineDash) {
+          context.setLineDash(renderOptions.lineDash);
+          context.lineDashOffset = renderOptions.lineDashOffset;
+        }
+        context.lineCap = renderOptions.lineCap;
+        context.lineJoin = renderOptions.lineJoin;
+        context.miterLimit = renderOptions.miterLimit;
+        context.stroke();
+      }
+    }
+
+    /**
+     * @private
+     * @param {RenderOptions} renderOptions Render options.
+     * @return {HTMLCanvasElement} Canvas containing the icon
+     */
+    createHitDetectionCanvas_(renderOptions) {
+      let context;
+      if (this.fill_) {
+        let color$1 = this.fill_.getColor();
+
+        // determine if fill is transparent (or pattern or gradient)
+        let opacity = 0;
+        if (typeof color$1 === 'string') {
+          color$1 = color.asArray(color$1);
+        }
+        if (color$1 === null) {
+          opacity = 1;
+        } else if (Array.isArray(color$1)) {
+          opacity = color$1.length === 4 ? color$1[3] : 1;
+        }
+        if (opacity === 0) {
+          // if a transparent fill style is set, create an extra hit-detection image
+          // with a default fill style
+          context = dom.createCanvasContext2D(renderOptions.size, renderOptions.size);
+          this.drawHitDetectionCanvas_(renderOptions, context);
+        }
+      }
+      return context ? context.canvas : this.getImage(1);
+    }
+
+    /**
+     * @private
+     * @param {CanvasRenderingContext2D} context The context to draw in.
+     */
+    createPath_(context) {
+      for (let k = 0; k < this.radii_.length; k += 1) {
+        const radius = this.radii_[k];
+        const angle = this.angles_[k];
+        // Watch out: image coordinates have y pointing downwards!
+        context.lineTo(radius * Math.cos(angle), -radius * Math.sin(angle));
+      }
+      context.closePath();
+    }
+
+    /**
+     * @private
+     * @param {RenderOptions} renderOptions Render options.
+     * @param {CanvasRenderingContext2D} context The context.
+     */
+    drawHitDetectionCanvas_(renderOptions, context) {
+      // set origin to canvas center
+      context.translate(renderOptions.size / 2, renderOptions.size / 2);
+      this.createPath_(context);
+      context.fillStyle = defaultFillStyle;
+      context.fill();
+      if (renderOptions.strokeStyle) {
+        context.strokeStyle = renderOptions.strokeStyle;
+        context.lineWidth = renderOptions.strokeWidth;
+        if (renderOptions.lineDash) {
+          context.setLineDash(renderOptions.lineDash);
+          context.lineDashOffset = renderOptions.lineDashOffset;
+        }
+        context.lineJoin = renderOptions.lineJoin;
+        context.miterLimit = renderOptions.miterLimit;
+        context.stroke();
+      }
+    }
+
+    /**
+     * @override
+     */
+    ready() {
+      return this.fill_ ? this.fill_.ready() : Promise.resolve();
+    }
+  }
+
+  // Custom symbols that cannot be represented as RegularShape.
+  // Coordinates are normalized within a [-1,-1,1,1] square and will be scaled by size/2 when rendered.
+  // Shapes are auto-closed, so no need to make the last coordinate equal to the first.
+  const customSymbols = {
+    arrow: [[0, 1], [-0.5, 0.5], [-0.25, 0.5], [-0.25, -1], [0.25, -1], [0.25, 0.5], [0.5, 0.5]],
+    arrowhead: [[0, 0], [-1, 1], [0, 0], [-1, -1]],
+    filled_arrowhead: [[0, 0], [-1, 1], [-1, -1]],
+    cross_fill: [[1, 0.2], [0.2, 0.2], [0.2, 1], [-0.2, 1], [-0.2, 0.2], [-1, 0.2], [-1, -0.2], [-0.2, -0.2], [-0.2, -1], [0.2, -1], [0.2, -0.2], [1, -0.2]],
+    quarter_square: [[0, 0], [0, 1], [-1, 1], [-1, 0]],
+    half_square: [[0, 1], [-1, 1], [-1, -1], [0, -1]],
+    diagonal_half_square: [[-1, 1], [-1, -1], [1, -1]],
+    // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
+    right_half_triangle: [[0, 1], [-1, -1], [0, -1]],
+    left_half_triangle: [[0, 1], [0, -1], [1, -1]],
+    'shape://carrow': [[0, 0], [-1, 0.4], [-1, -0.4]],
+    'shape://oarrow': [[0, 0], [-1, 0.4], [0, 0], [-1, -0.4]]
+  };
+
+  /**
+   * Get registered custom symbol coordinate array.
+   * @private
+   * @param {string} name Wellknown symbol name.
+   * @returns {Array<Array<number>>} Custom symbol coordinates inside the [-1,-1,1,1] square.
+   */
+  function getCustomSymbolCoordinates(name) {
+    return customSymbols[name];
+  }
+
+  /**
+   * Register a custom symbol for use as a graphic.
+   * Custom symbols are referenced by WellKnownName inside a Mark.
+   * Custom symbol coordinates must be entered in counterclockwise order and must all lie within [-1,-1,1,1].
+   * The first and last coordinates must not be equal. The shape will be closed automatically.
+   * @param {string} wellknownname Custom symbol name.
+   * @param {Array<Array<number>>} normalizedCoordinates Array of coordinates.
+   * @returns {void}
+   */
+  function registerCustomSymbol(name, normalizedCoordinates) {
+    // Verify that input coordinates lie outside the expected [-1,-1,1,1] square.
+    const allInside = normalizedCoordinates.every(_ref => {
+      let [x, y] = _ref;
+      return x >= -1 && x <= 1 && y >= -1 && y <= 1;
+    });
+    if (!allInside) {
+      throw new Error('Custom symbol coordinates must lie within [-1,-1,1,1].');
+    }
+
+    // Verify that input shape is not closed.
+    const [x1, y1] = normalizedCoordinates[0];
+    const [xN, yN] = normalizedCoordinates[normalizedCoordinates.length - 1];
+    if (x1 === xN && y1 === yN) {
+      throw new Error('Custom symbol start and end coordinate should not be the same. Custom symbols will close themselves.');
+    }
+    customSymbols[name] = normalizedCoordinates;
+  }
+
+  const HALF_CIRCLE_RESOLUTION = 96; // Number of points to approximate half a circle as radial shape.
+
+  /**
+   * Test render a point with an image style (or subclass). Will throw an error if rendering a point fails.
+   * @private
+   * @param {ol/styleImage} olImage OpenLayers Image style (or subclass) instance.
+   * @returns {void} Does nothing if render succeeds.
+   */
+  function testRenderImageMark(olImage) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const context = canvas.getContext('2d');
+    const olContext = render.toContext(context);
+    const olStyle = new Style({
+      image: olImage
+    });
+    olContext.setStyle(olStyle);
+    olContext.drawGeometry(new Point([16, 16]));
+  }
+
+  /**
+   * Approximate a partial circle as a radial shape.
+   * @private
+   * @param {object} options Options.
+   * @param {number} startAngle Start angle in radians.
+   * @param {number} endAngle End angle in radians.
+   * @param {number} radius Symbol radius.
+   * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
+   * @param {ol/style/fill} fill OpenLayers Fill instance.
+   * @param {number} rotation Symbol rotation in radians (clockwise). Default 0.
+   * @returns {RadialShape} A RadialShape instance.
+   */
+  function createPartialCircleRadialShape(_ref) {
+    let {
+      wellKnownName,
+      startAngle,
+      endAngle,
+      radius,
+      stroke,
+      fill,
+      rotation
+    } = _ref;
+    const numPoints = Math.ceil(HALF_CIRCLE_RESOLUTION * (endAngle - startAngle) / Math.PI);
+    const radii = [0];
+    const angles = [0];
+    for (let k = 0; k <= numPoints; k += 1) {
+      const deltaAngle = (endAngle - startAngle) / numPoints;
+      radii.push(radius);
+      angles.push(startAngle + k * deltaAngle);
+    }
+    try {
+      const olImage = new RadialShape({
+        radii,
+        angles,
+        stroke,
+        fill,
+        rotation: rotation ?? 0.0
+      });
+      testRenderImageMark(olImage);
+      return olImage;
+    } catch (err) {
+      // Custom radial shapes only work from OL v10.3.0 onwards,
+      // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
+      warnOnce(`Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`);
+      // When creating a radial shape fails, return default square as fallback.
+      return new RegularShape({
+        angle: Math.PI / 4,
+        fill,
+        points: 4,
+        // For square, scale radius so the height of the square equals the given size.
+        radius: radius * Math.sqrt(2.0),
+        stroke,
+        rotation: rotation ?? 0.0
+      });
+    }
+  }
+
+  /**
+   * Create a radial shape from symbol coordinates in the unit square, scaled by radius.
+   * @private
+   * @param {object} options Options.
+   * @param {Array<Array<number>>} coordinates Unit coordinates in counter-clockwise order.
+   * @param {number} radius Symbol radius.
+   * @param {ol/style/stroke} stroke OpenLayers Stroke instance.
+   * @param {ol/style/fill} fill OpenLayers Fill instance.
+   * @param {number} rotation Symbol rotation in radians (clockwise). Default 0.
+   * @returns {RadialShape} A RadialShape instance.
+   */
+  function radialShapeFromUnitCoordinates(_ref2) {
+    let {
+      wellKnownName,
+      coordinates,
+      radius,
+      stroke,
+      fill,
+      rotation
+    } = _ref2;
+    // Convert unit coordinates and radius to polar coordinate representation.
+    const radii = [];
+    const angles = [];
+    coordinates.forEach(_ref3 => {
+      let [x, y] = _ref3;
+      const polarRadius = radius * Math.sqrt(x * x + y * y);
+      let polarAngle = Math.atan2(y, x);
+      if (polarAngle < 2) {
+        polarAngle += 2 * Math.PI;
+      }
+      radii.push(polarRadius);
+      angles.push(polarAngle);
+    });
+    try {
+      const olImage = new RadialShape({
+        radii,
+        angles,
+        stroke,
+        fill,
+        rotation: rotation ?? 0.0
+      });
+      testRenderImageMark(olImage);
+      return olImage;
+    } catch (err) {
+      // Custom radial shapes only work from OL v10.3.0 onwards,
+      // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
+      warnOnce(`Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`);
+      // When creating a radial shape fails, return default square as fallback.
+      return new RegularShape({
+        angle: Math.PI / 4,
+        fill,
+        points: 4,
+        // For square, scale radius so the height of the square equals the given size.
+        radius: radius * Math.sqrt(2.0),
+        stroke,
+        rotation: rotation ?? 0.0
+      });
+    }
+  }
+
+  /**
    * @private
    * Create an OL point style corresponding to a well known symbol identifier.
    * @param {string} wellKnownName SLD Well Known Name for symbolizer.
@@ -2029,161 +2809,158 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     let rotationDegrees = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0.0;
     const radius = size / 2;
     const rotationRadians = Math.PI * rotationDegrees / 180.0;
-    let fillColor;
-    if (fill && fill.getColor()) {
-      fillColor = fill.getColor();
+    const sharedOptions = {
+      stroke,
+      fill,
+      rotation: rotationRadians
+    };
+    const customSymbolCoordinates = getCustomSymbolCoordinates(wellKnownName);
+    if (customSymbolCoordinates) {
+      return radialShapeFromUnitCoordinates({
+        ...sharedOptions,
+        wellKnownName,
+        coordinates: customSymbolCoordinates,
+        radius
+      });
     }
     switch (wellKnownName) {
       case 'circle':
         return new Circle({
+          stroke,
           fill,
-          radius,
-          stroke
+          radius
         });
       case 'shape://dot':
         return new Circle({
+          stroke,
           fill,
-          radius: radius / 8,
-          stroke
+          radius: radius / 8
         });
       case 'equilateral_triangle':
       case 'triangle':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 3,
-          radius,
-          stroke,
-          rotation: rotationRadians
+          radius
         });
       case 'star':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 5,
           radius,
-          radius2: radius / 2.5,
-          stroke,
-          rotation: rotationRadians
+          radius2: radius / 2.5
         });
       case 'shape://plus':
       case 'cross':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 4,
           radius,
-          radius2: 0,
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
-          rotation: rotationRadians
+          radius2: 0
         });
       case 'pentagon':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 5,
-          radius,
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
-          rotation: rotationRadians
+          radius
         });
       case 'hexagon':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 6,
-          radius,
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
-          rotation: rotationRadians
+          radius
         });
       case 'octagon':
         return new RegularShape({
+          ...sharedOptions,
           angle: Math.PI / 8,
-          fill,
           points: 8,
-          radius: radius / Math.cos(Math.PI / 8),
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
-          rotation: rotationRadians
+          radius: radius / Math.cos(Math.PI / 8)
         });
       case 'shape://times':
       case 'cross2': // cross2 is used by QGIS for the x symbol.
       case 'x':
         return new RegularShape({
+          ...sharedOptions,
           angle: Math.PI / 4,
-          fill,
           points: 4,
           radius: Math.sqrt(2.0) * radius,
-          radius2: 0,
-          stroke: stroke || new Stroke({
-            color: fillColor,
-            width: radius / 2
-          }),
-          rotation: rotationRadians
+          radius2: 0
         });
       case 'diamond':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 4,
-          radius,
-          stroke,
-          rotation: rotationRadians
+          radius
         });
       case 'shape://horline':
       case 'horline':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 2,
           radius,
-          angle: Math.PI / 2,
-          stroke,
-          rotation: rotationRadians
+          angle: Math.PI / 2
         });
       case 'shape://vertline':
       case 'line':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 2,
           radius,
-          angle: 0,
-          stroke,
-          rotation: rotationRadians
+          angle: 0
         });
       case 'shape://backslash':
       case 'backslash':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 2,
           radius: radius * Math.sqrt(2),
-          angle: -Math.PI / 4,
-          stroke,
-          rotation: rotationRadians
+          angle: -Math.PI / 4
         });
       case 'shape://slash':
       case 'slash':
         return new RegularShape({
-          fill,
+          ...sharedOptions,
           points: 2,
           radius: radius * Math.sqrt(2),
-          angle: Math.PI / 4,
-          stroke,
-          rotation: rotationRadians
+          angle: Math.PI / 4
         });
+
+      // Symbols that cannot be represented by RegularShape or custom symbols.
+      case 'semi_circle':
+        return createPartialCircleRadialShape({
+          ...sharedOptions,
+          wellKnownName,
+          startAngle: 0,
+          endAngle: Math.PI,
+          radius
+        });
+      case 'third_circle':
+        return createPartialCircleRadialShape({
+          ...sharedOptions,
+          wellKnownName,
+          startAngle: Math.PI / 2,
+          endAngle: 7 * Math.PI / 6,
+          radius
+        });
+      case 'quarter_circle':
+        return createPartialCircleRadialShape({
+          ...sharedOptions,
+          wellKnownName,
+          startAngle: Math.PI / 2,
+          endAngle: Math.PI,
+          radius
+        });
+
+      // Default for unknown wellknownname is a square.
       default:
         // Default is `square`
         return new RegularShape({
+          ...sharedOptions,
           angle: Math.PI / 4,
-          fill,
           points: 4,
           // For square, scale radius so the height of the square equals the given size.
-          radius: radius * Math.sqrt(2.0),
-          stroke,
-          rotation: rotationRadians
+          radius: radius * Math.sqrt(2.0)
         });
     }
   }
@@ -3835,9 +4612,11 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;
+  exports.registerCustomSymbol = registerCustomSymbol;
   exports.registerFunction = registerFunction;
   exports.version = version;
+  exports.warnOnce = warnOnce;
 
   return exports;
 
-})({}, ol.render.Feature, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.geom.MultiPoint);
+})({}, ol.render.Feature, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.color, ol.colorlike, ol.style.IconImageCache, ol.style.Image, ol.dom, ol.style.IconImage, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.geom.MultiPoint);
