@@ -4,6 +4,8 @@ import Circle from 'ol/style/Circle';
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
 import Reader from '../src/Reader';
+import { registerCustomSymbol } from '../src/styles/customSymbols';
+
 import OlStyler, {
   createOlStyle,
   createOlStyleFunction,
@@ -28,6 +30,7 @@ import { dynamicPointSymbolizerSld } from './data/dynamic-point-symbolizer.sld';
 import { dynamicTextSymbolizerSld } from './data/dynamic-text-symbolizer.sld';
 import { dynamicPointSymbolizerWithUom } from './data/dynamic-point-symbolizer-with-uom';
 import { doubleLineSld } from './data/double-line.sld';
+import { customSymbolSld } from './data/custom-symbol.sld';
 
 import { IMAGE_LOADING, IMAGE_LOADED } from '../src/constants';
 import {
@@ -36,6 +39,7 @@ import {
   clearImageLoadingStateCache,
   getImageLoadingState,
 } from '../src/imageCache';
+import RadialShape from '../src/styles/RadialShape';
 
 const getMockOLFeature = geometryType => ({
   properties: {},
@@ -1338,6 +1342,55 @@ describe('Styling with dynamic SVG Parameters', () => {
       const [style] = styleFunction(olFeature);
       // Point symbolizer mark stroke width is always 2 pixels.
       expect(style.getImage().getStroke().getWidth()).to.equal(2);
+    });
+  });
+
+  describe('Custom symbols', () => {
+    let styleFunction;
+    let fmtGeoJSON;
+    before(() => {
+      registerCustomSymbol('crystal', [
+        [0.5, 0],
+        [0.75, 0.75],
+        [0, 0.5],
+        [-1, 1],
+        [-0.5, 0],
+        [-0.75, -0.75],
+        [0, -0.5],
+        [1, -1],
+      ]);
+      fmtGeoJSON = new OLFormatGeoJSON();
+      const sldObject = Reader(customSymbolSld);
+      const [featureTypeStyle] =
+        sldObject.layers[0].styles[0].featuretypestyles;
+      styleFunction = createOlStyleFunction(featureTypeStyle);
+    });
+
+    it('Custom symbol is a RadialShape image', () => {
+      const olFeature = fmtGeoJSON.readFeature({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [175135, 441200],
+        },
+        properties: {},
+      });
+      const [olStyle] = styleFunction(olFeature);
+      const olImage = olStyle.getImage();
+      expect(olImage instanceof RadialShape).to.be.true;
+    });
+
+    it('Cloning custom symbol style does not crash', () => {
+      const olFeature = fmtGeoJSON.readFeature({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [175135, 441200],
+        },
+        properties: {},
+      });
+      const [olStyle] = styleFunction(olFeature);
+      olStyle.clone();
     });
   });
 });

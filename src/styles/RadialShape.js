@@ -156,7 +156,6 @@ class RadialShape extends ImageStyle {
     const scale = this.getScale();
     const style = new RadialShape({
       fill: this.getFill() ? this.getFill().clone() : undefined,
-      points: this.getPoints(),
       radii: [...this.getRadii()],
       angles: [...this.getAngles()],
       stroke: this.getStroke() ? this.getStroke().clone() : undefined,
