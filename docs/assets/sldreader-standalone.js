@@ -1,4 +1,4 @@
-/* Version: 0.7.0 - July 23, 2025 15:52:30 */
+/* Version: 0.7.1 - August 7, 2025 15:59:15 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2160,7 +2160,6 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       const scale = this.getScale();
       const style = new RadialShape({
         fill: this.getFill() ? this.getFill().clone() : undefined,
-        points: this.getPoints(),
         radii: [...this.getRadii()],
         angles: [...this.getAngles()],
         stroke: this.getStroke() ? this.getStroke().clone() : undefined,
@@ -4594,7 +4593,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     registerFunction('__fe:Div__', (a, b) => Number(a) / Number(b));
   }
 
-  const version = '0.7.0';
+  const version = '0.7.1';
 
   // Add support for a handful of built-in SLD function implementations.
   addBuiltInFunctions();
