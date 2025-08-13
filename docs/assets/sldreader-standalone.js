@@ -1,4 +1,4 @@
-/* Version: 0.7.1 - August 13, 2025 10:40:01 */
+/* Version: 0.7.2 - August 13, 2025 11:04:32 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -4610,7 +4610,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     registerFunction('__fe:Div__', (a, b) => Number(a) / Number(b));
   }
 
-  const version = '0.7.1';
+  const version = '0.7.2';
 
   // Add support for a handful of built-in SLD function implementations.
   addBuiltInFunctions();
