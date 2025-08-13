@@ -193,7 +193,7 @@ describe('Reads xml sld 11', () => {
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.font).to.be.an.instanceof(Object);
     expect(symbolizer.font.styling).to.be.an.instanceof(Object);
-    expect(symbolizer.font.styling.fontFamily).to.equal('Noto Sans');
+    expect(symbolizer.font.styling.fontFamily).to.equal('"Noto Sans", Arial, sans-serif');
   });
   it('rule textsymbolizer has fill', () => {
     const rule =

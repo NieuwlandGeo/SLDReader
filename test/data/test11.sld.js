@@ -74,6 +74,8 @@ export const sld11 = `<?xml version="1.0" encoding="UTF-8"?>
             </se:Label>
             <se:Font>
               <se:SvgParameter name="font-family">Noto Sans</se:SvgParameter>
+              <se:SvgParameter name="font-family">Arial</se:SvgParameter>
+              <se:SvgParameter name="font-family">sans-serif</se:SvgParameter>
               <se:SvgParameter name="font-size">13</se:SvgParameter>
             </se:Font>
             <se:LabelPlacement>

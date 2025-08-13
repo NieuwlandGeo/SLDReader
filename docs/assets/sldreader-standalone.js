@@ -1,4 +1,4 @@
-/* Version: 0.7.1 - August 7, 2025 15:59:15 */
+/* Version: 0.7.1 - August 13, 2025 10:40:01 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -639,7 +639,24 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         simplifiedValue = parseFloat(simplifiedValue);
       }
     }
-    obj[propertyName] = simplifiedValue;
+
+    // Special handling for font-family style property.
+    // This property can be present more than once, and should be turned into a comma-separated string.
+    if (typeof simplifiedValue === 'string' && propertyName === 'fontFamily') {
+      // Add quotes to font family if necessary.
+      let fontFamily = simplifiedValue;
+      if (/[^\w-]|\d/.test(fontFamily)) {
+        fontFamily = `"${fontFamily}"`;
+      }
+      if (!obj.fontFamily) {
+        obj.fontFamily = fontFamily;
+      } else if (typeof obj.fontFamily === 'string') {
+        // Append font family to existing font family (as long as it's a static property).
+        obj.fontFamily += `, ${fontFamily}`;
+      }
+    } else {
+      obj[propertyName] = simplifiedValue;
+    }
   }
   function addNumericParameterValueProp(node, obj, prop) {
     let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};

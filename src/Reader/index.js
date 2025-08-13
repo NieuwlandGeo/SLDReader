@@ -148,7 +148,9 @@ function addExternalGraphicProp(node, obj, prop, options) {
       externalgraphic.onlineresource = `data:${externalgraphic.format || ''};base64,${externalgraphic.inlinecontent}`;
       delete externalgraphic.inlinecontent;
     } else if (externalgraphic.encoding?.indexOf('xml') > -1) {
-      const encodedXml = window.encodeURIComponent(externalgraphic.inlinecontent);
+      const encodedXml = window.encodeURIComponent(
+        externalgraphic.inlinecontent
+      );
       externalgraphic.onlineresource = `data:image/svg+xml;utf8,${encodedXml}`;
       delete externalgraphic.inlinecontent;
     }
@@ -410,7 +412,24 @@ function addParameterValueProp(node, obj, prop, options = {}) {
     }
   }
 
-  obj[propertyName] = simplifiedValue;
+  // Special handling for font-family style property.
+  // This property can be present more than once, and should be turned into a comma-separated string.
+  if (typeof simplifiedValue === 'string' && propertyName === 'fontFamily') {
+    // Add quotes to font family if necessary.
+    let fontFamily = simplifiedValue;
+    if (/[^\w-]|\d/.test(fontFamily)) {
+      fontFamily = `"${fontFamily}"`;
+    }
+
+    if (!obj.fontFamily) {
+      obj.fontFamily = fontFamily;
+    } else if (typeof obj.fontFamily === 'string') {
+      // Append font family to existing font family (as long as it's a static property).
+      obj.fontFamily += `, ${fontFamily}`;
+    }
+  } else {
+    obj[propertyName] = simplifiedValue;
+  }
 }
 
 function addNumericParameterValueProp(node, obj, prop, options = {}) {
