@@ -56,7 +56,7 @@ export function getStyle(layer, name) {
  * get rules for specific feature after applying filters
  * @private
  * const style = getStyle(sldLayer, stylename);
- * getRules(style.featuretypestyles['0'], geojson, resolution);
+ * getRules(style.featuretypestyles['0'], geojson, { resolution });
  * @param  {FeatureTypeStyle} featureTypeStyle
  * @param  {object} feature geojson
  * @param {EvaluationContext} context Evaluation context.

@@ -1,4 +1,4 @@
-/* Version: 0.7.2 - September 19, 2025 09:39:53 */
+/* Version: 0.7.2 - September 19, 2025 09:49:53 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1524,7 +1524,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * get rules for specific feature after applying filters
    * @private
    * const style = getStyle(sldLayer, stylename);
-   * getRules(style.featuretypestyles['0'], geojson, resolution);
+   * getRules(style.featuretypestyles['0'], geojson, { resolution });
    * @param  {FeatureTypeStyle} featureTypeStyle
    * @param  {object} feature geojson
    * @param {EvaluationContext} context Evaluation context.
