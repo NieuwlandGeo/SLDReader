@@ -56,7 +56,7 @@ export function getStyle(layer, name) {
  * get rules for specific feature after applying filters
  * @private
  * const style = getStyle(sldLayer, stylename);
- * getRules(style.featuretypestyles['0'], geojson, resolution);
+ * getRules(style.featuretypestyles['0'], geojson, { resolution });
  * @param  {FeatureTypeStyle} featureTypeStyle
  * @param  {object} feature geojson
  * @param {EvaluationContext} context Evaluation context.
@@ -83,7 +83,12 @@ export function getRules(featureTypeStyle, feature, context) {
     }
   }
 
-  // When eligible rules contain only rules with ElseFilter, return them all.
+  // If none of the valid rules are an ElseFilter, return them all.
+  if (elseFilterCount === 0) {
+    return validRules;
+  }
+
+  // When all valid rules are ElseFilter rules, return them all.
   // Note: the spec does not forbid more than one ElseFilter remaining at a given scale,
   // but leaves handling this case up to the implementor.
   // The SLDLibrary chooses to keep them all.
@@ -91,7 +96,7 @@ export function getRules(featureTypeStyle, feature, context) {
     return validRules;
   }
 
-  // If a mix of rules with and without ElseFilter remains, only keep rules without ElseFilter.
+  // If only some of the rules are ElseFilter rules, return all rules without an ElseFilter.
   return validRules.filter(rule => !rule.elsefilter);
 }
 

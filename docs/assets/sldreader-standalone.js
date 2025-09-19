@@ -1,4 +1,4 @@
-/* Version: 0.7.2 - August 13, 2025 11:04:32 */
+/* Version: 0.7.2 - September 19, 2025 09:49:53 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1524,7 +1524,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * get rules for specific feature after applying filters
    * @private
    * const style = getStyle(sldLayer, stylename);
-   * getRules(style.featuretypestyles['0'], geojson, resolution);
+   * getRules(style.featuretypestyles['0'], geojson, { resolution });
    * @param  {FeatureTypeStyle} featureTypeStyle
    * @param  {object} feature geojson
    * @param {EvaluationContext} context Evaluation context.
@@ -1551,7 +1551,12 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       }
     }
 
-    // When eligible rules contain only rules with ElseFilter, return them all.
+    // If none of the valid rules are an ElseFilter, return them all.
+    if (elseFilterCount === 0) {
+      return validRules;
+    }
+
+    // When all valid rules are ElseFilter rules, return them all.
     // Note: the spec does not forbid more than one ElseFilter remaining at a given scale,
     // but leaves handling this case up to the implementor.
     // The SLDLibrary chooses to keep them all.
@@ -1559,7 +1564,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       return validRules;
     }
 
-    // If a mix of rules with and without ElseFilter remains, only keep rules without ElseFilter.
+    // If only some of the rules are ElseFilter rules, return all rules without an ElseFilter.
     return validRules.filter(rule => !rule.elsefilter);
   }
 

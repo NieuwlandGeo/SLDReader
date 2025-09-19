@@ -151,7 +151,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
       const filteredRules = Utils.getRules(
         featureTypeStyle,
         testFeature,
-        0.28 // scale 1:1000.
+        { resolution: 0.28 } // scale 1:1000.
       );
       expect(filteredRules.map(rule => rule.name)).to.deep.equal([
         'always-passes',
@@ -159,7 +159,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
       ]);
     });
 
-    it('Keep ElseFilter rule if no other rule matches', () => {
+    it('Keep ElseFilter rule if all other eligible rules are outside scale range', () => {
       const featureTypeStyle = {
         rules: [
           {
@@ -184,10 +184,42 @@ describe('reads info from StyledLayerDescriptor object', () => {
       const filteredRules = Utils.getRules(
         featureTypeStyle,
         testFeature,
-        0.28 // scale 1:1000.
+        { resolution: 0.28 } // scale 1:1000.
       );
       expect(filteredRules.map(rule => rule.name)).to.deep.equal([
         'rule-elsefilter',
+      ]);
+    });
+
+    it('Discard ElseFilter rule if at least one other eligible rule is within scale range', () => {
+      const featureTypeStyle = {
+        rules: [
+          {
+            name: 'rule-elsefilter',
+            elsefilter: true,
+          },
+          {
+            name: 'only-above-scale-5000',
+            minscaledenominator: 5000,
+          },
+          {
+            name: 'value-equals-100',
+            filter: {
+              type: 'comparison',
+              operator: 'propertyisequalto',
+              propertyname: 'value',
+              literal: '100',
+            },
+          },
+        ],
+      };
+      const filteredRules = Utils.getRules(
+        featureTypeStyle,
+        testFeature,
+        { resolution: 2.8 } // scale 1:10000.
+      );
+      expect(filteredRules.map(rule => rule.name)).to.deep.equal([
+        'only-above-scale-5000',
       ]);
     });
   });
