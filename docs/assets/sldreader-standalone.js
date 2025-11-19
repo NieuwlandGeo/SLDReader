@@ -1,4 +1,4 @@
-/* Version: 0.7.2 - September 19, 2025 09:49:53 */
+/* Version: 0.7.2 - November 19, 2025 16:40:34 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -323,7 +323,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {object} obj  the object to modify
    * @param {string} prop key on obj to hold array
    */
-  function addSymbolizer(node, obj, prop) {
+  function addSymbolizer(node, obj, prop, options) {
     const property = prop.toLowerCase();
     obj[property] = obj[property] || [];
     const item = {
@@ -355,6 +355,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       item.uom = UOM_PIXEL;
     }
     readNode(node, item, {
+      ...options,
       uom: item.uom
     });
     obj[property].push(item);
@@ -378,6 +379,44 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     const property = prop.toLowerCase();
     obj[property] = {};
     readGraphicNode(node, obj[property], options);
+  }
+  function addGraphicFillProp(node, obj, prop, options) {
+    const property = prop.toLowerCase();
+    const graphicFill = {};
+    readNode(node, graphicFill, options);
+
+    // QGIS compatibility hack: if a graphic fill uses a rotated horizontal or vertical line,
+    // replace it with slash or backslash if the rotation is an odd multiple of 45 degrees.
+    // This ensures that the line fill won't be fragmented.
+    // A (back)slash spans the entire diagonal of the fill image square.
+    const markName = graphicFill?.graphic?.mark?.wellknownname;
+    if (options.compatibilityMode === 'QGIS' && (markName === 'line' || markName === 'horline')) {
+      const rotation = graphicFill?.graphic?.rotation ?? 0;
+
+      // After these steps, if rotation is an odd multiple of 45 degrees, rotation will be either 45 or 135.
+      let reducedRotation = rotation % 180;
+      if (reducedRotation < 0) {
+        reducedRotation = reducedRotation + 180;
+      }
+      if (markName === 'line') {
+        if (reducedRotation === 45) {
+          graphicFill.graphic.mark.wellknownname = 'slash';
+          graphicFill.graphic.rotation = 0;
+        } else if (reducedRotation === 135) {
+          graphicFill.graphic.mark.wellknownname = 'backslash';
+          graphicFill.graphic.rotation = 0;
+        }
+      } else if (markName === 'horline') {
+        if (reducedRotation === 45) {
+          graphicFill.graphic.mark.wellknownname = 'backslash';
+          graphicFill.graphic.rotation = 0;
+        } else if (reducedRotation === 135) {
+          graphicFill.graphic.mark.wellknownname = 'slash';
+          graphicFill.graphic.rotation = 0;
+        }
+      }
+    }
+    obj[property] = graphicFill;
   }
   function addExternalGraphicProp(node, obj, prop, options) {
     const property = prop.toLowerCase();
@@ -741,7 +780,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     Fill: addProp,
     Stroke: addProp,
     GraphicStroke: addProp,
-    GraphicFill: (node, obj, prop, options) => addProp(node, obj, prop, {
+    GraphicFill: (node, obj, prop, options) => addGraphicFillProp(node, obj, prop, {
       ...options,
       uom: UOM_PIXEL
     }),
@@ -795,32 +834,32 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @type {Object}
    */
   const parsers = {
-    NamedLayer: (element, obj) => {
-      addPropArray(element, obj, 'layers');
+    NamedLayer: (element, obj, _, options) => {
+      addPropArray(element, obj, 'layers', options);
     },
-    UserLayer: (element, obj) => {
-      addPropArray(element, obj, 'layers');
+    UserLayer: (element, obj, _, options) => {
+      addPropArray(element, obj, 'layers', options);
     },
-    UserStyle: (element, obj) => {
+    UserStyle: (element, obj, _, options) => {
       obj.styles = obj.styles || [];
       const style = {
         default: getBool(element, 'IsDefault'),
         featuretypestyles: []
       };
-      readNode(element, style);
+      readNode(element, style, options);
       obj.styles.push(style);
     },
-    FeatureTypeStyle: (element, obj) => {
+    FeatureTypeStyle: (element, obj, _, options) => {
       obj.featuretypestyle = obj.featuretypestyle || [];
       const featuretypestyle = {
         rules: []
       };
-      readNode(element, featuretypestyle);
+      readNode(element, featuretypestyle, options);
       obj.featuretypestyles.push(featuretypestyle);
     },
-    Rule: (element, obj) => {
+    Rule: (element, obj, _, options) => {
       const rule = {};
-      readNode(element, rule);
+      readNode(element, rule, options);
       obj.rules.push(rule);
     },
     Name: addPropWithTextContent,
@@ -876,16 +915,24 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
 
   /**
    * Creates a object from an sld xml string,
-   * @param  {string} sld xml string
+   * @param {string} sld xml string
+   * @param {object} options Parse options.
+   * @param {string} [options.compatibilityMode] Set this to 'QGIS' to improve compatibility with SLDs exported by QGIS.
    * @return {StyledLayerDescriptor}  object representing sld style
    */
-  function Reader(sld) {
+  function Reader(sld, options) {
     const result = {};
     const parser = new DOMParser();
     const doc = parser.parseFromString(sld, 'application/xml');
     const rootNode = doc.documentElement;
     result.version = rootNode.getAttribute('version');
-    readNode(rootNode, result);
+    const defaultParseOptions = {
+      compatibilityMode: 'OGC'
+    };
+    readNode(rootNode, result, {
+      ...defaultParseOptions,
+      ...options
+    });
     return result;
   }
 
