@@ -1,7 +1,19 @@
+// Some constants used for QGIS symbols.
+// See also: https://github.com/qgis/QGIS/blob/master/src/core/symbology/qgsmarkersymbollayer.cpp
+const VERTEX_OFFSET_FROM_ORIGIN = 0.6072;
+const THICKNESS = 0.3;
+const HALF_THICKNESS = THICKNESS / 2.0;
+const INTERSECTION_POINT = THICKNESS / Math.SQRT2;
+const DIAGONAL1 = Math.SQRT1_2 - INTERSECTION_POINT * 0.5;
+const DIAGONAL2 = Math.SQRT1_2 + INTERSECTION_POINT * 0.5;
+
 // Custom symbols that cannot be represented as RegularShape.
 // Coordinates are normalized within a [-1,-1,1,1] square and will be scaled by size/2 when rendered.
 // Shapes are auto-closed, so no need to make the last coordinate equal to the first.
 const customSymbols = {
+  // ============
+  // QGIS symbols
+  // ============
   arrow: [
     [0, 1],
     [-0.5, 0.5],
@@ -64,6 +76,70 @@ const customSymbols = {
     [0, -1],
     [1, -1],
   ],
+  trapezoid: [
+    [0.5, 0.5],
+    [1, -0.5],
+    [-1, -0.5],
+    [-0.5, 0.5],
+  ],
+  parallelogram_left: [
+    [1, -0.5],
+    [0.5, 0.5],
+    [-1, 0.5],
+    [-0.5, -0.5],
+  ],
+  parallelogram_right: [
+    [0.5, -0.5],
+    [1, 0.5],
+    [-0.5, 0.5],
+    [-1, -0.5],
+  ],
+  square_with_corners: [
+    [-VERTEX_OFFSET_FROM_ORIGIN, -1],
+    [VERTEX_OFFSET_FROM_ORIGIN, -1],
+    [1, -VERTEX_OFFSET_FROM_ORIGIN],
+    [1, VERTEX_OFFSET_FROM_ORIGIN],
+    [VERTEX_OFFSET_FROM_ORIGIN, 1],
+    [-VERTEX_OFFSET_FROM_ORIGIN, 1],
+    [-1, VERTEX_OFFSET_FROM_ORIGIN],
+    [-1, -VERTEX_OFFSET_FROM_ORIGIN],
+  ],
+  shield: [
+    [1, -0.5],
+    [1, 1],
+    [-1, 1],
+    [-1, -0.5],
+    [0, -1],
+  ],
+  asterisk_fill: [
+    [-HALF_THICKNESS, 1],
+    [HALF_THICKNESS, 1],
+    [HALF_THICKNESS, HALF_THICKNESS + INTERSECTION_POINT],
+    [DIAGONAL1, DIAGONAL2],
+    [DIAGONAL2, DIAGONAL1],
+    [HALF_THICKNESS + INTERSECTION_POINT, HALF_THICKNESS],
+    [1, HALF_THICKNESS],
+    [1, -HALF_THICKNESS],
+    [HALF_THICKNESS + INTERSECTION_POINT, -HALF_THICKNESS],
+    [DIAGONAL2, -DIAGONAL1],
+    [DIAGONAL1, -DIAGONAL2],
+    [HALF_THICKNESS, -HALF_THICKNESS - INTERSECTION_POINT],
+    [HALF_THICKNESS, -1],
+    [-HALF_THICKNESS, -1],
+    [-HALF_THICKNESS, -HALF_THICKNESS - INTERSECTION_POINT],
+    [-DIAGONAL1, -DIAGONAL2],
+    [-DIAGONAL2, -DIAGONAL1],
+    [-HALF_THICKNESS - INTERSECTION_POINT, -HALF_THICKNESS],
+    [-1, -HALF_THICKNESS],
+    [-1, HALF_THICKNESS],
+    [-HALF_THICKNESS - INTERSECTION_POINT, HALF_THICKNESS],
+    [-DIAGONAL2, DIAGONAL1],
+    [-DIAGONAL1, DIAGONAL2],
+    [-HALF_THICKNESS, HALF_THICKNESS + INTERSECTION_POINT],
+  ],
+  // =================
+  // Geoserver symbols
+  // =================
   'shape://carrow': [
     [0, 0],
     [-1, 0.4],
@@ -102,9 +178,7 @@ export function registerCustomSymbol(name, normalizedCoordinates) {
     ([x, y]) => x >= -1 && x <= 1 && y >= -1 && y <= 1
   );
   if (!allInside) {
-    throw new Error(
-      'Custom symbol coordinates must lie within [-1,-1,1,1].'
-    );
+    throw new Error('Custom symbol coordinates must lie within [-1,-1,1,1].');
   }
 
   // Verify that input shape is not closed.
