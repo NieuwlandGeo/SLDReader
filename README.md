@@ -56,7 +56,7 @@ Wellknown names that reference a symbol library, like `ttf://CustomFont#42` are 
 
 Only one Graphic per PointSymbolizer is supported. Each Graphic can only have one Mark or one ExternalGraphic.
 
-Some vendor-specific marks (GeoServer, QGIS) are also supported, see the [Mark Gallery demo page](https://nieuwlandgeo.github.io/SLDReader/mark-gallery.html). *Note:* for full custom symbol support you need to use OpenLayers v10.3.0 or higher.
+Some vendor-specific marks (GeoServer, QGIS) are also supported, see the [Mark Gallery demo page](https://nieuwlandgeo.github.io/SLDReader/mark-gallery.html). _Note:_ for full custom symbol support you need to use OpenLayers v10.3.0 or higher.
 
 #### ExternalGraphic
 
@@ -70,6 +70,7 @@ External graphics can be used with an `OnlineResource` linking to a valid image 
 ```
 
 A valid image url can also be a base64 url:
+
 ```xml
 <se:ExternalGraphic>
   <se:OnlineResource xlink:type="simple" xlink:href="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="/>
@@ -112,12 +113,14 @@ SLD's with parametric embedded SVG's exported by QGIS should be able to be used 
 Support for this functionality is quite hacky and experimental, but appears to work for simple examples.
 
 #### Custom mark symbols
+
 It's possible to register your own symbols under your own `WellKnownName`.
 
-Custom symbol coordinates must be entered in counterclockwise order and must all lie within a  `[-1, -1, 1, 1]` bounding box.
+Custom symbol coordinates must be entered in counterclockwise order and must all lie within a `[-1, -1, 1, 1]` bounding box.
 The coordinates will be scaled by the symbol `<Size>` parameter.
 
 Example (see the [Mark Gallery demo page](https://nieuwlandgeo.github.io/SLDReader/mark-gallery.html)):
+
 ```javascript
 SLDReader.registerCustomSymbol('crystal', [
   [0.5, 0],
@@ -386,6 +389,24 @@ The registered function will be called with the value of its child expressions a
 - Unless specifically set for your features, the geometry property name is `'geometry'` for OpenLayers features by default.
 - Make your functions as lenient as possible regarding possible inputs. Do not throw errors, but try to return a value that makes sense in that case. If you return `null` from a function implementation, the function fallback value will be used if one is specified in the SLD.
   - `<Function name="someFunction" fallbackValue="42">`
+
+## Compatibility mode
+
+Some software packaged implement SLD styling in a way that's slightly different from the SLD specification. Especially when the SLD specification is a bit vague on some points.
+
+When parsing an SLD, it's possible to specify which software was used to create (or render) the SLD. In this case, SLDReader can make some changes to the parsed SLD for a better visual match between the SLD displayed in the software and the output of the SLDReader style function.
+
+To parse an SLD in compatibility mode, add it as an option as follows:
+
+```javascript
+const sldObject = SLDReader.Reader(sld, { compatibilityMode: 'QGIS' });
+```
+
+For now, only QGIS is available as compatibility mode option, but more can be added in the future.
+
+### Compatibility mode `QGIS`
+
+In QGIS compatibility mode, a rotated `line` symbol inside a `GraphicFill` will be replaced by an unrotated `slash` or `backslash` when the rotation is an odd multiple of 45 degrees. This ensures that lines are unbroken in the graphic fill, because a (back)slash symbol spans the entire diagonal of the tiled square. A rotated line only spans part of the diagonal, causing broken lines in the fill.
 
 ## Contributing
 
