@@ -1,4 +1,4 @@
-/* Version: 0.7.2 - November 19, 2025 16:40:34 */
+/* Version: 0.7.2 - November 20, 2025 10:36:34 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2669,10 +2669,22 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     }
   }
 
+  // Some constants used for QGIS symbols.
+  // See also: https://github.com/qgis/QGIS/blob/master/src/core/symbology/qgsmarkersymbollayer.cpp
+  const VERTEX_OFFSET_FROM_ORIGIN = 0.6072;
+  const THICKNESS = 0.3;
+  const HALF_THICKNESS = THICKNESS / 2.0;
+  const INTERSECTION_POINT = THICKNESS / Math.SQRT2;
+  const DIAGONAL1 = Math.SQRT1_2 - INTERSECTION_POINT * 0.5;
+  const DIAGONAL2 = Math.SQRT1_2 + INTERSECTION_POINT * 0.5;
+
   // Custom symbols that cannot be represented as RegularShape.
   // Coordinates are normalized within a [-1,-1,1,1] square and will be scaled by size/2 when rendered.
   // Shapes are auto-closed, so no need to make the last coordinate equal to the first.
   const customSymbols = {
+    // ============
+    // QGIS symbols
+    // ============
     arrow: [[0, 1], [-0.5, 0.5], [-0.25, 0.5], [-0.25, -1], [0.25, -1], [0.25, 0.5], [0.5, 0.5]],
     arrowhead: [[0, 0], [-1, 1], [0, 0], [-1, -1]],
     filled_arrowhead: [[0, 0], [-1, 1], [-1, -1]],
@@ -2683,6 +2695,15 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     // In QGIS, right_half_triangle apparently means "skip the right half of the triangle".
     right_half_triangle: [[0, 1], [-1, -1], [0, -1]],
     left_half_triangle: [[0, 1], [0, -1], [1, -1]],
+    trapezoid: [[0.5, 0.5], [1, -0.5], [-1, -0.5], [-0.5, 0.5]],
+    parallelogram_left: [[1, -0.5], [0.5, 0.5], [-1, 0.5], [-0.5, -0.5]],
+    parallelogram_right: [[0.5, -0.5], [1, 0.5], [-0.5, 0.5], [-1, -0.5]],
+    square_with_corners: [[-0.6072, -1], [VERTEX_OFFSET_FROM_ORIGIN, -1], [1, -0.6072], [1, VERTEX_OFFSET_FROM_ORIGIN], [VERTEX_OFFSET_FROM_ORIGIN, 1], [-0.6072, 1], [-1, VERTEX_OFFSET_FROM_ORIGIN], [-1, -0.6072]],
+    shield: [[1, -0.5], [1, 1], [-1, 1], [-1, -0.5], [0, -1]],
+    asterisk_fill: [[-0.15, 1], [HALF_THICKNESS, 1], [HALF_THICKNESS, HALF_THICKNESS + INTERSECTION_POINT], [DIAGONAL1, DIAGONAL2], [DIAGONAL2, DIAGONAL1], [HALF_THICKNESS + INTERSECTION_POINT, HALF_THICKNESS], [1, HALF_THICKNESS], [1, -0.15], [HALF_THICKNESS + INTERSECTION_POINT, -0.15], [DIAGONAL2, -DIAGONAL1], [DIAGONAL1, -DIAGONAL2], [HALF_THICKNESS, -0.15 - INTERSECTION_POINT], [HALF_THICKNESS, -1], [-0.15, -1], [-0.15, -0.15 - INTERSECTION_POINT], [-DIAGONAL1, -DIAGONAL2], [-DIAGONAL2, -DIAGONAL1], [-0.15 - INTERSECTION_POINT, -0.15], [-1, -0.15], [-1, HALF_THICKNESS], [-0.15 - INTERSECTION_POINT, HALF_THICKNESS], [-DIAGONAL2, DIAGONAL1], [-DIAGONAL1, DIAGONAL2], [-0.15, HALF_THICKNESS + INTERSECTION_POINT]],
+    // =================
+    // Geoserver symbols
+    // =================
     'shape://carrow': [[0, 0], [-1, 0.4], [-1, -0.4]],
     'shape://oarrow': [[0, 0], [-1, 0.4], [0, 0], [-1, -0.4]]
   };
@@ -2766,15 +2787,28 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       radius,
       stroke,
       fill,
-      rotation
+      rotation,
+      arc
     } = _ref;
     const numPoints = Math.ceil(HALF_CIRCLE_RESOLUTION * (endAngle - startAngle) / Math.PI);
-    const radii = [0];
-    const angles = [0];
+    const radii = [];
+    const angles = [];
+    if (!arc) {
+      radii.push(0);
+      angles.push(0);
+    }
     for (let k = 0; k <= numPoints; k += 1) {
       const deltaAngle = (endAngle - startAngle) / numPoints;
       radii.push(radius);
       angles.push(startAngle + k * deltaAngle);
+    }
+    // In case of an arc, add circle points again in reverse order.
+    if (arc) {
+      for (let k = numPoints; k >= 0; k -= 1) {
+        const deltaAngle = (endAngle - startAngle) / numPoints;
+        radii.push(radius);
+        angles.push(startAngle + k * deltaAngle);
+      }
     }
     try {
       const olImage = new RadialShape({
@@ -2912,9 +2946,18 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           radius
         });
       case 'star':
+      case 'regular_star':
+        // QGIS alias for star
         return new RegularShape({
           ...sharedOptions,
           points: 5,
+          radius,
+          radius2: radius / 2.5
+        });
+      case 'star_diamond':
+        return new RegularShape({
+          ...sharedOptions,
+          points: 4,
           radius,
           radius2: radius / 2.5
         });
@@ -2944,6 +2987,13 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           angle: Math.PI / 8,
           points: 8,
           radius: radius / Math.cos(Math.PI / 8)
+        });
+      case 'decagon':
+        return new RegularShape({
+          ...sharedOptions,
+          angle: Math.PI / 10,
+          points: 10,
+          radius: radius / Math.cos(Math.PI / 10)
         });
       case 'shape://times':
       case 'cross2': // cross2 is used by QGIS for the x symbol.
@@ -3018,6 +3068,33 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
           startAngle: Math.PI / 2,
           endAngle: Math.PI,
           radius
+        });
+      case 'half_arc':
+        return createPartialCircleRadialShape({
+          ...sharedOptions,
+          wellKnownName,
+          startAngle: 0,
+          endAngle: Math.PI,
+          radius,
+          arc: true
+        });
+      case 'third_arc':
+        return createPartialCircleRadialShape({
+          ...sharedOptions,
+          wellKnownName,
+          startAngle: Math.PI / 2,
+          endAngle: 7 * Math.PI / 6,
+          radius,
+          arc: true
+        });
+      case 'quarter_arc':
+        return createPartialCircleRadialShape({
+          ...sharedOptions,
+          wellKnownName,
+          startAngle: Math.PI / 2,
+          endAngle: Math.PI,
+          radius,
+          arc: true
         });
 
       // Default for unknown wellknownname is a square.

@@ -47,6 +47,7 @@ function createPartialCircleRadialShape({
   stroke,
   fill,
   rotation,
+  arc,
 }) {
   let a1 = startAngle;
   let a2 = endAngle;
@@ -57,12 +58,25 @@ function createPartialCircleRadialShape({
   const numPoints = Math.ceil(
     (HALF_CIRCLE_RESOLUTION * (endAngle - startAngle)) / Math.PI
   );
-  const radii = [0];
-  const angles = [0];
+
+  const radii = [];
+  const angles = [];
+  if (!arc) {
+    radii.push(0);
+    angles.push(0);
+  }
   for (let k = 0; k <= numPoints; k += 1) {
     const deltaAngle = (endAngle - startAngle) / numPoints;
     radii.push(radius);
     angles.push(startAngle + k * deltaAngle);
+  }
+  // In case of an arc, add circle points again in reverse order.
+  if (arc) {
+    for (let k = numPoints; k >= 0; k -= 1) {
+      const deltaAngle = (endAngle - startAngle) / numPoints;
+      radii.push(radius);
+      angles.push(startAngle + k * deltaAngle);
+    }
   }
 
   try {
@@ -210,9 +224,18 @@ function getWellKnownSymbol(
       });
 
     case 'star':
+    case 'regular_star': // QGIS alias for star
       return new RegularShape({
         ...sharedOptions,
         points: 5,
+        radius,
+        radius2: radius / 2.5,
+      });
+
+    case 'star_diamond':
+      return new RegularShape({
+        ...sharedOptions,
+        points: 4,
         radius,
         radius2: radius / 2.5,
       });
@@ -246,6 +269,14 @@ function getWellKnownSymbol(
         angle: Math.PI / 8,
         points: 8,
         radius: radius / Math.cos(Math.PI / 8),
+      });
+
+    case 'decagon':
+      return new RegularShape({
+        ...sharedOptions,
+        angle: Math.PI / 10,
+        points: 10,
+        radius: radius / Math.cos(Math.PI / 10),
       });
 
     case 'shape://times':
@@ -328,6 +359,36 @@ function getWellKnownSymbol(
         startAngle: Math.PI / 2,
         endAngle: Math.PI,
         radius,
+      });
+
+    case 'half_arc':
+      return createPartialCircleRadialShape({
+        ...sharedOptions,
+        wellKnownName,
+        startAngle: 0,
+        endAngle: Math.PI,
+        radius,
+        arc: true,
+      });
+
+    case 'third_arc':
+      return createPartialCircleRadialShape({
+        ...sharedOptions,
+        wellKnownName,
+        startAngle: Math.PI / 2,
+        endAngle: (7 * Math.PI) / 6,
+        radius,
+        arc: true,
+      });
+
+    case 'quarter_arc':
+      return createPartialCircleRadialShape({
+        ...sharedOptions,
+        wellKnownName,
+        startAngle: Math.PI / 2,
+        endAngle: Math.PI,
+        radius,
+        arc: true,
       });
 
     // Default for unknown wellknownname is a square.
