@@ -112,6 +112,8 @@ Creates a object from an sld xml string,
 | Param | Type | Description |
 | --- | --- | --- |
 | sld | <code>string</code> | xml string |
+| options | <code>object</code> | options |
+| options.compatibilityMode | <code>string</code> | Optional. Can be set to 'QGIS' for improved compatibility with SLDs exported from QGIS. |
 
 <a name="registerFunction"></a>
 
@@ -156,7 +158,11 @@ Clear the function cache.
 <a name="createOlStyleFunction"></a>
 
 ## createOlStyleFunction(featureTypeStyle, options) ⇒ <code>function</code>
-Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.**Important!** When using externalGraphics for point styling, make sure to call .changed() on the layerinside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, theimage icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
+Create an OpenLayers style function from a FeatureTypeStyle object extracted from an SLD document.
+
+**Important!** When using externalGraphics for point styling, make sure to call .changed() on the layer
+inside options.imageLoadedCallback to immediately see the loaded image. If you do not do this, the
+image icon will only become visible the next time OpenLayers draws the layer (after pan or zoom).
 
 **Kind**: global function  
 **Returns**: <code>function</code> - A function that can be set as style function on an OpenLayers vector style layer.  
@@ -172,12 +178,17 @@ Create an OpenLayers style function from a FeatureTypeStyle object extracted fro
 
 **Example**  
 ```js
-myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {  imageLoadedCallback: () => { myOlVectorLayer.changed(); }}));
+myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
+  imageLoadedCallback: () => { myOlVectorLayer.changed(); }
+}));
 ```
 <a name="createOlStyle"></a>
 
 ## createOlStyle(styleRule, geometryType) ⇒ <code>Array.&lt;ol.Style&gt;</code>
-Create an array of OpenLayers style instances for features with the chosen geometry type from a style rule.Since this function creates a static OpenLayers style and not a style function,usage of this function is only suitable for simple symbolizers that do not depend on feature propertiesand do not contain external graphics. External graphic marks will be shown as a grey circle instead.
+Create an array of OpenLayers style instances for features with the chosen geometry type from a style rule.
+Since this function creates a static OpenLayers style and not a style function,
+usage of this function is only suitable for simple symbolizers that do not depend on feature properties
+and do not contain external graphics. External graphic marks will be shown as a grey circle instead.
 
 **Kind**: global function  
 **Returns**: <code>Array.&lt;ol.Style&gt;</code> - An array of OpenLayers style instances.  
@@ -232,7 +243,8 @@ getStyleNames, notice name is not required for userstyle, you might get undefine
 <a name="getStyle"></a>
 
 ## getStyle(layer, [name]) ⇒ <code>object</code>
-get style from array layer.styles, if name is undefined it returns default style.null is no style found
+get style from array layer.styles, if name is undefined it returns default style.
+null is no style found
 
 **Kind**: global function  
 **Returns**: <code>object</code> - the style from layer.styles matching the name  
@@ -245,7 +257,8 @@ get style from array layer.styles, if name is undefined it returns default style
 <a name="getRuleSymbolizers"></a>
 
 ## getRuleSymbolizers(rule) ⇒ <code>Array.&lt;object&gt;</code>
-Get all symbolizers inside a given rule.Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
+Get all symbolizers inside a given rule.
+Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
 
 **Kind**: global function  
 **Returns**: <code>Array.&lt;object&gt;</code> - Array of all symbolizers in a rule.  
@@ -272,7 +285,8 @@ contains for each geometry type the symbolizer from an array of rules
 <a name="Expression"></a>
 
 ## Expression
-Modeled after [SvgParameterType](https://schemas.opengis.net/se/1.1.0/Symbolizer.xsd).Can be either a primitive value (string,integer,boolean), or an object with these properties:
+Modeled after [SvgParameterType](https://schemas.opengis.net/se/1.1.0/Symbolizer.xsd).
+Can be either a primitive value (string,integer,boolean), or an object with these properties:
 
 **Kind**: global typedef  
 **Properties**
@@ -290,7 +304,8 @@ Modeled after [SvgParameterType](https://schemas.opengis.net/se/1.1.0/Symbolizer
 <a name="Filter"></a>
 
 ## Filter
-[filter operators](https://schemas.opengis.net/filter/2.0/filter.xsd), see also[geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
+[filter operators](https://schemas.opengis.net/filter/2.0/filter.xsd), see also
+[geoserver](http://docs.geoserver.org/stable/en/user/styling/sld/reference/filters.html)
 
 **Kind**: global typedef  
 **Properties**
@@ -375,7 +390,8 @@ a typedef for Rule to match a feature: [xsd](http://schemas.opengis.net/se/1.1.0
 <a name="PolygonSymbolizer"></a>
 
 ## PolygonSymbolizer
-a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also[geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html)
+a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
+[geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/polygonsymbolizer.html)
 
 **Kind**: global typedef  
 **Properties**
@@ -390,7 +406,8 @@ a typedef for [PolygonSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer
 <a name="LineSymbolizer"></a>
 
 ## LineSymbolizer
-a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also[geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
+a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd), see also
+[geoserver docs](http://docs.geoserver.org/stable/en/user/styling/sld/reference/linesymbolizer.html#sld-reference-linesymbolizer)
 
 **Kind**: global typedef  
 **Properties**
@@ -412,7 +429,8 @@ a typedef for [LineSymbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xs
 <a name="PointSymbolizer"></a>
 
 ## PointSymbolizer
-a typedef for PointSymbolizer [xsd](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)& [geoserver docs](http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html)
+a typedef for PointSymbolizer [xsd](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+& [geoserver docs](http://docs.geoserver.org/latest/en/user/styling/sld/reference/pointsymbolizer.html)
 
 **Kind**: global typedef  
 **Properties**
