@@ -28,6 +28,9 @@ export const dynamicPolygonSymbolizerSld = `<?xml version="1.0" encoding="UTF-8"
                 <ogc:PropertyName>myStrokeWidth</ogc:PropertyName>
               </se:SvgParameter>
             </se:Stroke>
+            <se:PerpendicularOffset>
+              <ogc:PropertyName>myOffset</ogc:PropertyName>
+            </se:PerpendicularOffset>
           </se:PolygonSymbolizer>
         </se:Rule>
       </se:FeatureTypeStyle>

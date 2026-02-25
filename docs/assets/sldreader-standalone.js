@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - February 25, 2026 13:21:53 */
+/* Version: 0.7.3 - February 25, 2026 16:19:33 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2228,7 +2228,6 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       const scale = this.getScale();
       const style = new RadialShape({
         fill: this.getFill() ? this.getFill().clone() : undefined,
-        points: this.getPoints(),
         radii: this.getRadii(),
         angles: this.getAngles(),
         stroke: this.getStroke() ? this.getStroke().clone() : undefined,
@@ -2368,15 +2367,6 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
      */
     getOrigin() {
       return this.origin_;
-    }
-
-    /**
-     * Get the number of points for generating the shape.
-     * @return {number} Number of points for stars and regular polygons.
-     * @api
-     */
-    getPoints() {
-      return this.points_;
     }
 
     /**

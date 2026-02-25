@@ -156,7 +156,6 @@ class RadialShape extends ImageStyle {
     const scale = this.getScale();
     const style = new RadialShape({
       fill: this.getFill() ? this.getFill().clone() : undefined,
-      points: this.getPoints(),
       radii: this.getRadii(),
       angles: this.getAngles(),
       stroke: this.getStroke() ? this.getStroke().clone() : undefined,
@@ -311,15 +310,6 @@ class RadialShape extends ImageStyle {
    */
   getOrigin() {
     return this.origin_;
-  }
-
-  /**
-   * Get the number of points for generating the shape.
-   * @return {number} Number of points for stars and regular polygons.
-   * @api
-   */
-  getPoints() {
-    return this.points_;
   }
 
   /**
