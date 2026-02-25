@@ -35,7 +35,7 @@ npm start
 
 - Most SLDReader functions work from OpenLayers v6.15 or higher.
 - OpenLayers version 8.3.0 or higher required to use `GraphicStroke` symbolizers without visual artefacts.
-- OpenLayers version 10.3.0 or higher required to support custom `Mark` symbols.
+- OpenLayers version 10.8.0 is required for custom `Mark` symbols and perpendicular stroke offsets.
 - An up-to date browser. If you need to support older browsers, you have to compile SLDReader yourself with a different `browserslist` setting in `package.json`.
   - The browsers supported by SLDReader can be found here: https://browsersl.ist/#q=defaults .
 - If you want to build and/or run SLDReader, NodeJS v18.18 or higher is required.
@@ -158,7 +158,7 @@ Only these svg-parameters are supported:
 
 GraphicStroke with Mark or ExternalGraphic is mostly supported.
 
-GraphicFill and PerpendicularOffset are not supported.
+GraphicFills are not supported on LineSymbolizers.
 
 #### Note about GraphicStroke
 
@@ -166,6 +166,7 @@ GraphicFill and PerpendicularOffset are not supported.
 - ExternalGraphic is mostly supported with these caveats:
   - Always add a Size-element, even if using an ExternalGraphic instead of a Mark.
   - SLD V1.0.0 does not officially support the Gap property. For this, SLDReader implements the same workaround that Geoserver uses. You can use the `stroke-dasharray` parameter to add a gap between stroke marks. To do this, use a dash array with two parameters: the first parameter being the size of the graphic and the second being the gap size. See the " GraphicStroke: ExternalGraphic" example.
+- It is not possible to combine a GraphicStroke with a PerpendicularOffset.
 
 #### GraphicStroke vendor options
 
@@ -204,6 +205,25 @@ Dynamic Labels (with PropertyName elements), Font and Halo are supported. No ven
 - For LinePlacement, PerpendicularOffset is not supported.
 
 [1]: according to the SLD-spec, label rotation takes place before displacement, but OpenLayers applies displacement before rotation. Beware when combining rotation and displacement inside a single text symbolizer.
+
+#### Perpendicular Offset
+
+Both LineSymbolizer and PolygonSymbolizer can use a PerpendicularOffset, for example
+
+```xml
+<se:LineSymbolizer>
+  <se:Stroke>
+    <se:SvgParameter name="stroke">#FF0000</se:SvgParameter>
+  </se:Stroke>
+  <se:PerpendicularOffset>12</se:PerpendicularOffset>
+</se:LineSymbolizer>
+```
+
+For line symbolizers, a positive offset displaces the stroke towards the left of the line.
+For polygon symbolizers, a positive offset displaces the stroke outwards.
+Offsets are in pixels by default, but will use the units of measure defined on a symbolizer.
+
+Note: it's unfortunately not possible to apply a perpendicular offset to a symbolizer using a GraphicStroke.
 
 ### Dynamic parameter values
 
