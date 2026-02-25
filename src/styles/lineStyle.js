@@ -16,7 +16,7 @@ function lineStyle(symbolizer) {
   }
 
   return new Style({
-    stroke: getSimpleStroke(symbolizer?.stroke),
+    stroke: getSimpleStroke(symbolizer?.stroke, symbolizer?.perpendicularoffset),
   });
 }
 

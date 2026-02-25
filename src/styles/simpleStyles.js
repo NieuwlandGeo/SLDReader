@@ -8,10 +8,12 @@ import evaluate from '../olEvaluator';
  * Get an OL style/Stroke instance from the css/svg properties of the .stroke property
  * of an SLD symbolizer object.
  * @private
- * @param  {object} stroke SLD symbolizer.stroke object.
+ * @param {object} stroke SLD symbolizer.stroke object.
+ * @param {number} perpendicularoffset Perpendicular stroke offset in pixels.
+ * Positive offset towards left hand side of the stroke (as per SLD spec).
  * @return {object} OpenLayers style/Stroke instance. Returns undefined when input is null or undefined.
  */
-export function getSimpleStroke(stroke) {
+export function getSimpleStroke(stroke, perpendicularoffset) {
   // According to SLD spec, if no Stroke element is present inside a symbolizer element,
   // no stroke is to be rendered.
   if (!stroke) {
@@ -34,11 +36,24 @@ export function getSimpleStroke(stroke) {
     0.0
   );
 
+  const strokePerpendicularOffset = evaluate(
+    perpendicularoffset,
+    null,
+    null,
+    null
+  );
+
   const strokeOptions = {
     color: getOLColorString(strokeColor, strokeOpacity),
     width: strokeWidth,
     lineDashOffset: strokeLineDashOffset,
   };
+
+  if (strokePerpendicularOffset !== null) {
+    // Note: positive offset in SLD means offset to the left of the line, which is inverted w.r.t. the OpenLayers offset,
+    // which is defined as positive in the line normal direction.
+    strokeOptions.offset = -strokePerpendicularOffset;
+  }
 
   // Optional parameters that will be added to stroke options when present in SLD.
   const strokeLineJoin = evaluate(styleParams?.strokeLinejoin, null, null);

@@ -3,6 +3,8 @@ import Style from 'ol/style/Style';
 import Circle from 'ol/style/Circle';
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
+import RadialShape from '../src/styles/RadialShape';
+
 import Reader from '../src/Reader';
 import { registerCustomSymbol } from '../src/styles/customSymbols';
 
@@ -39,7 +41,6 @@ import {
   clearImageLoadingStateCache,
   getImageLoadingState,
 } from '../src/imageCache';
-import RadialShape from '../src/styles/RadialShape';
 
 const getMockOLFeature = geometryType => ({
   properties: {},
@@ -1024,6 +1025,7 @@ describe('Styling with dynamic SVG Parameters', () => {
       myStrokeOpacity: 1.0,
       myFillColor: '#646464', // [100, 100, 100]
       myFillOpacity: 0.4,
+      myOffset: 12,
     },
   };
 
@@ -1189,6 +1191,10 @@ describe('Styling with dynamic SVG Parameters', () => {
 
     it('Dynamic partially transparent fill color (transparency encoded in color string))', () => {
       expect(olStyle.getFill().getColor()).to.equal('rgba(100, 100, 100, 0.4)');
+    });
+
+    it('Dynamic stroke offset', () => {
+      expect(olStyle.getStroke().getOffset()).to.equal(-12); // OL offsets in the opposite direction from the SLD definition.
     });
   });
 

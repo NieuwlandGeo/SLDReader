@@ -3,7 +3,7 @@
  */
 
 /*
- * This is a modified version of ol/style/RegularShape.
+ * This is a modified version of ol/style/RadialShape.
  * It is a more flexible version that allows for creating custom shapes (without holes).
  * Instead of radius/radius2 and a number of points, it takes an array of radii and angles,
  * and uses this polar representation to create a symbol.
@@ -51,7 +51,6 @@ export const defaultStrokeStyle = '#000';
  */
 
 /**
- * @private
  * @typedef {Object} RenderOptions
  * @property {import("../colorlike.js").ColorLike|undefined} strokeStyle StrokeStyle.
  * @property {number} strokeWidth StrokeWidth.
@@ -62,6 +61,7 @@ export const defaultStrokeStyle = '#000';
  * @property {CanvasLineJoin} lineJoin LineJoin.
  * @property {number} miterLimit MiterLimit.
  */
+
 
 /**
  * @classdesc
@@ -87,7 +87,7 @@ class RadialShape extends ImageStyle {
 
     /**
      * @private
-     * @type {HTMLCanvasElement|null}
+     * @type {HTMLCanvasElement|OffscreenCanvas|null}
      */
     this.hitDetectionCanvas_ = null;
 
@@ -156,8 +156,8 @@ class RadialShape extends ImageStyle {
     const scale = this.getScale();
     const style = new RadialShape({
       fill: this.getFill() ? this.getFill().clone() : undefined,
-      radii: [...this.getRadii()],
-      angles: [...this.getAngles()],
+      radii: this.getRadii(),
+      angles: this.getAngles(),
       stroke: this.getStroke() ? this.getStroke().clone() : undefined,
       rotation: this.getRotation(),
       rotateWithView: this.getRotateWithView(),
@@ -189,6 +189,24 @@ class RadialShape extends ImageStyle {
   }
 
   /**
+   * Get the array of radii for the shape.
+   * @return {number} Radii.
+   * @api
+   */
+  getRadii() {
+    return this.radii_;
+  }
+
+  /**
+   * Get the array of angles for the shape.
+   * @return {Array<number>} Angles.
+   * @api
+   */
+  getAngles() {
+    return this.angles_;
+  }
+
+  /**
    * Get the fill style for the shape.
    * @return {import("./Fill.js").default|null} Fill style.
    * @api
@@ -208,7 +226,7 @@ class RadialShape extends ImageStyle {
   }
 
   /**
-   * @return {HTMLCanvasElement} Image element.
+   * @return {HTMLCanvasElement|OffscreenCanvas} Image element.
    * @override
    */
   getHitDetectionImage() {
@@ -223,7 +241,7 @@ class RadialShape extends ImageStyle {
   /**
    * Get the image icon.
    * @param {number} pixelRatio Pixel ratio.
-   * @return {HTMLCanvasElement} Image or Canvas element.
+   * @return {HTMLCanvasElement|OffscreenCanvas} Image or Canvas element.
    * @api
    * @override
    */
@@ -232,8 +250,8 @@ class RadialShape extends ImageStyle {
     const cacheKey =
       `${pixelRatio},${this.angle_},${this.radii_.join()},${this.angles_.join()},${fillKey}` +
       Object.values(this.renderOptions_).join(',');
-    let image = /** @type {HTMLCanvasElement} */ (
-      iconImageCache.get(cacheKey, null, null)?.getImage(1)
+    let image = /** @type {HTMLCanvasElement|OffscreenCanvas} */ (
+      iconImageCache.get(cacheKey, null)?.getImage(1)
     );
     if (!image) {
       const renderOptions = this.renderOptions_;
@@ -242,12 +260,18 @@ class RadialShape extends ImageStyle {
       this.draw_(renderOptions, context, pixelRatio);
 
       image = context.canvas;
-      iconImageCache.set(
-        cacheKey,
+      const iconImage = new IconImage(
+        image,
+        undefined,
         null,
-        null,
-        new IconImage(image, undefined, null, ImageState.LOADED, null)
+        ImageState.LOADED,
+        null
       );
+      iconImageCache.set(cacheKey, null, iconImage);
+      // Update the image in place to an ImageBitmap for better performance and lower memory usage
+      createImageBitmap(image).then(imageBitmap => {
+        iconImage.setImage(imageBitmap);
+      });
     }
     return image;
   }
@@ -289,24 +313,6 @@ class RadialShape extends ImageStyle {
   }
 
   /**
-   * Get the array of radii for the shape.
-   * @return {number} Radii.
-   * @api
-   */
-  getRadii() {
-    return this.radii_;
-  }
-
-  /**
-   * Get the array of angles for the shape.
-   * @return {Array<number>} Angles.
-   * @api
-   */
-  getAngles() {
-    return this.angles_;
-  }
-
-  /**
    * Get the size of the symbolizer (in pixels).
    * @return {import("../size.js").Size} Size.
    * @api
@@ -339,8 +345,7 @@ class RadialShape extends ImageStyle {
    * @param {function(import("../events/Event.js").default): void} listener Listener function.
    * @override
    */
-  // eslint-disable-next-line no-unused-vars
-  listenImageChange(listener) {}
+  listenImageChange() {}
 
   /**
    * Load not yet loaded URI.
@@ -352,8 +357,7 @@ class RadialShape extends ImageStyle {
    * @param {function(import("../events/Event.js").default): void} listener Listener function.
    * @override
    */
-  // eslint-disable-next-line no-unused-vars
-  unlistenImageChange(listener) {}
+  unlistenImageChange() {}
 
   /**
    * Calculate additional canvas size needed for the miter.
@@ -480,7 +484,7 @@ class RadialShape extends ImageStyle {
     }
 
     const add = this.calculateLineJoinSize_(lineJoin, strokeWidth, miterLimit);
-    
+
     let maxRadius = 0;
     this.radii_.forEach(radius => {
       maxRadius = Math.max(maxRadius, radius);
@@ -512,7 +516,7 @@ class RadialShape extends ImageStyle {
   /**
    * @private
    * @param {RenderOptions} renderOptions Render options.
-   * @param {CanvasRenderingContext2D} context The rendering context.
+   * @param {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} context The rendering context.
    * @param {number} pixelRatio The pixel ratio.
    */
   draw_(renderOptions, context, pixelRatio) {
@@ -547,7 +551,7 @@ class RadialShape extends ImageStyle {
   /**
    * @private
    * @param {RenderOptions} renderOptions Render options.
-   * @return {HTMLCanvasElement} Canvas containing the icon
+   * @return {HTMLCanvasElement|OffscreenCanvas} Canvas containing the icon
    */
   createHitDetectionCanvas_(renderOptions) {
     let context;
@@ -591,7 +595,7 @@ class RadialShape extends ImageStyle {
   /**
    * @private
    * @param {RenderOptions} renderOptions Render options.
-   * @param {CanvasRenderingContext2D} context The context.
+   * @param {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} context The context.
    */
   drawHitDetectionCanvas_(renderOptions, context) {
     // set origin to canvas center

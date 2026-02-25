@@ -78,6 +78,7 @@ export const sldWithUom = `<?xml version="1.0" encoding="UTF-8"?>
                 <ogc:Literal>12</ogc:Literal>
               </se:Gap>
             </se:GraphicStroke>
+            <se:PerpendicularOffset>12</se:PerpendicularOffset>
           </se:LineSymbolizer>
         </se:Rule>
         <se:Rule>

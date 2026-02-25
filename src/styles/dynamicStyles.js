@@ -92,6 +92,20 @@ export function applyDynamicStrokeStyling(
     somethingChanged = true;
   }
 
+  // Change stroke offset if it's scale or property based.
+  if (isDynamicExpression(symbolizer?.perpendicularoffset)) {
+    const offset = evaluate(symbolizer.perpendicularoffset, feature, context, null);
+    // Changing offset is only possible from OL 10.8.0 onwards.
+    // Check to prevent crash for older OL versions here.
+    if (typeof olStroke.setOffset === 'function') {
+      if (offset === null) {
+        olStroke.setOffset(null);
+      } else {
+        olStroke.setOffset(-offset);
+      }
+    }
+  }
+
   return somethingChanged;
 }
 

@@ -193,7 +193,9 @@ describe('Reads xml sld 11', () => {
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.font).to.be.an.instanceof(Object);
     expect(symbolizer.font.styling).to.be.an.instanceof(Object);
-    expect(symbolizer.font.styling.fontFamily).to.equal('"Noto Sans", Arial, sans-serif');
+    expect(symbolizer.font.styling.fontFamily).to.equal(
+      '"Noto Sans", Arial, sans-serif'
+    );
   });
   it('rule textsymbolizer has fill', () => {
     const rule =
@@ -710,6 +712,16 @@ describe('SVG style parameters', () => {
         type: 'literal',
         typeHint: 'number',
         value: 2,
+        uom: UOM_METRE,
+      });
+    });
+
+    it('LineSymbolizer PerpendicularOffset inherits uom', () => {
+      const { perpendicularoffset } = lineSymbolizer;
+      expect(perpendicularoffset).to.deep.equal({
+        type: 'literal',
+        typeHint: 'number',
+        value: 12,
         uom: UOM_METRE,
       });
     });
