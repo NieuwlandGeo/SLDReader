@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - November 20, 2025 12:33:45 */
+/* Version: 0.7.3 - February 25, 2026 12:33:41 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -3114,10 +3114,12 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * Get an OL style/Stroke instance from the css/svg properties of the .stroke property
    * of an SLD symbolizer object.
    * @private
-   * @param  {object} stroke SLD symbolizer.stroke object.
+   * @param {object} stroke SLD symbolizer.stroke object.
+   * @param {number} perpendicularoffset Perpendicular stroke offset in pixels.
+   * Positive offset towards left hand side of the stroke (as per SLD spec).
    * @return {object} OpenLayers style/Stroke instance. Returns undefined when input is null or undefined.
    */
-  function getSimpleStroke(stroke) {
+  function getSimpleStroke(stroke, perpendicularoffset) {
     // According to SLD spec, if no Stroke element is present inside a symbolizer element,
     // no stroke is to be rendered.
     if (!stroke) {
@@ -3130,11 +3132,17 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     const strokeOpacity = evaluate(styleParams?.strokeOpacity, null, null, 1.0);
     const strokeWidth = evaluate(styleParams?.strokeWidth, null, null, 1.0);
     const strokeLineDashOffset = evaluate(styleParams?.strokeDashoffset, null, null, 0.0);
+    const strokePerpendicularOffset = evaluate(perpendicularoffset, null, null, null);
     const strokeOptions = {
       color: getOLColorString(strokeColor, strokeOpacity),
       width: strokeWidth,
       lineDashOffset: strokeLineDashOffset
     };
+    if (strokePerpendicularOffset !== null) {
+      // Note: positive offset in SLD means offset to the left of the line, which is inverted w.r.t. the OpenLayers offset,
+      // which is defined as positive in the line normal direction.
+      strokeOptions.offset = -strokePerpendicularOffset;
+    }
 
     // Optional parameters that will be added to stroke options when present in SLD.
     const strokeLineJoin = evaluate(styleParams?.strokeLinejoin, null, null);
@@ -3239,6 +3247,20 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       const strokeOpacity = evaluate(styling.strokeOpacity, feature, context, 1.0);
       olStroke.setColor(getOLColorString(strokeColor, strokeOpacity));
       somethingChanged = true;
+    }
+
+    // Change stroke offset if it's scale or property based.
+    if (isDynamicExpression(symbolizer?.perpendicularoffset)) {
+      const offset = evaluate(symbolizer.perpendicularoffset, feature, context, null);
+      // Changing offset is only possible from OL 10.8.0 onwards.
+      // Check to prevent crash for older OL versions here.
+      if (typeof olStroke.setOffset === 'function') {
+        if (offset === null) {
+          olStroke.setOffset(null);
+        } else {
+          olStroke.setOffset(-offset);
+        }
+      }
     }
     return somethingChanged;
   }
@@ -3725,7 +3747,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       return getGraphicStrokeStyle(symbolizer);
     }
     return new Style({
-      stroke: getSimpleStroke(symbolizer?.stroke)
+      stroke: getSimpleStroke(symbolizer?.stroke, symbolizer?.perpendicularoffset)
     });
   }
   const cachedLineStyle = memoizeStyleFunction(lineStyle);
@@ -4073,7 +4095,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
         }
       });
     }
-    const polygonStroke = getSimpleStroke(symbolizer.stroke);
+    const polygonStroke = getSimpleStroke(symbolizer?.stroke, symbolizer?.perpendicularoffset);
     return new Style({
       fill: polygonFill,
       stroke: polygonStroke

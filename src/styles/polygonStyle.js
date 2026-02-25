@@ -270,7 +270,7 @@ function polygonStyle(symbolizer) {
     });
   }
 
-  const polygonStroke = getSimpleStroke(symbolizer.stroke);
+  const polygonStroke = getSimpleStroke(symbolizer?.stroke, symbolizer?.perpendicularoffset);
 
   return new Style({
     fill: polygonFill,
