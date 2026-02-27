@@ -11,6 +11,7 @@ import { staticPolygonSymbolizerSld } from './data/static-polygon-symbolizer.sld
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
 import { graphicStrokeVendorOption } from './data/graphicstroke-vendoroption.sld';
 import { qgisParametricSvg } from './data/qgis-parametric-svg.sld';
+import { fontSymbolsSld } from './data/font-symbols.sld';
 import { sldWithUom } from './data/sld-with-uom';
 
 import { UOM_METRE } from '../src/constants';
@@ -757,6 +758,45 @@ describe('SVG style parameters', () => {
     it('Polygon graphic fill stroke width always pixel', () => {
       const graphicFillMark = polygonSymbolizer.fill.graphicfill.graphic.mark;
       expect(graphicFillMark.stroke.styling.strokeWidth).to.equal(1);
+    });
+  });
+
+  describe('Font symbol marks', () => {
+    let style;
+    beforeEach(() => {
+      const parsedSld = Reader(fontSymbolsSld);
+      [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+    });
+
+    it('Parse font symbol mark according to Symbology Encoding 1.1.0', () => {
+      const rule = style.rules[0];
+      expect(rule.name).to.equal('Font Symbol SE 1.1.0');
+      const { pointsymbolizer } = rule;
+      const { graphic } = pointsymbolizer[0];
+      expect(graphic.mark.wellknownname).to.be.undefined;
+      expect(graphic.mark.fontfamily).to.equal('Wingdings');
+      expect(graphic.mark.markindex).to.equal(77);
+      expect(graphic.size).to.equal(14);
+    });
+
+    it('Parse font symbol mark according to Geoserver TTF WellKnownName syntax', () => {
+      const rule = style.rules[1];
+      expect(rule.name).to.equal('Font Symbol Geoserver');
+      const { pointsymbolizer } = rule;
+      const { graphic } = pointsymbolizer[0];
+      expect(graphic.mark.wellknownname).to.be.undefined;
+      expect(graphic.mark.fontfamily).to.equal('Font Awesome 6 Pro Solid');
+      expect(graphic.mark.markindex).to.equal(979058);
+      expect(graphic.size).to.equal(42);
+    });
+
+    it('Invalid wellknownname ttf:// syntax is kept as-is', () => {
+      const rule = style.rules[2];
+      expect(rule.name).to.equal('Invalid mark index');
+      const { pointsymbolizer } = rule;
+      const { graphic } = pointsymbolizer[0];
+      expect(graphic.mark.wellknownname).to.equal('ttf://Webdings#');
+      expect(graphic.size).to.equal(24);
     });
   });
 });
