@@ -17,6 +17,8 @@ const dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
 
 const parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
 const paramReplacerRegex = /param\(([^)]*)\)/g;
+const geoserverFontSymbolRegex = /:\/\/([^#]+?)#([0-9xa-fA-F]*?)$/;
+const fontFamilyRegex = /:\/\/([\w\s]+).*/;
 
 /**
  * Generic parser for elements with maxOccurs > 1
@@ -91,6 +93,53 @@ function addProp(node, obj, prop, options) {
   const property = prop.toLowerCase();
   obj[property] = {};
   readNode(node, obj[property], options);
+}
+
+/**
+ * Parser specific for Mark elements with code for font symbol handling.
+ * @private
+ * @param {Element} node the xml element to parse
+ * @param {object} obj  the object to modify
+ * @param {string} prop key on obj to hold empty object
+ * @param {object} options Parse options.
+ */
+function addMark(node, obj, prop, options) {
+  const mark = {};
+  readNode(node, mark, options);
+
+  // Check for font symbol.
+  // If mark has a wellknownname of format `ttf://{fontfamily}#{markindex}`, it's GeoServer syntax.
+  // In this case, parse font family and mark index.
+  const geoserverFontSymbolMatch = (mark.wellknownname ?? '').match(
+    geoserverFontSymbolRegex
+  );
+  if (
+    Array.isArray(geoserverFontSymbolMatch) &&
+    geoserverFontSymbolMatch.length === 3
+  ) {
+    const fontfamily = geoserverFontSymbolMatch[1];
+    const markIndexString = geoserverFontSymbolMatch[2];
+    const markindex = Number.parseInt(markIndexString);
+    if (!Number.isNaN(markindex)) {
+      mark.fontfamily = fontfamily;
+      mark.markindex = markindex;
+      delete mark.wellknownname;
+    }
+  }
+
+  // If mark has an onlineresource and a markindex, it's a font symbol according to Symbology Encoding 1.1.0 spec.
+  // In this case, extract font family from onlineresource and copy markindex as-is.
+  if (mark.markindex && mark.onlineresource) {
+    mark.markindex = Number.parseInt(mark.markindex);
+
+    // Parse font family from onlineresource.
+    const fontFamilyMatch = mark.onlineresource.match(fontFamilyRegex);
+    if (Array.isArray(fontFamilyMatch) && fontFamilyMatch.length > 1) {
+      mark.fontfamily = fontFamilyMatch[1];
+    }
+  }
+
+  obj.mark = mark;
 }
 
 function addGraphicProp(node, obj, prop, options) {
@@ -575,7 +624,7 @@ const SymbParsers = {
   Format: addPropWithTextContent,
   Gap: addNumericParameterValueProp,
   InitialGap: addNumericParameterValueProp,
-  Mark: addProp,
+  Mark: addMark,
   Label: (node, obj, prop, options) =>
     addParameterValueProp(node, obj, prop, {
       ...options,
