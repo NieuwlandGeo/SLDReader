@@ -22,6 +22,7 @@ export const fontSymbolsSld = `<?xml version="1.0" encoding="UTF-8"?>
                   <se:SvgParameter name="stroke">#0000FF</se:SvgParameter>
                 </se:Stroke>
               </se:Mark>
+              <se:Rotation>45</se:Rotation>
               <se:Size>14</se:Size>
             </se:Graphic>
           </se:PointSymbolizer>

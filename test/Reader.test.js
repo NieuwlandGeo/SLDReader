@@ -768,35 +768,35 @@ describe('SVG style parameters', () => {
       [style] = parsedSld.layers[0].styles[0].featuretypestyles;
     });
 
-    it('Parse font symbol mark according to Symbology Encoding 1.1.0', () => {
+    it('Parse font symbol mark according to Symbology Encoding 1.1.0 as textsymbolizer', () => {
       const rule = style.rules[0];
       expect(rule.name).to.equal('Font Symbol SE 1.1.0');
-      const { pointsymbolizer } = rule;
-      const { graphic } = pointsymbolizer[0];
-      expect(graphic.mark.wellknownname).to.be.undefined;
-      expect(graphic.mark.fontfamily).to.equal('Wingdings');
-      expect(graphic.mark.markindex).to.equal(77);
-      expect(graphic.size).to.equal(14);
+      const { textsymbolizer } = rule;
+      const item = textsymbolizer[0];
+      expect(item.label).to.equal(String.fromCharCode(77));
+      expect(item.font.styling).to.deep.equal({
+        fontFamily: 'Wingdings',
+        fontSize: 14, // Graphic size becomes font size.
+      });
+      // Rotation is stored in label placement.
+      expect(item.labelplacement.pointplacement.rotation).to.equal(45);
+      // Symbol color becomes text fill color.
+      expect(item.fill.styling.fill).to.equal('#FF0000');
+      // Symbol stroke becomes text halo.
+      expect(item.halo.radius).to.equal(3);
+      expect(item.halo.fill.styling.fill).to.equal('#0000FF');
     });
 
     it('Parse font symbol mark according to Geoserver TTF WellKnownName syntax', () => {
       const rule = style.rules[1];
       expect(rule.name).to.equal('Font Symbol Geoserver');
-      const { pointsymbolizer } = rule;
-      const { graphic } = pointsymbolizer[0];
-      expect(graphic.mark.wellknownname).to.be.undefined;
-      expect(graphic.mark.fontfamily).to.equal('Font Awesome 6 Pro Solid');
-      expect(graphic.mark.markindex).to.equal(979058);
-      expect(graphic.size).to.equal(42);
-    });
-
-    it('Invalid wellknownname ttf:// syntax is kept as-is', () => {
-      const rule = style.rules[2];
-      expect(rule.name).to.equal('Invalid mark index');
-      const { pointsymbolizer } = rule;
-      const { graphic } = pointsymbolizer[0];
-      expect(graphic.mark.wellknownname).to.equal('ttf://Webdings#');
-      expect(graphic.size).to.equal(24);
+      const { textsymbolizer } = rule;
+      const item = textsymbolizer[0];
+      expect(item.label).to.equal(String.fromCharCode(979058));
+      expect(item.font.styling).to.deep.equal({
+        fontFamily: 'Font Awesome 6 Pro Solid',
+        fontSize: 42,
+      });
     });
   });
 });

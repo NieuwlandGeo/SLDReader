@@ -46,7 +46,6 @@ function addPropArray(node, obj, prop, options) {
  */
 function addSymbolizer(node, obj, prop, options) {
   const property = prop.toLowerCase();
-  obj[property] = obj[property] || [];
   const item = { type: 'symbolizer' };
 
   // Check and add if symbolizer node has uom attribute.
@@ -77,7 +76,78 @@ function addSymbolizer(node, obj, prop, options) {
   }
 
   readNode(node, item, { ...options, uom: item.uom });
-  obj[property].push(item);
+
+  // Convert point symbolizers using a font symbol to text symbolizers.
+  if (
+    property === 'pointsymbolizer' &&
+    item?.graphic?.mark?.fontfamily &&
+    item?.graphic?.mark.markindex > 0
+  ) {
+    obj.textsymbolizer = obj.textstymbolizer ?? [];
+
+    const textSymbolizer = {
+      uom: item.uom,
+      type: item.type,
+      label: String.fromCharCode(item.graphic.mark.markindex),
+      labelplacement: {
+        pointplacement: {
+          anchorpoint: {
+            anchorpointx: 0.5,
+            anchorpointy: 0.5,
+          },
+        },
+      },
+      font: {
+        styling: {
+          fontFamily: item.graphic.mark.fontfamily,
+        },
+      },
+    };
+
+    if (item.graphic?.size) {
+      textSymbolizer.font.styling.fontSize = item.graphic.size;
+    }
+
+    const fill = item.graphic.mark?.fill;
+    if (fill) {
+      textSymbolizer.fill = item.graphic.mark.fill;
+    }
+
+    const stroke = item.graphic.mark?.stroke;
+    if (stroke?.styling) {
+      textSymbolizer.halo = {
+        radius: stroke.styling.strokeWidth ?? 1,
+      };
+      if (stroke?.styling?.stroke) {
+        textSymbolizer.halo.fill = {
+          styling: {
+            fill: stroke.styling.stroke,
+          },
+        };
+      }
+    }
+
+    if (item?.graphic?.displacement) {
+      textSymbolizer.labelplacement = {
+        pointplacement: {
+          displacement: item.graphic.displacement,
+        },
+      };
+    }
+
+    if (item?.graphic?.rotation) {
+      if (!textSymbolizer.labelplacement) {
+        textSymbolizer.labelplacement = { pointplacement: {} };
+      }
+      textSymbolizer.labelplacement.pointplacement.rotation =
+        item.graphic.rotation;
+    }
+
+    obj.textsymbolizer.push(textSymbolizer);
+  } else {
+    obj[property] = obj[property] ?? [];
+    obj[property].push(item);
+  }
 }
 
 /**
