@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - February 25, 2026 16:19:33 */
+/* Version: 0.7.3 - March 2, 2026 08:52:48 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -570,8 +570,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {string} [options.uom] Unit of measure.
    * concatenate all literal expressions into a single string.
    */
-  function addParameterValueProp(node, obj, prop) {
-    let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  function addParameterValueProp(node, obj, prop, options = {}) {
     const defaultParseOptions = {
       skipEmptyNodes: true,
       forceLowerCase: true,
@@ -697,15 +696,13 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       obj[propertyName] = simplifiedValue;
     }
   }
-  function addNumericParameterValueProp(node, obj, prop) {
-    let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  function addNumericParameterValueProp(node, obj, prop, options = {}) {
     addParameterValueProp(node, obj, prop, {
       ...options,
       typeHint: 'number'
     });
   }
-  function addDimensionlessNumericParameterValueProp(node, obj, prop) {
-    let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  function addDimensionlessNumericParameterValueProp(node, obj, prop, options = {}) {
     addParameterValueProp(node, obj, prop, {
       ...options,
       typeHint: 'number',
@@ -1160,8 +1157,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {any} defaultValue Optional default value to use when feature is null.
    * Signature (feature, propertyName) => property value.
    */
-  function evaluate(expression, feature, context) {
-    let defaultValue = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  function evaluate(expression, feature, context, defaultValue = null) {
     // Determine the value of the expression.
     let value = null;
     const jsType = typeof expression;
@@ -1921,8 +1917,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {number} size Requested size in pixels.
    * @param {number} [rotationDegrees] Image rotation in degrees (clockwise). Default 0.
    */
-  function createCachedImageStyle(imageUrl, size) {
-    let rotationDegrees = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0.0;
+  function createCachedImageStyle(imageUrl, size, rotationDegrees = 0.0) {
     const {
       image,
       width,
@@ -2700,9 +2695,9 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     trapezoid: [[0.5, 0.5], [1, -0.5], [-1, -0.5], [-0.5, 0.5]],
     parallelogram_left: [[1, -0.5], [0.5, 0.5], [-1, 0.5], [-0.5, -0.5]],
     parallelogram_right: [[0.5, -0.5], [1, 0.5], [-0.5, 0.5], [-1, -0.5]],
-    square_with_corners: [[-0.6072, -1], [VERTEX_OFFSET_FROM_ORIGIN, -1], [1, -0.6072], [1, VERTEX_OFFSET_FROM_ORIGIN], [VERTEX_OFFSET_FROM_ORIGIN, 1], [-0.6072, 1], [-1, VERTEX_OFFSET_FROM_ORIGIN], [-1, -0.6072]],
+    square_with_corners: [[-VERTEX_OFFSET_FROM_ORIGIN, -1], [VERTEX_OFFSET_FROM_ORIGIN, -1], [1, -VERTEX_OFFSET_FROM_ORIGIN], [1, VERTEX_OFFSET_FROM_ORIGIN], [VERTEX_OFFSET_FROM_ORIGIN, 1], [-VERTEX_OFFSET_FROM_ORIGIN, 1], [-1, VERTEX_OFFSET_FROM_ORIGIN], [-1, -VERTEX_OFFSET_FROM_ORIGIN]],
     shield: [[1, -0.5], [1, 1], [-1, 1], [-1, -0.5], [0, -1]],
-    asterisk_fill: [[-0.15, 1], [HALF_THICKNESS, 1], [HALF_THICKNESS, HALF_THICKNESS + INTERSECTION_POINT], [DIAGONAL1, DIAGONAL2], [DIAGONAL2, DIAGONAL1], [HALF_THICKNESS + INTERSECTION_POINT, HALF_THICKNESS], [1, HALF_THICKNESS], [1, -0.15], [HALF_THICKNESS + INTERSECTION_POINT, -0.15], [DIAGONAL2, -DIAGONAL1], [DIAGONAL1, -DIAGONAL2], [HALF_THICKNESS, -0.15 - INTERSECTION_POINT], [HALF_THICKNESS, -1], [-0.15, -1], [-0.15, -0.15 - INTERSECTION_POINT], [-DIAGONAL1, -DIAGONAL2], [-DIAGONAL2, -DIAGONAL1], [-0.15 - INTERSECTION_POINT, -0.15], [-1, -0.15], [-1, HALF_THICKNESS], [-0.15 - INTERSECTION_POINT, HALF_THICKNESS], [-DIAGONAL2, DIAGONAL1], [-DIAGONAL1, DIAGONAL2], [-0.15, HALF_THICKNESS + INTERSECTION_POINT]],
+    asterisk_fill: [[-HALF_THICKNESS, 1], [HALF_THICKNESS, 1], [HALF_THICKNESS, HALF_THICKNESS + INTERSECTION_POINT], [DIAGONAL1, DIAGONAL2], [DIAGONAL2, DIAGONAL1], [HALF_THICKNESS + INTERSECTION_POINT, HALF_THICKNESS], [1, HALF_THICKNESS], [1, -HALF_THICKNESS], [HALF_THICKNESS + INTERSECTION_POINT, -HALF_THICKNESS], [DIAGONAL2, -DIAGONAL1], [DIAGONAL1, -DIAGONAL2], [HALF_THICKNESS, -HALF_THICKNESS - INTERSECTION_POINT], [HALF_THICKNESS, -1], [-HALF_THICKNESS, -1], [-HALF_THICKNESS, -HALF_THICKNESS - INTERSECTION_POINT], [-DIAGONAL1, -DIAGONAL2], [-DIAGONAL2, -DIAGONAL1], [-HALF_THICKNESS - INTERSECTION_POINT, -HALF_THICKNESS], [-1, -HALF_THICKNESS], [-1, HALF_THICKNESS], [-HALF_THICKNESS - INTERSECTION_POINT, HALF_THICKNESS], [-DIAGONAL2, DIAGONAL1], [-DIAGONAL1, DIAGONAL2], [-HALF_THICKNESS, HALF_THICKNESS + INTERSECTION_POINT]],
     // =================
     // Geoserver symbols
     // =================
@@ -2731,10 +2726,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    */
   function registerCustomSymbol(name, normalizedCoordinates) {
     // Verify that input coordinates lie outside the expected [-1,-1,1,1] square.
-    const allInside = normalizedCoordinates.every(_ref => {
-      let [x, y] = _ref;
-      return x >= -1 && x <= 1 && y >= -1 && y <= 1;
-    });
+    const allInside = normalizedCoordinates.every(([x, y]) => x >= -1 && x <= 1 && y >= -1 && y <= 1);
     if (!allInside) {
       throw new Error('Custom symbol coordinates must lie within [-1,-1,1,1].');
     }
@@ -2781,17 +2773,16 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {number} rotation Symbol rotation in radians (clockwise). Default 0.
    * @returns {RadialShape} A RadialShape instance.
    */
-  function createPartialCircleRadialShape(_ref) {
-    let {
-      wellKnownName,
-      startAngle,
-      endAngle,
-      radius,
-      stroke,
-      fill,
-      rotation,
-      arc
-    } = _ref;
+  function createPartialCircleRadialShape({
+    wellKnownName,
+    startAngle,
+    endAngle,
+    radius,
+    stroke,
+    fill,
+    rotation,
+    arc
+  }) {
     const numPoints = Math.ceil(HALF_CIRCLE_RESOLUTION * (endAngle - startAngle) / Math.PI);
     const radii = [];
     const angles = [];
@@ -2850,20 +2841,18 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {number} rotation Symbol rotation in radians (clockwise). Default 0.
    * @returns {RadialShape} A RadialShape instance.
    */
-  function radialShapeFromUnitCoordinates(_ref2) {
-    let {
-      wellKnownName,
-      coordinates,
-      radius,
-      stroke,
-      fill,
-      rotation
-    } = _ref2;
+  function radialShapeFromUnitCoordinates({
+    wellKnownName,
+    coordinates,
+    radius,
+    stroke,
+    fill,
+    rotation
+  }) {
     // Convert unit coordinates and radius to polar coordinate representation.
     const radii = [];
     const angles = [];
-    coordinates.forEach(_ref3 => {
-      let [x, y] = _ref3;
+    coordinates.forEach(([x, y]) => {
       const polarRadius = radius * Math.sqrt(x * x + y * y);
       let polarAngle = Math.atan2(y, x);
       if (polarAngle < 2) {
@@ -2909,8 +2898,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {ol/style/fill} fill OpenLayers Fill instance.
    * @param {number} rotationDegrees Symbol rotation in degrees (clockwise). Default 0.
    */
-  function getWellKnownSymbol(wellKnownName, size, stroke, fill) {
-    let rotationDegrees = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0.0;
+  function getWellKnownSymbol(wellKnownName, size, stroke, fill, rotationDegrees = 0.0) {
     const radius = size / 2;
     const rotationRadians = Math.PI * rotationDegrees / 180.0;
     const sharedOptions = {
@@ -3501,8 +3489,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     const angle = -Math.atan2(invertY ? -dY : dY, dX);
     return angle;
   }
-  function splitLineString(geometry, graphicSpacing) {
-    let _options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  function splitLineString(geometry, graphicSpacing, _options = {}) {
     const defaultOptions = {
       minimumGraphicSpacing: 0
     };
@@ -3775,14 +3762,12 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   const dense3Pixels = [[0, 0], [1, 1], [2, 2], [3, 3], [2, 0], [0, 2]];
   const dense4Pixels = [[0, 0], [1, 1]];
   function fillPixels(context, xyCoords) {
-    xyCoords.forEach(_ref => {
-      let [x, y] = _ref;
+    xyCoords.forEach(([x, y]) => {
       context.fillRect(x, y, 1, 1);
     });
   }
   function clearPixels(context, xyCoords) {
-    xyCoords.forEach(_ref2 => {
-      let [x, y] = _ref2;
+    xyCoords.forEach(([x, y]) => {
       context.clearRect(x, y, 1, 1);
     });
   }
@@ -4390,8 +4375,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {boolean} [options.useFallbackStyles] Default true. When true, provides default OL styles as fallback for unknown geometry types.
    * @return ol.style.Style or array of it
    */
-  function OlStyler(categorizedSymbolizers, feature, context) {
-    let options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  function OlStyler(categorizedSymbolizers, feature, context, options = {}) {
     const {
       polygonSymbolizers,
       lineSymbolizers,
@@ -4484,8 +4468,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    *   imageLoadedCallback: () => { myOlVectorLayer.changed(); }
    * }));
    */
-  function createOlStyleFunction(featureTypeStyle) {
-    let options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  function createOlStyleFunction(featureTypeStyle, options = {}) {
     const imageLoadedCallback = options.imageLoadedCallback || (() => {});
 
     // Keep track of whether a callback has been registered per image url.
@@ -4720,10 +4703,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @returns {boolean} True if the first argument is the same as any of the other arguments
    * using string-based comparison.
    */
-  function stringIn() {
-    for (var _len = arguments.length, inputArgs = new Array(_len), _key = 0; _key < _len; _key++) {
-      inputArgs[_key] = arguments[_key];
-    }
+  function stringIn(...inputArgs) {
     const [test, ...candidates] = inputArgs;
     // Compare test with candidates as string.
     const testString = asString(test);
