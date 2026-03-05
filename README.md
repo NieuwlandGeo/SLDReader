@@ -144,6 +144,97 @@ SLDReader.registerCustomSymbol('crystal', [
 
 Note: OpenLayers v10.3.0 or higher is required to use the custom symbol functionality. On lower versions, a square is displayed instead.
 
+#### Font symbols
+In SLD, it's possible to use a font symbol by supplying an onlineresource that points to a (TTF) font file, together with an index pointing towards a single character within the font file.
+
+Example (renders a spider on systems that have the Webdings font installed):
+```xml
+<se:PointSymbolizer>
+  <se:Graphic>
+    <se:Mark>
+      <se:OnlineResource xlink:href="ttf://Webdings" xlink:type="simple"/>
+      <se:Format>ttf</se:Format>
+      <se:MarkIndex>33</se:MarkIndex>
+      <se:Fill>
+        <se:SvgParameter name="fill">#FF0000</se:SvgParameter>
+      </se:Fill>
+      <se:Stroke>
+        <se:SvgParameter name="stroke-width">3</se:SvgParameter>
+        <se:SvgParameter name="stroke">#0000FF</se:SvgParameter>
+      </se:Stroke>
+    </se:Mark>
+    <se:Size>32</se:Size>
+  </se:Graphic>
+</se:PointSymbolizer>
+```
+
+SLDReader also supports the Geoserver font symbol shorthand, by pointing to a symbol within the wellknownname.
+
+Example (the equivalent of the example above):
+```xml
+<se:PointSymbolizer>
+  <se:Graphic>
+    <se:Mark>
+      <se:WellKnownName>ttf://Webdings#0x0021</se:WellKnownName>
+      <!-- fill,stroke,size etc.. -->
+  </se:Graphic>
+</se:PointSymbolizer>
+```
+
+This is useful for server-side rendering where the font file can be accessed on the file system, but presents a problem when rendering font symbols on the web. SLDReader solves this by ignoring the `ttf://` prefix and/or format, and extracts the font family from the onlineresource or geoserver ttf:// wellknownname.
+
+Upon parsing, marks using a font symbol are converted to textsymbolizers with a single character with a char code corresponding to the font symbol index.
+
+For example, the spider font symbol above will become the following text symbolizer in SLDReader:
+```javascript
+{
+  "label": "!", // Character code 0x21 (or 33 as integer).
+  "font": {
+    "styling": {
+      "fontFamily": "Webdings",
+      "fontSize": 32
+    }
+  },
+  // other style props omitted for brevity.
+}
+```
+
+#### Making the font family accessible in your web page for SLDReader
+When using fonts that are globally available, you can just use the font family (like Webdings), and it will work. But since SLDReader cannot access the file system, you must make sure that the font family is declared within css or an (inline) `<style>` element. If you do not do this, the text symbol will just be the single character label in the default system font.
+
+Example: IMKL custom symbols.
+IMKL is a dutch information model (IM) for cables ((K)abels) and pipes ((L)eidingen). This uses a custom font that needs to be declared in css as follows:
+```css
+@font-face {
+  font-family: 'IMKLIcons';
+  src: url("https://register.geostandaarden.nl/symbool/imkl/3.0.0rc2/font/IMKLIcons-Regular.ttf")format("truetype");
+}
+```
+
+After declaring this custom font in your css, or inline style, you can use symbols by referring them by the font-family declared above.
+
+Try it out on the 'Custom GeoJSON styling' demo page.
+
+```xml
+<se:PointSymbolizer>
+  <se:Graphic>
+    <se:Mark>
+      <se:OnlineResource xlink:href="ttf://IMKLIcons" xlink:type="simple"/>
+      <se:Format>ttf</se:Format>
+      <se:MarkIndex>120</se:MarkIndex>
+      <se:Fill>
+        <se:SvgParameter name="fill">#008800</se:SvgParameter>
+      </se:Fill>
+      <se:Stroke>
+        <se:SvgParameter name="stroke-width">2</se:SvgParameter>
+        <se:SvgParameter name="stroke">#224422</se:SvgParameter>
+      </se:Stroke>
+    </se:Mark>
+    <se:Size>32</se:Size>
+  </se:Graphic>
+</se:PointSymbolizer>
+```
+
 #### LineSymbolizer
 
 Only these svg-parameters are supported:

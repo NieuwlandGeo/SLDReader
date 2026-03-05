@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 2, 2026 08:52:48 */
+/* Version: 0.7.3 - March 2, 2026 09:08:06 */
 var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -298,6 +298,8 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   const dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
   const parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
   const paramReplacerRegex = /param\(([^)]*)\)/g;
+  const geoserverFontSymbolRegex = /:\/\/([^#]+?)#([0-9xa-fA-F]*?)$/;
+  const fontFamilyRegex = /:\/\/([\w\s]+).*/;
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -325,7 +327,6 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    */
   function addSymbolizer(node, obj, prop, options) {
     const property = prop.toLowerCase();
-    obj[property] = obj[property] || [];
     const item = {
       type: 'symbolizer'
     };
@@ -358,7 +359,68 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       ...options,
       uom: item.uom
     });
-    obj[property].push(item);
+
+    // Convert point symbolizers using a font symbol to text symbolizers.
+    if (property === 'pointsymbolizer' && item?.graphic?.mark?.fontfamily && item?.graphic?.mark.markindex > 0) {
+      obj.textsymbolizer = obj.textstymbolizer ?? [];
+      const textSymbolizer = {
+        uom: item.uom,
+        type: item.type,
+        label: String.fromCharCode(item.graphic.mark.markindex),
+        labelplacement: {
+          pointplacement: {
+            anchorpoint: {
+              anchorpointx: 0.5,
+              anchorpointy: 0.5
+            }
+          }
+        },
+        font: {
+          styling: {
+            fontFamily: item.graphic.mark.fontfamily
+          }
+        }
+      };
+      if (item.graphic?.size) {
+        textSymbolizer.font.styling.fontSize = item.graphic.size;
+      }
+      const fill = item.graphic.mark?.fill;
+      if (fill) {
+        textSymbolizer.fill = item.graphic.mark.fill;
+      }
+      const stroke = item.graphic.mark?.stroke;
+      if (stroke?.styling) {
+        textSymbolizer.halo = {
+          radius: stroke.styling.strokeWidth ?? 1
+        };
+        if (stroke?.styling?.stroke) {
+          textSymbolizer.halo.fill = {
+            styling: {
+              fill: stroke.styling.stroke
+            }
+          };
+        }
+      }
+      if (item?.graphic?.displacement) {
+        textSymbolizer.labelplacement = {
+          pointplacement: {
+            displacement: item.graphic.displacement
+          }
+        };
+      }
+      if (item?.graphic?.rotation) {
+        if (!textSymbolizer.labelplacement) {
+          textSymbolizer.labelplacement = {
+            pointplacement: {}
+          };
+        }
+        textSymbolizer.labelplacement.pointplacement.rotation = item.graphic.rotation;
+      }
+      obj.textsymbolizer.push(textSymbolizer);
+    } else {
+      obj[property] = obj[property] ?? [];
+      obj[property].push(item);
+    }
   }
 
   /**
@@ -374,6 +436,47 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     const property = prop.toLowerCase();
     obj[property] = {};
     readNode(node, obj[property], options);
+  }
+
+  /**
+   * Parser specific for Mark elements with code for font symbol handling.
+   * @private
+   * @param {Element} node the xml element to parse
+   * @param {object} obj  the object to modify
+   * @param {string} prop key on obj to hold empty object
+   * @param {object} options Parse options.
+   */
+  function addMark(node, obj, prop, options) {
+    const mark = {};
+    readNode(node, mark, options);
+
+    // Check for font symbol.
+    // If mark has a wellknownname of format `ttf://{fontfamily}#{markindex}`, it's GeoServer syntax.
+    // In this case, parse font family and mark index.
+    const geoserverFontSymbolMatch = (mark.wellknownname ?? '').match(geoserverFontSymbolRegex);
+    if (Array.isArray(geoserverFontSymbolMatch) && geoserverFontSymbolMatch.length === 3) {
+      const fontfamily = geoserverFontSymbolMatch[1];
+      const markIndexString = geoserverFontSymbolMatch[2];
+      const markindex = Number.parseInt(markIndexString);
+      if (!Number.isNaN(markindex)) {
+        mark.fontfamily = fontfamily;
+        mark.markindex = markindex;
+        delete mark.wellknownname;
+      }
+    }
+
+    // If mark has an onlineresource and a markindex, it's a font symbol according to Symbology Encoding 1.1.0 spec.
+    // In this case, extract font family from onlineresource and copy markindex as-is.
+    if (mark.markindex && mark.onlineresource) {
+      mark.markindex = Number.parseInt(mark.markindex);
+
+      // Parse font family from onlineresource.
+      const fontFamilyMatch = mark.onlineresource.match(fontFamilyRegex);
+      if (Array.isArray(fontFamilyMatch) && fontFamilyMatch.length > 1) {
+        mark.fontfamily = fontFamilyMatch[1];
+      }
+    }
+    obj.mark = mark;
   }
   function addGraphicProp(node, obj, prop, options) {
     const property = prop.toLowerCase();
@@ -786,7 +889,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     Format: addPropWithTextContent,
     Gap: addNumericParameterValueProp,
     InitialGap: addNumericParameterValueProp,
-    Mark: addProp,
+    Mark: addMark,
     Label: (node, obj, prop, options) => addParameterValueProp(node, obj, prop, {
       ...options,
       skipEmptyNodes: false
