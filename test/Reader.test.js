@@ -875,5 +875,18 @@ describe('SVG style parameters', () => {
         'font://Wingdings|77|14|#FF0000|3|#0000FF'
       );
     });
+
+    it('Font symbols inside GraphicStroke are converted to ExternalGraphics', () => {
+      const parsedSld = Reader(fontSymbolsSld);
+      const [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      const rule = style.rules[4];
+      expect(rule.name).to.equal('GraphicStroke with font symbol');
+      const { linesymbolizer } = rule;
+      const { graphic } = linesymbolizer[0].stroke.graphicstroke;
+      expect(graphic.externalgraphic.onlineresource).to.equal(
+        'font://Webdings|33|32|#008800|2|#224422'
+      );
+      expect(graphic.size).to.equal(32);
+    });
   });
 });

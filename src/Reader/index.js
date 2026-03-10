@@ -154,65 +154,7 @@ function addSymbolizer(node, obj, prop, options) {
       }
 
       obj.textsymbolizer.push(fontTextSymbolizer);
-    } else if (options.fontSymbolConversion === 'ExternalGraphic') {
-      obj.pointsymbolizer = obj.pointsymbolizer ?? [];
-
-      // Join all relevant style info into a single custom font:// url.
-      // template: `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`
-      // Note: strokeColor will be set to '-' if there is no stroke.
-      const fontFamily = item.graphic.mark.fontfamily;
-      const markIndex = item.graphic.mark.markindex;
-      const symbolSize = evaluate(
-        item.graphic?.size,
-        null,
-        null,
-        DEFAULT_EXTERNALGRAPHIC_SIZE
-      );
-      const symbolFill = evaluate(
-        item.graphic?.mark?.fill?.styling?.fill,
-        null,
-        null,
-        '#000000'
-      );
-      const strokeWidth = evaluate(
-        item.graphic?.mark?.stroke?.styling?.strokeWidth,
-        null,
-        null,
-        1
-      );
-      // Note: '-' for stroke color means do not draw stroke.
-      const strokeColor = evaluate(
-        item.graphic?.mark?.stroke?.styling?.stroke,
-        null,
-        null,
-        '-'
-      );
-
-      const fontUrl = `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`;
-
-      const fontSymbolGraphic = {
-        externalgraphic: {
-          onlineresource: fontUrl,
-        },
-        size: symbolSize,
-      };
-
-      if (item?.graphic?.rotation) {
-        fontSymbolGraphic.rotation = item.graphic.rotation;
-      }
-
-      if (item?.graphic?.displacement) {
-        fontSymbolGraphic.displacement = item.graphic.displacement;
-      }
-
-      const fontPointSymbolizer = {
-        uom: item.uom,
-        type: item.type,
-        graphic: fontSymbolGraphic,
-      };
-
-      obj.pointsymbolizer.push(fontPointSymbolizer);
-    } else {
+    } else if (options.fontSymbolConversion !== 'ExternalGraphic') {
       throw new Error(
         `Invalid font symbol conversion option: ${options.fontSymbolConversion}. Expected one of 'ExternalGraphic' or 'TextSymbolizer'.`
       );
@@ -285,10 +227,75 @@ function addMark(node, obj, prop, options) {
   obj.mark = mark;
 }
 
+function convertFontSymbolGraphicToExternalGraphic(graphic) {
+  // Join all relevant style info into a single custom font:// url.
+  // template: `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`
+  // Note: strokeColor will be set to '-' if there is no stroke.
+  const fontFamily = graphic.mark.fontfamily;
+  const markIndex = graphic.mark.markindex;
+  const symbolSize = evaluate(
+    graphic?.size,
+    null,
+    null,
+    DEFAULT_EXTERNALGRAPHIC_SIZE
+  );
+  const symbolFill = evaluate(
+    graphic?.mark?.fill?.styling?.fill,
+    null,
+    null,
+    '#000000'
+  );
+  const strokeWidth = evaluate(
+    graphic?.mark?.stroke?.styling?.strokeWidth,
+    null,
+    null,
+    1
+  );
+  // Note: '-' for stroke color means do not draw stroke.
+  const strokeColor = evaluate(
+    graphic?.mark?.stroke?.styling?.stroke,
+    null,
+    null,
+    '-'
+  );
+
+  const fontUrl = `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`;
+
+  const fontSymbolGraphic = {
+    externalgraphic: {
+      onlineresource: fontUrl,
+    },
+    size: symbolSize,
+  };
+
+  if (graphic?.rotation) {
+    fontSymbolGraphic.rotation = graphic.rotation;
+  }
+
+  if (graphic?.displacement) {
+    fontSymbolGraphic.displacement = graphic.displacement;
+  }
+
+  return fontSymbolGraphic;
+}
+
 function addGraphicProp(node, obj, prop, options) {
-  const property = prop.toLowerCase();
-  obj[property] = {};
-  readGraphicNode(node, obj[property], options);
+  const graphic = {};
+  readGraphicNode(node, graphic, options);
+
+  // If graphic is a font symbol mark, convert it to an external graphic.
+  if (
+    graphic?.mark?.fontfamily &&
+    graphic?.mark?.markindex > 0 &&
+    options.fontSymbolConversion === 'ExternalGraphic'
+  ) {
+    // Convert font symbol to external graphic.
+    const convertedFontSymbolMark =
+      convertFontSymbolGraphicToExternalGraphic(graphic);
+    obj.graphic = convertedFontSymbolMark;
+  } else {
+    obj.graphic = graphic;
+  }
 }
 
 function addGraphicFillProp(node, obj, prop, options) {

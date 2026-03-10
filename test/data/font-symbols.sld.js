@@ -90,6 +90,33 @@ export const fontSymbolsSld = `<?xml version="1.0" encoding="UTF-8"?>
             </se:Graphic>
           </se:PointSymbolizer>
         </se:Rule>
+        <se:Rule>
+          <se:Name>GraphicStroke with font symbol</se:Name>
+          <se:LineSymbolizer>
+            <se:Stroke>
+              <se:GraphicStroke>
+                <se:Graphic>
+                  <se:Mark>
+                    <se:OnlineResource xlink:href="ttf://Webdings" xlink:type="simple"/>
+                    <se:Format>ttf</se:Format>
+                    <se:MarkIndex>33</se:MarkIndex>
+                    <se:Fill>
+                      <se:SvgParameter name="fill">#008800</se:SvgParameter>
+                    </se:Fill>
+                    <se:Stroke>
+                      <se:SvgParameter name="stroke-width">2</se:SvgParameter>
+                      <se:SvgParameter name="stroke">#224422</se:SvgParameter>
+                    </se:Stroke>
+                  </se:Mark>
+                  <se:Size>32</se:Size>
+                </se:Graphic>
+                <se:Gap>
+                  <ogc:Literal>12</ogc:Literal>
+                </se:Gap>
+              </se:GraphicStroke>
+            </se:Stroke>
+          </se:LineSymbolizer>
+        </se:Rule>
       </se:FeatureTypeStyle>
     </UserStyle>
   </NamedLayer>
