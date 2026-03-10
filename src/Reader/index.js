@@ -1,4 +1,11 @@
-import { UOM_METRE, UOM_FOOT, UOM_PIXEL, UOM_NONE } from '../constants';
+import {
+  UOM_METRE,
+  UOM_FOOT,
+  UOM_PIXEL,
+  UOM_NONE,
+  DEFAULT_EXTERNALGRAPHIC_SIZE,
+} from '../constants';
+import evaluate from '../olEvaluator';
 import createFilter from './filter';
 
 /**
@@ -43,6 +50,7 @@ function addPropArray(node, obj, prop, options) {
  * @param {Element} node the xml element to parse
  * @param {object} obj  the object to modify
  * @param {string} prop key on obj to hold array
+ * @param {string} options Parse options.
  */
 function addSymbolizer(node, obj, prop, options) {
   const property = prop.toLowerCase();
@@ -81,69 +89,134 @@ function addSymbolizer(node, obj, prop, options) {
   if (
     property === 'pointsymbolizer' &&
     item?.graphic?.mark?.fontfamily &&
-    item?.graphic?.mark.markindex > 0
+    item?.graphic?.mark?.markindex > 0
   ) {
-    obj.textsymbolizer = obj.textstymbolizer ?? [];
+    //TODO: TL;DR: move text symbolizer and external graphic conversion to separate functions.
+    if (options.fontSymbolConversion === 'TextSymbolizer') {
+      obj.textsymbolizer = obj.textsymbolizer ?? [];
 
-    const textSymbolizer = {
-      uom: item.uom,
-      type: item.type,
-      label: String.fromCharCode(item.graphic.mark.markindex),
-      labelplacement: {
-        pointplacement: {
-          anchorpoint: {
-            anchorpointx: 0.5,
-            anchorpointy: 0.5,
+      const fontTextSymbolizer = {
+        uom: item.uom,
+        type: item.type,
+        label: String.fromCharCode(item.graphic.mark.markindex),
+        labelplacement: {
+          pointplacement: {
+            anchorpoint: {
+              anchorpointx: 0.5,
+              anchorpointy: 0.5,
+            },
           },
         },
-      },
-      font: {
-        styling: {
-          fontFamily: item.graphic.mark.fontfamily,
-        },
-      },
-    };
-
-    if (item.graphic?.size) {
-      textSymbolizer.font.styling.fontSize = item.graphic.size;
-    }
-
-    const fill = item.graphic.mark?.fill;
-    if (fill) {
-      textSymbolizer.fill = item.graphic.mark.fill;
-    }
-
-    const stroke = item.graphic.mark?.stroke;
-    if (stroke?.styling) {
-      textSymbolizer.halo = {
-        radius: stroke.styling.strokeWidth ?? 1,
-      };
-      if (stroke?.styling?.stroke) {
-        textSymbolizer.halo.fill = {
+        font: {
           styling: {
-            fill: stroke.styling.stroke,
+            fontFamily: item.graphic.mark.fontfamily,
           },
-        };
-      }
-    }
-
-    if (item?.graphic?.displacement) {
-      textSymbolizer.labelplacement = {
-        pointplacement: {
-          displacement: item.graphic.displacement,
         },
       };
-    }
 
-    if (item?.graphic?.rotation) {
-      if (!textSymbolizer.labelplacement) {
-        textSymbolizer.labelplacement = { pointplacement: {} };
+      const fill = item.graphic.mark?.fill;
+      if (fill) {
+        fontTextSymbolizer.fill = item.graphic.mark.fill;
       }
-      textSymbolizer.labelplacement.pointplacement.rotation =
-        item.graphic.rotation;
-    }
 
-    obj.textsymbolizer.push(textSymbolizer);
+      const stroke = item.graphic.mark?.stroke;
+      if (stroke?.styling) {
+        fontTextSymbolizer.halo = {
+          radius: stroke.styling.strokeWidth ?? 1,
+        };
+        if (stroke?.styling?.stroke) {
+          fontTextSymbolizer.halo.fill = {
+            styling: {
+              fill: stroke.styling.stroke,
+            },
+          };
+        }
+      }
+
+      if (item.graphic?.size) {
+        fontTextSymbolizer.font.styling.fontSize = item.graphic.size;
+      }
+
+      if (item?.graphic?.rotation) {
+        if (!fontTextSymbolizer.labelplacement?.pointplacement) {
+          fontTextSymbolizer.labelplacement = { pointplacement: {} };
+        }
+        fontTextSymbolizer.labelplacement.pointplacement.rotation =
+          item.graphic.rotation;
+      }
+
+      if (item?.graphic?.displacement) {
+        if (!fontTextSymbolizer.labelplacement?.pointplacement) {
+          fontTextSymbolizer.labelplacement = { pointplacement: {} };
+        }
+        fontTextSymbolizer.labelplacement.pointplacement.displacement =
+          item.graphic.displacement;
+      }
+
+      obj.textsymbolizer.push(fontTextSymbolizer);
+    } else if (options.fontSymbolConversion === 'ExternalGraphic') {
+      obj.pointsymbolizer = obj.pointsymbolizer ?? [];
+
+      // Join all relevant style info into a single custom font:// url.
+      // template: `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`
+      // Note: strokeColor will be set to '-' if there is no stroke.
+      const fontFamily = item.graphic.mark.fontfamily;
+      const markIndex = item.graphic.mark.markindex;
+      const symbolSize = evaluate(
+        item.graphic?.size,
+        null,
+        null,
+        DEFAULT_EXTERNALGRAPHIC_SIZE
+      );
+      const symbolFill = evaluate(
+        item.graphic?.mark?.fill?.styling?.fill,
+        null,
+        null,
+        '#000000'
+      );
+      const strokeWidth = evaluate(
+        item.graphic?.mark?.stroke?.styling?.strokeWidth,
+        null,
+        null,
+        1
+      );
+      // Note: '-' for stroke color means do not draw stroke.
+      const strokeColor = evaluate(
+        item.graphic?.mark?.stroke?.styling?.stroke,
+        null,
+        null,
+        '-'
+      );
+
+      const fontUrl = `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`;
+
+      const fontSymbolGraphic = {
+        externalgraphic: {
+          onlineresource: fontUrl,
+        },
+        size: symbolSize,
+      };
+
+      if (item?.graphic?.rotation) {
+        fontSymbolGraphic.rotation = item.graphic.rotation;
+      }
+
+      if (item?.graphic?.displacement) {
+        fontSymbolGraphic.displacement = item.graphic.displacement;
+      }
+
+      const fontPointSymbolizer = {
+        uom: item.uom,
+        type: item.type,
+        graphic: fontSymbolGraphic,
+      };
+
+      obj.pointsymbolizer.push(fontPointSymbolizer);
+    } else {
+      throw new Error(
+        `Invalid font symbol conversion option: ${options.fontSymbolConversion}. Expected one of 'ExternalGraphic' or 'TextSymbolizer'.`
+      );
+    }
   } else {
     obj[property] = obj[property] ?? [];
     obj[property].push(item);
@@ -842,6 +915,7 @@ export default function Reader(sld, options) {
 
   const defaultParseOptions = {
     compatibilityMode: 'OGC',
+    fontSymbolConversion: 'ExternalGraphic',
   };
 
   readNode(rootNode, result, { ...defaultParseOptions, ...options });

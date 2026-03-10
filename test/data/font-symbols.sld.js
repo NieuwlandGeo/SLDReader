@@ -22,8 +22,12 @@ export const fontSymbolsSld = `<?xml version="1.0" encoding="UTF-8"?>
                   <se:SvgParameter name="stroke">#0000FF</se:SvgParameter>
                 </se:Stroke>
               </se:Mark>
-              <se:Rotation>45</se:Rotation>
               <se:Size>14</se:Size>
+              <se:Rotation>45</se:Rotation>
+              <se:Displacement>
+                <se:DisplacementX>6</se:DisplacementX>
+                <se:DisplacementY>7</se:DisplacementY>
+              </se:Displacement>
             </se:Graphic>
           </se:PointSymbolizer>
         </se:Rule>
@@ -46,13 +50,43 @@ export const fontSymbolsSld = `<?xml version="1.0" encoding="UTF-8"?>
           </se:PointSymbolizer>
         </se:Rule>
         <se:Rule>
-          <se:Name>Invalid mark index</se:Name>
+          <se:Name>Font symbol default values</se:Name>
           <se:PointSymbolizer>
             <se:Graphic>
               <se:Mark>
-                <se:WellKnownName>ttf://Webdings#</se:WellKnownName>
+                <se:WellKnownName>ttf://Webdings#0x21</se:WellKnownName>
               </se:Mark>
-              <se:Size>24</se:Size>
+            </se:Graphic>
+          </se:PointSymbolizer>
+        </se:Rule>
+        <se:Rule>
+          <se:Name>Font symbol defaults for dynamic values</se:Name>
+          <se:PointSymbolizer>
+            <se:Graphic>
+              <se:Mark>
+                <se:OnlineResource xlink:href="ttf://Webdings" xlink:type="simple"/>
+                <se:Format>ttf</se:Format>
+                <se:MarkIndex>33</se:MarkIndex>
+                <se:Fill>
+                  <se:SvgParameter name="fill">
+                    <ogc:PropertyName>myFillColor</ogc:PropertyName>
+                  </se:SvgParameter>
+                </se:Fill>
+                <se:Stroke>
+                  <se:SvgParameter name="stroke-width">
+                    <ogc:PropertyName>myStrokeWidth</ogc:PropertyName>
+                  </se:SvgParameter>
+                  <se:SvgParameter name="stroke">
+                    <ogc:PropertyName>myStrokeColor</ogc:PropertyName>
+                  </se:SvgParameter>
+                </se:Stroke>
+              </se:Mark>
+              <se:Rotation>
+                <ogc:PropertyName>myRotation</ogc:PropertyName>
+              </se:Rotation>
+              <se:Size>
+                <ogc:PropertyName>mySize</ogc:PropertyName>
+              </se:Size>
             </se:Graphic>
           </se:PointSymbolizer>
         </se:Rule>
