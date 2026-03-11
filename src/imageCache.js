@@ -1,8 +1,10 @@
+import { DEVICE_PIXEL_RATIO } from 'ol/has';
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
 import { getRuleSymbolizers, getByPath } from './Utils';
+import { renderFontSymbolToCanvas } from './styles/fontSymbols';
 
 // These are possible locations for an external graphic inside a symbolizer.
 const externalGraphicPaths = [
@@ -127,25 +129,91 @@ function invalidateExternalGraphics(featureTypeStyle, imageUrl) {
   });
 }
 
+function checkFontReady(fontFamily, fontSize) {
+  if (typeof document.fonts?.load !== 'function') {
+    return Promise.resolve();
+  }
+  const fontString = `${fontSize}px ${fontFamily}`;
+  return document.fonts.load(fontString);
+}
+
 /**
  * @private
- * Creates a promise that loads an image and store it in the image cache.
- * Calling this method with the same image url twice will return the loader promise
- * that was created when this method was called the first time for that specific image url.
- * @param {string} imageUrl Image url.
- * @returns {Promise} A promise that resolves when the image is loaded and fails when the
- * image didn't load correctly.
+ * Load a custom font url describing a font symbol by rendering it to a canvas and returning it as an image.
+ * @param {string} fontUrl Custom 'font://' url describing the font symbol.
+ * @returns {Promise<HTMLImageElement>} A promise that resolves with the symbol rendered as an image.
  */
-function getCachingImageLoader(imageUrl) {
-  // Check of a load is already in progress for an image.
-  // If so, return the loader.
-  let loader = getImageLoader(imageUrl);
-  if (loader) {
-    return loader;
-  }
+function getFontSymbolImageLoader(fontUrl) {
+  // Font url template: `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`
+  const fragments = fontUrl.substring(7); // Strip font://-prefix.
+  const [
+    fontFamily,
+    markIndexString,
+    symbolSizeString,
+    symbolFill,
+    strokeWidthString,
+    strokeColor,
+  ] = fragments.split('|');
+  const markIndex = Number(markIndexString);
+  const symbolSize = Math.round(Number(symbolSizeString)); // Round 'font size' to nearest integer.
+  const strokeWidth = Number(strokeWidthString);
 
-  // If no load is in progress, create a new loader and store it in the image loader cache before returning it.
-  loader = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
+    checkFontReady(fontFamily, symbolSize).then(() => {
+      // Render font symbol larger than it's size. This results in a crisper look.
+      // Do not scale too much, because you will lose the benefit of antialiasing 
+      // Antialiasing has a 'width' of 1 pixel and gets lost when scaled down back from a very large image.
+      const scaleFactor = 2 * DEVICE_PIXEL_RATIO;
+
+      const canvas = renderFontSymbolToCanvas(
+        fontFamily,
+        markIndex,
+        symbolSize,
+        symbolFill,
+        strokeWidth,
+        strokeColor,
+        scaleFactor
+      );
+
+      canvas.toBlob(blob => {
+        const objectUrl = URL.createObjectURL(blob);
+
+        const image = new Image();
+        image.onload = () => {
+          setCachedImage(fontUrl, {
+            url: fontUrl,
+            image,
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+          });
+          setImageLoadingState(fontUrl, IMAGE_LOADED);
+
+          // Object url no longer needed after 'loading' the canvas pixels into the image.
+          URL.revokeObjectURL(objectUrl);
+
+          resolve(fontUrl);
+        };
+
+        image.onerror = () => {
+          setImageLoadingState(fontUrl, IMAGE_ERROR);
+          reject();
+        };
+
+        image.src = objectUrl;
+      });
+    });
+  });
+}
+
+/**
+ * @private
+ * Create an image loader function that takes an image url and returns a promise that resolves with a HTMLImageElement.
+ * The loader function also updates the internal image loading state.
+ * @param {string} imageUrl Image url.
+ * @returns {Promise<HTMLImageElement>} A promise that resolves with the loaded image.
+ */
+function getImageUrlLoader(imageUrl) {
+  return new Promise((resolve, reject) => {
     const image = new Image();
 
     image.onload = () => {
@@ -166,6 +234,33 @@ function getCachingImageLoader(imageUrl) {
 
     image.src = imageUrl;
   });
+}
+
+/**
+ * @private
+ * Creates a promise that loads an image and store it in the image cache.
+ * Calling this method with the same image url twice will return the loader promise
+ * that was created when this method was called the first time for that specific image url.
+ * @param {string} imageUrl Image url.
+ * @returns {Promise} A promise that resolves when the image is loaded and fails when the
+ * image didn't load correctly.
+ */
+function getCachingImageLoader(imageUrl) {
+  // Check of a load is already in progress for an image.
+  // If so, return the loader.
+  let loader = getImageLoader(imageUrl);
+  if (loader) {
+    return loader;
+  }
+
+  // Image url's starting with 'font://' are font symbol url's.
+  // Instead of loading these, create them by drawing a font symbol on a canvas and give it back as an image.
+  if (imageUrl.indexOf('font://') === 0) {
+    loader = getFontSymbolImageLoader(imageUrl);
+  } else {
+    // If no load is in progress, create a new loader and store it in the image loader cache before returning it.
+    loader = getImageUrlLoader(imageUrl);
+  }
 
   // Cache the new image loader and return it.
   setImageLoadingState(imageUrl, IMAGE_LOADING);

@@ -1,5 +1,5 @@
-/* Version: 0.7.3 - March 2, 2026 08:52:48 */
-var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, has, Polygon, MultiPolygon, Text, MultiPoint) {
+/* Version: 0.7.3 - March 11, 2026 16:15:06 */
+var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
   const IMAGE_LOADING = 'IMAGE_LOADING';
@@ -24,6 +24,229 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   // None = number is dimensionless.
   const UOM_NONE = 'none';
   const METRES_PER_FOOT = 0.3048;
+
+  // This module contains a global registry of function implementations,
+  // and functions to register new function implementations.
+
+  const FunctionCache = new Map();
+
+  /**
+   * Register a function implementation by name. When evaluating the function, it will be called
+   * with the values of the parameter elements evaluated for a single feature.
+   * If the function returns null, the fallback value given in the SLD function element will be used instead.
+   *
+   * Note: take care of these possible gotcha's in the function implementation.
+   * * The function will be called with the number of parameters given in the SLD function element.
+   *   This number can be different from the expected number of arguments.
+   * * Try to avoid throwing errors from the function implementation and return null if possible.
+   * * Literal values will always be provided as strings. Convert numeric parameters to numbers yourself.
+   * * Geometry valued parameters will be provided as OpenLayers geometry instances. Do not mutate these!
+   * @param {string} functionName Function name.
+   * @param {Function} implementation The function implementation.
+   */
+  function registerFunction(functionName, implementation) {
+    if (typeof implementation !== 'function') {
+      throw new Error('Function implementation is not a function');
+    }
+    FunctionCache[functionName] = implementation;
+  }
+
+  /**
+   * Get a function implementation by name.
+   * @param {string} functionName Function name.
+   * @returns {Function} The function implementation, or null if no function with the given
+   * name has been registered yet.
+   */
+  function getFunction(functionName) {
+    return FunctionCache[functionName] || null;
+  }
+
+  /**
+   * @private
+   * @param {any} input Input value.
+   * @returns The string representation of the input value.
+   * It will always return a valid string and return an empty string for null and undefined values.
+   * Other types of input will be returned as their type name.
+   */
+  function asString(input) {
+    if (input === null) {
+      return '';
+    }
+    const inputType = typeof input;
+    switch (inputType) {
+      case 'string':
+        return input;
+      case 'number':
+      case 'bigint':
+      case 'boolean':
+        return input.toString();
+      case 'undefined':
+        return '';
+      default:
+        // object, function, symbol, bigint, boolean, other?
+        return inputType;
+    }
+  }
+
+  /**
+   * Maps geometry type string to the dimension of a geometry.
+   * Multipart geometries will return the dimension of their separate parts.
+   * @private
+   * @param {string} geometryType OpenLayers Geometry type name.
+   * @returns {number} The dimension of the geometry. Will return -1 for GeometryCollection or unknown type.
+   */
+  function dimensionFromGeometryType(geometryType) {
+    switch (geometryType) {
+      case 'Point':
+      case 'MultiPoint':
+        return 0;
+      case 'LineString':
+      case 'LinearRing':
+      case 'Circle':
+      case 'MultiLineString':
+        return 1;
+      case 'Polygon':
+      case 'MultiPolygon':
+        return 2;
+      default:
+        return -1;
+    }
+  }
+
+  // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
+  // Constant expressions are returned as-is.
+
+
+  /**
+   * Check if an expression depends on feature properties.
+   * @private
+   * @param {Expression} expression SLDReader expression object.
+   * @returns {bool} Returns true if the expression depends on feature properties.
+   */
+  function isDynamicExpression(expression) {
+    // Expressions whose pixel value changes with resolution are dynamic by definition.
+    if (expression && (expression.uom === UOM_METRE || expression.uom === UOM_FOOT)) {
+      return true;
+    }
+    switch ((expression || {}).type) {
+      case 'expression':
+        // Expressions with all literal child values are already concatenated into a static string,
+        // so any expression that survives that process has at least one non-literal child
+        // and therefore possibly dynamic component.
+        return true;
+      case 'literal':
+        return false;
+      case 'propertyname':
+        return true;
+      case 'function':
+        // Note: assuming function expressions are dynamic is correct in most practical cases.
+        // A more accurate implementation would be that a function expression is static if:
+        // * The function is idempotent. You cannot tell from the implementation, unless the implementor marks it as such.
+        // * All function parameter expressions are static.
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * @private
+   * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
+   * Constant expressions are returned as-is.
+   * @param {Expression} expression SLD object expression.
+   * @param {ol/feature} feature OpenLayers feature instance.
+   * @param {EvaluationContext} context Evaluation context.
+   * @param {any} defaultValue Optional default value to use when feature is null.
+   * Signature (feature, propertyName) => property value.
+   */
+  function evaluate(expression, feature, context, defaultValue = null) {
+    // Determine the value of the expression.
+    let value = null;
+    const jsType = typeof expression;
+    if (jsType === 'string' || jsType === 'number' || jsType === 'undefined' || jsType === 'boolean' || expression === null) {
+      // Expression value equals the expression itself if it's a native javascript type.
+      value = expression;
+    } else if (expression.type === 'literal') {
+      // Take expression value directly from literal type expression.
+      value = expression.value;
+    } else if (expression.type === 'propertyname') {
+      // Expression value is taken from input feature.
+      // If feature is null/undefined, use default value instead.
+      const propertyName = expression.value;
+      if (feature) {
+        // If the property name equals the geometry field name, return the feature geometry.
+        if (typeof feature.getGeometryName === 'function' && propertyName === feature.getGeometryName()) {
+          value = feature.getGeometry();
+        } else {
+          value = context.getProperty(feature, propertyName);
+        }
+      } else {
+        value = defaultValue;
+      }
+    } else if (expression.type === 'expression') {
+      // Expression value is the concatenation of all child expession values.
+      if (expression.children.length === 1) {
+        value = evaluate(expression.children[0], feature, context, defaultValue);
+      } else {
+        // In case of multiple child expressions, concatenate the evaluated child results.
+        const childValues = [];
+        for (let k = 0; k < expression.children.length; k += 1) {
+          childValues.push(
+          // Do not use default values when evaluating children. Only apply default is
+          // the concatenated result is empty.
+          evaluate(expression.children[k], feature, context, null));
+        }
+        value = childValues.join('');
+      }
+    } else if (expression.type === 'function' && expression.name === 'dimension' && feature instanceof RenderFeature) {
+      // Special shortcut for the dimension function when used on a RenderFeature (vector tiles),
+      // which ignores the geometry name parameter and directly outputs the dimension.
+      value = dimensionFromGeometryType(feature.getType());
+    } else if (expression.type === 'function') {
+      const func = getFunction(expression.name);
+      if (!func) {
+        value = expression.fallbackValue;
+      } else {
+        try {
+          // evaluate parameter expressions.
+          const paramValues = expression.params.map(paramExpression => evaluate(paramExpression, feature, context));
+          value = func(...paramValues);
+        } catch {
+          value = expression.fallbackValue;
+        }
+      }
+    }
+
+    // Do not substitute default value if the value is numeric zero.
+    if (value === 0) {
+      return value;
+    }
+
+    // Check if value is empty/null. If so, return default value.
+    if (value === null || typeof value === 'undefined' || value === '' || Number.isNaN(value)) {
+      value = defaultValue;
+    }
+    if (expression) {
+      // Convert value to number if expression is flagged as numeric.
+      if (expression.typeHint === 'number') {
+        value = Number(value);
+        if (Number.isNaN(value)) {
+          value = defaultValue;
+        }
+      }
+      // Convert value to pixels in case of uom = metre or feet.
+      if (expression.uom === UOM_FOOT) {
+        // Convert feet to metres.
+        value *= METRES_PER_FOOT;
+      }
+      if (expression.uom === UOM_METRE || expression.uom === UOM_FOOT) {
+        // Convert metres to pixels.
+        const scaleFactor = context ? context.resolution : 1;
+        value /= scaleFactor;
+      }
+    }
+    return value;
+  }
 
   /**
    * Factory methods for filterelements
@@ -298,6 +521,8 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
   const dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
   const parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
   const paramReplacerRegex = /param\(([^)]*)\)/g;
+  const geoserverFontSymbolRegex = /:\/\/([^#]+?)#([0-9xa-fA-F]*?)$/;
+  const fontFamilyRegex = /:\/\/([\w\s]+).*/;
 
   /**
    * Generic parser for elements with maxOccurs > 1
@@ -322,10 +547,10 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @param {Element} node the xml element to parse
    * @param {object} obj  the object to modify
    * @param {string} prop key on obj to hold array
+   * @param {string} options Parse options.
    */
   function addSymbolizer(node, obj, prop, options) {
     const property = prop.toLowerCase();
-    obj[property] = obj[property] || [];
     const item = {
       type: 'symbolizer'
     };
@@ -358,7 +583,74 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       ...options,
       uom: item.uom
     });
-    obj[property].push(item);
+
+    // Convert point symbolizers using a font symbol to text symbolizers.
+    if (property === 'pointsymbolizer' && item?.graphic?.mark?.fontfamily && item?.graphic?.mark?.markindex > 0) {
+      //TODO: TL;DR: move text symbolizer and external graphic conversion to separate functions.
+      if (options.fontSymbolConversion === 'TextSymbolizer') {
+        obj.textsymbolizer = obj.textsymbolizer ?? [];
+        const fontTextSymbolizer = {
+          uom: item.uom,
+          type: item.type,
+          label: String.fromCharCode(item.graphic.mark.markindex),
+          labelplacement: {
+            pointplacement: {
+              anchorpoint: {
+                anchorpointx: 0.5,
+                anchorpointy: 0.5
+              }
+            }
+          },
+          font: {
+            styling: {
+              fontFamily: item.graphic.mark.fontfamily
+            }
+          }
+        };
+        const fill = item.graphic.mark?.fill;
+        if (fill) {
+          fontTextSymbolizer.fill = item.graphic.mark.fill;
+        }
+        const stroke = item.graphic.mark?.stroke;
+        if (stroke?.styling) {
+          fontTextSymbolizer.halo = {
+            radius: stroke.styling.strokeWidth ?? 1
+          };
+          if (stroke?.styling?.stroke) {
+            fontTextSymbolizer.halo.fill = {
+              styling: {
+                fill: stroke.styling.stroke
+              }
+            };
+          }
+        }
+        if (item.graphic?.size) {
+          fontTextSymbolizer.font.styling.fontSize = item.graphic.size;
+        }
+        if (item?.graphic?.rotation) {
+          if (!fontTextSymbolizer.labelplacement?.pointplacement) {
+            fontTextSymbolizer.labelplacement = {
+              pointplacement: {}
+            };
+          }
+          fontTextSymbolizer.labelplacement.pointplacement.rotation = item.graphic.rotation;
+        }
+        if (item?.graphic?.displacement) {
+          if (!fontTextSymbolizer.labelplacement?.pointplacement) {
+            fontTextSymbolizer.labelplacement = {
+              pointplacement: {}
+            };
+          }
+          fontTextSymbolizer.labelplacement.pointplacement.displacement = item.graphic.displacement;
+        }
+        obj.textsymbolizer.push(fontTextSymbolizer);
+      } else if (options.fontSymbolConversion !== 'ExternalGraphic') {
+        throw new Error(`Invalid font symbol conversion option: ${options.fontSymbolConversion}. Expected one of 'ExternalGraphic' or 'TextSymbolizer'.`);
+      }
+    } else {
+      obj[property] = obj[property] ?? [];
+      obj[property].push(item);
+    }
   }
 
   /**
@@ -375,10 +667,85 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     obj[property] = {};
     readNode(node, obj[property], options);
   }
+
+  /**
+   * Parser specific for Mark elements with code for font symbol handling.
+   * @private
+   * @param {Element} node the xml element to parse
+   * @param {object} obj  the object to modify
+   * @param {string} prop key on obj to hold empty object
+   * @param {object} options Parse options.
+   */
+  function addMark(node, obj, prop, options) {
+    const mark = {};
+    readNode(node, mark, options);
+
+    // Check for font symbol.
+    // If mark has a wellknownname of format `ttf://{fontfamily}#{markindex}`, it's GeoServer syntax.
+    // In this case, parse font family and mark index.
+    const geoserverFontSymbolMatch = (mark.wellknownname ?? '').match(geoserverFontSymbolRegex);
+    if (Array.isArray(geoserverFontSymbolMatch) && geoserverFontSymbolMatch.length === 3) {
+      const fontfamily = geoserverFontSymbolMatch[1];
+      const markIndexString = geoserverFontSymbolMatch[2];
+      const markindex = Number.parseInt(markIndexString);
+      if (!Number.isNaN(markindex)) {
+        mark.fontfamily = fontfamily;
+        mark.markindex = markindex;
+        delete mark.wellknownname;
+      }
+    }
+
+    // If mark has an onlineresource and a markindex, it's a font symbol according to Symbology Encoding 1.1.0 spec.
+    // In this case, extract font family from onlineresource and copy markindex as-is.
+    if (mark.markindex && mark.onlineresource) {
+      mark.markindex = Number.parseInt(mark.markindex);
+
+      // Parse font family from onlineresource.
+      const fontFamilyMatch = mark.onlineresource.match(fontFamilyRegex);
+      if (Array.isArray(fontFamilyMatch) && fontFamilyMatch.length > 1) {
+        mark.fontfamily = fontFamilyMatch[1];
+      }
+    }
+    obj.mark = mark;
+  }
+  function convertFontSymbolGraphicToExternalGraphic(graphic) {
+    // Join all relevant style info into a single custom font:// url.
+    // template: `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`
+    // Note: strokeColor will be set to '-' if there is no stroke.
+    const fontFamily = graphic.mark.fontfamily;
+    const markIndex = graphic.mark.markindex;
+    const symbolSize = evaluate(graphic?.size, null, null, DEFAULT_EXTERNALGRAPHIC_SIZE);
+    const symbolFill = evaluate(graphic?.mark?.fill?.styling?.fill, null, null, '#000000');
+    const strokeWidth = evaluate(graphic?.mark?.stroke?.styling?.strokeWidth, null, null, 1);
+    // Note: '-' for stroke color means do not draw stroke.
+    const strokeColor = evaluate(graphic?.mark?.stroke?.styling?.stroke, null, null, '-');
+    const fontUrl = `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`;
+    const fontSymbolGraphic = {
+      externalgraphic: {
+        onlineresource: fontUrl
+      },
+      size: symbolSize
+    };
+    if (graphic?.rotation) {
+      fontSymbolGraphic.rotation = graphic.rotation;
+    }
+    if (graphic?.displacement) {
+      fontSymbolGraphic.displacement = graphic.displacement;
+    }
+    return fontSymbolGraphic;
+  }
   function addGraphicProp(node, obj, prop, options) {
-    const property = prop.toLowerCase();
-    obj[property] = {};
-    readGraphicNode(node, obj[property], options);
+    const graphic = {};
+    readGraphicNode(node, graphic, options);
+
+    // If graphic is a font symbol mark, convert it to an external graphic.
+    if (graphic?.mark?.fontfamily && graphic?.mark?.markindex > 0 && options.fontSymbolConversion === 'ExternalGraphic') {
+      // Convert font symbol to external graphic.
+      const convertedFontSymbolMark = convertFontSymbolGraphicToExternalGraphic(graphic);
+      obj.graphic = convertedFontSymbolMark;
+    } else {
+      obj.graphic = graphic;
+    }
   }
   function addGraphicFillProp(node, obj, prop, options) {
     const property = prop.toLowerCase();
@@ -786,7 +1153,7 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     Format: addPropWithTextContent,
     Gap: addNumericParameterValueProp,
     InitialGap: addNumericParameterValueProp,
-    Mark: addProp,
+    Mark: addMark,
     Label: (node, obj, prop, options) => addParameterValueProp(node, obj, prop, {
       ...options,
       skipEmptyNodes: false
@@ -924,7 +1291,8 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
     const rootNode = doc.documentElement;
     result.version = rootNode.getAttribute('version');
     const defaultParseOptions = {
-      compatibilityMode: 'OGC'
+      compatibilityMode: 'OGC',
+      fontSymbolConversion: 'ExternalGraphic'
     };
     readNode(rootNode, result, {
       ...defaultParseOptions,
@@ -1022,229 +1390,6 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @property {Expression} graphic.size
    * @property {Expression} graphic.rotation
    * */
-
-  // This module contains a global registry of function implementations,
-  // and functions to register new function implementations.
-
-  const FunctionCache = new Map();
-
-  /**
-   * Register a function implementation by name. When evaluating the function, it will be called
-   * with the values of the parameter elements evaluated for a single feature.
-   * If the function returns null, the fallback value given in the SLD function element will be used instead.
-   *
-   * Note: take care of these possible gotcha's in the function implementation.
-   * * The function will be called with the number of parameters given in the SLD function element.
-   *   This number can be different from the expected number of arguments.
-   * * Try to avoid throwing errors from the function implementation and return null if possible.
-   * * Literal values will always be provided as strings. Convert numeric parameters to numbers yourself.
-   * * Geometry valued parameters will be provided as OpenLayers geometry instances. Do not mutate these!
-   * @param {string} functionName Function name.
-   * @param {Function} implementation The function implementation.
-   */
-  function registerFunction(functionName, implementation) {
-    if (typeof implementation !== 'function') {
-      throw new Error('Function implementation is not a function');
-    }
-    FunctionCache[functionName] = implementation;
-  }
-
-  /**
-   * Get a function implementation by name.
-   * @param {string} functionName Function name.
-   * @returns {Function} The function implementation, or null if no function with the given
-   * name has been registered yet.
-   */
-  function getFunction(functionName) {
-    return FunctionCache[functionName] || null;
-  }
-
-  /**
-   * @private
-   * @param {any} input Input value.
-   * @returns The string representation of the input value.
-   * It will always return a valid string and return an empty string for null and undefined values.
-   * Other types of input will be returned as their type name.
-   */
-  function asString(input) {
-    if (input === null) {
-      return '';
-    }
-    const inputType = typeof input;
-    switch (inputType) {
-      case 'string':
-        return input;
-      case 'number':
-      case 'bigint':
-      case 'boolean':
-        return input.toString();
-      case 'undefined':
-        return '';
-      default:
-        // object, function, symbol, bigint, boolean, other?
-        return inputType;
-    }
-  }
-
-  /**
-   * Maps geometry type string to the dimension of a geometry.
-   * Multipart geometries will return the dimension of their separate parts.
-   * @private
-   * @param {string} geometryType OpenLayers Geometry type name.
-   * @returns {number} The dimension of the geometry. Will return -1 for GeometryCollection or unknown type.
-   */
-  function dimensionFromGeometryType(geometryType) {
-    switch (geometryType) {
-      case 'Point':
-      case 'MultiPoint':
-        return 0;
-      case 'LineString':
-      case 'LinearRing':
-      case 'Circle':
-      case 'MultiLineString':
-        return 1;
-      case 'Polygon':
-      case 'MultiPolygon':
-        return 2;
-      default:
-        return -1;
-    }
-  }
-
-  // This module contains an evaluate function that takes an SLD expression and a feature and outputs the value for that feature.
-  // Constant expressions are returned as-is.
-
-
-  /**
-   * Check if an expression depends on feature properties.
-   * @private
-   * @param {Expression} expression SLDReader expression object.
-   * @returns {bool} Returns true if the expression depends on feature properties.
-   */
-  function isDynamicExpression(expression) {
-    // Expressions whose pixel value changes with resolution are dynamic by definition.
-    if (expression && (expression.uom === UOM_METRE || expression.uom === UOM_FOOT)) {
-      return true;
-    }
-    switch ((expression || {}).type) {
-      case 'expression':
-        // Expressions with all literal child values are already concatenated into a static string,
-        // so any expression that survives that process has at least one non-literal child
-        // and therefore possibly dynamic component.
-        return true;
-      case 'literal':
-        return false;
-      case 'propertyname':
-        return true;
-      case 'function':
-        // Note: assuming function expressions are dynamic is correct in most practical cases.
-        // A more accurate implementation would be that a function expression is static if:
-        // * The function is idempotent. You cannot tell from the implementation, unless the implementor marks it as such.
-        // * All function parameter expressions are static.
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * @private
-   * This function takes an SLD expression and an OL feature and outputs the expression value for that feature.
-   * Constant expressions are returned as-is.
-   * @param {Expression} expression SLD object expression.
-   * @param {ol/feature} feature OpenLayers feature instance.
-   * @param {EvaluationContext} context Evaluation context.
-   * @param {any} defaultValue Optional default value to use when feature is null.
-   * Signature (feature, propertyName) => property value.
-   */
-  function evaluate(expression, feature, context, defaultValue = null) {
-    // Determine the value of the expression.
-    let value = null;
-    const jsType = typeof expression;
-    if (jsType === 'string' || jsType === 'number' || jsType === 'undefined' || jsType === 'boolean' || expression === null) {
-      // Expression value equals the expression itself if it's a native javascript type.
-      value = expression;
-    } else if (expression.type === 'literal') {
-      // Take expression value directly from literal type expression.
-      value = expression.value;
-    } else if (expression.type === 'propertyname') {
-      // Expression value is taken from input feature.
-      // If feature is null/undefined, use default value instead.
-      const propertyName = expression.value;
-      if (feature) {
-        // If the property name equals the geometry field name, return the feature geometry.
-        if (typeof feature.getGeometryName === 'function' && propertyName === feature.getGeometryName()) {
-          value = feature.getGeometry();
-        } else {
-          value = context.getProperty(feature, propertyName);
-        }
-      } else {
-        value = defaultValue;
-      }
-    } else if (expression.type === 'expression') {
-      // Expression value is the concatenation of all child expession values.
-      if (expression.children.length === 1) {
-        value = evaluate(expression.children[0], feature, context, defaultValue);
-      } else {
-        // In case of multiple child expressions, concatenate the evaluated child results.
-        const childValues = [];
-        for (let k = 0; k < expression.children.length; k += 1) {
-          childValues.push(
-          // Do not use default values when evaluating children. Only apply default is
-          // the concatenated result is empty.
-          evaluate(expression.children[k], feature, context, null));
-        }
-        value = childValues.join('');
-      }
-    } else if (expression.type === 'function' && expression.name === 'dimension' && feature instanceof RenderFeature) {
-      // Special shortcut for the dimension function when used on a RenderFeature (vector tiles),
-      // which ignores the geometry name parameter and directly outputs the dimension.
-      value = dimensionFromGeometryType(feature.getType());
-    } else if (expression.type === 'function') {
-      const func = getFunction(expression.name);
-      if (!func) {
-        value = expression.fallbackValue;
-      } else {
-        try {
-          // evaluate parameter expressions.
-          const paramValues = expression.params.map(paramExpression => evaluate(paramExpression, feature, context));
-          value = func(...paramValues);
-        } catch {
-          value = expression.fallbackValue;
-        }
-      }
-    }
-
-    // Do not substitute default value if the value is numeric zero.
-    if (value === 0) {
-      return value;
-    }
-
-    // Check if value is empty/null. If so, return default value.
-    if (value === null || typeof value === 'undefined' || value === '' || Number.isNaN(value)) {
-      value = defaultValue;
-    }
-    if (expression) {
-      // Convert value to number if expression is flagged as numeric.
-      if (expression.typeHint === 'number') {
-        value = Number(value);
-        if (Number.isNaN(value)) {
-          value = defaultValue;
-        }
-      }
-      // Convert value to pixels in case of uom = metre or feet.
-      if (expression.uom === UOM_FOOT) {
-        // Convert feet to metres.
-        value *= METRES_PER_FOOT;
-      }
-      if (expression.uom === UOM_METRE || expression.uom === UOM_FOOT) {
-        // Convert metres to pixels.
-        const scaleFactor = context ? context.resolution : 1;
-        value /= scaleFactor;
-      }
-    }
-    return value;
-  }
 
   function isNullOrUndefined(value) {
     return value == null;
@@ -1707,6 +1852,55 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
    * @property {TextSymbolizer[]} textSymbolizers  textsymbolizers
    */
 
+  /**
+   * Render a single font character as an HTMLCanvasElement.
+   * @param {string} fontFamily Font family.
+   * @param {integer} markIndex Mark index.
+   * @param {integer} size Symbol size in pixels.
+   * @param {string} fillColor Font symbol color.
+   * @param {double} strokeWidth Font symbol stroke outline with in pixels.
+   * @param {string} strokeColor Font symbol stroke outline color. When set to '-', do not render a stroke.
+   * @param {integer} [scaleFactor] Scale returned image by scaleFactor. Default 1 (no scaling).
+   * @returns {HTMLCanvasElement} An HTMLCanvasElement containing the rendered font symbol.
+   */
+  function renderFontSymbolToCanvas(fontFamily, markIndex, size, fillColor, strokeWidth, strokeColor, scaleFactor = 1) {
+    // Draw character on a canvas.
+    const symbolText = String.fromCharCode(markIndex);
+    const symbolSize = size * scaleFactor;
+    const canvasSize = symbolSize;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    const context = canvas.getContext('2d');
+
+    // Set font and text alignment for predictable placement.
+    let fontSize = symbolSize;
+    context.font = `${fontSize}px ${fontFamily}`;
+    context.lineCap = 'round';
+    context.direction = 'ltr';
+    context.textBaseline = 'top';
+    context.textAlign = 'center';
+
+    // Symbol width may larger than the font size. In that case, scale the symbol so it fits within the canvas bounding box.
+    let textMetrics = context.measureText(symbolText);
+    if (textMetrics.width > symbolSize) {
+      fontSize = Math.round(fontSize * (fontSize / textMetrics.width));
+      context.font = `${fontSize}px ${fontFamily}`;
+    }
+
+    // Apply symbol color.
+    context.fillStyle = fillColor;
+    context.fillText(symbolText, canvasSize / 2, 0);
+
+    // Apply symbol stroke (if there is one).
+    if (strokeColor && strokeColor !== '-') {
+      context.strokeStyle = strokeColor;
+      context.lineWidth = strokeWidth * scaleFactor;
+      context.strokeText(symbolText, canvasSize / 2, 0);
+    }
+    return canvas;
+  }
+
   // These are possible locations for an external graphic inside a symbolizer.
   const externalGraphicPaths = ['graphic.externalgraphic', 'stroke.graphicstroke.graphic.externalgraphic', 'fill.graphicfill.graphic.externalgraphic'];
 
@@ -1802,6 +1996,87 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       updateSymbolizerInvalidatedState(rule.polygonsymbolizer, imageUrl);
     });
   }
+  function checkFontReady(fontFamily, fontSize) {
+    if (typeof document.fonts?.load !== 'function') {
+      return Promise.resolve();
+    }
+    const fontString = `${fontSize}px ${fontFamily}`;
+    return document.fonts.load(fontString);
+  }
+
+  /**
+   * @private
+   * Load a custom font url describing a font symbol by rendering it to a canvas and returning it as an image.
+   * @param {string} fontUrl Custom 'font://' url describing the font symbol.
+   * @returns {Promise<HTMLImageElement>} A promise that resolves with the symbol rendered as an image.
+   */
+  function getFontSymbolImageLoader(fontUrl) {
+    // Font url template: `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`
+    const fragments = fontUrl.substring(7); // Strip font://-prefix.
+    const [fontFamily, markIndexString, symbolSizeString, symbolFill, strokeWidthString, strokeColor] = fragments.split('|');
+    const markIndex = Number(markIndexString);
+    const symbolSize = Math.round(Number(symbolSizeString)); // Round 'font size' to nearest integer.
+    const strokeWidth = Number(strokeWidthString);
+    return new Promise((resolve, reject) => {
+      checkFontReady(fontFamily, symbolSize).then(() => {
+        // Render font symbol larger than it's size. This results in a crisper look.
+        // Do not scale too much, because you will lose the benefit of antialiasing 
+        // Antialiasing has a 'width' of 1 pixel and gets lost when scaled down back from a very large image.
+        const scaleFactor = 2 * has.DEVICE_PIXEL_RATIO;
+        const canvas = renderFontSymbolToCanvas(fontFamily, markIndex, symbolSize, symbolFill, strokeWidth, strokeColor, scaleFactor);
+        canvas.toBlob(blob => {
+          const objectUrl = URL.createObjectURL(blob);
+          const image = new Image();
+          image.onload = () => {
+            setCachedImage(fontUrl, {
+              url: fontUrl,
+              image,
+              width: image.naturalWidth,
+              height: image.naturalHeight
+            });
+            setImageLoadingState(fontUrl, IMAGE_LOADED);
+
+            // Object url no longer needed after 'loading' the canvas pixels into the image.
+            URL.revokeObjectURL(objectUrl);
+            resolve(fontUrl);
+          };
+          image.onerror = () => {
+            setImageLoadingState(fontUrl, IMAGE_ERROR);
+            reject();
+          };
+          image.src = objectUrl;
+        });
+      });
+    });
+  }
+
+  /**
+   * @private
+   * Create an image loader function that takes an image url and returns a promise that resolves with a HTMLImageElement.
+   * The loader function also updates the internal image loading state.
+   * @param {string} imageUrl Image url.
+   * @returns {Promise<HTMLImageElement>} A promise that resolves with the loaded image.
+   */
+  function getImageUrlLoader(imageUrl) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        setCachedImage(imageUrl, {
+          url: imageUrl,
+          image,
+          width: image.naturalWidth,
+          height: image.naturalHeight
+        });
+        setImageLoadingState(imageUrl, IMAGE_LOADED);
+        resolve(imageUrl);
+      };
+      image.onerror = () => {
+        setImageLoadingState(imageUrl, IMAGE_ERROR);
+        reject();
+      };
+      image.src = imageUrl;
+    });
+  }
 
   /**
    * @private
@@ -1820,25 +2095,14 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
       return loader;
     }
 
-    // If no load is in progress, create a new loader and store it in the image loader cache before returning it.
-    loader = new Promise((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => {
-        setCachedImage(imageUrl, {
-          url: imageUrl,
-          image,
-          width: image.naturalWidth,
-          height: image.naturalHeight
-        });
-        setImageLoadingState(imageUrl, IMAGE_LOADED);
-        resolve(imageUrl);
-      };
-      image.onerror = () => {
-        setImageLoadingState(imageUrl, IMAGE_ERROR);
-        reject();
-      };
-      image.src = imageUrl;
-    });
+    // Image url's starting with 'font://' are font symbol url's.
+    // Instead of loading these, create them by drawing a font symbol on a canvas and give it back as an image.
+    if (imageUrl.indexOf('font://') === 0) {
+      loader = getFontSymbolImageLoader(imageUrl);
+    } else {
+      // If no load is in progress, create a new loader and store it in the image loader cache before returning it.
+      loader = getImageUrlLoader(imageUrl);
+    }
 
     // Cache the new image loader and return it.
     setImageLoadingState(imageUrl, IMAGE_LOADING);
@@ -4768,4 +5032,4 @@ var SLDReader = (function (exports, RenderFeature, Style, Icon, Fill, Stroke, Ci
 
   return exports;
 
-})({}, ol.render.Feature, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.color, ol.colorlike, ol.style.IconImageCache, ol.style.Image, ol.dom, ol.style.IconImage, ol.geom.LineString, ol.extent, ol.has, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.geom.MultiPoint);
+})({}, ol.render.Feature, ol.has, ol.style.Style, ol.style.Icon, ol.style.Fill, ol.style.Stroke, ol.style.Circle, ol.style.RegularShape, ol.render, ol.geom.Point, ol.color, ol.colorlike, ol.style.IconImageCache, ol.style.Image, ol.dom, ol.style.IconImage, ol.geom.LineString, ol.extent, ol.geom.Polygon, ol.geom.MultiPolygon, ol.style.Text, ol.geom.MultiPoint);

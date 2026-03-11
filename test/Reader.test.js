@@ -11,6 +11,7 @@ import { staticPolygonSymbolizerSld } from './data/static-polygon-symbolizer.sld
 import { dynamicPolygonSymbolizerSld } from './data/dynamic-polygon-symbolizer.sld';
 import { graphicStrokeVendorOption } from './data/graphicstroke-vendoroption.sld';
 import { qgisParametricSvg } from './data/qgis-parametric-svg.sld';
+import { fontSymbolsSld } from './data/font-symbols.sld';
 import { sldWithUom } from './data/sld-with-uom';
 
 import { UOM_METRE } from '../src/constants';
@@ -757,6 +758,135 @@ describe('SVG style parameters', () => {
     it('Polygon graphic fill stroke width always pixel', () => {
       const graphicFillMark = polygonSymbolizer.fill.graphicfill.graphic.mark;
       expect(graphicFillMark.stroke.styling.strokeWidth).to.equal(1);
+    });
+  });
+
+  describe('Font symbol marks', () => {
+    describe('Convert font symbol to ExternalGraphic during parsing', () => {
+      let style;
+      beforeEach(() => {
+        const parsedSld = Reader(fontSymbolsSld, {
+          fontSymbolConversion: 'ExternalGraphic',
+        });
+        [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      });
+
+      it('Parse font symbol mark according to Symbology Encoding 1.1.0 as external graphic', () => {
+        const rule = style.rules[0];
+        expect(rule.name).to.equal('Font Symbol SE 1.1.0');
+        const { pointsymbolizer } = rule;
+        const item = pointsymbolizer[0];
+        // font://{fontfamily}|{markindex}|{size}|{fill}|{strokewidth}|{stroke}
+        expect(item.graphic.externalgraphic.onlineresource).to.equal(
+          'font://Wingdings|77|14|#FF0000|3|#0000FF'
+        );
+        expect(item.graphic.size).to.equal(14);
+        expect(item.graphic.rotation).to.equal(45);
+        expect(item.graphic.displacement).to.deep.equal({
+          displacementx: 6,
+          displacementy: 7,
+        });
+      });
+
+      it('Parse Geoserver ttf:// WellKnownName mark as TextSymbolizer', () => {
+        const rule = style.rules[1];
+        expect(rule.name).to.equal('Font Symbol Geoserver');
+        const { pointsymbolizer } = rule;
+        const item = pointsymbolizer[0];
+        expect(item.graphic.externalgraphic.onlineresource).to.equal(
+          'font://Font Awesome 6 Pro Solid|979058|42|#880000|3|#000088'
+        );
+        //TODO: check size on item.graphic.
+      });
+
+      it('Use defaults for missing font symbol graphic properties', () => {
+        const rule = style.rules[2];
+        expect(rule.name).to.equal('Font symbol default values');
+        const { pointsymbolizer } = rule;
+        const item = pointsymbolizer[0];
+        // Default size: 10
+        // Default fill: #000000
+        // Absence of stroke is encoded as {strokewidth}|{stroke} --> 1|-.
+        expect(item.graphic.externalgraphic.onlineresource).to.equal(
+          'font://Webdings|33|16|#000000|1|-'
+        );
+      });
+
+      it('Use default values for dynamic font symbol graphic properties', () => {
+        const rule = style.rules[3];
+        expect(rule.name).to.equal('Font symbol defaults for dynamic values');
+        const { pointsymbolizer } = rule;
+        const item = pointsymbolizer[0];
+        expect(item.graphic.externalgraphic.onlineresource).to.equal(
+          'font://Webdings|33|16|#000000|1|-'
+        );
+      });
+    });
+
+    describe('Convert font symbol to TextSymbolizer during parsing', () => {
+      let style;
+      beforeEach(() => {
+        const parsedSld = Reader(fontSymbolsSld, {
+          fontSymbolConversion: 'TextSymbolizer',
+        });
+        [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      });
+
+      it('Parse font symbol mark according to Symbology Encoding 1.1.0 as textsymbolizer', () => {
+        const rule = style.rules[0];
+        expect(rule.name).to.equal('Font Symbol SE 1.1.0');
+        const { textsymbolizer } = rule;
+        const item = textsymbolizer[0];
+        expect(item.label).to.equal(String.fromCharCode(77));
+        expect(item.font.styling).to.deep.equal({
+          fontFamily: 'Wingdings',
+          fontSize: 14, // Graphic size becomes font size.
+        });
+        // Rotation is stored in label placement.
+        expect(item.labelplacement.pointplacement.rotation).to.equal(45);
+        // Symbol color becomes text fill color.
+        expect(item.fill.styling.fill).to.equal('#FF0000');
+        // Symbol stroke becomes text halo.
+        expect(item.halo.radius).to.equal(3);
+        expect(item.halo.fill.styling.fill).to.equal('#0000FF');
+      });
+
+      it('Parse Geoserver ttf:// WellKnownName mark as TextSymbolizer', () => {
+        const rule = style.rules[1];
+        expect(rule.name).to.equal('Font Symbol Geoserver');
+        const { textsymbolizer } = rule;
+        const item = textsymbolizer[0];
+        expect(item.label).to.equal(String.fromCharCode(979058));
+        expect(item.font.styling).to.deep.equal({
+          fontFamily: 'Font Awesome 6 Pro Solid',
+          fontSize: 42,
+        });
+      });
+    });
+
+    it('Font symbol are converted to ExternalGraphics by default', () => {
+      const parsedSld = Reader(fontSymbolsSld);
+      const [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      const rule = style.rules[0];
+      expect(rule.name).to.equal('Font Symbol SE 1.1.0');
+      const { pointsymbolizer } = rule;
+      const item = pointsymbolizer[0];
+      expect(item.graphic.externalgraphic.onlineresource).to.equal(
+        'font://Wingdings|77|14|#FF0000|3|#0000FF'
+      );
+    });
+
+    it('Font symbols inside GraphicStroke are converted to ExternalGraphics', () => {
+      const parsedSld = Reader(fontSymbolsSld);
+      const [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+      const rule = style.rules[4];
+      expect(rule.name).to.equal('GraphicStroke with font symbol');
+      const { linesymbolizer } = rule;
+      const { graphic } = linesymbolizer[0].stroke.graphicstroke;
+      expect(graphic.externalgraphic.onlineresource).to.equal(
+        'font://Webdings|33|32|#008800|2|#224422'
+      );
+      expect(graphic.size).to.equal(32);
     });
   });
 });

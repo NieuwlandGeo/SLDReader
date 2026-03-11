@@ -1,4 +1,11 @@
-import { UOM_METRE, UOM_FOOT, UOM_PIXEL, UOM_NONE } from '../constants';
+import {
+  UOM_METRE,
+  UOM_FOOT,
+  UOM_PIXEL,
+  UOM_NONE,
+  DEFAULT_EXTERNALGRAPHIC_SIZE,
+} from '../constants';
+import evaluate from '../olEvaluator';
 import createFilter from './filter';
 
 /**
@@ -17,6 +24,8 @@ const dimensionlessSvgProps = new Set(['strokeOpacity', 'fillOpacity']);
 
 const parametricSvgRegex = /^data:image\/svg\+xml;base64,(.*)(\?.*)/;
 const paramReplacerRegex = /param\(([^)]*)\)/g;
+const geoserverFontSymbolRegex = /:\/\/([^#]+?)#([0-9xa-fA-F]*?)$/;
+const fontFamilyRegex = /:\/\/([\w\s]+).*/;
 
 /**
  * Generic parser for elements with maxOccurs > 1
@@ -41,10 +50,10 @@ function addPropArray(node, obj, prop, options) {
  * @param {Element} node the xml element to parse
  * @param {object} obj  the object to modify
  * @param {string} prop key on obj to hold array
+ * @param {string} options Parse options.
  */
 function addSymbolizer(node, obj, prop, options) {
   const property = prop.toLowerCase();
-  obj[property] = obj[property] || [];
   const item = { type: 'symbolizer' };
 
   // Check and add if symbolizer node has uom attribute.
@@ -75,7 +84,85 @@ function addSymbolizer(node, obj, prop, options) {
   }
 
   readNode(node, item, { ...options, uom: item.uom });
-  obj[property].push(item);
+
+  // Convert point symbolizers using a font symbol to text symbolizers.
+  if (
+    property === 'pointsymbolizer' &&
+    item?.graphic?.mark?.fontfamily &&
+    item?.graphic?.mark?.markindex > 0
+  ) {
+    //TODO: TL;DR: move text symbolizer and external graphic conversion to separate functions.
+    if (options.fontSymbolConversion === 'TextSymbolizer') {
+      obj.textsymbolizer = obj.textsymbolizer ?? [];
+
+      const fontTextSymbolizer = {
+        uom: item.uom,
+        type: item.type,
+        label: String.fromCharCode(item.graphic.mark.markindex),
+        labelplacement: {
+          pointplacement: {
+            anchorpoint: {
+              anchorpointx: 0.5,
+              anchorpointy: 0.5,
+            },
+          },
+        },
+        font: {
+          styling: {
+            fontFamily: item.graphic.mark.fontfamily,
+          },
+        },
+      };
+
+      const fill = item.graphic.mark?.fill;
+      if (fill) {
+        fontTextSymbolizer.fill = item.graphic.mark.fill;
+      }
+
+      const stroke = item.graphic.mark?.stroke;
+      if (stroke?.styling) {
+        fontTextSymbolizer.halo = {
+          radius: stroke.styling.strokeWidth ?? 1,
+        };
+        if (stroke?.styling?.stroke) {
+          fontTextSymbolizer.halo.fill = {
+            styling: {
+              fill: stroke.styling.stroke,
+            },
+          };
+        }
+      }
+
+      if (item.graphic?.size) {
+        fontTextSymbolizer.font.styling.fontSize = item.graphic.size;
+      }
+
+      if (item?.graphic?.rotation) {
+        if (!fontTextSymbolizer.labelplacement?.pointplacement) {
+          fontTextSymbolizer.labelplacement = { pointplacement: {} };
+        }
+        fontTextSymbolizer.labelplacement.pointplacement.rotation =
+          item.graphic.rotation;
+      }
+
+      if (item?.graphic?.displacement) {
+        if (!fontTextSymbolizer.labelplacement?.pointplacement) {
+          fontTextSymbolizer.labelplacement = { pointplacement: {} };
+        }
+        fontTextSymbolizer.labelplacement.pointplacement.displacement =
+          item.graphic.displacement;
+      }
+
+      obj.textsymbolizer.push(fontTextSymbolizer);
+    } else if (options.fontSymbolConversion !== 'ExternalGraphic') {
+      throw new Error(
+        `Invalid font symbol conversion option: ${options.fontSymbolConversion}. Expected one of 'ExternalGraphic' or 'TextSymbolizer'.`
+      );
+    }
+  } else {
+    obj[property] = obj[property] ?? [];
+    obj[property].push(item);
+  }
 }
 
 /**
@@ -93,10 +180,122 @@ function addProp(node, obj, prop, options) {
   readNode(node, obj[property], options);
 }
 
+/**
+ * Parser specific for Mark elements with code for font symbol handling.
+ * @private
+ * @param {Element} node the xml element to parse
+ * @param {object} obj  the object to modify
+ * @param {string} prop key on obj to hold empty object
+ * @param {object} options Parse options.
+ */
+function addMark(node, obj, prop, options) {
+  const mark = {};
+  readNode(node, mark, options);
+
+  // Check for font symbol.
+  // If mark has a wellknownname of format `ttf://{fontfamily}#{markindex}`, it's GeoServer syntax.
+  // In this case, parse font family and mark index.
+  const geoserverFontSymbolMatch = (mark.wellknownname ?? '').match(
+    geoserverFontSymbolRegex
+  );
+  if (
+    Array.isArray(geoserverFontSymbolMatch) &&
+    geoserverFontSymbolMatch.length === 3
+  ) {
+    const fontfamily = geoserverFontSymbolMatch[1];
+    const markIndexString = geoserverFontSymbolMatch[2];
+    const markindex = Number.parseInt(markIndexString);
+    if (!Number.isNaN(markindex)) {
+      mark.fontfamily = fontfamily;
+      mark.markindex = markindex;
+      delete mark.wellknownname;
+    }
+  }
+
+  // If mark has an onlineresource and a markindex, it's a font symbol according to Symbology Encoding 1.1.0 spec.
+  // In this case, extract font family from onlineresource and copy markindex as-is.
+  if (mark.markindex && mark.onlineresource) {
+    mark.markindex = Number.parseInt(mark.markindex);
+
+    // Parse font family from onlineresource.
+    const fontFamilyMatch = mark.onlineresource.match(fontFamilyRegex);
+    if (Array.isArray(fontFamilyMatch) && fontFamilyMatch.length > 1) {
+      mark.fontfamily = fontFamilyMatch[1];
+    }
+  }
+
+  obj.mark = mark;
+}
+
+function convertFontSymbolGraphicToExternalGraphic(graphic) {
+  // Join all relevant style info into a single custom font:// url.
+  // template: `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`
+  // Note: strokeColor will be set to '-' if there is no stroke.
+  const fontFamily = graphic.mark.fontfamily;
+  const markIndex = graphic.mark.markindex;
+  const symbolSize = evaluate(
+    graphic?.size,
+    null,
+    null,
+    DEFAULT_EXTERNALGRAPHIC_SIZE
+  );
+  const symbolFill = evaluate(
+    graphic?.mark?.fill?.styling?.fill,
+    null,
+    null,
+    '#000000'
+  );
+  const strokeWidth = evaluate(
+    graphic?.mark?.stroke?.styling?.strokeWidth,
+    null,
+    null,
+    1
+  );
+  // Note: '-' for stroke color means do not draw stroke.
+  const strokeColor = evaluate(
+    graphic?.mark?.stroke?.styling?.stroke,
+    null,
+    null,
+    '-'
+  );
+
+  const fontUrl = `font://${fontFamily}|${markIndex}|${symbolSize}|${symbolFill}|${strokeWidth}|${strokeColor}`;
+
+  const fontSymbolGraphic = {
+    externalgraphic: {
+      onlineresource: fontUrl,
+    },
+    size: symbolSize,
+  };
+
+  if (graphic?.rotation) {
+    fontSymbolGraphic.rotation = graphic.rotation;
+  }
+
+  if (graphic?.displacement) {
+    fontSymbolGraphic.displacement = graphic.displacement;
+  }
+
+  return fontSymbolGraphic;
+}
+
 function addGraphicProp(node, obj, prop, options) {
-  const property = prop.toLowerCase();
-  obj[property] = {};
-  readGraphicNode(node, obj[property], options);
+  const graphic = {};
+  readGraphicNode(node, graphic, options);
+
+  // If graphic is a font symbol mark, convert it to an external graphic.
+  if (
+    graphic?.mark?.fontfamily &&
+    graphic?.mark?.markindex > 0 &&
+    options.fontSymbolConversion === 'ExternalGraphic'
+  ) {
+    // Convert font symbol to external graphic.
+    const convertedFontSymbolMark =
+      convertFontSymbolGraphicToExternalGraphic(graphic);
+    obj.graphic = convertedFontSymbolMark;
+  } else {
+    obj.graphic = graphic;
+  }
 }
 
 function addGraphicFillProp(node, obj, prop, options) {
@@ -575,7 +774,7 @@ const SymbParsers = {
   Format: addPropWithTextContent,
   Gap: addNumericParameterValueProp,
   InitialGap: addNumericParameterValueProp,
-  Mark: addProp,
+  Mark: addMark,
   Label: (node, obj, prop, options) =>
     addParameterValueProp(node, obj, prop, {
       ...options,
@@ -723,6 +922,7 @@ export default function Reader(sld, options) {
 
   const defaultParseOptions = {
     compatibilityMode: 'OGC',
+    fontSymbolConversion: 'ExternalGraphic',
   };
 
   readNode(rootNode, result, { ...defaultParseOptions, ...options });
