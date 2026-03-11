@@ -18,23 +18,43 @@ export function renderFontSymbolToCanvas(
   strokeColor,
   scaleFactor = 1
 ) {
-  // TEST AREA
+  // Draw character on a canvas.
+  const symbolText = String.fromCharCode(markIndex);
+  const symbolSize = size * scaleFactor;
+  const canvasSize = symbolSize;
+
   const canvas = document.createElement('canvas');
-  const width = size * scaleFactor;
-  const height = size * scaleFactor;
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = canvasSize;
+  canvas.height = canvasSize;
+
   const context = canvas.getContext('2d');
 
-  context.fillStyle = fillColor;
-  context.arc(width / 2, height / 2, width / 3, 0, 2 * Math.PI);
-  context.fill();
+  // Set font and text alignment for predictable placement.
+  let fontSize = symbolSize;
+  context.font = `${fontSize}px ${fontFamily}`;
+  context.lineCap = 'round';
+  context.direction = 'ltr';
+  context.textBaseline = 'top';
+  context.textAlign = 'center';
 
+  // Symbol width may larger than the font size. In that case, scale the symbol so it fits within the canvas bounding box.
+  let textMetrics = context.measureText(symbolText);
+  if (textMetrics.width > symbolSize) {
+    fontSize = Math.round(
+      fontSize * (fontSize / textMetrics.width)
+    );
+    context.font = `${fontSize}px ${fontFamily}`;
+  }
+
+  // Apply symbol color.
+  context.fillStyle = fillColor;
+  context.fillText(symbolText, canvasSize / 2, 0);
+
+  // Apply symbol stroke (if there is one).
   if (strokeColor && strokeColor !== '-') {
     context.strokeStyle = strokeColor;
     context.lineWidth = strokeWidth * scaleFactor;
-    context.arc(width / 2, height / 2, width / 3, 0, 2 * Math.PI);
-    context.stroke();
+    context.strokeText(symbolText, canvasSize / 2, 0);
   }
 
   return canvas;
