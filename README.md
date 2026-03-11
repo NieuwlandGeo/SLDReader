@@ -183,21 +183,15 @@ Example (the equivalent of the example above):
 
 This is useful for server-side rendering where the font file can be accessed on the file system, but presents a problem when rendering font symbols on the web. SLDReader solves this by ignoring the `ttf://` prefix and/or format, and extracts the font family from the onlineresource or geoserver ttf:// wellknownname.
 
-Upon parsing, marks using a font symbol are converted to textsymbolizers with a single character with a char code corresponding to the font symbol index.
+Font symbols are converted to images by rendering them as an ExternalGraphic by default. By passing the option `fontSymbolConversion: 'TextSymbolizer'` when reading an sld, mark symbols are converted to text symbolizers.
 
-For example, the spider font symbol above will become the following text symbolizer in SLDReader:
 ```javascript
-{
-  "label": "!", // Character code 0x21 (or 33 as integer).
-  "font": {
-    "styling": {
-      "fontFamily": "Webdings",
-      "fontSize": 32
-    }
-  },
-  // other style props omitted for brevity.
-}
+const mySld = Reader(fontSymbolsSld, {
+  fontSymbolConversion: 'TextSymbolizer',
+});
 ```
+
+Both options have their pros and cons. Symbol marks converted to text symbolizers can have dynamic color and stroke with (dynamic = taken from feature properties), but they cannot be used in GraphicStroke or GraphicFill elements. For converted ExternalGraphics, the situation is the other way around.
 
 #### Making the font family accessible in your web page for SLDReader
 When using fonts that are globally available, you can just use the font family (like Webdings), and it will work. But since SLDReader cannot access the file system, you must make sure that the font family is declared within css or an (inline) `<style>` element. If you do not do this, the text symbol will just be the single character label in the default system font.
@@ -212,28 +206,6 @@ IMKL is a dutch information model (IM) for cables ((K)abels) and pipes ((L)eidin
 ```
 
 After declaring this custom font in your css, or inline style, you can use symbols by referring them by the font-family declared above.
-
-Try it out on the 'Custom GeoJSON styling' demo page.
-
-```xml
-<se:PointSymbolizer>
-  <se:Graphic>
-    <se:Mark>
-      <se:OnlineResource xlink:href="ttf://IMKLIcons" xlink:type="simple"/>
-      <se:Format>ttf</se:Format>
-      <se:MarkIndex>120</se:MarkIndex>
-      <se:Fill>
-        <se:SvgParameter name="fill">#008800</se:SvgParameter>
-      </se:Fill>
-      <se:Stroke>
-        <se:SvgParameter name="stroke-width">2</se:SvgParameter>
-        <se:SvgParameter name="stroke">#224422</se:SvgParameter>
-      </se:Stroke>
-    </se:Mark>
-    <se:Size>32</se:Size>
-  </se:Graphic>
-</se:PointSymbolizer>
-```
 
 #### LineSymbolizer
 
