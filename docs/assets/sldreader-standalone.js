@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 25, 2026 15:40:20 */
+/* Version: 0.7.3 - March 25, 2026 16:42:15 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1729,51 +1729,28 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    */
   function getRules(featureTypeStyle, feature, context) {
     const validRules = [];
-    let elseFilterCount = 0;
+    let match = false;
     for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
       const rule = featureTypeStyle.rules[j];
       // Only keep rules that pass the rule's min/max scale denominator checks.
       if (scaleSelector(rule, context.resolution)) {
-        if (rule.elsefilter) {
-          // In the first rule selection step, keep all rules with an ElseFilter.
-          validRules.push(rule);
-          elseFilterCount += 1;
-        } else if (!rule.filter) {
+        if (!rule.filter) {
           // Rules without filter always apply.
           validRules.push(rule);
+          match = true;
         } else if (filterSelector(rule.filter, feature, context)) {
           // If a rule has a filter, only keep it if the feature passes the filter.
           validRules.push(rule);
+          match = true;
         }
       }
     }
 
-    // If none of the valid rules are an ElseFilter, return them all.
-    if (elseFilterCount === 0) {
-      return validRules;
+    // If no non-ElseFilter rules match, return all ElseFilter rules.
+    if (!match) {
+      return featureTypeStyle.elseFilterRules ?? [];
     }
-
-    // When all valid rules are ElseFilter rules, return them all.
-    // Note: the spec does not forbid more than one ElseFilter remaining at a given scale,
-    // but leaves handling this case up to the implementor.
-    // The SLDLibrary chooses to keep them all.
-    if (elseFilterCount === validRules.length) {
-      return validRules;
-    }
-
-    // If only some of the rules are ElseFilter rules, return all rules without an ElseFilter.
-    return validRules.filter(rule => !rule.elsefilter);
-  }
-
-  /**
-   * Get all symbolizers inside a given rule.
-   * Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
-   * @param {object} rule SLD rule object.
-   * @returns {Array<object>} Array of all symbolizers in a rule.
-   */
-  function getRuleSymbolizers(rule) {
-    const allSymbolizers = [...(rule.polygonsymbolizer || []), ...(rule.linesymbolizer || []), ...(rule.pointsymbolizer || []), ...(rule.textsymbolizer || [])];
-    return allSymbolizers;
+    return validRules;
   }
 
   /**
@@ -1820,46 +1797,6 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       warnings.add(errMsg);
     }
   }
-
-  /**
-   * Get styling from rules per geometry type
-   * @private
-   * @param  {Rule[]} rules [description]
-   * @return {CategorizedSymbolizers}
-   */
-  function categorizeSymbolizers(rules) {
-    const result = {
-      polygonSymbolizers: [],
-      lineSymbolizers: [],
-      pointSymbolizers: [],
-      textSymbolizers: []
-    };
-    (rules || []).forEach(rule => {
-      if (rule.polygonsymbolizer) {
-        result.polygonSymbolizers = [...result.polygonSymbolizers, ...rule.polygonsymbolizer];
-      }
-      if (rule.linesymbolizer) {
-        result.lineSymbolizers = [...result.lineSymbolizers, ...rule.linesymbolizer];
-      }
-      if (rule.pointsymbolizer) {
-        result.pointSymbolizers = [...result.pointSymbolizers, ...rule.pointsymbolizer];
-      }
-      if (rule.textsymbolizer) {
-        result.textSymbolizers = [...result.textSymbolizers, ...rule.textsymbolizer];
-      }
-    });
-    return result;
-  }
-
-  /**
-   * @typedef CategorizedSymbolizers
-   * @name CategorizedSymbolizers
-   * @description contains for each geometry type the symbolizer from an array of rules
-   * @property {PolygonSymbolizer[]} polygonSymbolizers polygonsymbolizers
-   * @property {LineSymbolizer[]} lineSymbolizers  linesymbolizers
-   * @property {PointSymbolizer[]} pointSymbolizers  pointsymbolizers, same as graphic prop from PointSymbolizer
-   * @property {TextSymbolizer[]} textSymbolizers  textsymbolizers
-   */
 
   /**
    * Render a single font character as an HTMLCanvasElement.
@@ -1973,20 +1910,16 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       }
     }
   }
-  function updateSymbolizerInvalidatedState(ruleSymbolizer, imageUrl) {
-    if (!ruleSymbolizer) {
+  function updateSymbolizerInvalidatedState(symbolizers, imageUrl) {
+    if (!symbolizers) {
       return;
     }
 
     // Watch out! A symbolizer inside a rule may be a symbolizer, or an array of symbolizers.
     // Todo: refactor so rule.symbolizers property is always an array with 0..n symbolizer objects.
-    if (!Array.isArray(ruleSymbolizer)) {
-      invalidateExternalGraphicSymbolizers(ruleSymbolizer, imageUrl);
-    } else {
-      for (let k = 0; k < ruleSymbolizer.length; k += 1) {
-        invalidateExternalGraphicSymbolizers(ruleSymbolizer[k], imageUrl);
-      }
-    }
+    symbolizers.forEach(symbolizer => {
+      invalidateExternalGraphicSymbolizers(symbolizer, imageUrl);
+    });
   }
 
   /**
@@ -1996,14 +1929,16 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {string} imageUrl The image url.
    */
   function invalidateExternalGraphics(featureTypeStyle, imageUrl) {
-    if (!featureTypeStyle.rules) {
-      return;
+    if (featureTypeStyle.rules) {
+      featureTypeStyle.rules.forEach(rule => {
+        updateSymbolizerInvalidatedState(rule.symbolizers, imageUrl);
+      });
     }
-    featureTypeStyle.rules.forEach(rule => {
-      updateSymbolizerInvalidatedState(rule.pointsymbolizer, imageUrl);
-      updateSymbolizerInvalidatedState(rule.linesymbolizer, imageUrl);
-      updateSymbolizerInvalidatedState(rule.polygonsymbolizer, imageUrl);
-    });
+    if (featureTypeStyle.elseFilterRules) {
+      featureTypeStyle.elseFilterRules.forEach(rule => {
+        updateSymbolizerInvalidatedState(rule.symbolizers, imageUrl);
+      });
+    }
   }
   function checkFontReady(fontFamily, fontSize) {
     if (typeof document.fonts?.load !== 'function') {
@@ -2029,7 +1964,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     return new Promise((resolve, reject) => {
       checkFontReady(fontFamily, symbolSize).then(() => {
         // Render font symbol larger than it's size. This results in a crisper look.
-        // Do not scale too much, because you will lose the benefit of antialiasing 
+        // Do not scale too much, because you will lose the benefit of antialiasing
         // Antialiasing has a 'width' of 1 pixel and gets lost when scaled down back from a very large image.
         const scaleFactor = 2 * has.DEVICE_PIXEL_RATIO;
         const canvas = renderFontSymbolToCanvas(fontFamily, markIndex, symbolSize, symbolFill, strokeWidth, strokeColor, scaleFactor);
@@ -2147,37 +2082,34 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
   /**
    * @private
    * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
-   * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
+   * @param {Array<object>} symbolizers Array of symbolizers from rules that pass the filter for a single feature.
    * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
    * @param {Function} imageLoadedCallback Function to call when an image has loaded.
    */
-  function processExternalGraphicSymbolizers(rules, featureTypeStyle, imageLoadedCallback, callbackRef) {
+  function processExternalGraphicSymbolizers(symbolizers, featureTypeStyle, imageLoadedCallback, callbackRef) {
     // Walk over all symbolizers inside all given rules.
     // Dive into the symbolizers to find ExternalGraphic elements and for each ExternalGraphic,
     // check if the image url has been encountered before.
     // If not -> start loading the image into the global image cache.
-    rules.forEach(rule => {
-      const allSymbolizers = getRuleSymbolizers(rule);
-      allSymbolizers.forEach(symbolizer => {
-        externalGraphicPaths.forEach(path => {
-          const exgraphic = getByPath(symbolizer, path);
-          if (!exgraphic) {
-            return;
+    symbolizers.forEach(symbolizer => {
+      externalGraphicPaths.forEach(path => {
+        const exgraphic = getByPath(symbolizer, path);
+        if (!exgraphic) {
+          return;
+        }
+        const imageUrl = exgraphic.onlineresource;
+        const imageLoadingState = getImageLoadingState(imageUrl);
+        if (!imageLoadingState || imageLoadingState === IMAGE_LOADING) {
+          // Prevent adding imageLoadedCallback more than once per image per created style function
+          // by inspecting the callbackRef object passed by the style function creator function.
+          // Each style function has its own callbackRef dictionary.
+          if (!callbackRef[imageUrl]) {
+            callbackRef[imageUrl] = true;
+            // Load image and when loaded, invalidate all symbolizers referencing the image
+            // and invoke the imageLoadedCallback.
+            loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
           }
-          const imageUrl = exgraphic.onlineresource;
-          const imageLoadingState = getImageLoadingState(imageUrl);
-          if (!imageLoadingState || imageLoadingState === IMAGE_LOADING) {
-            // Prevent adding imageLoadedCallback more than once per image per created style function
-            // by inspecting the callbackRef object passed by the style function creator function.
-            // Each style function has its own callbackRef dictionary.
-            if (!callbackRef[imageUrl]) {
-              callbackRef[imageUrl] = true;
-              // Load image and when loaded, invalidate all symbolizers referencing the image
-              // and invoke the imageLoadedCallback.
-              loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
-            }
-          }
-        });
+        }
       });
     });
   }
@@ -4617,28 +4549,29 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
 
   /**
    * @private
-   * Convert symbolizers together with the feature to OL style objects and append them to the OL styles array.
-   * @example appendStyles(styles, point[j], feature, getPointStyle);
+   * Convert symbolizer together with the feature to an OL style instance and append it to the OL styles array.
+   * @example appendStyles(styles, pointsymbolizer, feature, getPointStyle, context);
    * @param {Array<ol/style>} styles Array of OL styles.
    * @param {Array<object>} symbolizers Array of feature symbolizers.
    * @param {ol/feature} feature OpenLayers feature.
    * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
    * @param {EvaluationContext} context Evaluation context.
    */
-  function appendStyles(styles, symbolizers, feature, styleFunction, context) {
-    (symbolizers || []).forEach(symbolizer => {
-      const olStyle = styleFunction(symbolizer, feature, context);
-      if (olStyle) {
-        styles.push(olStyle);
-      }
-    });
+  function appendStyle(styles, symbolizer, feature, styleFunction, context) {
+    if (!symbolizer) {
+      return;
+    }
+    const olStyle = styleFunction(symbolizer, feature, context);
+    if (olStyle) {
+      styles.push(olStyle);
+    }
   }
 
   /**
    * Create openlayers style
    * @private
    * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
-   * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
+   * @param {Array<object>} symbolizers Array of symbolizers.
    * @param {object|Feature} feature {@link http://geojson.org|geojson}
    *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
    * @param {EvaluationContext} context Evaluation context.
@@ -4648,13 +4581,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {boolean} [options.useFallbackStyles] Default true. When true, provides default OL styles as fallback for unknown geometry types.
    * @return ol.style.Style or array of it
    */
-  function OlStyler(categorizedSymbolizers, feature, context, options = {}) {
-    const {
-      polygonSymbolizers,
-      lineSymbolizers,
-      pointSymbolizers,
-      textSymbolizers
-    } = categorizedSymbolizers;
+  function OlStyler(symbolizers, feature, context, options = {}) {
     const defaultOptions = {
       strictGeometryMatch: false,
       useFallbackStyles: true
@@ -4663,36 +4590,62 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       ...defaultOptions,
       ...options
     };
+    if (!(Array.isArray(symbolizers) && symbolizers.length > 0)) {
+      return [];
+    }
     const geometry = feature.getGeometry ? feature.getGeometry() : feature.geometry;
     const geometryType = geometry.getType ? geometry.getType() : geometry.type;
+    let unknownGeometryType = false;
     let styles = [];
-    switch (geometryType) {
-      case 'Point':
-      case 'MultiPoint':
-        appendStyles(styles, pointSymbolizers, feature, getPointStyle, context);
-        appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
-        break;
-      case 'LineString':
-      case 'MultiLineString':
-        appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
-        if (!styleOptions.strictGeometryMatch) {
-          appendStyles(styles, pointSymbolizers, feature, getLinePointStyle, context);
-        }
-        appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
-        break;
-      case 'Polygon':
-      case 'MultiPolygon':
-        appendStyles(styles, polygonSymbolizers, feature, getPolygonStyle, context);
-        if (!styleOptions.strictGeometryMatch) {
-          appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
-        }
-        appendStyles(styles, pointSymbolizers, feature, getPolygonPointStyle, context);
-        appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
-        break;
-      default:
-        if (styleOptions.useFallbackStyles) {
-          styles = defaultStyles;
-        }
+    symbolizers.forEach(symbolizer => {
+      switch (geometryType) {
+        case 'Point':
+        case 'MultiPoint':
+          if (symbolizer.type === 'pointsymbolizer') {
+            appendStyle(styles, symbolizer, feature, getPointStyle, context);
+          }
+          if (symbolizer.type === 'textsymbolizer') {
+            appendStyle(styles, symbolizer, feature, getTextStyle, context);
+          }
+          break;
+        case 'LineString':
+        case 'MultiLineString':
+          if (symbolizer.type === 'linesymbolizer') {
+            appendStyle(styles, symbolizer, feature, getLineStyle, context);
+          }
+          if (!styleOptions.strictGeometryMatch) {
+            if (symbolizer.type === 'pointsymbolizer') {
+              appendStyle(styles, symbolizer, feature, getLinePointStyle, context);
+            }
+          }
+          if (symbolizer.type === 'textsymbolizer') {
+            appendStyle(styles, symbolizer, feature, getTextStyle, context);
+          }
+          break;
+        case 'Polygon':
+        case 'MultiPolygon':
+          if (symbolizer.type === 'polygonsymbolizer') {
+            appendStyle(styles, symbolizer, feature, getPolygonStyle, context);
+          }
+          if (!styleOptions.strictGeometryMatch) {
+            if (symbolizer.type === 'linesymbolizer') {
+              appendStyle(styles, symbolizer, feature, getLineStyle, context);
+            }
+          }
+          if (symbolizer.type === 'pointsymbolizer') {
+            appendStyle(styles, symbolizer, feature, getPolygonPointStyle, context);
+          }
+          if (symbolizer.type === 'textsymbolizer') {
+            appendStyle(styles, symbolizer, feature, getTextStyle, context);
+          }
+          break;
+        default:
+          unknownGeometryType = true;
+          break;
+      }
+    });
+    if (unknownGeometryType && styleOptions.useFallbackStyles) {
+      styles = defaultStyles;
     }
 
     // Set z-index of styles explicitly to fix a bug where GraphicStroke is always rendered above a line symbolizer.
@@ -4758,17 +4711,15 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
 
       // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
       const rules = getRules(featureTypeStyle, feature, context);
+      const symbolizers = rules.map(rule => rule.symbolizers).flat();
 
       // Start loading images for external graphic symbolizers and when loaded:
       // * update symbolizers to use the cached image.
       // * call imageLoadedCallback with the image url.
-      processExternalGraphicSymbolizers(rules, featureTypeStyle, imageLoadedCallback, callbackRef);
-
-      // Convert style rules to style rule lookup categorized by geometry type.
-      const categorizedSymbolizers = categorizeSymbolizers(rules);
+      processExternalGraphicSymbolizers(symbolizers, featureTypeStyle, imageLoadedCallback, callbackRef);
 
       // Determine style rule array.
-      const olStyles = OlStyler(categorizedSymbolizers, feature, context);
+      const olStyles = OlStyler(symbolizers, feature, context);
       return olStyles;
     };
   }
@@ -4786,8 +4737,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
    */
   function createOlStyle(styleRule, geometryType) {
-    const categorizedSymbolizers = categorizeSymbolizers([styleRule]);
-    const olStyles = OlStyler(categorizedSymbolizers, {
+    const olStyles = OlStyler(styleRule.symbolizers, {
       geometry: {
         type: geometryType
       }
@@ -5023,14 +4973,12 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
 
   exports.OlStyler = OlStyler;
   exports.Reader = Reader;
-  exports.categorizeSymbolizers = categorizeSymbolizers;
   exports.createOlStyle = createOlStyle;
   exports.createOlStyleFunction = createOlStyleFunction;
   exports.getByPath = getByPath;
   exports.getFunction = getFunction;
   exports.getLayer = getLayer;
   exports.getLayerNames = getLayerNames;
-  exports.getRuleSymbolizers = getRuleSymbolizers;
   exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;

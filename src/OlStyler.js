@@ -1,5 +1,4 @@
 import { getRules } from './Utils';
-import categorizeSymbolizers from './categorizeSymbolizers';
 import { processExternalGraphicSymbolizers } from './imageCache';
 import { defaultPointStyle } from './styles/static';
 import getPointStyle from './styles/pointStyle';
@@ -22,28 +21,30 @@ const defaultStyles = [defaultPointStyle];
 
 /**
  * @private
- * Convert symbolizers together with the feature to OL style objects and append them to the OL styles array.
- * @example appendStyles(styles, point[j], feature, getPointStyle);
+ * Convert symbolizer together with the feature to an OL style instance and append it to the OL styles array.
+ * @example appendStyles(styles, pointsymbolizer, feature, getPointStyle, context);
  * @param {Array<ol/style>} styles Array of OL styles.
  * @param {Array<object>} symbolizers Array of feature symbolizers.
  * @param {ol/feature} feature OpenLayers feature.
  * @param {Function} styleFunction Function for getting the OL style object. Signature (symbolizer, feature) => OL style.
  * @param {EvaluationContext} context Evaluation context.
  */
-function appendStyles(styles, symbolizers, feature, styleFunction, context) {
-  (symbolizers || []).forEach(symbolizer => {
-    const olStyle = styleFunction(symbolizer, feature, context);
-    if (olStyle) {
-      styles.push(olStyle);
-    }
-  });
+function appendStyle(styles, symbolizer, feature, styleFunction, context) {
+  if (!symbolizer) {
+    return;
+  }
+
+  const olStyle = styleFunction(symbolizer, feature, context);
+  if (olStyle) {
+    styles.push(olStyle);
+  }
 }
 
 /**
  * Create openlayers style
  * @private
  * @example OlStyler(getGeometryStyles(rules), geojson.geometry.type);
- * @param {object} categorizedSymbolizers Symbolizers categorized by type, e.g. .pointSymbolizers = [array of point symbolizer objects].
+ * @param {Array<object>} symbolizers Array of symbolizers.
  * @param {object|Feature} feature {@link http://geojson.org|geojson}
  *  or {@link https://openlayers.org/en/latest/apidoc/module-ol_Feature-Feature.html|ol/Feature} Changed in 0.0.04 & 0.0.5!
  * @param {EvaluationContext} context Evaluation context.
@@ -53,19 +54,7 @@ function appendStyles(styles, symbolizers, feature, styleFunction, context) {
  * @param {boolean} [options.useFallbackStyles] Default true. When true, provides default OL styles as fallback for unknown geometry types.
  * @return ol.style.Style or array of it
  */
-export default function OlStyler(
-  categorizedSymbolizers,
-  feature,
-  context,
-  options = {}
-) {
-  const {
-    polygonSymbolizers,
-    lineSymbolizers,
-    pointSymbolizers,
-    textSymbolizers,
-  } = categorizedSymbolizers;
-
+export default function OlStyler(symbolizers, feature, context, options = {}) {
   const defaultOptions = {
     strictGeometryMatch: false,
     useFallbackStyles: true,
@@ -73,60 +62,82 @@ export default function OlStyler(
 
   const styleOptions = { ...defaultOptions, ...options };
 
+  if (!(Array.isArray(symbolizers) && symbolizers.length > 0)) {
+    return [];
+  }
+
   const geometry = feature.getGeometry
     ? feature.getGeometry()
     : feature.geometry;
   const geometryType = geometry.getType ? geometry.getType() : geometry.type;
+  let unknownGeometryType = false;
 
   let styles = [];
-  switch (geometryType) {
-    case 'Point':
-    case 'MultiPoint':
-      appendStyles(styles, pointSymbolizers, feature, getPointStyle, context);
-      appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
-      break;
+  symbolizers.forEach(symbolizer => {
+    switch (geometryType) {
+      case 'Point':
+      case 'MultiPoint':
+        if (symbolizer.type === 'pointsymbolizer') {
+          appendStyle(styles, symbolizer, feature, getPointStyle, context);
+        }
+        if (symbolizer.type === 'textsymbolizer') {
+          appendStyle(styles, symbolizer, feature, getTextStyle, context);
+        }
+        break;
 
-    case 'LineString':
-    case 'MultiLineString':
-      appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
-      if (!styleOptions.strictGeometryMatch) {
-        appendStyles(
-          styles,
-          pointSymbolizers,
-          feature,
-          getLinePointStyle,
-          context
-        );
-      }
-      appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
-      break;
+      case 'LineString':
+      case 'MultiLineString':
+        if (symbolizer.type === 'linesymbolizer') {
+          appendStyle(styles, symbolizer, feature, getLineStyle, context);
+        }
+        if (!styleOptions.strictGeometryMatch) {
+          if (symbolizer.type === 'pointsymbolizer') {
+            appendStyle(
+              styles,
+              symbolizer,
+              feature,
+              getLinePointStyle,
+              context
+            );
+          }
+        }
+        if (symbolizer.type === 'textsymbolizer') {
+          appendStyle(styles, symbolizer, feature, getTextStyle, context);
+        }
+        break;
 
-    case 'Polygon':
-    case 'MultiPolygon':
-      appendStyles(
-        styles,
-        polygonSymbolizers,
-        feature,
-        getPolygonStyle,
-        context
-      );
-      if (!styleOptions.strictGeometryMatch) {
-        appendStyles(styles, lineSymbolizers, feature, getLineStyle, context);
-      }
-      appendStyles(
-        styles,
-        pointSymbolizers,
-        feature,
-        getPolygonPointStyle,
-        context
-      );
-      appendStyles(styles, textSymbolizers, feature, getTextStyle, context);
-      break;
+      case 'Polygon':
+      case 'MultiPolygon':
+        if (symbolizer.type === 'polygonsymbolizer') {
+          appendStyle(styles, symbolizer, feature, getPolygonStyle, context);
+        }
+        if (!styleOptions.strictGeometryMatch) {
+          if (symbolizer.type === 'linesymbolizer') {
+            appendStyle(styles, symbolizer, feature, getLineStyle, context);
+          }
+        }
+        if (symbolizer.type === 'pointsymbolizer') {
+          appendStyle(
+            styles,
+            symbolizer,
+            feature,
+            getPolygonPointStyle,
+            context
+          );
+        }
+        if (symbolizer.type === 'textsymbolizer') {
+          appendStyle(styles, symbolizer, feature, getTextStyle, context);
+        }
+        break;
 
-    default:
-      if (styleOptions.useFallbackStyles) {
-        styles = defaultStyles;
-      }
+      default:
+        unknownGeometryType = true;
+        break;
+    }
+  });
+
+  if (unknownGeometryType && styleOptions.useFallbackStyles) {
+    styles = defaultStyles;
   }
 
   // Set z-index of styles explicitly to fix a bug where GraphicStroke is always rendered above a line symbolizer.
@@ -204,21 +215,20 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
     // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
     const rules = getRules(featureTypeStyle, feature, context);
 
+    const symbolizers = rules.map(rule => rule.symbolizers).flat();
+
     // Start loading images for external graphic symbolizers and when loaded:
     // * update symbolizers to use the cached image.
     // * call imageLoadedCallback with the image url.
     processExternalGraphicSymbolizers(
-      rules,
+      symbolizers,
       featureTypeStyle,
       imageLoadedCallback,
       callbackRef
     );
 
-    // Convert style rules to style rule lookup categorized by geometry type.
-    const categorizedSymbolizers = categorizeSymbolizers(rules);
-
     // Determine style rule array.
-    const olStyles = OlStyler(categorizedSymbolizers, feature, context);
+    const olStyles = OlStyler(symbolizers, feature, context);
 
     return olStyles;
   };
@@ -237,10 +247,8 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
  * myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
  */
 export function createOlStyle(styleRule, geometryType) {
-  const categorizedSymbolizers = categorizeSymbolizers([styleRule]);
-
   const olStyles = OlStyler(
-    categorizedSymbolizers,
+    styleRule.symbolizers,
     { geometry: { type: geometryType } },
     () => null,
     { strictGeometryMatch: true, useFallbackStyles: false }

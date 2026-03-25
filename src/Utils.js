@@ -64,57 +64,29 @@ export function getStyle(layer, name) {
  */
 export function getRules(featureTypeStyle, feature, context) {
   const validRules = [];
-  let elseFilterCount = 0;
+  let match = false;
   for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
     const rule = featureTypeStyle.rules[j];
     // Only keep rules that pass the rule's min/max scale denominator checks.
     if (scaleSelector(rule, context.resolution)) {
-      if (rule.elsefilter) {
-        // In the first rule selection step, keep all rules with an ElseFilter.
-        validRules.push(rule);
-        elseFilterCount += 1;
-      } else if (!rule.filter) {
+      if (!rule.filter) {
         // Rules without filter always apply.
         validRules.push(rule);
+        match = true;
       } else if (filterSelector(rule.filter, feature, context)) {
         // If a rule has a filter, only keep it if the feature passes the filter.
         validRules.push(rule);
+        match = true;
       }
     }
   }
 
-  // If none of the valid rules are an ElseFilter, return them all.
-  if (elseFilterCount === 0) {
-    return validRules;
+  // If no non-ElseFilter rules match, return all ElseFilter rules.
+  if (!match) {
+    return featureTypeStyle.elseFilterRules ?? [];
   }
 
-  // When all valid rules are ElseFilter rules, return them all.
-  // Note: the spec does not forbid more than one ElseFilter remaining at a given scale,
-  // but leaves handling this case up to the implementor.
-  // The SLDLibrary chooses to keep them all.
-  if (elseFilterCount === validRules.length) {
-    return validRules;
-  }
-
-  // If only some of the rules are ElseFilter rules, return all rules without an ElseFilter.
-  return validRules.filter(rule => !rule.elsefilter);
-}
-
-/**
- * Get all symbolizers inside a given rule.
- * Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
- * @param {object} rule SLD rule object.
- * @returns {Array<object>} Array of all symbolizers in a rule.
- */
-export function getRuleSymbolizers(rule) {
-  const allSymbolizers = [
-    ...(rule.polygonsymbolizer || []),
-    ...(rule.linesymbolizer || []),
-    ...(rule.pointsymbolizer || []),
-    ...(rule.textsymbolizer || []),
-  ];
-
-  return allSymbolizers;
+  return validRules;
 }
 
 /**
