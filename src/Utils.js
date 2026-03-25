@@ -81,9 +81,12 @@ export function getRules(featureTypeStyle, feature, context) {
     }
   }
 
-  // If no non-ElseFilter rules match, return all ElseFilter rules.
-  if (!match) {
-    return featureTypeStyle.elseFilterRules ?? [];
+  // If no non-ElseFilter rules match, return all ElseFilter rules,
+  // but only those that fall within the scale range if they have one.
+  if (!match && featureTypeStyle.elseFilterRules) {
+    return featureTypeStyle.elseFilterRules.filter(rule =>
+      scaleSelector(rule, context.resolution)
+    );
   }
 
   return validRules;

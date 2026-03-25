@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 25, 2026 16:42:15 */
+/* Version: 0.7.3 - March 25, 2026 17:08:02 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1746,9 +1746,10 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       }
     }
 
-    // If no non-ElseFilter rules match, return all ElseFilter rules.
-    if (!match) {
-      return featureTypeStyle.elseFilterRules ?? [];
+    // If no non-ElseFilter rules match, return all ElseFilter rules,
+    // but only those that fall within the scale range if they have one.
+    if (!match && featureTypeStyle.elseFilterRules) {
+      return featureTypeStyle.elseFilterRules.filter(rule => scaleSelector(rule, context.resolution));
     }
     return validRules;
   }
