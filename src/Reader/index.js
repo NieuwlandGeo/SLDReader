@@ -54,7 +54,7 @@ function addPropArray(node, obj, prop, options) {
  */
 function addSymbolizer(node, obj, prop, options) {
   const symbolizerType = prop.toLowerCase();
-  const item = { type: symbolizerType};
+  const item = { type: symbolizerType };
 
   if (!obj.symbolizers) {
     obj.symbolizers = [];
@@ -843,6 +843,7 @@ const parsers = {
     obj.featuretypestyle = obj.featuretypestyle || [];
     const featuretypestyle = {
       rules: [],
+      elseFilterRules: null,
     };
     readNode(element, featuretypestyle, options);
     obj.featuretypestyles.push(featuretypestyle);
@@ -850,7 +851,14 @@ const parsers = {
   Rule: (element, obj, _, options) => {
     const rule = {};
     readNode(element, rule, options);
-    obj.rules.push(rule);
+    if (rule.elsefilter) {
+      if (obj.elseFilterRules === null) {
+        obj.elseFilterRules = [];
+      }
+      obj.elseFilterRules.push(rule);
+    } else {
+      obj.rules.push(rule);
+    }
   },
   Name: addPropWithTextContent,
   Title: addPropWithTextContent,

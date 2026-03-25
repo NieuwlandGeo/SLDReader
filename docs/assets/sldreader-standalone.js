@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 25, 2026 14:19:59 */
+/* Version: 0.7.3 - March 25, 2026 15:40:20 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1217,7 +1217,8 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     FeatureTypeStyle: (element, obj, _, options) => {
       obj.featuretypestyle = obj.featuretypestyle || [];
       const featuretypestyle = {
-        rules: []
+        rules: [],
+        elseFilterRules: null
       };
       readNode(element, featuretypestyle, options);
       obj.featuretypestyles.push(featuretypestyle);
@@ -1225,7 +1226,14 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     Rule: (element, obj, _, options) => {
       const rule = {};
       readNode(element, rule, options);
-      obj.rules.push(rule);
+      if (rule.elsefilter) {
+        if (obj.elseFilterRules === null) {
+          obj.elseFilterRules = [];
+        }
+        obj.elseFilterRules.push(rule);
+      } else {
+        obj.rules.push(rule);
+      }
     },
     Name: addPropWithTextContent,
     Title: addPropWithTextContent,
