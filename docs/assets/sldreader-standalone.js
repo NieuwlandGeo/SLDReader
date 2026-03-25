@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 25, 2026 17:08:02 */
+/* Version: 0.7.3 - March 25, 2026 17:20:58 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1718,17 +1718,15 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
   }
 
   /**
-   * get rules for specific feature after applying filters
+   * Get symbolizers for rules for specific feature after applying filters
    * @private
-   * const style = getStyle(sldLayer, stylename);
-   * getRules(style.featuretypestyles['0'], geojson, { resolution });
    * @param  {FeatureTypeStyle} featureTypeStyle
    * @param  {object} feature geojson
    * @param {EvaluationContext} context Evaluation context.
-   * @return {Rule[]}
+   * @return {Symbolizer[]}
    */
-  function getRules(featureTypeStyle, feature, context) {
-    const validRules = [];
+  function getSymbolizersForFeature(featureTypeStyle, feature, context) {
+    const symbolizers = [];
     let match = false;
     for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
       const rule = featureTypeStyle.rules[j];
@@ -1736,11 +1734,11 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       if (scaleSelector(rule, context.resolution)) {
         if (!rule.filter) {
           // Rules without filter always apply.
-          validRules.push(rule);
+          symbolizers.push(...rule.symbolizers);
           match = true;
         } else if (filterSelector(rule.filter, feature, context)) {
           // If a rule has a filter, only keep it if the feature passes the filter.
-          validRules.push(rule);
+          symbolizers.push(...rule.symbolizers);
           match = true;
         }
       }
@@ -1749,9 +1747,13 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     // If no non-ElseFilter rules match, return all ElseFilter rules,
     // but only those that fall within the scale range if they have one.
     if (!match && featureTypeStyle.elseFilterRules) {
-      return featureTypeStyle.elseFilterRules.filter(rule => scaleSelector(rule, context.resolution));
+      featureTypeStyle.elseFilterRules.forEach(rule => {
+        if (scaleSelector(rule, context.resolution)) {
+          symbolizers.push(...rule.symbolizers);
+        }
+      });
     }
-    return validRules;
+    return symbolizers;
   }
 
   /**
@@ -4711,8 +4713,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       context.resolution = groundResolution;
 
       // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
-      const rules = getRules(featureTypeStyle, feature, context);
-      const symbolizers = rules.map(rule => rule.symbolizers).flat();
+      const symbolizers = getSymbolizersForFeature(featureTypeStyle, feature, context);
 
       // Start loading images for external graphic symbolizers and when loaded:
       // * update symbolizers to use the cached image.
@@ -4980,9 +4981,9 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
   exports.getFunction = getFunction;
   exports.getLayer = getLayer;
   exports.getLayerNames = getLayerNames;
-  exports.getRules = getRules;
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;
+  exports.getSymbolizersForFeature = getSymbolizersForFeature;
   exports.registerCustomSymbol = registerCustomSymbol;
   exports.registerFunction = registerFunction;
   exports.version = version;
