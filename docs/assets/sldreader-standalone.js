@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 11, 2026 16:15:06 */
+/* Version: 0.7.3 - March 25, 2026 14:19:59 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -550,10 +550,13 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {string} options Parse options.
    */
   function addSymbolizer(node, obj, prop, options) {
-    const property = prop.toLowerCase();
+    const symbolizerType = prop.toLowerCase();
     const item = {
-      type: 'symbolizer'
+      type: symbolizerType
     };
+    if (!obj.symbolizers) {
+      obj.symbolizers = [];
+    }
 
     // Check and add if symbolizer node has uom attribute.
     // If there is no uom attribute, default to pixel.
@@ -585,10 +588,9 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     });
 
     // Convert point symbolizers using a font symbol to text symbolizers.
-    if (property === 'pointsymbolizer' && item?.graphic?.mark?.fontfamily && item?.graphic?.mark?.markindex > 0) {
+    if (symbolizerType === 'pointsymbolizer' && item?.graphic?.mark?.fontfamily && item?.graphic?.mark?.markindex > 0) {
       //TODO: TL;DR: move text symbolizer and external graphic conversion to separate functions.
       if (options.fontSymbolConversion === 'TextSymbolizer') {
-        obj.textsymbolizer = obj.textsymbolizer ?? [];
         const fontTextSymbolizer = {
           uom: item.uom,
           type: item.type,
@@ -643,13 +645,12 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
           }
           fontTextSymbolizer.labelplacement.pointplacement.displacement = item.graphic.displacement;
         }
-        obj.textsymbolizer.push(fontTextSymbolizer);
+        obj.symbolizers.push(fontTextSymbolizer);
       } else if (options.fontSymbolConversion !== 'ExternalGraphic') {
         throw new Error(`Invalid font symbol conversion option: ${options.fontSymbolConversion}. Expected one of 'ExternalGraphic' or 'TextSymbolizer'.`);
       }
     } else {
-      obj[property] = obj[property] ?? [];
-      obj[property].push(item);
+      obj.symbolizers.push(item);
     }
   }
 
