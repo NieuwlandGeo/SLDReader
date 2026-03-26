@@ -1,6 +1,3 @@
-import { scaleSelector, filterSelector } from './Filter';
-import { processExternalGraphicSymbolizer } from './imageCache';
-
 /**
  * get all layer names in sld
  * @param {StyledLayerDescriptor} sld
@@ -53,70 +50,15 @@ export function getStyle(layer, name) {
   return layer.styles[0];
 }
 
-/**
- * Get symbolizers for rules for specific feature after applying filters
- * @private
- * @param  {FeatureTypeStyle} featureTypeStyle
- * @param  {object} feature geojson
- * @param {EvaluationContext} context Evaluation context.
- * @return {Symbolizer[]}
- */
-export function getSymbolizersForFeature(featureTypeStyle, feature, context) {
-  const symbolizers = [];
-  let match = false;
-  for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
-    const rule = featureTypeStyle.rules[j];
-    if (!rule.symbolizers) {
-      return;
-    }
-    // Only keep rules that pass the rule's min/max scale denominator checks.
-    if (scaleSelector(rule, context.resolution)) {
-      // Rules without filter always apply.
-      // Rules with filter are checked for each feature.
-      if (!rule.filter || filterSelector(rule.filter, feature, context)) {
-        for (let k = 0; k < rule.symbolizers.length; k += 1) {
-          const symbolizer = rule.symbolizers[k];
-
-          // Start loading images for external graphic symbolizers and when loaded:
-          // * update symbolizers to use the cached image.
-          // * call imageLoadedCallback with the image url.
-          processExternalGraphicSymbolizer(
-            symbolizer,
-            featureTypeStyle,
-            context.imageLoadedCallback,
-            context.callbackRef
-          );
-
-          symbolizers.push(symbolizer);
-        }
-        match = true;
-      }
-    }
-  }
-
-  // If no non-ElseFilter rules match, return all ElseFilter rules,
-  // but only those that fall within the scale range if they have one.
-  if (!match && featureTypeStyle.elseFilterRules) {
-    featureTypeStyle.elseFilterRules.forEach(rule => {
-      if (!rule.symbolizers) {
-        return;
-      }
-      if (scaleSelector(rule, context.resolution)) {
-        for (let k = 0; k < rule.symbolizers.length; k += 1) {
-          const symbolizer = rule.symbolizers[k];
-          processExternalGraphicSymbolizer(
-            symbolizer,
-            featureTypeStyle,
-            context.imageLoadedCallback,
-            context.callbackRef
-          );
-          symbolizers.push(symbolizer);
-        }
-      }
-    });
-  }
-
-  return symbolizers;
+export function isGeometryTypeSupported(geometryType) {
+  return (
+    geometryType === 'Point' ||
+    geometryType === 'MultiPoint' ||
+    geometryType === 'LineString' ||
+    geometryType === 'MultiLineString' ||
+    geometryType === 'Polygon' ||
+    geometryType === 'MultiPolygon'
+  );
 }
 
 /**
