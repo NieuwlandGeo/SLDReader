@@ -39,6 +39,75 @@ function appendStyle(styles, symbolizer, feature, styleFunction, context) {
   }
 }
 
+function isGeometryTypeSupported(geometryType) {
+  return (
+    geometryType === 'Point' ||
+    geometryType === 'MultiPoint' ||
+    geometryType === 'LineString' ||
+    geometryType === 'MultiLineString' ||
+    geometryType === 'Polygon' ||
+    geometryType === 'MultiPolygon'
+  );
+}
+
+function appendOlStylesForFeature(
+  styles,
+  feature,
+  symbolizer,
+  context,
+  options
+) {
+  const geometry = feature.getGeometry
+    ? feature.getGeometry()
+    : feature.geometry;
+  const geometryType = geometry.getType ? geometry.getType() : geometry.type;
+
+  switch (geometryType) {
+    case 'Point':
+    case 'MultiPoint':
+      if (symbolizer.type === 'pointsymbolizer') {
+        appendStyle(styles, symbolizer, feature, getPointStyle, context);
+      }
+      if (symbolizer.type === 'textsymbolizer') {
+        appendStyle(styles, symbolizer, feature, getTextStyle, context);
+      }
+      break;
+
+    case 'LineString':
+    case 'MultiLineString':
+      if (symbolizer.type === 'linesymbolizer') {
+        appendStyle(styles, symbolizer, feature, getLineStyle, context);
+      }
+      if (!options?.strictGeometryMatch) {
+        if (symbolizer.type === 'pointsymbolizer') {
+          appendStyle(styles, symbolizer, feature, getLinePointStyle, context);
+        }
+      }
+      if (symbolizer.type === 'textsymbolizer') {
+        appendStyle(styles, symbolizer, feature, getTextStyle, context);
+      }
+      break;
+
+    case 'Polygon':
+    case 'MultiPolygon':
+      if (symbolizer.type === 'polygonsymbolizer') {
+        appendStyle(styles, symbolizer, feature, getPolygonStyle, context);
+      }
+      if (!options?.strictGeometryMatch) {
+        if (symbolizer.type === 'linesymbolizer') {
+          appendStyle(styles, symbolizer, feature, getLineStyle, context);
+        }
+      }
+      if (symbolizer.type === 'pointsymbolizer') {
+        appendStyle(styles, symbolizer, feature, getPolygonPointStyle, context);
+      }
+      if (symbolizer.type === 'textsymbolizer') {
+        appendStyle(styles, symbolizer, feature, getTextStyle, context);
+      }
+      break;
+  }
+}
+
 /**
  * Create openlayers style
  * @private
@@ -65,79 +134,16 @@ export default function OlStyler(symbolizers, feature, context, options = {}) {
     return [];
   }
 
-  const geometry = feature.getGeometry
-    ? feature.getGeometry()
-    : feature.geometry;
-  const geometryType = geometry.getType ? geometry.getType() : geometry.type;
-  let unknownGeometryType = false;
-
   let styles = [];
   symbolizers.forEach(symbolizer => {
-    switch (geometryType) {
-      case 'Point':
-      case 'MultiPoint':
-        if (symbolizer.type === 'pointsymbolizer') {
-          appendStyle(styles, symbolizer, feature, getPointStyle, context);
-        }
-        if (symbolizer.type === 'textsymbolizer') {
-          appendStyle(styles, symbolizer, feature, getTextStyle, context);
-        }
-        break;
-
-      case 'LineString':
-      case 'MultiLineString':
-        if (symbolizer.type === 'linesymbolizer') {
-          appendStyle(styles, symbolizer, feature, getLineStyle, context);
-        }
-        if (!styleOptions.strictGeometryMatch) {
-          if (symbolizer.type === 'pointsymbolizer') {
-            appendStyle(
-              styles,
-              symbolizer,
-              feature,
-              getLinePointStyle,
-              context
-            );
-          }
-        }
-        if (symbolizer.type === 'textsymbolizer') {
-          appendStyle(styles, symbolizer, feature, getTextStyle, context);
-        }
-        break;
-
-      case 'Polygon':
-      case 'MultiPolygon':
-        if (symbolizer.type === 'polygonsymbolizer') {
-          appendStyle(styles, symbolizer, feature, getPolygonStyle, context);
-        }
-        if (!styleOptions.strictGeometryMatch) {
-          if (symbolizer.type === 'linesymbolizer') {
-            appendStyle(styles, symbolizer, feature, getLineStyle, context);
-          }
-        }
-        if (symbolizer.type === 'pointsymbolizer') {
-          appendStyle(
-            styles,
-            symbolizer,
-            feature,
-            getPolygonPointStyle,
-            context
-          );
-        }
-        if (symbolizer.type === 'textsymbolizer') {
-          appendStyle(styles, symbolizer, feature, getTextStyle, context);
-        }
-        break;
-
-      default:
-        unknownGeometryType = true;
-        break;
-    }
+    appendOlStylesForFeature(
+      styles,
+      feature,
+      symbolizer,
+      context,
+      styleOptions
+    );
   });
-
-  if (unknownGeometryType && styleOptions.useFallbackStyles) {
-    styles = defaultStyles;
-  }
 
   // Set z-index of styles explicitly to fix a bug where GraphicStroke is always rendered above a line symbolizer.
   styles.forEach((style, index) => style.setZIndex(index));
@@ -220,6 +226,14 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
 
     if (!(symbolizers && symbolizers.length > 0)) {
       return [];
+    }
+
+    const geometry = feature.getGeometry
+      ? feature.getGeometry()
+      : feature.geometry;
+    const geometryType = geometry.getType ? geometry.getType() : geometry.type;
+    if (!isGeometryTypeSupported(geometryType)) {
+      return defaultStyles;
     }
 
     // Determine style rule array.
