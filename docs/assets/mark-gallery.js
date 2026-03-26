@@ -72,7 +72,7 @@ const wellknownNames = [
   },
   {
     category: 'other',
-    names: ['horline', 'backslash', 'slash', 'crystal', 'cyrstla'],
+    names: ['horline', 'backslash', 'slash', 'crystal'],
   },
 ];
 
