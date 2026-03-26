@@ -1,5 +1,4 @@
 import { getSymbolizersForFeature } from './Utils';
-import { processExternalGraphicSymbolizers } from './imageCache';
 import { defaultPointStyle } from './styles/static';
 import getPointStyle from './styles/pointStyle';
 import getLineStyle from './styles/lineStyle';
@@ -194,7 +193,7 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
   const callbackRef = {};
 
   // Evaluation context.
-  const context = {};
+  const context = { imageLoadedCallback, callbackRef };
 
   context.getProperty =
     typeof options.getProperty === 'function'
@@ -213,17 +212,15 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
     context.resolution = groundResolution;
 
     // Determine applicable style rules for the feature, taking feature properties and current resolution into account.
-    const symbolizers = getSymbolizersForFeature(featureTypeStyle, feature, context);
-
-    // Start loading images for external graphic symbolizers and when loaded:
-    // * update symbolizers to use the cached image.
-    // * call imageLoadedCallback with the image url.
-    processExternalGraphicSymbolizers(
-      symbolizers,
+    const symbolizers = getSymbolizersForFeature(
       featureTypeStyle,
-      imageLoadedCallback,
-      callbackRef
+      feature,
+      context
     );
+
+    if (!(symbolizers && symbolizers.length > 0)) {
+      return [];
+    }
 
     // Determine style rule array.
     const olStyles = OlStyler(symbolizers, feature, context);

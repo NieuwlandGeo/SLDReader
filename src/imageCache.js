@@ -299,13 +299,46 @@ export function loadExternalGraphic(
 
 /**
  * @private
+ * Start loading image referenced in an externalgraphic.
+ * @param {object} externalgraphic Externalgraphic style object.
+ * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
+ * @param {Function} imageLoadedCallback Function to call when an image has loaded.
+ * @param {object} callbackRef A cache of url -> bool that indicates if a loading image already has a callback assigned.
+ */
+function checkAndLoadExternalGraphic(
+  externalgraphic,
+  featureTypeStyle,
+  imageLoadedCallback,
+  callbackRef
+) {
+  if (!externalgraphic) {
+    return;
+  }
+
+  const imageUrl = externalgraphic.onlineresource;
+  const imageLoadingState = getImageLoadingState(imageUrl);
+  if (!imageLoadingState || imageLoadingState === IMAGE_LOADING) {
+    // Prevent adding imageLoadedCallback more than once per image per created style function
+    // by inspecting the callbackRef object passed by the style function creator function.
+    // Each style function has its own callbackRef dictionary.
+    if (!callbackRef[imageUrl]) {
+      callbackRef[imageUrl] = true;
+      // Load image and when loaded, invalidate all symbolizers referencing the image
+      // and invoke the imageLoadedCallback.
+      loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
+    }
+  }
+}
+
+/**
+ * @private
  * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
- * @param {Array<object>} symbolizers Array of symbolizers from rules that pass the filter for a single feature.
+ * @param {Array<object>} symbolizer A symbolizer that may contain external graphics.
  * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
  * @param {Function} imageLoadedCallback Function to call when an image has loaded.
  */
-export function processExternalGraphicSymbolizers(
-  symbolizers,
+export function processExternalGraphicSymbolizer(
+  symbolizer,
   featureTypeStyle,
   imageLoadedCallback,
   callbackRef
@@ -314,27 +347,35 @@ export function processExternalGraphicSymbolizers(
   // Dive into the symbolizers to find ExternalGraphic elements and for each ExternalGraphic,
   // check if the image url has been encountered before.
   // If not -> start loading the image into the global image cache.
-  symbolizers.forEach(symbolizer => {
-    externalGraphicPaths.forEach(path => {
-      const exgraphic = getByPath(symbolizer, path);
-      if (!exgraphic) {
-        return;
-      }
-      const imageUrl = exgraphic.onlineresource;
-      const imageLoadingState = getImageLoadingState(imageUrl);
-      if (!imageLoadingState || imageLoadingState === IMAGE_LOADING) {
-        // Prevent adding imageLoadedCallback more than once per image per created style function
-        // by inspecting the callbackRef object passed by the style function creator function.
-        // Each style function has its own callbackRef dictionary.
-        if (!callbackRef[imageUrl]) {
-          callbackRef[imageUrl] = true;
-          // Load image and when loaded, invalidate all symbolizers referencing the image
-          // and invoke the imageLoadedCallback.
-          loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
-        }
-      }
-    });
-  });
+  for (let k = 0; k < externalGraphicPaths.length; k += 1) {
+    // Note: this process assumes that each symbolizer has at most one external graphic element.
+    const path = externalGraphicPaths[k];
+    const externalgraphic = getByPath(symbolizer, path);
+    checkAndLoadExternalGraphic(
+      externalgraphic,
+      featureTypeStyle,
+      imageLoadedCallback,
+      callbackRef
+    );
+  }
+}
+
+export function processExternalGraphicSymbolizers(
+  symbolizers,
+  featureTypeStyle,
+  context
+) {
+  if (!(symbolizers && symbolizers.length > 0)) {
+    return;
+  }
+  for (let k = 0; k < symbolizers.length; k += 1) {
+    processExternalGraphicSymbolizer(
+      symbolizers[k],
+      featureTypeStyle,
+      context.imageLoadedCallback,
+      context.callbackRef
+    );
+  }
 }
 
 /**

@@ -1,4 +1,5 @@
 import { scaleSelector, filterSelector } from './Filter';
+import { processExternalGraphicSymbolizer } from './imageCache';
 
 /**
  * get all layer names in sld
@@ -65,15 +66,29 @@ export function getSymbolizersForFeature(featureTypeStyle, feature, context) {
   let match = false;
   for (let j = 0; j < featureTypeStyle.rules.length; j += 1) {
     const rule = featureTypeStyle.rules[j];
+    if (!rule.symbolizers) {
+      return;
+    }
     // Only keep rules that pass the rule's min/max scale denominator checks.
     if (scaleSelector(rule, context.resolution)) {
-      if (!rule.filter) {
-        // Rules without filter always apply.
-        symbolizers.push(...rule.symbolizers);
-        match = true;
-      } else if (filterSelector(rule.filter, feature, context)) {
-        // If a rule has a filter, only keep it if the feature passes the filter.
-        symbolizers.push(...rule.symbolizers);
+      // Rules without filter always apply.
+      // Rules with filter are checked for each feature.
+      if (!rule.filter || filterSelector(rule.filter, feature, context)) {
+        for (let k = 0; k < rule.symbolizers.length; k += 1) {
+          const symbolizer = rule.symbolizers[k];
+
+          // Start loading images for external graphic symbolizers and when loaded:
+          // * update symbolizers to use the cached image.
+          // * call imageLoadedCallback with the image url.
+          processExternalGraphicSymbolizer(
+            symbolizer,
+            featureTypeStyle,
+            context.imageLoadedCallback,
+            context.callbackRef
+          );
+
+          symbolizers.push(symbolizer);
+        }
         match = true;
       }
     }
@@ -83,10 +98,22 @@ export function getSymbolizersForFeature(featureTypeStyle, feature, context) {
   // but only those that fall within the scale range if they have one.
   if (!match && featureTypeStyle.elseFilterRules) {
     featureTypeStyle.elseFilterRules.forEach(rule => {
-      if (scaleSelector(rule, context.resolution)) {
-        symbolizers.push(...rule.symbolizers);
+      if (!rule.symbolizers) {
+        return;
       }
-    })
+      if (scaleSelector(rule, context.resolution)) {
+        for (let k = 0; k < rule.symbolizers.length; k += 1) {
+          const symbolizer = rule.symbolizers[k];
+          processExternalGraphicSymbolizer(
+            symbolizer,
+            featureTypeStyle,
+            context.imageLoadedCallback,
+            context.callbackRef
+          );
+          symbolizers.push(symbolizer);
+        }
+      }
+    });
   }
 
   return symbolizers;
