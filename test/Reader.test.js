@@ -38,24 +38,24 @@ describe('Reads xml', () => {
     }
   });
   it('has style for waterbodies', () => {
-    const wbstyles = result.layers['0'].styles;
+    const wbstyles = result.layers[0].styles;
     expect(wbstyles).to.be.an.instanceof(Array);
     expect(wbstyles).to.have.length(12);
   });
   it('style has props', () => {
-    const style = result.layers['0'].styles['0'];
+    const style = result.layers[0].styles[0];
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
     expect(style.default).to.be.true;
   });
   it('featuretypestyles has rules', () => {
     const featuretypestyle =
-      result.layers['0'].styles['0'].featuretypestyles['0'];
+      result.layers[0].styles[0].featuretypestyles[0];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
   it('rules have props', () => {
     const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
-    const [symbolizer] = rule.polygonsymbolizer;
+      result.layers[0].styles[0].featuretypestyles[0].rules[0];
+    const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
     expect(symbolizer.fill.styling).to.be.an.instanceof(Object);
@@ -65,15 +65,14 @@ describe('Reads xml', () => {
   });
   it('Scale denominators are numeric', () => {
     const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
+      result.layers[0].styles[0].featuretypestyles[0].rules[0];
     expect(rule.maxscaledenominator).to.equal(3000000);
     expect(rule.minscaledenominator).to.equal(1000);
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
     const rule =
-      result.layers['2'].styles['0'].featuretypestyles['0'].rules['0'];
-    const [symbolizer] = rule.pointsymbolizer;
-    expect(rule).to.have.property('pointsymbolizer');
+      result.layers[2].styles[0].featuretypestyles[0].rules[0];
+    const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.have.property('graphic');
     expect(symbolizer.graphic).to.have.property('externalgraphic');
     expect(symbolizer.graphic.externalgraphic).to.have.property(
@@ -85,9 +84,8 @@ describe('Reads xml', () => {
   });
   it('cities layer has pointsymbolizer with graphic mark', () => {
     const rule =
-      result.layers['2'].styles['0'].featuretypestyles['0'].rules['1'];
-    expect(rule).to.have.property('pointsymbolizer');
-    const [symbolizer] = rule.pointsymbolizer;
+      result.layers[2].styles[0].featuretypestyles[0].elseFilterRules[0];
+    const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.have.property('graphic');
     expect(symbolizer.graphic).to.have.property('mark');
     expect(symbolizer.graphic).to.have.property('size');
@@ -96,9 +94,8 @@ describe('Reads xml', () => {
   });
   it('reads multiple pointsymbolizers', () => {
     const rule =
-      result.layers['4'].styles['0'].featuretypestyles['0'].rules['0'];
-    expect(rule).to.have.property('pointsymbolizer');
-    const pointSymbolizers = rule.pointsymbolizer;
+      result.layers[4].styles[0].featuretypestyles[0].rules[0];
+    const pointSymbolizers = rule.symbolizers;
     expect(pointSymbolizers).to.be.an('array');
     expect(pointSymbolizers.length).to.equal(2);
     expect(pointSymbolizers[0]).to.have.property('graphic');
@@ -150,27 +147,27 @@ describe('Reads xml sld 11', () => {
   });
   it('returns object for the layers', () => {
     expect(result.layers).to.have.length(1);
-    expect(result.layers['0'].name).to.equal('bestuurlijkegrenzen:provincies');
+    expect(result.layers[0].name).to.equal('bestuurlijkegrenzen:provincies');
   });
   it('has styles', () => {
-    const { styles } = result.layers['0'];
+    const { styles } = result.layers[0];
     expect(styles).to.be.an.instanceof(Array);
     expect(styles).to.have.length(1);
   });
   it('style has props', () => {
-    const style = result.layers['0'].styles['0'];
+    const style = result.layers[0].styles[0];
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
   });
   it('featuretypestyles has rules', () => {
     const featuretypestyle =
-      result.layers['0'].styles['0'].featuretypestyles['0'];
+      result.layers[0].styles[0].featuretypestyles[0];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
     expect(featuretypestyle.rules).to.have.length(4);
   });
   it('rule polygonsymbolizer has props from svg', () => {
     const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
-    const [symbolizer] = rule.polygonsymbolizer;
+      result.layers[0].styles[0].featuretypestyles[0].rules[0];
+    const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
     expect(symbolizer.fill.styling).to.be.an.instanceof(Object);
@@ -178,8 +175,8 @@ describe('Reads xml sld 11', () => {
   });
   it('rule textsymbolizer label', () => {
     const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
-    const [symbolizer] = rule.textsymbolizer;
+      result.layers[0].styles[0].featuretypestyles[0].rules[3];
+    const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.label).to.deep.equal({
       type: 'propertyname',
@@ -189,8 +186,8 @@ describe('Reads xml sld 11', () => {
   });
   it('rule textsymbolizer has font', () => {
     const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
-    const [symbolizer] = rule.textsymbolizer;
+      result.layers[0].styles[0].featuretypestyles[0].rules[3];
+    const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.font).to.be.an.instanceof(Object);
     expect(symbolizer.font.styling).to.be.an.instanceof(Object);
@@ -200,8 +197,8 @@ describe('Reads xml sld 11', () => {
   });
   it('rule textsymbolizer has fill', () => {
     const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['3'];
-    const [symbolizer] = rule.textsymbolizer;
+      result.layers[0].styles[0].featuretypestyles[0].rules[3];
+    const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
   });
@@ -241,7 +238,7 @@ describe('Dynamic filter expressions', () => {
 
   it('Has propertyname expression for size', () => {
     const rule = featureTypeStyle.rules[0];
-    expect(rule.pointsymbolizer[0].graphic.size).to.deep.equal({
+    expect(rule.symbolizers[0].graphic.size).to.deep.equal({
       type: 'propertyname',
       typeHint: 'number',
       value: 'size',
@@ -259,33 +256,33 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('returns object for the layers', () => {
     expect(result.layers).to.have.length(1);
-    expect(result.layers['0'].name).to.equal('spoorwegen-trace');
+    expect(result.layers[0].name).to.equal('spoorwegen-trace');
   });
   it('has styles', () => {
-    const { styles } = result.layers['0'];
+    const { styles } = result.layers[0];
     expect(styles).to.be.an.instanceof(Array);
     expect(styles).to.have.length(1);
   });
   it('style has props', () => {
-    const style = result.layers['0'].styles['0'];
+    const style = result.layers[0].styles[0];
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
   });
   it('featuretypestyles has rules', () => {
     const featuretypestyle =
-      result.layers['0'].styles['0'].featuretypestyles['0'];
+      result.layers[0].styles[0].featuretypestyles[0];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
     expect(featuretypestyle.rules).to.have.length(1);
   });
   it('rules has linesymbolizers', () => {
     const rule =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0'];
-    expect(rule.linesymbolizer).to.be.an.instanceof(Array);
-    expect(rule.linesymbolizer).to.have.length(2);
+      result.layers[0].styles[0].featuretypestyles[0].rules[0];
+    expect(rule.symbolizers).to.be.an.instanceof(Array);
+    expect(rule.symbolizers).to.have.length(2);
   });
   it('rule linesymbolizer has props from svg 1', () => {
     const linesymbolizer1 =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0']
-        .linesymbolizer['0'];
+      result.layers[0].styles[0].featuretypestyles[0].rules[0]
+        .symbolizers[0];
     expect(linesymbolizer1.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling.stroke).to.equal('#FF0000');
@@ -293,16 +290,16 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('rule linesymbolizer has props from svg 2', () => {
     const linesymbolizer2 =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0']
-        .linesymbolizer['1'];
+      result.layers[0].styles[0].featuretypestyles[0].rules[0]
+        .symbolizers[1];
     expect(linesymbolizer2.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling.strokeDasharray).to.equal('2 6');
   });
   it('rule linesymbolizer has graphicstroke', () => {
     const { stroke } =
-      result.layers['0'].styles['0'].featuretypestyles['0'].rules['0']
-        .linesymbolizer['1'];
+      result.layers[0].styles[0].featuretypestyles[0].rules[0]
+        .symbolizers[1];
     expect(stroke.graphicstroke).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.have.property('mark');
@@ -361,7 +358,7 @@ describe('SLD v1.1.0 GraphicStroke properties', () => {
 
   function getGraphicStroke(sldObject) {
     const rule = sldObject.layers[0].styles[0].featuretypestyles[0].rules[0];
-    const { graphicstroke } = rule.linesymbolizer[0].stroke;
+    const { graphicstroke } = rule.symbolizers[0].stroke;
     return graphicstroke;
   }
 
@@ -404,12 +401,12 @@ describe('Parse vendor options', () => {
   });
 
   it('Sections without vendor options have no .vendoroptions prop', () => {
-    const symbolizer = style.rules[0].linesymbolizer[0];
+    const symbolizer = style.rules[0].symbolizers[0];
     expect(symbolizer.vendoroptions).to.be.undefined;
   });
 
   it('Parse vendor options into a .vendoroptions prop', () => {
-    const symbolizer = style.rules[0].linesymbolizer[1];
+    const symbolizer = style.rules[0].symbolizers[1];
     expect(symbolizer.vendoroptions).to.deep.equal({
       placement: 'lastPoint',
     });
@@ -424,35 +421,35 @@ describe('Symbolizers are always an array', () => {
   });
 
   it('Single Point symbolizer --> array', () => {
-    expect(Array.isArray(style.rules[0].pointsymbolizer)).to.be.true;
+    expect(Array.isArray(style.rules[0].symbolizers)).to.be.true;
   });
 
   it('Multiple Point symbolizers --> array', () => {
-    expect(Array.isArray(style.rules[1].pointsymbolizer)).to.be.true;
+    expect(Array.isArray(style.rules[1].symbolizers)).to.be.true;
   });
 
   it('Single Text symbolizer --> array', () => {
-    expect(Array.isArray(style.rules[2].textsymbolizer)).to.be.true;
+    expect(Array.isArray(style.rules[2].symbolizers)).to.be.true;
   });
 
   it('Multiple Text symbolizers --> array', () => {
-    expect(Array.isArray(style.rules[3].textsymbolizer)).to.be.true;
+    expect(Array.isArray(style.rules[3].symbolizers)).to.be.true;
   });
 
   it('Single Line symbolizer --> array', () => {
-    expect(Array.isArray(style.rules[4].linesymbolizer)).to.be.true;
+    expect(Array.isArray(style.rules[4].symbolizers)).to.be.true;
   });
 
   it('Multiple Line symbolizers --> array', () => {
-    expect(Array.isArray(style.rules[5].linesymbolizer)).to.be.true;
+    expect(Array.isArray(style.rules[5].symbolizers)).to.be.true;
   });
 
   it('Single Polygon symbolizer --> array', () => {
-    expect(Array.isArray(style.rules[6].polygonsymbolizer)).to.be.true;
+    expect(Array.isArray(style.rules[6].symbolizers)).to.be.true;
   });
 
   it('Multiple Polygon symbolizers --> array', () => {
-    expect(Array.isArray(style.rules[7].polygonsymbolizer)).to.be.true;
+    expect(Array.isArray(style.rules[7].symbolizers)).to.be.true;
   });
 });
 
@@ -464,9 +461,9 @@ describe('SVG style parameters', () => {
     beforeEach(() => {
       const parsedSld = Reader(staticPolygonSymbolizerSld);
       [style] = parsedSld.layers[0].styles[0].featuretypestyles;
-      const stroke = style.rules[0].polygonsymbolizer[0].stroke;
+      const stroke = style.rules[0].symbolizers[0].stroke;
       strokeStyle = stroke.styling;
-      const fill = style.rules[0].polygonsymbolizer[0].fill;
+      const fill = style.rules[0].symbolizers[0].fill;
       fillStyle = fill.styling;
     });
 
@@ -506,9 +503,9 @@ describe('SVG style parameters', () => {
     beforeEach(() => {
       const parsedSld = Reader(dynamicPolygonSymbolizerSld);
       [style] = parsedSld.layers[0].styles[0].featuretypestyles;
-      const stroke = style.rules[0].polygonsymbolizer[0].stroke;
+      const stroke = style.rules[0].symbolizers[0].stroke;
       strokeStyle = stroke.styling;
-      const fill = style.rules[0].polygonsymbolizer[0].fill;
+      const fill = style.rules[0].symbolizers[0].fill;
       fillStyle = fill.styling;
     });
 
@@ -545,7 +542,7 @@ describe('SVG style parameters', () => {
     beforeEach(() => {
       const parsedSld = Reader(qgisParametricSvg);
       [style] = parsedSld.layers[0].styles[0].featuretypestyles;
-      graphic = style.rules[0].pointsymbolizer[0].graphic;
+      graphic = style.rules[0].symbolizers[0].graphic;
     });
 
     it('Skip mark element when ExternalGraphic has already been encountered', () => {
@@ -595,7 +592,7 @@ describe('SVG style parameters', () => {
 
     it('Base64 inline content is converted to base64 onlineresource', () => {
       const externalgraphic =
-        style.rules[0].pointsymbolizer[0].graphic.externalgraphic;
+        style.rules[0].symbolizers[0].graphic.externalgraphic;
       expect(externalgraphic.onlineresource).to.equal(
         'data:image/png;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
       );
@@ -603,7 +600,7 @@ describe('SVG style parameters', () => {
 
     it('SVG xml inline content is converted to base64 onlineresource', () => {
       const externalgraphic =
-        style.rules[1].pointsymbolizer[0].graphic.externalgraphic;
+        style.rules[1].symbolizers[0].graphic.externalgraphic;
       expect(externalgraphic.onlineresource).to.equal(
         'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Cpath%20d%3D%22M50%2C3l12%2C36h38l-30%2C22l11%2C36l-31-21l-31%2C21l11-36l-30-22h38z%22%20fill%3D%22%23FF0%22%20stroke%3D%22%23FC0%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E'
       );
@@ -619,10 +616,10 @@ describe('SVG style parameters', () => {
     beforeEach(() => {
       parsedSld = Reader(sldWithUom);
       const fts = parsedSld.layers[0].styles[0].featuretypestyles[0];
-      pointSymbolizer = fts.rules[0].pointsymbolizer[0];
-      textSymbolizer = fts.rules[0].textsymbolizer[0];
-      lineSymbolizer = fts.rules[1].linesymbolizer[0];
-      polygonSymbolizer = fts.rules[2].polygonsymbolizer[0];
+      pointSymbolizer = fts.rules[0].symbolizers[0];
+      textSymbolizer = fts.rules[0].symbolizers[1];
+      lineSymbolizer = fts.rules[1].symbolizers[0];
+      polygonSymbolizer = fts.rules[2].symbolizers[0];
     });
 
     it('Parse uom attribute for symbolizer elements', () => {
@@ -647,7 +644,7 @@ describe('SVG style parameters', () => {
                   `Found uom on non-numeric literal [${nodeName}].`
                 );
               }
-            } else if (node.uom && node.type !== 'symbolizer') {
+            } else if (node.uom && node.type.indexOf('symbolizer') === -1) {
               throw new Error(
                 `Found uom on non-symbolizer object [${nodeName}].`
               );
@@ -774,8 +771,7 @@ describe('SVG style parameters', () => {
       it('Parse font symbol mark according to Symbology Encoding 1.1.0 as external graphic', () => {
         const rule = style.rules[0];
         expect(rule.name).to.equal('Font Symbol SE 1.1.0');
-        const { pointsymbolizer } = rule;
-        const item = pointsymbolizer[0];
+        const item = rule.symbolizers[0];
         // font://{fontfamily}|{markindex}|{size}|{fill}|{strokewidth}|{stroke}
         expect(item.graphic.externalgraphic.onlineresource).to.equal(
           'font://Wingdings|77|14|#FF0000|3|#0000FF'
@@ -791,8 +787,7 @@ describe('SVG style parameters', () => {
       it('Parse Geoserver ttf:// WellKnownName mark as TextSymbolizer', () => {
         const rule = style.rules[1];
         expect(rule.name).to.equal('Font Symbol Geoserver');
-        const { pointsymbolizer } = rule;
-        const item = pointsymbolizer[0];
+        const item = rule.symbolizers[0];
         expect(item.graphic.externalgraphic.onlineresource).to.equal(
           'font://Font Awesome 6 Pro Solid|979058|42|#880000|3|#000088'
         );
@@ -802,8 +797,7 @@ describe('SVG style parameters', () => {
       it('Use defaults for missing font symbol graphic properties', () => {
         const rule = style.rules[2];
         expect(rule.name).to.equal('Font symbol default values');
-        const { pointsymbolizer } = rule;
-        const item = pointsymbolizer[0];
+        const item = rule.symbolizers[0];
         // Default size: 10
         // Default fill: #000000
         // Absence of stroke is encoded as {strokewidth}|{stroke} --> 1|-.
@@ -815,8 +809,7 @@ describe('SVG style parameters', () => {
       it('Use default values for dynamic font symbol graphic properties', () => {
         const rule = style.rules[3];
         expect(rule.name).to.equal('Font symbol defaults for dynamic values');
-        const { pointsymbolizer } = rule;
-        const item = pointsymbolizer[0];
+        const item = rule.symbolizers[0];
         expect(item.graphic.externalgraphic.onlineresource).to.equal(
           'font://Webdings|33|16|#000000|1|-'
         );
@@ -835,8 +828,7 @@ describe('SVG style parameters', () => {
       it('Parse font symbol mark according to Symbology Encoding 1.1.0 as textsymbolizer', () => {
         const rule = style.rules[0];
         expect(rule.name).to.equal('Font Symbol SE 1.1.0');
-        const { textsymbolizer } = rule;
-        const item = textsymbolizer[0];
+        const item = rule.symbolizers[0];
         expect(item.label).to.equal(String.fromCharCode(77));
         expect(item.font.styling).to.deep.equal({
           fontFamily: 'Wingdings',
@@ -854,8 +846,7 @@ describe('SVG style parameters', () => {
       it('Parse Geoserver ttf:// WellKnownName mark as TextSymbolizer', () => {
         const rule = style.rules[1];
         expect(rule.name).to.equal('Font Symbol Geoserver');
-        const { textsymbolizer } = rule;
-        const item = textsymbolizer[0];
+                const item = rule.symbolizers[0];
         expect(item.label).to.equal(String.fromCharCode(979058));
         expect(item.font.styling).to.deep.equal({
           fontFamily: 'Font Awesome 6 Pro Solid',
@@ -869,8 +860,7 @@ describe('SVG style parameters', () => {
       const [style] = parsedSld.layers[0].styles[0].featuretypestyles;
       const rule = style.rules[0];
       expect(rule.name).to.equal('Font Symbol SE 1.1.0');
-      const { pointsymbolizer } = rule;
-      const item = pointsymbolizer[0];
+      const item = rule.symbolizers[0];
       expect(item.graphic.externalgraphic.onlineresource).to.equal(
         'font://Wingdings|77|14|#FF0000|3|#0000FF'
       );
@@ -881,8 +871,8 @@ describe('SVG style parameters', () => {
       const [style] = parsedSld.layers[0].styles[0].featuretypestyles;
       const rule = style.rules[4];
       expect(rule.name).to.equal('GraphicStroke with font symbol');
-      const { linesymbolizer } = rule;
-      const { graphic } = linesymbolizer[0].stroke.graphicstroke;
+      const linesymbolizer = rule.symbolizers[0];
+      const { graphic } = linesymbolizer.stroke.graphicstroke;
       expect(graphic.externalgraphic.onlineresource).to.equal(
         'font://Webdings|33|32|#008800|2|#224422'
       );

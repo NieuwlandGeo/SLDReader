@@ -1,5 +1,4 @@
 /* global describe it expect before beforeEach */
-import Style from 'ol/style/Style';
 import Circle from 'ol/style/Circle';
 import OLFormatGeoJSON from 'ol/format/GeoJSON';
 
@@ -8,10 +7,7 @@ import RadialShape from '../src/styles/RadialShape';
 import Reader from '../src/Reader';
 import { registerCustomSymbol } from '../src/styles/customSymbols';
 
-import OlStyler, {
-  createOlStyle,
-  createOlStyleFunction,
-} from '../src/OlStyler';
+import { createOlStyle, createOlStyleFunction } from '../src/OlStyler';
 
 import { sld } from './data/test.sld';
 import { sld11 } from './data/test11.sld';
@@ -49,82 +45,41 @@ const getMockOLFeature = geometryType => ({
   },
 });
 
-describe('create ol style object from styledescription', () => {
-  const styleDescription = {
-    polygonSymbolizers: [
-      {
-        fill: {
-          styling: {
-            fill: 'blue',
-          },
-        },
-      },
-    ],
-    lineSymbolizers: [
-      {
-        stroke: {
-          styling: {
-            stroke: 'red',
-          },
-        },
-      },
-    ],
-    pointSymbolizers: [],
-    textSymbolizers: [],
-  };
-
-  it('returns array', () => {
-    const style = OlStyler(styleDescription, getMockOLFeature('Polygon'));
-    expect(style).to.be.an('array');
-  });
-  it('returns object with polygon style', () => {
-    const style = OlStyler(styleDescription, getMockOLFeature('Polygon'));
-    expect(style['0']).to.be.an.instanceof(Style);
-  });
-  it('returns object with polygon fill', () => {
-    const style = OlStyler(styleDescription, getMockOLFeature('Polygon'));
-    expect(style['0'].getFill().getColor()).to.equal('blue');
-  });
-  it('returns object linestring style', () => {
-    const style = OlStyler(styleDescription, getMockOLFeature('LineString'));
-    expect(style['0']).to.be.an.instanceof(Style);
-  });
-  it('returns object with polygon fill', () => {
-    const style = OlStyler(styleDescription, getMockOLFeature('LineString'));
-    expect(style['0'].getStroke().getColor()).to.equal('red');
-  });
-});
-
 describe('creates point style', () => {
-  const styleDescription = {
-    polygonSymbolizers: [],
-    lineSymbolizers: [],
-    textSymbolizers: [],
-    pointSymbolizers: [
-      {
-        graphic: {
-          mark: {
-            wellknownname: 'star',
-            fill: {},
-            stroke: {},
-          },
-          opactity: 20,
-          size: 10,
-          rotation: 0,
+  let styleFn;
+  before(() => {
+    const featureTypeStyle = {
+      rules: [
+        {
+          symbolizers: [
+            {
+              type: 'pointsymbolizer',
+              uom: 'pixel',
+              graphic: {
+                mark: {
+                  wellknownname: 'star',
+                  stroke: {
+                    styling: {
+                      stroke: '#FF0000',
+                      strokeWidth: 2,
+                    },
+                  },
+                },
+                size: 10,
+              },
+            },
+          ],
         },
-      },
-    ],
-  };
-  it('returns array', () => {
-    const styles = OlStyler(styleDescription, getMockOLFeature('Point'));
-    expect(styles).to.be.an('array');
+      ],
+    };
+    styleFn = createOlStyleFunction(featureTypeStyle);
   });
-  it('returns style', () => {
-    const [style] = OlStyler(styleDescription, getMockOLFeature('Point'));
-    expect(style).to.be.an.instanceOf(Style);
+  it('returns point style', () => {
+    const [style] = styleFn(getMockOLFeature('Point'));
+    expect(style.getImage().getStroke().getColor()).to.equal('#FF0000');
   });
   it('uses radius and radius2 for star-like regular shape', () => {
-    const [style] = OlStyler(styleDescription, getMockOLFeature('Point'));
+    const [style] = styleFn(getMockOLFeature('Point'));
     expect(style.getImage().getRadius()).to.equal(5);
     expect(style.getImage().getRadius2()).to.equal(2);
   });
@@ -288,7 +243,7 @@ describe('SLD with external graphics', () => {
     // Requesting feature style for a feature with type 2 should only update the loading state for the corresponding image.
     expect(
       getImageLoadingState(
-        featureTypeStyle.rules[1].pointsymbolizer[0].graphic.externalgraphic
+        featureTypeStyle.rules[1].symbolizers[0].graphic.externalgraphic
           .onlineresource
       )
     ).to.equal(IMAGE_LOADING);
@@ -296,19 +251,19 @@ describe('SLD with external graphics', () => {
     // But other symbolizers should be left alone.
     expect(
       getImageLoadingState(
-        featureTypeStyle.rules[0].pointsymbolizer[0].graphic.externalgraphic
+        featureTypeStyle.rules[0].symbolizers[0].graphic.externalgraphic
           .onlineresource
       )
     ).to.be.undefined;
     expect(
       getImageLoadingState(
-        featureTypeStyle.rules[2].pointsymbolizer[0].graphic.externalgraphic
+        featureTypeStyle.rules[2].symbolizers[0].graphic.externalgraphic
           .onlineresource
       )
     ).to.be.undefined;
     expect(
       getImageLoadingState(
-        featureTypeStyle.rules[3].pointsymbolizer[0].graphic.externalgraphic
+        featureTypeStyle.elseFilterRules[0].symbolizers[0].graphic.externalgraphic
           .onlineresource
       )
     ).to.be.undefined;
@@ -335,7 +290,7 @@ describe('SLD with external graphics', () => {
     const styleFunction = createOlStyleFunction(featureTypeStyle, {
       imageLoadedCallback: () => {
         // When this function is called, the loading state should be either loaded or error.
-        const [symbolizer] = featureTypeStyle.rules[1].pointsymbolizer;
+        const [symbolizer] = featureTypeStyle.rules[1].symbolizers;
         const imageUrl = symbolizer.graphic.externalgraphic.onlineresource;
         expect(getImageLoadingState(imageUrl)).to.equal(IMAGE_LOADED);
         done();
@@ -492,11 +447,11 @@ describe('SLD with external graphics', () => {
     const styleFunction1 = createOlStyleFunction(featureTypeStyle);
     const styleFunction2 = createOlStyleFunction(featureTypeStyle2, {
       imageLoadedCallback: () => {
-        expect(featureTypeStyle.rules[1].pointsymbolizer[0].__invalidated).to.be
+        expect(featureTypeStyle.rules[1].symbolizers[0].__invalidated).to.be
           .true;
         // The pointsymbolizer of the second style object should also be properly invalidated,
         // even if it uses the same image for which the first style function triggered the loading.
-        expect(featureTypeStyle2.rules[0].pointsymbolizer[0].__invalidated).to
+        expect(featureTypeStyle2.rules[0].symbolizers[0].__invalidated).to
           .be.true;
         done();
       },
@@ -582,7 +537,7 @@ describe('SLD with stacked line symbolizer', () => {
     // for the graphicstroke sub-symbolizer in the second LineSymbolizer inside the rule.
     styleFunction(olFeature, null)[0];
     const graphicStrokeSymbolizer =
-      featureTypeStyle.rules[0].linesymbolizer[1].stroke.graphicstroke;
+      featureTypeStyle.rules[0].symbolizers[1].stroke.graphicstroke;
     // Symbolizer should have IMAGE_LOADING metadata flag set.
     expect(
       getImageLoadingState(

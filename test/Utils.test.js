@@ -1,5 +1,6 @@
 /* global describe it expect */
-import * as Utils from '../src/Utils';
+import { createOlStyleFunction } from '../src/OlStyler';
+import { getLayer, getLayerNames, getStyle, getStyleNames } from '../src/Utils';
 
 describe('reads info from StyledLayerDescriptor object', () => {
   it('get layer names', () => {
@@ -16,7 +17,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
         },
       ],
     };
-    const layernames = Utils.getLayerNames(sld);
+    const layernames = getLayerNames(sld);
     expect(layernames).to.have.length(3);
     expect(layernames).to.deep.equal(['WaterBodies', 'Roads', 'Cities']);
   });
@@ -36,7 +37,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
         },
       ],
     };
-    const layer = Utils.getLayer(sld, 'WaterBodies');
+    const layer = getLayer(sld, 'WaterBodies');
     expect(layer.styles).to.have.length(1);
     expect(layer.name).to.equal('WaterBodies');
   });
@@ -49,7 +50,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
         },
       ],
     };
-    const stylenames = Utils.getStyleNames(layer, 'WaterBodies');
+    const stylenames = getStyleNames(layer, 'WaterBodies');
     expect(stylenames).to.have.length(1);
     expect(stylenames).to.deep.equal(['Default Styler']);
   });
@@ -65,7 +66,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
         },
       ],
     };
-    const style = Utils.getStyle(layer, 'Hover Styler');
+    const style = getStyle(layer, 'Hover Styler');
     expect(style.name).to.equal('Hover Styler');
   });
 
@@ -81,7 +82,7 @@ describe('reads info from StyledLayerDescriptor object', () => {
         },
       ],
     };
-    const style = Utils.getStyle(layer);
+    const style = getStyle(layer);
     expect(style.name).to.equal('Hover Styler');
   });
 
@@ -96,41 +97,65 @@ describe('reads info from StyledLayerDescriptor object', () => {
         },
       ],
     };
-    const style = Utils.getStyle(layer);
+    const style = getStyle(layer);
     expect(style.name).to.equal('Default Styler');
   });
 
   describe('Evaluating rule filters: ElseFilters and ScaleDenominators', () => {
     const testFeature = {
       type: 'Feature',
-      geometry: null,
+      geometry: {
+        type: 'Point',
+        coordinates: [12.34, 45.68],
+      },
       properties: {
         value: 42,
       },
     };
 
+    const createPointSymbolizer = fillColor => ({
+      type: 'pointsymbolizer',
+      uom: 'pixel',
+      graphic: {
+        mark: {
+          wellknownname: 'circle',
+          fill: {
+            styling: {
+              fill: fillColor,
+            },
+          },
+        },
+        size: 10,
+      },
+    });
+
     it('Skip rules outside min/max scale denominator', () => {
+      // Use colors to check which rules have been hit.
       const featureTypeStyle = {
         rules: [
           {
             name: 'rule1',
             maxscaledenominator: 500,
+            symbolizers: [createPointSymbolizer('#FF0000')],
           },
           {
             name: 'rule2',
             minscaledenominator: 500,
             maxscaledenominator: 5000,
+            symbolizers: [createPointSymbolizer('#00FF00')],
           },
           {
             name: 'rule3',
             minscaledenominator: 5000,
+            symbolizers: [createPointSymbolizer('#0000FF')],
           },
         ],
       };
-      const filteredRules = Utils.getRules(featureTypeStyle, testFeature, {
-        resolution: 0.28, // scale 1:1000.
-      });
-      expect(filteredRules.map(rule => rule.name)).to.deep.equal(['rule2']);
+      const styleFn = createOlStyleFunction(featureTypeStyle);
+      const olStyles = styleFn(testFeature, 0.28); // resolution 0.28 = scale 1:1000
+      expect(
+        olStyles.map(style => style.getImage().getFill().getColor())
+      ).to.deep.equal(['#00FF00']); // only rule 2 matches scale 1:1000
     });
 
     it('Skip ElseFilter when any other rule matches', () => {
@@ -138,37 +163,35 @@ describe('reads info from StyledLayerDescriptor object', () => {
         rules: [
           {
             name: 'always-passes',
-          },
-          {
-            name: 'rule-elsefilter',
-            elsefilter: true,
+            symbolizers: [createPointSymbolizer('#FF0000')],
           },
           {
             name: 'always-passes-too',
+            symbolizers: [createPointSymbolizer('#00FF00')],
+          },
+        ],
+        elseFilterRules: [
+          {
+            name: 'rule-elsefilter',
+            elsefilter: true,
+            symbolizers: [createPointSymbolizer('#0000FF')],
           },
         ],
       };
-      const filteredRules = Utils.getRules(
-        featureTypeStyle,
-        testFeature,
-        { resolution: 0.28 } // scale 1:1000.
-      );
-      expect(filteredRules.map(rule => rule.name)).to.deep.equal([
-        'always-passes',
-        'always-passes-too',
-      ]);
+      const styleFn = createOlStyleFunction(featureTypeStyle);
+      const olStyles = styleFn(testFeature, 0.28); // resolution 0.28 = scale 1:1000
+      expect(
+        olStyles.map(style => style.getImage().getFill().getColor())
+      ).to.deep.equal(['#FF0000', '#00FF00']); // elsefilter rule is skipped because at least one other rule matches
     });
 
     it('Keep ElseFilter rule if all other eligible rules are outside scale range', () => {
       const featureTypeStyle = {
         rules: [
           {
-            name: 'rule-elsefilter',
-            elsefilter: true,
-          },
-          {
             name: 'only-above-scale-5000',
             minscaledenominator: 5000,
+            symbolizers: [createPointSymbolizer('#FF0000')],
           },
           {
             name: 'value-equals-100',
@@ -178,29 +201,31 @@ describe('reads info from StyledLayerDescriptor object', () => {
               propertyname: 'value',
               literal: '100',
             },
+            symbolizers: [createPointSymbolizer('#00FF00')],
+          },
+        ],
+        elseFilterRules: [
+          {
+            name: 'rule-elsefilter',
+            elsefilter: true,
+            symbolizers: [createPointSymbolizer('#0000FF')],
           },
         ],
       };
-      const filteredRules = Utils.getRules(
-        featureTypeStyle,
-        testFeature,
-        { resolution: 0.28 } // scale 1:1000.
-      );
-      expect(filteredRules.map(rule => rule.name)).to.deep.equal([
-        'rule-elsefilter',
-      ]);
+      const styleFn = createOlStyleFunction(featureTypeStyle);
+      const olStyles = styleFn(testFeature, 0.28); // resolution 0.28 = scale 1:1000
+      expect(
+        olStyles.map(style => style.getImage().getFill().getColor())
+      ).to.deep.equal(['#0000FF']); // ElseFilter rule is selected because both other rules are filtered out.
     });
 
     it('Discard ElseFilter rule if at least one other eligible rule is within scale range', () => {
       const featureTypeStyle = {
         rules: [
           {
-            name: 'rule-elsefilter',
-            elsefilter: true,
-          },
-          {
             name: 'only-above-scale-5000',
             minscaledenominator: 5000,
+            symbolizers: [createPointSymbolizer('#FF0000')],
           },
           {
             name: 'value-equals-100',
@@ -210,17 +235,22 @@ describe('reads info from StyledLayerDescriptor object', () => {
               propertyname: 'value',
               literal: '100',
             },
+            symbolizers: [createPointSymbolizer('#00FF00')],
+          },
+        ],
+        elseFilterRules: [
+          {
+            name: 'rule-elsefilter',
+            elsefilter: true,
+            symbolizers: [createPointSymbolizer('#0000FF')],
           },
         ],
       };
-      const filteredRules = Utils.getRules(
-        featureTypeStyle,
-        testFeature,
-        { resolution: 2.8 } // scale 1:10000.
-      );
-      expect(filteredRules.map(rule => rule.name)).to.deep.equal([
-        'only-above-scale-5000',
-      ]);
+      const styleFn = createOlStyleFunction(featureTypeStyle);
+      const olStyles = styleFn(testFeature, 2.8); // resolution 2.8 = scale 1:10000
+      expect(
+        olStyles.map(style => style.getImage().getFill().getColor())
+      ).to.deep.equal(['#FF0000']); // Only rule 1 matches, so no else filter rules.
     });
   });
 });
