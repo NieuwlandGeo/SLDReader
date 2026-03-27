@@ -127,11 +127,11 @@ function getPointStyle(symbolizer, feature, context) {
   const sizeValue =
     Number(evaluate(size, feature, context)) || DEFAULT_MARK_SIZE;
   const rotationDegrees = Number(evaluate(rotation, feature, context)) || 0.0;
+  const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
 
   // --- Update dynamic rotation ---
   if (isDynamicExpression(rotation)) {
-    // Note: OL angles are in radians.
-    const rotationRadians = (Math.PI * rotationDegrees) / 180.0;
+    // Note: OL expects angles in radians.
     olImage.setRotation(rotationRadians);
   }
 
@@ -192,7 +192,12 @@ function getPointStyle(symbolizer, feature, context) {
       const dx = evaluate(displacementx, feature, context) || 0.0;
       const dy = evaluate(displacementy, feature, context) || 0.0;
       if (dx !== 0.0 || dy !== 0.0) {
-        olImage.setDisplacement([dx, dy]);
+        // The SLD spec says that rotation must be independent of displacement,
+        // but because OpenLayers applies rotation after displacement, the displaced center will be rotated too.
+        // Compensate for this by rotating displaced center back in counter-clockwise direction.
+        const dx2 = Math.cos(rotationRadians) * dx - Math.sin(rotationRadians) * dy;
+        const dy2 = Math.sin(rotationRadians) * dx + Math.cos(rotationRadians) * dy;
+        olImage.setDisplacement([dx2, dy2]);
       }
     }
   }

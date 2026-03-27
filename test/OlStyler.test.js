@@ -263,8 +263,8 @@ describe('SLD with external graphics', () => {
     ).to.be.undefined;
     expect(
       getImageLoadingState(
-        featureTypeStyle.elseFilterRules[0].symbolizers[0].graphic.externalgraphic
-          .onlineresource
+        featureTypeStyle.elseFilterRules[0].symbolizers[0].graphic
+          .externalgraphic.onlineresource
       )
     ).to.be.undefined;
 
@@ -451,8 +451,8 @@ describe('SLD with external graphics', () => {
           .true;
         // The pointsymbolizer of the second style object should also be properly invalidated,
         // even if it uses the same image for which the first style function triggered the loading.
-        expect(featureTypeStyle2.rules[0].symbolizers[0].__invalidated).to
-          .be.true;
+        expect(featureTypeStyle2.rules[0].symbolizers[0].__invalidated).to.be
+          .true;
         done();
       },
     });
@@ -595,9 +595,15 @@ describe('Dynamic style properties', () => {
         );
       });
 
-      it('Reads displacement from feature', () => {
+      it('Reads displacement and compensates for rotation', () => {
         const style = styleFunction(pointFeature)[0];
-        expect(style.getImage().getDisplacement()).to.deep.equal([10, 20]);
+        const [dx, dy] = style.getImage().getDisplacement();
+        const rotation = style.getImage().getRotation();
+        // OriDx and oriDy are the original, uncompensated, displacement values from SLD.
+        const oriDx = Math.cos(-rotation) * dx - Math.sin(-rotation) * dy;
+        expect(oriDx).to.be.closeTo(10, 1e-6);
+        const oriDy = Math.sin(-rotation) * dx + Math.cos(-rotation) * dy;
+        expect(oriDy).to.be.closeTo(20, 1e-6);
       });
 
       it('Reads text for label from feature', () => {
@@ -1227,8 +1233,14 @@ describe('Styling with dynamic SVG Parameters', () => {
       expect(imageRotationDegrees).to.equal(42);
     });
 
-    it('Dynamic displacement', () => {
-      expect(olStyle.getImage().getDisplacement()).to.deep.equal([15, 45]);
+    it('Dynamic displacement (compensated for dynamic rotation)', () => {
+      const [dx, dy] = olStyle.getImage().getDisplacement();
+      const rotation = olStyle.getImage().getRotation();
+      // OriDx and oriDy are the original, uncompensated, displacement values from SLD.
+      const oriDx = Math.cos(-rotation) * dx - Math.sin(-rotation) * dy;
+      expect(oriDx).to.be.closeTo(15, 1e-6);
+      const oriDy = Math.sin(-rotation) * dx + Math.cos(-rotation) * dy;
+      expect(oriDy).to.be.closeTo(45, 1e-6);
     });
   });
 
