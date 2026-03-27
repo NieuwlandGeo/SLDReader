@@ -88,9 +88,9 @@ describe('Function parsing', () => {
   it('Function as svg style parameter', () => {
     const result = Reader(dynamicSld);
     const [featureTypeStyle] = result.layers[0].styles[0].featuretypestyles;
-    const rule = featureTypeStyle.rules[1];
+    const rule = featureTypeStyle.elseFilterRules[0];
     expect(
-      rule.pointsymbolizer[0].graphic.mark.fill.styling.fill
+      rule.symbolizers[0].graphic.mark.fill.styling.fill
     ).to.deep.equal({
       type: 'function',
       name: 'random_color',

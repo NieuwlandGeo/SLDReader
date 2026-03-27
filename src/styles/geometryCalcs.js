@@ -52,6 +52,16 @@ export function splitLineString(geometry, graphicSpacing, _options = {}) {
     return [[...coords[0], 0]];
   }
 
+  // Degenerate case of a line cointaining exactly two points that overlap.
+  // In that case, return the first coordinate as if the line string cointained only one point.
+  if (
+    coords.length === 2 &&
+    coords[0][0] === coords[1][0] &&
+    coords[0][1] === coords[1][1]
+  ) {
+    return [[...coords[0], 0]];
+  }
+
   // Handle first point placement case.
   if (splitOptions.placement === PLACEMENT_FIRSTPOINT) {
     const p1 = coords[0];
@@ -136,8 +146,15 @@ export function splitLineString(geometry, graphicSpacing, _options = {}) {
 export function getLineMidpoint(geometry) {
   // Use the splitpoints routine to distribute points over the line with
   // a point-to-point distance along the line equal to half line length.
-  // This results in three points. Take the middle point.
   const splitPoints = splitLineString(geometry, geometry.getLength() / 2);
+
+  // In some degenerate cases, the splitPoints array will return only one point.
+  if (splitPoints.length === 1) {
+    return splitPoints[0];
+  }
+
+  // In normal cases, splitting with half line length will result in three points.
+  // Take the middle one.
   const [x, y] = splitPoints[1];
   return [x, y];
 }

@@ -263,9 +263,15 @@ export function filterSelector(filter, feature, context) {
         return false;
       }
 
-      return filter.predicates.every(predicate =>
-        filterSelector(predicate, feature, context)
-      );
+      let result = true;
+      for (let k = 0; k < filter.predicates.length; k += 1) {
+        const predicate = filter.predicates[k];
+        if (!filterSelector(predicate, feature, context)) {
+          result = false;
+          break;
+        }
+      }
+      return result;
     }
 
     case 'or': {
@@ -273,9 +279,15 @@ export function filterSelector(filter, feature, context) {
         throw new Error('Or filter must have predicates array.');
       }
 
-      return filter.predicates.some(predicate =>
-        filterSelector(predicate, feature, context)
-      );
+      let result = false;
+      for (let k = 0; k < filter.predicates.length; k += 1) {
+        const predicate = filter.predicates[k];
+        if (filterSelector(predicate, feature, context)) {
+          result = true;
+          break;
+        }
+      }
+      return result;
     }
 
     case 'not': {

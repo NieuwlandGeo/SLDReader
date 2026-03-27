@@ -94,8 +94,9 @@ function createFeatureTypeStyle() {
         },
         expression2: wellknownname,
       },
-      pointsymbolizer: [
+      symbolizers: [
         {
+          type: 'pointsymbolizer',
           graphic: {
             mark: {
               wellknownname,
@@ -119,10 +120,11 @@ function createFeatureTypeStyle() {
   };
 
   // Add else filter to display unknown wellknownname as a boring gray square.
-  featureTypeStyle.rules.push({
+  featureTypeStyle.elseFilterRules =[{
     elsefilter: true,
-    pointsymbolizer: [
+    symbolizers: [
       {
+        type: 'pointsymbolizer',
         graphic: {
           mark: {
             wellknownname: 'square',
@@ -142,7 +144,7 @@ function createFeatureTypeStyle() {
         },
       },
     ],
-  });
+  }];
 
   return featureTypeStyle;
 }

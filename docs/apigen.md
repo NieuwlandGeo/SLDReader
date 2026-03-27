@@ -61,9 +61,6 @@ Note: this will be a mix of Point/Line/Polygon/Text symbolizers.</p>
 ## Typedefs
 
 <dl>
-<dt><a href="#CategorizedSymbolizers">CategorizedSymbolizers</a></dt>
-<dd><p>contains for each geometry type the symbolizer from an array of rules</p>
-</dd>
 <dt><a href="#Expression">Expression</a></dt>
 <dd><p>Modeled after <a href="https://schemas.opengis.net/se/1.1.0/Symbolizer.xsd">SvgParameterType</a>.
 Can be either a primitive value (string,integer,boolean), or an object with these properties:</p>
@@ -267,21 +264,6 @@ Note: this will be a mix of Point/Line/Polygon/Text symbolizers.
 | --- | --- | --- |
 | rule | <code>object</code> | SLD rule object. |
 
-<a name="CategorizedSymbolizers"></a>
-
-## CategorizedSymbolizers
-contains for each geometry type the symbolizer from an array of rules
-
-**Kind**: global typedef  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| polygonSymbolizers | [<code>Array.&lt;PolygonSymbolizer&gt;</code>](#PolygonSymbolizer) | polygonsymbolizers |
-| lineSymbolizers | [<code>Array.&lt;LineSymbolizer&gt;</code>](#LineSymbolizer) | linesymbolizers |
-| pointSymbolizers | [<code>Array.&lt;PointSymbolizer&gt;</code>](#PointSymbolizer) | pointsymbolizers, same as graphic prop from PointSymbolizer |
-| textSymbolizers | <code>Array.&lt;TextSymbolizer&gt;</code> | textsymbolizers |
-
 <a name="Expression"></a>
 
 ## Expression
@@ -366,6 +348,7 @@ a typedef for FeatureTypeStyle: [xsd](http://schemas.opengis.net/se/1.1.0/Featur
 | Name | Type |
 | --- | --- |
 | rules | [<code>Array.&lt;Rule&gt;</code>](#Rule) | 
+| elseFilterRules | [<code>Array.&lt;Rule&gt;</code>](#Rule) For rules with an ElseFilter | 
 
 <a name="Rule"></a>
 
@@ -383,9 +366,14 @@ a typedef for Rule to match a feature: [xsd](http://schemas.opengis.net/se/1.1.0
 | [elsefilter] | <code>boolean</code> | Set this to true when rule has no filter expression to catch everything not passing any other filter. |
 | [minscaledenominator] | <code>integer</code> |  |
 | [maxscaledenominator] | <code>integer</code> |  |
-| [polygonsymbolizer] | [<code>PolygonSymbolizer</code>](#PolygonSymbolizer) |  |
-| [linesymbolizer] | [<code>LineSymbolizer</code>](#LineSymbolizer) |  |
-| [pointsymbolizer] | [<code>PointSymbolizer</code>](#PointSymbolizer) |  |
+| [symbolizers] | [<code>Array.&lt;Symbolzier&gt;</code>](#Symbolizer) |  |
+
+<a name="Symbolizer"></a>
+
+## Symbolizer
+a typedef for [Symbolizer](http://schemas.opengis.net/se/1.1.0/Symbolizer.xsd)
+
+See kinds of symbolizers below.
 
 <a name="PolygonSymbolizer"></a>
 

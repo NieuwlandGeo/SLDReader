@@ -3,7 +3,7 @@ import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
 
 import { IMAGE_LOADING, IMAGE_LOADED, IMAGE_ERROR } from './constants';
-import { getRuleSymbolizers, getByPath } from './Utils';
+import { getByPath } from './Utils';
 import { renderFontSymbolToCanvas } from './styles/fontSymbols';
 
 // These are possible locations for an external graphic inside a symbolizer.
@@ -95,20 +95,16 @@ function invalidateExternalGraphicSymbolizers(symbolizer, imageUrl) {
   }
 }
 
-function updateSymbolizerInvalidatedState(ruleSymbolizer, imageUrl) {
-  if (!ruleSymbolizer) {
+function updateSymbolizerInvalidatedState(symbolizers, imageUrl) {
+  if (!symbolizers) {
     return;
   }
 
   // Watch out! A symbolizer inside a rule may be a symbolizer, or an array of symbolizers.
   // Todo: refactor so rule.symbolizers property is always an array with 0..n symbolizer objects.
-  if (!Array.isArray(ruleSymbolizer)) {
-    invalidateExternalGraphicSymbolizers(ruleSymbolizer, imageUrl);
-  } else {
-    for (let k = 0; k < ruleSymbolizer.length; k += 1) {
-      invalidateExternalGraphicSymbolizers(ruleSymbolizer[k], imageUrl);
-    }
-  }
+  symbolizers.forEach(symbolizer => {
+    invalidateExternalGraphicSymbolizers(symbolizer, imageUrl);
+  });
 }
 
 /**
@@ -118,15 +114,17 @@ function updateSymbolizerInvalidatedState(ruleSymbolizer, imageUrl) {
  * @param {string} imageUrl The image url.
  */
 function invalidateExternalGraphics(featureTypeStyle, imageUrl) {
-  if (!featureTypeStyle.rules) {
-    return;
+  if (featureTypeStyle.rules) {
+    featureTypeStyle.rules.forEach(rule => {
+      updateSymbolizerInvalidatedState(rule.symbolizers, imageUrl);
+    });
   }
 
-  featureTypeStyle.rules.forEach(rule => {
-    updateSymbolizerInvalidatedState(rule.pointsymbolizer, imageUrl);
-    updateSymbolizerInvalidatedState(rule.linesymbolizer, imageUrl);
-    updateSymbolizerInvalidatedState(rule.polygonsymbolizer, imageUrl);
-  });
+  if (featureTypeStyle.elseFilterRules) {
+    featureTypeStyle.elseFilterRules.forEach(rule => {
+      updateSymbolizerInvalidatedState(rule.symbolizers, imageUrl);
+    });
+  }
 }
 
 function checkFontReady(fontFamily, fontSize) {
@@ -161,7 +159,7 @@ function getFontSymbolImageLoader(fontUrl) {
   return new Promise((resolve, reject) => {
     checkFontReady(fontFamily, symbolSize).then(() => {
       // Render font symbol larger than it's size. This results in a crisper look.
-      // Do not scale too much, because you will lose the benefit of antialiasing 
+      // Do not scale too much, because you will lose the benefit of antialiasing
       // Antialiasing has a 'width' of 1 pixel and gets lost when scaled down back from a very large image.
       const scaleFactor = 2 * DEVICE_PIXEL_RATIO;
 
@@ -301,13 +299,46 @@ export function loadExternalGraphic(
 
 /**
  * @private
+ * Start loading image referenced in an externalgraphic.
+ * @param {object} externalgraphic Externalgraphic style object.
+ * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
+ * @param {Function} imageLoadedCallback Function to call when an image has loaded.
+ * @param {object} callbackRef A cache of url -> bool that indicates if a loading image already has a callback assigned.
+ */
+function checkAndLoadExternalGraphic(
+  externalgraphic,
+  featureTypeStyle,
+  imageLoadedCallback,
+  callbackRef
+) {
+  if (!externalgraphic) {
+    return;
+  }
+
+  const imageUrl = externalgraphic.onlineresource;
+  const imageLoadingState = getImageLoadingState(imageUrl);
+  if (!imageLoadingState || imageLoadingState === IMAGE_LOADING) {
+    // Prevent adding imageLoadedCallback more than once per image per created style function
+    // by inspecting the callbackRef object passed by the style function creator function.
+    // Each style function has its own callbackRef dictionary.
+    if (!callbackRef[imageUrl]) {
+      callbackRef[imageUrl] = true;
+      // Load image and when loaded, invalidate all symbolizers referencing the image
+      // and invoke the imageLoadedCallback.
+      loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
+    }
+  }
+}
+
+/**
+ * @private
  * Start loading images used in rules that have a pointsymbolizer with an externalgraphic.
- * @param {Array<object>} rules Array of SLD rule objects that pass the filter for a single feature.
+ * @param {Array<object>} symbolizer A symbolizer that may contain external graphics.
  * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
  * @param {Function} imageLoadedCallback Function to call when an image has loaded.
  */
-export function processExternalGraphicSymbolizers(
-  rules,
+export function processExternalGraphicSymbolizer(
+  symbolizer,
   featureTypeStyle,
   imageLoadedCallback,
   callbackRef
@@ -316,34 +347,35 @@ export function processExternalGraphicSymbolizers(
   // Dive into the symbolizers to find ExternalGraphic elements and for each ExternalGraphic,
   // check if the image url has been encountered before.
   // If not -> start loading the image into the global image cache.
-  rules.forEach(rule => {
-    const allSymbolizers = getRuleSymbolizers(rule);
-    allSymbolizers.forEach(symbolizer => {
-      externalGraphicPaths.forEach(path => {
-        const exgraphic = getByPath(symbolizer, path);
-        if (!exgraphic) {
-          return;
-        }
-        const imageUrl = exgraphic.onlineresource;
-        const imageLoadingState = getImageLoadingState(imageUrl);
-        if (!imageLoadingState || imageLoadingState === IMAGE_LOADING) {
-          // Prevent adding imageLoadedCallback more than once per image per created style function
-          // by inspecting the callbackRef object passed by the style function creator function.
-          // Each style function has its own callbackRef dictionary.
-          if (!callbackRef[imageUrl]) {
-            callbackRef[imageUrl] = true;
-            // Load image and when loaded, invalidate all symbolizers referencing the image
-            // and invoke the imageLoadedCallback.
-            loadExternalGraphic(
-              imageUrl,
-              featureTypeStyle,
-              imageLoadedCallback
-            );
-          }
-        }
-      });
-    });
-  });
+  for (let k = 0; k < externalGraphicPaths.length; k += 1) {
+    // Note: this process assumes that each symbolizer has at most one external graphic element.
+    const path = externalGraphicPaths[k];
+    const externalgraphic = getByPath(symbolizer, path);
+    checkAndLoadExternalGraphic(
+      externalgraphic,
+      featureTypeStyle,
+      imageLoadedCallback,
+      callbackRef
+    );
+  }
+}
+
+export function processExternalGraphicSymbolizers(
+  symbolizers,
+  featureTypeStyle,
+  context
+) {
+  if (!(symbolizers && symbolizers.length > 0)) {
+    return;
+  }
+  for (let k = 0; k < symbolizers.length; k += 1) {
+    processExternalGraphicSymbolizer(
+      symbolizers[k],
+      featureTypeStyle,
+      context.imageLoadedCallback,
+      context.callbackRef
+    );
+  }
 }
 
 /**
