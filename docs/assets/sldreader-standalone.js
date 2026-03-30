@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 27, 2026 16:12:19 */
+/* Version: 0.7.3 - March 30, 2026 15:34:24 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1069,6 +1069,24 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       ...options,
       typeHint: 'number'
     });
+    // QGIS compatibility mode: invert displacementy, since QGIS has Y positive in downwards direction.
+    if (prop === 'DisplacementY' && options.compatibilityMode === 'QGIS') {
+      if (obj.displacementy === null || typeof obj.displacementy === 'undefined') {
+        return;
+      }
+      if (typeof obj.displacementy === 'number') {
+        obj.displacementy = -obj.displacementy;
+      } else if (typeof obj.displacementy === 'object' && obj.displacementy.type === 'literal') {
+        obj.displacementy.value = -obj.displacementy.value;
+      } else if (typeof obj.displacementy === 'object') {
+        obj.displacementy = {
+          type: 'function',
+          name: '__fe:Mul__',
+          typeHint: 'number',
+          params: [obj.displacementy, -1]
+        };
+      }
+    }
   }
   function addDimensionlessNumericParameterValueProp(node, obj, prop, options = {}) {
     addParameterValueProp(node, obj, prop, {

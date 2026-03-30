@@ -678,6 +678,31 @@ function addParameterValueProp(node, obj, prop, options = {}) {
 
 function addNumericParameterValueProp(node, obj, prop, options = {}) {
   addParameterValueProp(node, obj, prop, { ...options, typeHint: 'number' });
+  // QGIS compatibility mode: invert displacementy, since QGIS has Y positive in downwards direction.
+  if (prop === 'DisplacementY' && options.compatibilityMode === 'QGIS') {
+    if (
+      obj.displacementy === null ||
+      typeof obj.displacementy === 'undefined'
+    ) {
+      return;
+    }
+
+    if (typeof obj.displacementy === 'number') {
+      obj.displacementy = -obj.displacementy;
+    } else if (
+      typeof obj.displacementy === 'object' &&
+      obj.displacementy.type === 'literal'
+    ) {
+      obj.displacementy.value = -obj.displacementy.value;
+    } else if (typeof obj.displacementy === 'object') {
+      obj.displacementy = {
+        type: 'function',
+        name: '__fe:Mul__',
+        typeHint: 'number',
+        params: [obj.displacementy, -1],
+      };
+    }
+  }
 }
 
 function addDimensionlessNumericParameterValueProp(
