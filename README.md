@@ -491,6 +491,8 @@ For now, only QGIS is available as compatibility mode option, but more can be ad
 
 In QGIS compatibility mode, a rotated `line` symbol inside a `GraphicFill` will be replaced by an unrotated `slash` or `backslash` when the rotation is an odd multiple of 45 degrees. This ensures that lines are unbroken in the graphic fill, because a (back)slash symbol spans the entire diagonal of the tiled square. A rotated line only spans part of the diagonal, causing broken lines in the fill.
 
+Also, vertical displacement of point and text symbolizers will be inverted because QGIS treats a positive Y as a downwards displacement, but the SLD spec defines a positive Y displacement as an upwards displacement.
+
 ## Contributing
 
 ### Creating an issue

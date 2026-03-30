@@ -13,6 +13,7 @@ import { graphicStrokeVendorOption } from './data/graphicstroke-vendoroption.sld
 import { qgisParametricSvg } from './data/qgis-parametric-svg.sld';
 import { fontSymbolsSld } from './data/font-symbols.sld';
 import { sldWithUom } from './data/sld-with-uom';
+import { qgisDisplacementSld } from './data/qgis-displacement.sld';
 
 import { UOM_METRE } from '../src/constants';
 
@@ -48,13 +49,11 @@ describe('Reads xml', () => {
     expect(style.default).to.be.true;
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle =
-      result.layers[0].styles[0].featuretypestyles[0];
+    const featuretypestyle = result.layers[0].styles[0].featuretypestyles[0];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
   });
   it('rules have props', () => {
-    const rule =
-      result.layers[0].styles[0].featuretypestyles[0].rules[0];
+    const rule = result.layers[0].styles[0].featuretypestyles[0].rules[0];
     const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
@@ -64,14 +63,12 @@ describe('Reads xml', () => {
     expect(symbolizer.stroke.styling.stroke).to.equal('#C0C0C0');
   });
   it('Scale denominators are numeric', () => {
-    const rule =
-      result.layers[0].styles[0].featuretypestyles[0].rules[0];
+    const rule = result.layers[0].styles[0].featuretypestyles[0].rules[0];
     expect(rule.maxscaledenominator).to.equal(3000000);
     expect(rule.minscaledenominator).to.equal(1000);
   });
   it('cities layer has PointSymbolizer with external graphic', () => {
-    const rule =
-      result.layers[2].styles[0].featuretypestyles[0].rules[0];
+    const rule = result.layers[2].styles[0].featuretypestyles[0].rules[0];
     const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.have.property('graphic');
     expect(symbolizer.graphic).to.have.property('externalgraphic');
@@ -93,8 +90,7 @@ describe('Reads xml', () => {
     expect(symbolizer.graphic.mark.wellknownname).to.equal('cross');
   });
   it('reads multiple pointsymbolizers', () => {
-    const rule =
-      result.layers[4].styles[0].featuretypestyles[0].rules[0];
+    const rule = result.layers[4].styles[0].featuretypestyles[0].rules[0];
     const pointSymbolizers = rule.symbolizers;
     expect(pointSymbolizers).to.be.an('array');
     expect(pointSymbolizers.length).to.equal(2);
@@ -159,14 +155,12 @@ describe('Reads xml sld 11', () => {
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle =
-      result.layers[0].styles[0].featuretypestyles[0];
+    const featuretypestyle = result.layers[0].styles[0].featuretypestyles[0];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
     expect(featuretypestyle.rules).to.have.length(4);
   });
   it('rule polygonsymbolizer has props from svg', () => {
-    const rule =
-      result.layers[0].styles[0].featuretypestyles[0].rules[0];
+    const rule = result.layers[0].styles[0].featuretypestyles[0].rules[0];
     const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
@@ -174,8 +168,7 @@ describe('Reads xml sld 11', () => {
     expect(symbolizer.fill.styling.fill).to.equal('#CCCCCC');
   });
   it('rule textsymbolizer label', () => {
-    const rule =
-      result.layers[0].styles[0].featuretypestyles[0].rules[3];
+    const rule = result.layers[0].styles[0].featuretypestyles[0].rules[3];
     const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.label).to.deep.equal({
@@ -185,8 +178,7 @@ describe('Reads xml sld 11', () => {
     });
   });
   it('rule textsymbolizer has font', () => {
-    const rule =
-      result.layers[0].styles[0].featuretypestyles[0].rules[3];
+    const rule = result.layers[0].styles[0].featuretypestyles[0].rules[3];
     const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.font).to.be.an.instanceof(Object);
@@ -196,8 +188,7 @@ describe('Reads xml sld 11', () => {
     );
   });
   it('rule textsymbolizer has fill', () => {
-    const rule =
-      result.layers[0].styles[0].featuretypestyles[0].rules[3];
+    const rule = result.layers[0].styles[0].featuretypestyles[0].rules[3];
     const [symbolizer] = rule.symbolizers;
     expect(symbolizer).to.be.an.instanceof(Object);
     expect(symbolizer.fill).to.be.an.instanceof(Object);
@@ -268,21 +259,18 @@ describe('Graphicstroke symbolizer', () => {
     expect(style.featuretypestyles).to.be.an.instanceof(Array);
   });
   it('featuretypestyles has rules', () => {
-    const featuretypestyle =
-      result.layers[0].styles[0].featuretypestyles[0];
+    const featuretypestyle = result.layers[0].styles[0].featuretypestyles[0];
     expect(featuretypestyle.rules).to.be.an.instanceof(Array);
     expect(featuretypestyle.rules).to.have.length(1);
   });
   it('rules has linesymbolizers', () => {
-    const rule =
-      result.layers[0].styles[0].featuretypestyles[0].rules[0];
+    const rule = result.layers[0].styles[0].featuretypestyles[0].rules[0];
     expect(rule.symbolizers).to.be.an.instanceof(Array);
     expect(rule.symbolizers).to.have.length(2);
   });
   it('rule linesymbolizer has props from svg 1', () => {
     const linesymbolizer1 =
-      result.layers[0].styles[0].featuretypestyles[0].rules[0]
-        .symbolizers[0];
+      result.layers[0].styles[0].featuretypestyles[0].rules[0].symbolizers[0];
     expect(linesymbolizer1.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer1.stroke.styling.stroke).to.equal('#FF0000');
@@ -290,16 +278,14 @@ describe('Graphicstroke symbolizer', () => {
   });
   it('rule linesymbolizer has props from svg 2', () => {
     const linesymbolizer2 =
-      result.layers[0].styles[0].featuretypestyles[0].rules[0]
-        .symbolizers[1];
+      result.layers[0].styles[0].featuretypestyles[0].rules[0].symbolizers[1];
     expect(linesymbolizer2.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling.strokeDasharray).to.equal('2 6');
   });
   it('rule linesymbolizer has graphicstroke', () => {
     const { stroke } =
-      result.layers[0].styles[0].featuretypestyles[0].rules[0]
-        .symbolizers[1];
+      result.layers[0].styles[0].featuretypestyles[0].rules[0].symbolizers[1];
     expect(stroke.graphicstroke).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.be.an.instanceof(Object);
     expect(stroke.graphicstroke.graphic).to.have.property('mark');
@@ -846,7 +832,7 @@ describe('SVG style parameters', () => {
       it('Parse Geoserver ttf:// WellKnownName mark as TextSymbolizer', () => {
         const rule = style.rules[1];
         expect(rule.name).to.equal('Font Symbol Geoserver');
-                const item = rule.symbolizers[0];
+        const item = rule.symbolizers[0];
         expect(item.label).to.equal(String.fromCharCode(979058));
         expect(item.font.styling).to.deep.equal({
           fontFamily: 'Font Awesome 6 Pro Solid',
@@ -877,6 +863,54 @@ describe('SVG style parameters', () => {
         'font://Webdings|33|32|#008800|2|#224422'
       );
       expect(graphic.size).to.equal(32);
+    });
+  });
+});
+
+describe('QGIS compatibility mode', () => {
+  let parsedSld;
+  before(() => {
+    parsedSld = Reader(qgisDisplacementSld, { compatibilityMode: 'QGIS' });
+  });
+
+  it('Inverts DisplacementY with numeric value', () => {
+    const [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+    const rule = style.rules[0];
+    expect(rule.name).to.equal('Static DisplacementY');
+    const graphic = rule.symbolizers[0].graphic;
+    expect(graphic.displacement.displacementy).to.equal(100);
+  });
+
+  it('Inverts DisplacementY with numeric value and non-pixel uom', () => {
+    const [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+    const rule = style.rules[1];
+    expect(rule.name).to.equal('Static DisplacementY with uom');
+    const graphic = rule.symbolizers[0].graphic;
+    expect(graphic.displacement.displacementy).to.deep.equal({
+      type: 'literal',
+      typeHint: 'number',
+      value: 100,
+      uom: 'metre',
+    });
+  });
+
+  it('Inverts DisplacementY with property-based value', () => {
+    const [style] = parsedSld.layers[0].styles[0].featuretypestyles;
+    const rule = style.rules[2];
+    expect(rule.name).to.equal('Dynamic DisplacementY');
+    const graphic = rule.symbolizers[0].graphic;
+    expect(graphic.displacement.displacementy).to.deep.equal({
+      type: 'function',
+      name: '__fe:Mul__',
+      typeHint: 'number',
+      params: [
+        {
+          type: 'propertyname',
+          typeHint: 'number',
+          value: 'offsety',
+        },
+        -1,
+      ],
     });
   });
 });
