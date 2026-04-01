@@ -15,6 +15,7 @@
             </Stroke>
           </LineSymbolizer>
           <LineSymbolizer>
+            <!-- Green arrowhead at the start, rotated 180 degrees -->
             <VendorOption name="placement">firstPoint</VendorOption>
             <Stroke>
               <GraphicStroke>
@@ -35,6 +36,7 @@
             </Stroke>
           </LineSymbolizer>
           <LineSymbolizer>
+            <!-- Red arrowhead at the end -->
             <VendorOption name="placement">lastPoint</VendorOption>
             <Stroke>
               <GraphicStroke>

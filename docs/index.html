@@ -1,27 +1,23 @@
 ---
 layout: default
-title: Tasmania
+title: Point symbolizers
 nav_order: 1
 ---
-
 <div class="row">
   <div class="col-md-12">
-    <h1>Openlayers SLD example</h1>
-    <div class="form-group">
-      <label for="style_chooser">Choose a style for the waterbodies</label>
-      <select id="style_chooser" class="form-control">
-      </select>
-    </div>
+    <h1>Point symbolizers with ExternalGraphic</h1>
+    <p><a href="assets/pointsymbolizers.js">View code</a></p>
   </div>
 </div>
 <div class="row">
-  <div class="col-md-12">
+  <div class="col-md-6">
     <div id="olmap"></div>
   </div>
+  <div class="col-md-6">
+    <textarea id="sld"></textarea>
+  </div>
 </div>
-<p>
-  Example tries to replicate <a href="http://dev.openlayers.org/releases/OpenLayers-2.13.1/examples/sld.html">openlayer
-    2.13 example</a> Road style uses two overlaying lines.
-</p>
 </div>
-<script src="assets/ol.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.41.0/mode/xml/xml.min.js"></script>
+<script src="assets/pointsymbolizers.js"></script>

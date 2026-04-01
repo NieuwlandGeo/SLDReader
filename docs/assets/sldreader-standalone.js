@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 30, 2026 15:34:24 */
+/* Version: 0.7.3 - April 1, 2026 08:31:02 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1309,6 +1309,8 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {string} sld xml string
    * @param {object} options Parse options.
    * @param {string} [options.compatibilityMode] Set this to 'QGIS' to improve compatibility with SLDs exported by QGIS.
+   * @param {string} [options.fontSymbolConversion] Set to 'TextSymbolizer' to convert font symbols to text symbolizers.
+   * Font symbolizers are converted to ExternalGraphic by default.
    * @return {StyledLayerDescriptor}  object representing sld style
    */
   function Reader(sld, options) {
