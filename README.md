@@ -86,7 +86,7 @@ const styleFunction = createOlStyleFunction(featureTypeStyle, {
 
 # Requirements
 
-- OpenLayers v10.8.0 or higher. Older OpenLayers versions will probably mostly work, but can crash when using custom symbols or perpendicular offset.
+- SLDReader requires at least OpenLayers v10.8.0 for full support of SLD features. Older versions will probably work, but lack support for custom symbols (including QGIS 'arrow' for example) and perpendicular line offsets.
 - An up-to date browser. If you need to support older browsers, you have to compile SLDReader yourself with a different `browserslist` setting in `package.json`.
   - The browsers supported by SLDReader can be found here: https://browsersl.ist/#q=defaults .
 - If you want to build and/or run SLDReader, NodeJS v18.18 or higher is required.
@@ -669,7 +669,9 @@ npm start (runs doc website on :4000)
 
 ## Creating an issue
 
-Please include an example sld and if possible an example feature as GeoJSON.
+If you are using an older (< v10.8.0) OpenLayers version, please first check if the problem still occurs in OpenLayers v10.8.0 or higher. Or use the [Custom GeoJSON styling](https://nieuwlandgeo.github.io/SLDReader/custom-geojson.html) test page on GitHub.
+
+Include a relevant fragment of the SLD document, and if possible, also include an example feature as GeoJSON.
 
 ## Pull requests
 
