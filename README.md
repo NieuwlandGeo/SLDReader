@@ -13,7 +13,7 @@ Library goals:
 
 - Implement as much of the [Symbology Encoding v1.1.0](https://www.ogc.org/standards/se/) specification as possible.
 - Support some vendor-specific (GeoServer, QGIS) options as well.
-- Have a good performance by efficiently recycling OpenLayers style instances.
+- Have a good performance, but prioritize rendering accuracy.
 
 [Live demos](https://nieuwlandgeo.github.io/SLDReader)
 
@@ -86,7 +86,7 @@ const styleFunction = createOlStyleFunction(featureTypeStyle, {
 
 # Requirements
 
-- SLDReader requires at least OpenLayers v10.8.0 for full support of SLD features. Older versions will probably work, but lack support for custom symbols (including QGIS 'arrow' for example) and perpendicular line offsets.
+- SLDReader requires at least OpenLayers v10.8.0 for full support of SLD features. Older versions will probably work, but lack support for custom symbols (including QGIS 'arrow' for example) and perpendicular line offsets. The peer dependency version is set to `>=7`, because that's the lowest version that doesn't crash in some cases.
 - An up-to date browser. If you need to support older browsers, you have to compile SLDReader yourself with a different `browserslist` setting in `package.json`.
   - The browsers supported by SLDReader can be found here: https://browsersl.ist/#q=defaults .
 - If you want to build and/or run SLDReader, NodeJS v18.18 or higher is required.
@@ -123,15 +123,13 @@ Example:
 </se:PointSymbolizer>
 ```
 
-Marks with well known symbol names are supported: circle, square, triangle, star, cross, x, hexagon, octagon. ExternalGraphic icons are supported.
+Marks with well known symbol names are supported: `circle`, `square`, `triangle`, `star`, `cross`, `x`, `hexagon`, `octagon`. ExternalGraphic icons are supported. Some vendor-specific marks (GeoServer, QGIS) are also supported, see the [Mark Gallery demo page](https://nieuwlandgeo.github.io/SLDReader/mark-gallery.html).
 
 Two custom marks are also supported: `horline` for a horizontal line through the center and `backslash` for a line from the top left to the bottom right. Use backslash instead of horline if you want to have diagonal hashing as a polygon graphic fill.
 
 The Size and Rotation elements can use `<ogc:PropertyName>` to read the values from each feature.
 
 Only one Graphic per PointSymbolizer is supported. Each Graphic can only have one Mark or one ExternalGraphic.
-
-Some vendor-specific marks (GeoServer, QGIS) are also supported, see the [Mark Gallery demo page](https://nieuwlandgeo.github.io/SLDReader/mark-gallery.html).
 
 ### ExternalGraphic
 
@@ -215,6 +213,9 @@ SLDReader.registerCustomSymbol('crystal', [
     <se:Mark>
       <se:WellKnownName>crystal</se:WellKnownName>
       <!-- ...etc... -->
+    </se:Mark>
+  </se:Graphic>
+</se:PointSymbolizer>
 ```
 
 ### Font symbols
@@ -268,7 +269,7 @@ const mySld = Reader(fontSymbolsSld, {
 
 Both options have their pros and cons. Symbol marks converted to text symbolizers can have dynamic color and stroke with (dynamic = taken from feature properties), but they cannot be used in GraphicStroke or GraphicFill elements. For converted ExternalGraphics, the situation is the other way around.
 
-#### Making the font family accessible in your web page for SLDReader
+### Making the font family accessible in your web page for SLDReader
 
 When using fonts that are globally available, you can just use the font family (like Webdings), and it will work. But since SLDReader cannot access the file system, you must make sure that the font family is declared within css or an (inline) `<style>` element. If you do not do this, the text symbol will just be the single character label in the default system font.
 
@@ -309,16 +310,40 @@ These svg-parameters are supported:
 - stroke-dasharray
 - stroke-dashoffset
 
-GraphicStroke with Mark or ExternalGraphic is mostly supported.
+You can use a GraphicStroke inside GraphicFills are not supported for LineSymbolizers.
 
-GraphicFills are not supported for LineSymbolizers.
+## GraphicStroke
 
-### Note about GraphicStroke
+Example:
 
+```xml
+<se:Stroke>
+  <se:GraphicStroke>
+    <se:Graphic>
+      <se:Mark>
+        <se:WellKnownName>square</se:WellKnownName>
+        <se:Fill>
+          <se:SvgParameter name="fill">#FF0000</se:SvgParameter>
+        </se:Fill>
+        <se:Stroke>
+          <se:SvgParameter name="stroke">#000000</se:SvgParameter>
+        </se:Stroke>
+      </se:Mark>
+      <se:Size>4</se:Size>
+      <se:Rotation>45</se:Rotation>
+    </se:Graphic>
+    <se:Gap>12</se:Gap>
+  </se:GraphicStroke>
+</se:Stroke>
+```
+
+### Notes about GraphicStroke
+
+- A GraphicStroke Stroke can be used in both Line- and PointSymbolizers.
 - It's not possible to use property-dependent values inside a GraphicStroke symbolizer.
 - ExternalGraphic is mostly supported with these caveats:
   - Always add a Size-element, even if using an ExternalGraphic instead of a Mark.
-  - SLD V1.0.0 does not officially support the Gap property. For this, SLDReader implements the same workaround that Geoserver uses. You can use the `stroke-dasharray` parameter to add a gap between stroke marks. To do this, use a dash array with two parameters: the first parameter being the size of the graphic and the second being the gap size. See the " GraphicStroke: ExternalGraphic" example.
+  - SLD V1.0.0 does not officially support the Gap property. For this, SLDReader implements the same workaround that Geoserver uses. You can use the `stroke-dasharray` parameter to add a gap between stroke marks. To do this, use a dash array with two parameters: the first parameter being the size of the graphic and the second being the gap size. See the "GraphicStroke: ExternalGraphic" example.
 - It is not possible to combine a GraphicStroke with a PerpendicularOffset.
 
 ### GraphicStroke vendor options
@@ -657,14 +682,21 @@ In QGIS compatibility mode, `DisplacementY` values are therefore inverted.
 
 # Running locally and contributing
 
-To install dependencies, test, build and document
+To install test, and build:
 
 ```
 npm install
 npm test
 npm run build
 npm run docs
-npm start (runs doc website on :4000)
+```
+
+To live serve the demo pages you need to have Docker installed, since the demo pages use a Jekyll container for rendering.
+
+To start the live documentation server including live reload:
+
+```
+npm start
 ```
 
 ## Creating an issue
