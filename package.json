@@ -65,7 +65,7 @@
     "terser": "^5.46.0"
   },
   "peerDependencies": {
-    "ol": ">= 6.15.0"
+    "ol": ">= 7"
   },
   "dependencies": {},
   "homepage": "https://github.com/NieuwlandGeo/SLDReader#readme",
