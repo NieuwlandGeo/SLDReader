@@ -111,6 +111,7 @@ Creates a object from an sld xml string,
 | sld | <code>string</code> | xml string |
 | options | <code>object</code> | options |
 | options.compatibilityMode | <code>string</code> | Optional. Can be set to 'QGIS' for improved compatibility with SLDs exported from QGIS. |
+| options.fontSymbolConversion | <code>string</code> | Set to 'TextSymbolizer' to convert font symbols to text symbolizers. Defaults to 'ExternalGraphic'. |
 
 <a name="registerFunction"></a>
 

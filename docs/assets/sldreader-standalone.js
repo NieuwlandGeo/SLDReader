@@ -1,4 +1,4 @@
-/* Version: 0.7.3 - March 30, 2026 15:34:24 */
+/* Version: 0.7.3 - April 1, 2026 09:46:38 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -1309,6 +1309,8 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {string} sld xml string
    * @param {object} options Parse options.
    * @param {string} [options.compatibilityMode] Set this to 'QGIS' to improve compatibility with SLDs exported by QGIS.
+   * @param {string} [options.fontSymbolConversion] Set to 'TextSymbolizer' to convert font symbols to text symbolizers.
+   * Font symbolizers are converted to ExternalGraphic by default.
    * @return {StyledLayerDescriptor}  object representing sld style
    */
   function Reader(sld, options) {
@@ -3034,7 +3036,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     } catch (err) {
       // Custom radial shapes only work from OL v10.3.0 onwards,
       // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
-      warnOnce(`Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`);
+      warnOnce(`Error rendering symbol '${wellKnownName}'. OpenLayers v10.8.0 or higher required. ${err}`);
       // When creating a radial shape fails, return default square as fallback.
       return new RegularShape({
         angle: Math.PI / 4,
@@ -3092,7 +3094,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     } catch (err) {
       // Custom radial shapes only work from OL v10.3.0 onwards,
       // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
-      warnOnce(`Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`);
+      warnOnce(`Error rendering symbol '${wellKnownName}'. OpenLayers v10.8.0 or higher required. ${err}`);
       // When creating a radial shape fails, return default square as fallback.
       return new RegularShape({
         angle: Math.PI / 4,

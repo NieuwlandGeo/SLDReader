@@ -93,7 +93,7 @@ function createPartialCircleRadialShape({
     // Custom radial shapes only work from OL v10.3.0 onwards,
     // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
     warnOnce(
-      `Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`
+      `Error rendering symbol '${wellKnownName}'. OpenLayers v10.8.0 or higher required. ${err}`
     );
     // When creating a radial shape fails, return default square as fallback.
     return new RegularShape({
@@ -154,7 +154,7 @@ function radialShapeFromUnitCoordinates({
     // Custom radial shapes only work from OL v10.3.0 onwards,
     // lower versions give errors because RadialShape expects Fill properties that were introduced in v10.3.0.
     warnOnce(
-      `Error rendering symbol '${wellKnownName}'. OpenLayers v10.3.0 or higher required. ${err}`
+      `Error rendering symbol '${wellKnownName}'. OpenLayers v10.8.0 or higher required. ${err}`
     );
     // When creating a radial shape fails, return default square as fallback.
     return new RegularShape({

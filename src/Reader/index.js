@@ -944,6 +944,8 @@ function readGraphicNode(node, obj, options) {
  * @param {string} sld xml string
  * @param {object} options Parse options.
  * @param {string} [options.compatibilityMode] Set this to 'QGIS' to improve compatibility with SLDs exported by QGIS.
+ * @param {string} [options.fontSymbolConversion] Set to 'TextSymbolizer' to convert font symbols to text symbolizers.
+ * Font symbolizers are converted to ExternalGraphic by default.
  * @return {StyledLayerDescriptor}  object representing sld style
  */
 export default function Reader(sld, options) {
