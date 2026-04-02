@@ -86,7 +86,7 @@ function createInversePixelPattern(size, color, pixels) {
 }
 
 export default function getQGISBrushFill(brushName, fillColor) {
-  let fill = null;
+  let fill;
   switch (brushName) {
     case 'brush://dense1':
       fill = new Fill({

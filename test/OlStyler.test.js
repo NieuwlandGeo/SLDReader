@@ -926,6 +926,7 @@ describe('PointSymbolizer and mixed geometries', () => {
 
     // After rendering a point symbolizer for a non-point feature,
     // the style returned for rendering a point feature should not re-use the previous calculated geometry.
+    // eslint-disable-next-line no-useless-assignment
     let style = styleFunction(lineFeature)[0];
     style = styleFunction(pointFeature)[0];
     expect(style.getGeometry()).to.be.null;
