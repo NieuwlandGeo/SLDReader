@@ -1,4 +1,4 @@
-/* Version: 1.0.0 - April 1, 2026 14:23:29 */
+/* Version: 1.0.0 - April 2, 2026 08:50:02 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -3003,6 +3003,9 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     rotation,
     arc
   }) {
+    if (endAngle < startAngle) {
+      [endAngle, startAngle] = [startAngle, endAngle];
+    }
     const numPoints = Math.ceil(HALF_CIRCLE_RESOLUTION * (endAngle - startAngle) / Math.PI);
     const radii = [];
     const angles = [];
@@ -4044,7 +4047,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     return createCanvasPattern(canvas);
   }
   function getQGISBrushFill(brushName, fillColor) {
-    let fill = null;
+    let fill;
     switch (brushName) {
       case 'brush://dense1':
         fill = new Fill({
@@ -4212,7 +4215,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     // Create mark graphic fill by drawing a single mark on a square canvas.
     const graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
     const canvasSize = graphicSize * has.DEVICE_PIXEL_RATIO;
-    let fill = null;
+    let fill;
 
     // The graphic symbol will be rendered at a larger size and then scaled back to the graphic size.
     // This is done to mitigate visual artifacts that occur when drawing between pixels.

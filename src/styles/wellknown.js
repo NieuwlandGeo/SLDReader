@@ -49,10 +49,8 @@ function createPartialCircleRadialShape({
   rotation,
   arc,
 }) {
-  let a1 = startAngle;
-  let a2 = endAngle;
-  if (a2 < a1) {
-    [a2, a1] = [a1, a2];
+  if (endAngle < startAngle) {
+    [endAngle, startAngle] = [startAngle, endAngle];
   }
 
   const numPoints = Math.ceil(

@@ -140,7 +140,7 @@ function getMarkGraphicFill(symbolizer) {
   // Create mark graphic fill by drawing a single mark on a square canvas.
   const graphicSize = Number(graphic.size) || DEFAULT_MARK_SIZE;
   const canvasSize = graphicSize * DEVICE_PIXEL_RATIO;
-  let fill = null;
+  let fill;
 
   // The graphic symbol will be rendered at a larger size and then scaled back to the graphic size.
   // This is done to mitigate visual artifacts that occur when drawing between pixels.
