@@ -27,7 +27,7 @@ Install the latest SLDReader version.
 npm install @nieuwlandgeo/sldreader
 ```
 
-### Converting an SLD to an OpenLayer style function
+### Converting an SLD to an OpenLayers style function
 
 ```javascript
 import { Reader, createOlStyleFunction } from '@nieuwlandgeo/sldreader';
