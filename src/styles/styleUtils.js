@@ -75,8 +75,8 @@ export function calculateGraphicSpacing(lineSymbolizer, graphicWidth) {
   // First digit represents size of graphic, second the relative space, e.g.
   // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
   let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
-  if (styling && styling.strokeDasharray) {
-    const dash = styling.strokeDasharray.split(' ');
+  if (Array.isArray(styling?.strokeDasharray)) {
+    const dash = styling.strokeDasharray;
     if (dash.length >= 2 && dash[0] !== 0) {
       multiplier = dash[1] / dash[0] + 1;
     }

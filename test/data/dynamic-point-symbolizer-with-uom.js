@@ -19,6 +19,8 @@ export const dynamicPointSymbolizerWithUom = `<?xml version="1.0" encoding="UTF-
                 <se:Stroke>
                   <se:SvgParameter name="stroke">#880000</se:SvgParameter>
                   <se:SvgParameter name="stroke-width">2px</se:SvgParameter>
+                  <se:SvgParameter name="stroke-dasharray">4 4</se:SvgParameter>
+                  <se:SvgParameter name="stroke-dashoffset">2</se:SvgParameter>
                 </se:Stroke>
               </se:Mark>
               <se:Size>

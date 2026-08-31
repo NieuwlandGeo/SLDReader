@@ -6,6 +6,7 @@ import evaluate from '../src/olEvaluator';
 import addBuiltInFunctions from '../src/functions/builtins';
 import { clearFunctionCache } from '../src/functions';
 import { Reader } from '../src';
+import { UOM_METRE } from '../src/constants';
 
 const geojson = {
   type: 'Feature',
@@ -289,5 +290,41 @@ describe('Expression evaluation', () => {
     const mathExpression = filter.expression1;
     const result = evaluate(mathExpression, null, null);
     expect(result).to.equal(42);
+  });
+
+  describe('Units of measure', () => {
+    it('Converts values with UOM using resolution', () => {
+      const expression = {
+        type: 'literal',
+        typeHint: 'number',
+        value: 42,
+        uom: UOM_METRE,
+      };
+
+      // Value of 42m with resolution of 10m/pixel ==> 4.2 pixels.
+      const result = evaluate(expression, null, context);
+      expect(result).to.equal(4.2);
+    });
+
+    it('Converts array of values with UOM using resolution', () => {
+      const expression = [
+        {
+          type: 'literal',
+          typeHint: 'number',
+          value: 10,
+          uom: UOM_METRE,
+        },
+        {
+          type: 'literal',
+          typeHint: 'number',
+          value: 20,
+          uom: UOM_METRE,
+        },
+      ];
+
+      // Value of 10 and 20m with resolution of 10m/pixel ==> 1 and 2 pixels.
+      const result = evaluate(expression, null, context);
+      expect(result).to.deep.equal([1, 2]);
+    });
   });
 });

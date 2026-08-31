@@ -281,7 +281,9 @@ describe('Graphicstroke symbolizer', () => {
       result.layers[0].styles[0].featuretypestyles[0].rules[0].symbolizers[1];
     expect(linesymbolizer2.stroke).to.be.an.instanceof(Object);
     expect(linesymbolizer2.stroke.styling).to.be.an.instanceof(Object);
-    expect(linesymbolizer2.stroke.styling.strokeDasharray).to.equal('2 6');
+    expect(linesymbolizer2.stroke.styling.strokeDasharray).to.deep.equal([
+      2, 6,
+    ]);
   });
   it('rule linesymbolizer has graphicstroke', () => {
     const { stroke } =
@@ -475,7 +477,7 @@ describe('SVG style parameters', () => {
       expect(strokeStyle.strokeLinecap).to.equal('square');
     });
     it('Stroke dasharray should be string', () => {
-      expect(strokeStyle.strokeDasharray).to.equal('6 10');
+      expect(strokeStyle.strokeDasharray).to.deep.equal([6, 10]);
     });
     it('Stroke dashoffset should be number', () => {
       expect(strokeStyle.strokeDashoffset).to.equal(4);
@@ -669,6 +671,23 @@ describe('SVG style parameters', () => {
         value: 'width_m',
         uom: UOM_METRE,
       });
+    });
+
+    it('LineSymbolizer dash array inherits uom', () => {
+      expect(lineSymbolizer.stroke.styling.strokeDasharray).to.deep.equal([
+        {
+          type: 'literal',
+          typeHint: 'number',
+          value: 4,
+          uom: UOM_METRE,
+        },
+        {
+          type: 'literal',
+          typeHint: 'number',
+          value: 4,
+          uom: UOM_METRE,
+        },
+      ]);
     });
 
     it('LineSymbolizer graphic stroke gap inherits uom', () => {

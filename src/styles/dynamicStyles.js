@@ -76,6 +76,29 @@ export function applyDynamicStrokeStyling(
     somethingChanged = true;
   }
 
+  // Change stroke line dash offset if it's dynamic.
+  if (isDynamicExpression(styling?.strokeDashoffset)) {
+    const strokeDashOffset = evaluate(
+      styling.strokeDashoffset,
+      feature,
+      context,
+      0
+    );
+    olStroke.setLineDashOffset(strokeDashOffset);
+    somethingChanged = true;
+  }
+
+  // Change stroke line dash array if any element in the dash array is dynamic.
+  if (Array.isArray(styling?.strokeDasharray)) {
+    if (styling.strokeDasharray.some(isDynamicExpression)) {
+      const strokeDashArray = styling.strokeDasharray.map(expression =>
+        evaluate(expression, feature, context, 0)
+      );
+      olStroke.setLineDash(strokeDashArray);
+      somethingChanged = true;
+    }
+  }
+
   // Change stroke color if either color or opacity is property based.
   if (
     isDynamicExpression(styling?.stroke) ||
@@ -94,7 +117,12 @@ export function applyDynamicStrokeStyling(
 
   // Change stroke offset if it's scale or property based.
   if (isDynamicExpression(symbolizer?.perpendicularoffset)) {
-    const offset = evaluate(symbolizer.perpendicularoffset, feature, context, null);
+    const offset = evaluate(
+      symbolizer.perpendicularoffset,
+      feature,
+      context,
+      null
+    );
     // Changing offset is only possible from OL 10.8.0 onwards.
     // Check to prevent crash for older OL versions here.
     if (typeof olStroke.setOffset === 'function') {

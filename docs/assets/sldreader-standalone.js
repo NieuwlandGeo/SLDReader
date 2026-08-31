@@ -1,4 +1,4 @@
-/* Version: 1.0.0 - April 2, 2026 08:50:02 */
+/* Version: 1.0.0 - August 31, 2026 11:23:16 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -124,11 +124,15 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @returns {bool} Returns true if the expression depends on feature properties.
    */
   function isDynamicExpression(expression) {
+    if (typeof expression === 'undefined' || expression === null) {
+      return false;
+    }
+
     // Expressions whose pixel value changes with resolution are dynamic by definition.
     if (expression && (expression.uom === UOM_METRE || expression.uom === UOM_FOOT)) {
       return true;
     }
-    switch ((expression || {}).type) {
+    switch (expression?.type) {
       case 'expression':
         // Expressions with all literal child values are already concatenated into a static string,
         // so any expression that survives that process has at least one non-literal child
@@ -160,6 +164,11 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * Signature (feature, propertyName) => property value.
    */
   function evaluate(expression, feature, context, defaultValue = null) {
+    // If expression is an array, evaluate it as an array of expressions.
+    if (Array.isArray(expression)) {
+      return expression.map(childExpression => evaluate(childExpression, feature, context, defaultValue));
+    }
+
     // Determine the value of the expression.
     let value = null;
     const jsType = typeof expression;
@@ -911,6 +920,26 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
   }
 
   /**
+   *
+   * @param {string} stringValue Input numeric string value.
+   * @param {string} inputUom Input value units of measure. One of UOM_[METRE, FOOT, PIXEL, NONE].
+   * @returns {object|number} Full typed uom literal if uom is metre or foot. Parsed float value otherwise.
+   */
+  function stringToNumberWithUom(stringValue, inputUom) {
+    // If numbers are written with 'px' at the end, they override the symbolizer's own uom.
+    const uom = stringValue.indexOf('px') > -1 ? UOM_PIXEL : inputUom;
+    if (uom === UOM_METRE || uom === UOM_FOOT) {
+      return {
+        type: 'literal',
+        typeHint: 'number',
+        value: parseFloat(stringValue),
+        uom
+      };
+    }
+    return parseFloat(stringValue);
+  }
+
+  /**
    * This function parses SLD XML nodes that can contain an SLD filter expression.
    * If the SLD node contains only text elements, the result will be concatenated into a string.
    * If the SLD node contains one or more non-literal nodes (for now, only PropertyName), the result
@@ -1032,18 +1061,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     // Convert simple string value to number if type hint is number.
     // Keep full literal expression if unit of measure is in metre or foot.
     if (typeof simplifiedValue === 'string' && parseOptions.typeHint === 'number') {
-      // If numbers are written with 'px' at the end, they override the symbolizer's own uom.
-      const uom = simplifiedValue.indexOf('px') > -1 ? UOM_PIXEL : parseOptions.uom;
-      if (uom === UOM_METRE || uom === UOM_FOOT) {
-        simplifiedValue = {
-          type: 'literal',
-          typeHint: 'number',
-          value: parseFloat(simplifiedValue),
-          uom
-        };
-      } else {
-        simplifiedValue = parseFloat(simplifiedValue);
-      }
+      simplifiedValue = stringToNumberWithUom(simplifiedValue, parseOptions.uom);
     }
 
     // Special handling for font-family style property.
@@ -1146,6 +1164,15 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       typeHint,
       uom
     });
+
+    // Convert "x y z" dash array string to array of numbers (with uom if needed).
+    if (parameterGroup === 'styling' && name === 'strokeDasharray') {
+      if (obj.styling.strokeDasharray?.length > 0) {
+        obj.styling.strokeDasharray = obj.styling.strokeDasharray.split(' ').map(stringValue => stringToNumberWithUom(stringValue, uom));
+      } else {
+        delete obj.styling.strokeDasharray;
+      }
+    }
   }
   const FilterParsers = {
     Filter: (element, obj) => {
@@ -2288,8 +2315,8 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     // First digit represents size of graphic, second the relative space, e.g.
     // size = 20, dash = [2 6] -> 2 ~ 20 then 6 ~ 60, total segment length should be 20 + 60 = 80
     let multiplier = 1; // default, i.e. a segment is the size of the graphic (without stroke/outline).
-    if (styling && styling.strokeDasharray) {
-      const dash = styling.strokeDasharray.split(' ');
+    if (Array.isArray(styling?.strokeDasharray)) {
+      const dash = styling.strokeDasharray;
       if (dash.length >= 2 && dash[0] !== 0) {
         multiplier = dash[1] / dash[0] + 1;
       }
@@ -3367,8 +3394,8 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       strokeOptions.lineCap = strokeLineCap;
     }
     const strokeDashArray = evaluate(styleParams?.strokeDasharray, null, null);
-    if (strokeDashArray !== null) {
-      strokeOptions.lineDash = strokeDashArray.split(' ');
+    if (Array.isArray(strokeDashArray) && strokeDashArray.every(value => value !== null)) {
+      strokeOptions.lineDash = strokeDashArray;
     }
     return new Stroke(strokeOptions);
   }
@@ -3452,6 +3479,22 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       const strokeWidth = evaluate(styling.strokeWidth, feature, context, 1.0);
       olStroke.setWidth(strokeWidth);
       somethingChanged = true;
+    }
+
+    // Change stroke line dash offset if it's dynamic.
+    if (isDynamicExpression(styling?.strokeDashoffset)) {
+      const strokeDashOffset = evaluate(styling.strokeDashoffset, feature, context, 0);
+      olStroke.setLineDashOffset(strokeDashOffset);
+      somethingChanged = true;
+    }
+
+    // Change stroke line dash array if any element in the dash array is dynamic.
+    if (Array.isArray(styling?.strokeDasharray)) {
+      if (styling.strokeDasharray.some(isDynamicExpression)) {
+        const strokeDashArray = styling.strokeDasharray.map(expression => evaluate(expression, feature, context, 0));
+        olStroke.setLineDash(strokeDashArray);
+        somethingChanged = true;
+      }
     }
 
     // Change stroke color if either color or opacity is property based.

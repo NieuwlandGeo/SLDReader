@@ -19,6 +19,7 @@ export const sldWithUom = `<?xml version="1.0" encoding="UTF-8"?>
                 <se:Stroke>
                   <se:SvgParameter name="stroke">#880000</se:SvgParameter>
                   <se:SvgParameter name="stroke-width">2px</se:SvgParameter>
+                  <se:SvgParameter name="stroke-dasharray">4 4</se:SvgParameter>
                 </se:Stroke>
               </se:Mark>
               <se:Size>10</se:Size>
@@ -58,6 +59,7 @@ export const sldWithUom = `<?xml version="1.0" encoding="UTF-8"?>
               <se:SvgParameter name="stroke-width">
                 <ogc:PropertyName>width_m</ogc:PropertyName>
               </se:SvgParameter>
+              <se:SvgParameter name="stroke-dasharray">4 4</se:SvgParameter>
             </se:Stroke>
             <se:GraphicStroke>
               <se:Graphic>
@@ -91,6 +93,7 @@ export const sldWithUom = `<?xml version="1.0" encoding="UTF-8"?>
                     <se:Stroke>
                       <se:SvgParameter name="stroke">#3544ea</se:SvgParameter>
                       <se:SvgParameter name="stroke-width">1</se:SvgParameter>
+                      <se:SvgParameter name="stroke-dasharray">4 4</se:SvgParameter>
                     </se:Stroke>
                   </se:Mark>
                   <se:Size>8</se:Size>
