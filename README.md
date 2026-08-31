@@ -531,8 +531,7 @@ Values can be forced to pixels by appending px:
 
 **Restrictions:**
 
-- Units of measure are not supported for `GraphicStroke` and `GraphicFill`.
-- Units of measure are not supported on `stroke-dasharray`.
+- Units of measure are not supported inside `GraphicStroke` and `GraphicFill`.
 - Units of measure are not supported within or as return value of `Function` elements. The return type of `Functions` is always treated as dimensionless or pixels, depending on context.
 - Values will always be treated as pixels where units of measure are not supported.
 
