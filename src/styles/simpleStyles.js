@@ -67,8 +67,11 @@ export function getSimpleStroke(stroke, perpendicularoffset) {
   }
 
   const strokeDashArray = evaluate(styleParams?.strokeDasharray, null, null);
-  if (strokeDashArray !== null) {
-    strokeOptions.lineDash = strokeDashArray.split(' ');
+  if (
+    Array.isArray(strokeDashArray) &&
+    strokeDashArray.every(value => value !== null)
+  ) {
+    strokeOptions.lineDash = strokeDashArray;
   }
 
   return new Stroke(strokeOptions);

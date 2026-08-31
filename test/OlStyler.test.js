@@ -1300,7 +1300,7 @@ describe('Styling with dynamic SVG Parameters', () => {
         },
       });
       const [style] = styleFunction(olFeature, 10); // Test with resolution of 10 m/px.
-      // Size = 40 metres / (10 metres / pixel) = 4.2 pixel.
+      // Size = 42 metres / (10 metres / pixel) = 4.2 pixel.
       expect(style.getImage().getRadius()).to.deep.equal(2.1); // radius = size / 2
     });
 
@@ -1313,9 +1313,39 @@ describe('Styling with dynamic SVG Parameters', () => {
         },
         properties: {},
       });
-      const [style] = styleFunction(olFeature);
+      const [style] = styleFunction(olFeature, 10); // Test with 10m/pixel resolution.
       // Point symbolizer mark stroke width is always 2 pixels.
       expect(style.getImage().getStroke().getWidth()).to.equal(2);
+    });
+
+    it('Point symbolizer mark stroke dash array in metres', () => {
+      const olFeature = fmtGeoJSON.readFeature({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [175135, 441200],
+        },
+        properties: {},
+      });
+      const [style] = styleFunction(olFeature, 10); // Test with 10m/pixel resolution.
+      // Dash = 4 metres / (10 metres / pixel) = 0.4 pixel.
+      expect(style.getImage().getStroke().getLineDash()).to.deep.equal([
+        0.4, 0.4,
+      ]);
+    });
+
+    it('Point symbolizer mark stroke dash offset in metres', () => {
+      const olFeature = fmtGeoJSON.readFeature({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [175135, 441200],
+        },
+        properties: {},
+      });
+      const [style] = styleFunction(olFeature, 10); // Test with 10m/pixel resolution.
+      // Dash offset = 2 metres / (10 metres / pixel) = 0.2 pixel.
+      expect(style.getImage().getStroke().getLineDashOffset()).to.equal(0.2);
     });
   });
 

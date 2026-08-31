@@ -18,6 +18,10 @@ import { dimensionFromGeometryType } from './functions/helpers';
  * @returns {bool} Returns true if the expression depends on feature properties.
  */
 export function isDynamicExpression(expression) {
+  if (typeof expression === 'undefined' || expression === null) {
+    return false;
+  }
+
   // Expressions whose pixel value changes with resolution are dynamic by definition.
   if (
     expression &&
@@ -26,7 +30,7 @@ export function isDynamicExpression(expression) {
     return true;
   }
 
-  switch ((expression || {}).type) {
+  switch (expression?.type) {
     case 'expression':
       // Expressions with all literal child values are already concatenated into a static string,
       // so any expression that survives that process has at least one non-literal child
@@ -63,6 +67,13 @@ export default function evaluate(
   context,
   defaultValue = null
 ) {
+  // If expression is an array, evaluate it as an array of expressions.
+  if (Array.isArray(expression)) {
+    return expression.map(childExpression =>
+      evaluate(childExpression, feature, context, defaultValue)
+    );
+  }
+
   // Determine the value of the expression.
   let value = null;
 

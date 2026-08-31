@@ -52,7 +52,7 @@ describe('Style utils', () => {
             },
           },
           styling: {
-            strokeDasharray: '1 2',
+            strokeDasharray: [1, 2],
           },
         },
       };
