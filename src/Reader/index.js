@@ -493,6 +493,27 @@ function simplifyChildExpressions(
 }
 
 /**
+ *
+ * @param {string} stringValue Input numeric string value.
+ * @param {string} inputUom Input value units of measure. One of UOM_[METRE, FOOT, PIXEL, NONE].
+ * @returns {object|number} Full typed uom literal if uom is metre or foot. Parsed float value otherwise.
+ */
+function stringToNumberWithUom(stringValue, inputUom) {
+  // If numbers are written with 'px' at the end, they override the symbolizer's own uom.
+  const uom = stringValue.indexOf('px') > -1 ? UOM_PIXEL : inputUom;
+  if (uom === UOM_METRE || uom === UOM_FOOT) {
+    return {
+      type: 'literal',
+      typeHint: 'number',
+      value: parseFloat(stringValue),
+      uom,
+    };
+  }
+
+  return parseFloat(stringValue);
+}
+
+/**
  * This function parses SLD XML nodes that can contain an SLD filter expression.
  * If the SLD node contains only text elements, the result will be concatenated into a string.
  * If the SLD node contains one or more non-literal nodes (for now, only PropertyName), the result
@@ -641,19 +662,7 @@ function addParameterValueProp(node, obj, prop, options = {}) {
     typeof simplifiedValue === 'string' &&
     parseOptions.typeHint === 'number'
   ) {
-    // If numbers are written with 'px' at the end, they override the symbolizer's own uom.
-    const uom =
-      simplifiedValue.indexOf('px') > -1 ? UOM_PIXEL : parseOptions.uom;
-    if (uom === UOM_METRE || uom === UOM_FOOT) {
-      simplifiedValue = {
-        type: 'literal',
-        typeHint: 'number',
-        value: parseFloat(simplifiedValue),
-        uom,
-      };
-    } else {
-      simplifiedValue = parseFloat(simplifiedValue);
-    }
+    simplifiedValue = stringToNumberWithUom(simplifiedValue, parseOptions.uom);
   }
 
   // Special handling for font-family style property.
@@ -774,6 +783,17 @@ function addParameterValue(element, obj, prop, parameterGroup, options) {
     typeHint,
     uom,
   });
+
+  // Convert "x y z" dash array string to array of numbers (with uom if needed).
+  if (parameterGroup === 'styling' && name === 'strokeDasharray') {
+    if (obj.styling.strokeDasharray?.length > 0) {
+      obj.styling.strokeDasharray = obj.styling.strokeDasharray
+        .split(' ')
+        .map(stringValue => stringToNumberWithUom(stringValue, uom));
+    } else {
+      delete obj.styling.strokeDasharray;
+    }
+  }
 }
 
 const FilterParsers = {

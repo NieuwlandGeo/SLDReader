@@ -1,4 +1,4 @@
-/* Version: 1.0.0 - April 2, 2026 08:50:02 */
+/* Version: 1.0.0 - August 31, 2026 09:30:17 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -911,6 +911,26 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
   }
 
   /**
+   *
+   * @param {string} stringValue Input numeric string value.
+   * @param {string} inputUom Input value units of measure. One of UOM_[METRE, FOOT, PIXEL, NONE].
+   * @returns {object|number} Full typed uom literal if uom is metre or foot. Parsed float value otherwise.
+   */
+  function stringToNumberWithUom(stringValue, inputUom) {
+    // If numbers are written with 'px' at the end, they override the symbolizer's own uom.
+    const uom = stringValue.indexOf('px') > -1 ? UOM_PIXEL : inputUom;
+    if (uom === UOM_METRE || uom === UOM_FOOT) {
+      return {
+        type: 'literal',
+        typeHint: 'number',
+        value: parseFloat(stringValue),
+        uom
+      };
+    }
+    return parseFloat(stringValue);
+  }
+
+  /**
    * This function parses SLD XML nodes that can contain an SLD filter expression.
    * If the SLD node contains only text elements, the result will be concatenated into a string.
    * If the SLD node contains one or more non-literal nodes (for now, only PropertyName), the result
@@ -1032,18 +1052,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     // Convert simple string value to number if type hint is number.
     // Keep full literal expression if unit of measure is in metre or foot.
     if (typeof simplifiedValue === 'string' && parseOptions.typeHint === 'number') {
-      // If numbers are written with 'px' at the end, they override the symbolizer's own uom.
-      const uom = simplifiedValue.indexOf('px') > -1 ? UOM_PIXEL : parseOptions.uom;
-      if (uom === UOM_METRE || uom === UOM_FOOT) {
-        simplifiedValue = {
-          type: 'literal',
-          typeHint: 'number',
-          value: parseFloat(simplifiedValue),
-          uom
-        };
-      } else {
-        simplifiedValue = parseFloat(simplifiedValue);
-      }
+      simplifiedValue = stringToNumberWithUom(simplifiedValue, parseOptions.uom);
     }
 
     // Special handling for font-family style property.
@@ -1146,6 +1155,11 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       typeHint,
       uom
     });
+
+    // Convert "x y z" dash array string to array of numbers (with uom if needed).
+    if (parameterGroup === 'styling' && name === 'strokeDasharray') {
+      obj.styling.strokeDasharray = obj.styling.strokeDasharray.split(' ').map(stringValue => stringToNumberWithUom(stringValue, uom));
+    }
   }
   const FilterParsers = {
     Filter: (element, obj) => {
