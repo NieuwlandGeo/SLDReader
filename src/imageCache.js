@@ -286,13 +286,13 @@ export function loadExternalGraphic(
     .then(() => {
       invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback(imageUrl);
+        imageLoadedCallback(imageUrl, IMAGE_LOADED);
       }
     })
     .catch(() => {
       invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback();
+        imageLoadedCallback(imageUrl, IMAGE_ERROR);
       }
     });
 }
