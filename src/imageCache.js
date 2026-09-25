@@ -360,24 +360,6 @@ export function processExternalGraphicSymbolizer(
   }
 }
 
-export function processExternalGraphicSymbolizers(
-  symbolizers,
-  featureTypeStyle,
-  context
-) {
-  if (!(symbolizers && symbolizers.length > 0)) {
-    return;
-  }
-  for (let k = 0; k < symbolizers.length; k += 1) {
-    processExternalGraphicSymbolizer(
-      symbolizers[k],
-      featureTypeStyle,
-      context.imageLoadedCallback,
-      context.callbackRef
-    );
-  }
-}
-
 /**
  * @private
  * Create an OL Icon style for an external graphic.
