@@ -171,7 +171,7 @@ image icon will only become visible the next time OpenLayers draws the layer (af
 | featureTypeStyle | [<code>FeatureTypeStyle</code>](#FeatureTypeStyle) | Feature Type Style object. |
 | options | <code>object</code> | Options |
 | options.convertResolution | <code>function</code> | An optional function to convert the resolution in map units/pixel to resolution in meters/pixel. When not given, the map resolution is used as-is. |
-| options.imageLoadedCallback | <code>function</code> | Optional callback that will be called with the url of an externalGraphic when an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image. |
+| options.imageLoadedCallback | <code>function</code> | Optional callback that will be called with the url of an externalGraphic when an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image. The callback will be called with (imageUrl, loadState = 'IMAGE_LOADED' or 'IMAGE_ERROR').|
 | options.getProperty | <code>function</code> | Optional custom property getter: (feature, propertyName) => property value. |
 
 **Example**  

@@ -1,4 +1,4 @@
-/* Version: 2.0.0 - September 25, 2026 11:53:16 */
+/* Version: 2.0.0 - September 25, 2026 11:59:33 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -4816,6 +4816,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * When not given, the map resolution is used as-is.
    * @param {function} options.imageLoadedCallback Optional callback that will be called with the url of an externalGraphic when
    * an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
+   * The callback will be called with (imageUrl, loadState = 'IMAGE_LOADED' or 'IMAGE_ERROR').
    * @param {function} options.getProperty Optional custom property getter: (feature, propertyName) => property value.
    * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
    * @example

@@ -265,6 +265,7 @@ function getOlFeatureProperty(feature, propertyName) {
  * When not given, the map resolution is used as-is.
  * @param {function} options.imageLoadedCallback Optional callback that will be called with the url of an externalGraphic when
  * an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
+ * The callback will be called with (imageUrl, loadState = 'IMAGE_LOADED' or 'IMAGE_ERROR').
  * @param {function} options.getProperty Optional custom property getter: (feature, propertyName) => property value.
  * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
  * @example
