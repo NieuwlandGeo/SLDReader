@@ -1,5 +1,9 @@
 import Reader from './Reader';
-import OlStyler, { createOlStyleFunction, createOlStyle } from './OlStyler';
+import OlStyler, {
+  createOlStyleFunction,
+  createOlStyle,
+  loadExternalGraphics,
+} from './OlStyler';
 import { registerCustomSymbol } from './styles/customSymbols';
 import { registerFunction, getFunction } from './functions';
 import addBuiltInFunctions from './functions/builtins';
@@ -14,6 +18,7 @@ export {
   OlStyler,
   createOlStyleFunction,
   createOlStyle,
+  loadExternalGraphics,
   registerFunction,
   getFunction,
   registerCustomSymbol,

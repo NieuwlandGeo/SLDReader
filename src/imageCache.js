@@ -286,13 +286,13 @@ export function loadExternalGraphic(
     .then(() => {
       invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback(imageUrl);
+        imageLoadedCallback(imageUrl, IMAGE_LOADED);
       }
     })
     .catch(() => {
       invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback();
+        imageLoadedCallback(imageUrl, IMAGE_ERROR);
       }
     });
 }
@@ -356,24 +356,6 @@ export function processExternalGraphicSymbolizer(
       featureTypeStyle,
       imageLoadedCallback,
       callbackRef
-    );
-  }
-}
-
-export function processExternalGraphicSymbolizers(
-  symbolizers,
-  featureTypeStyle,
-  context
-) {
-  if (!(symbolizers && symbolizers.length > 0)) {
-    return;
-  }
-  for (let k = 0; k < symbolizers.length; k += 1) {
-    processExternalGraphicSymbolizer(
-      symbolizers[k],
-      featureTypeStyle,
-      context.imageLoadedCallback,
-      context.callbackRef
     );
   }
 }

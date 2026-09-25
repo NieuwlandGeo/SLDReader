@@ -1,4 +1,4 @@
-/* Version: 2.0.0 - August 31, 2026 11:52:50 */
+/* Version: 2.0.0 - September 25, 2026 11:59:33 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2099,12 +2099,12 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     getCachingImageLoader(imageUrl).then(() => {
       invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback(imageUrl);
+        imageLoadedCallback(imageUrl, IMAGE_LOADED);
       }
     }).catch(() => {
       invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
-        imageLoadedCallback();
+        imageLoadedCallback(imageUrl, IMAGE_ERROR);
       }
     });
   }
@@ -4816,6 +4816,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * When not given, the map resolution is used as-is.
    * @param {function} options.imageLoadedCallback Optional callback that will be called with the url of an externalGraphic when
    * an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
+   * The callback will be called with (imageUrl, loadState = 'IMAGE_LOADED' or 'IMAGE_ERROR').
    * @param {function} options.getProperty Optional custom property getter: (feature, propertyName) => property value.
    * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
    * @example
@@ -4878,6 +4879,42 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       useFallbackStyles: false
     });
     return olStyles.filter(style => style !== null);
+  }
+
+  /**
+   * Load all ExternalGraphics referenced within a FeatureTypeStyle. This function returns a Promise that will resolve
+   * when all images have finished loading, or have already been loaded before.
+   * Image load errors are also considered finished loading. In that case, the
+   * image cache will contain an error symbol for the image url that failed to load.
+   * @public
+   * @param {object} FeatureTypeStyle Parsed FeatureTypeStyle object.
+   * @returns {Promise} Promise that resolves when all externalGraphics are available in the image cache.
+   */
+  function loadExternalGraphics(featureTypeStyle) {
+    const allRegularSymbolizers = (featureTypeStyle?.rules ?? []).flatMap(rule => rule?.symbolizers ?? []);
+    const allElseFilterSymbolizers = (featureTypeStyle?.elseFilterRules ?? []).flatMap(rule => rule?.symbolizers ?? []);
+    const allSymbolizers = [...allRegularSymbolizers, ...allElseFilterSymbolizers];
+    return new Promise(resolve => {
+      // Only image urls that haven't been loaded yet or are currently loading will be added to the url cache.
+      const urlCache = {};
+      // Second cache to flag when an image is done loading.
+      const doneLoading = {};
+      allSymbolizers.forEach(symbolizer => {
+        processExternalGraphicSymbolizer(symbolizer, featureTypeStyle, imageUrl => {
+          // When an image finishes loading, flag the url as loaded and check the state of all other currenly loading images.
+          doneLoading[imageUrl] = true;
+          const allDone = Object.keys(urlCache).every(url => doneLoading[url] === true);
+          if (allDone) {
+            resolve();
+          }
+        }, urlCache);
+      });
+
+      // If the url cache is empty, all images have been loaded already.
+      if (Object.keys(urlCache).length === 0) {
+        resolve();
+      }
+    });
   }
 
   // The functions below are taken from the Geoserver function list.
@@ -5114,6 +5151,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
   exports.getStyle = getStyle;
   exports.getStyleNames = getStyleNames;
   exports.isGeometryTypeSupported = isGeometryTypeSupported;
+  exports.loadExternalGraphics = loadExternalGraphics;
   exports.registerCustomSymbol = registerCustomSymbol;
   exports.registerFunction = registerFunction;
   exports.version = version;

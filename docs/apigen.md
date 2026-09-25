@@ -39,6 +39,10 @@ Since this function creates a static OpenLayers style and not a style function,
 usage of this function is only suitable for simple symbolizers that do not depend on feature properties
 and do not contain external graphics. External graphic marks will be shown as a grey circle instead.</p>
 </dd>
+<dt><a href="#loadExternalGraphics">loadExternalGraphics(featureTypeStyle)</a> ⇒ <code>Promise</code></dt>
+<dd><p>Start loading all external graphics and resolve when done. Load errors are also counted as done.
+Promise will resolve immediately when all graphics have already been loaded.</p>
+</dd>
 <dt><a href="#getLayerNames">getLayerNames(sld)</a> ⇒ <code>Array.&lt;string&gt;</code></dt>
 <dd><p>get all layer names in sld</p>
 </dd>
@@ -171,7 +175,7 @@ image icon will only become visible the next time OpenLayers draws the layer (af
 | featureTypeStyle | [<code>FeatureTypeStyle</code>](#FeatureTypeStyle) | Feature Type Style object. |
 | options | <code>object</code> | Options |
 | options.convertResolution | <code>function</code> | An optional function to convert the resolution in map units/pixel to resolution in meters/pixel. When not given, the map resolution is used as-is. |
-| options.imageLoadedCallback | <code>function</code> | Optional callback that will be called with the url of an externalGraphic when an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image. |
+| options.imageLoadedCallback | <code>function</code> | Optional callback that will be called with the url of an externalGraphic when an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image. The callback will be called with (imageUrl, loadState = 'IMAGE_LOADED' or 'IMAGE_ERROR').|
 | options.getProperty | <code>function</code> | Optional custom property getter: (feature, propertyName) => property value. |
 
 **Example**  
@@ -201,6 +205,22 @@ and do not contain external graphics. External graphic marks will be shown as a 
 ```js
 myOlVectorLayer.setStyle(SLDReader.createOlStyle(featureTypeStyle.rules[0], 'Point');
 ```
+
+<a name="loadExternalGraphics"></a>
+
+## loadExternalGraphics(featureTypeStyle) ⇒ <code>Promise</code>
+Start loading all external graphics used in symbolizers within a FeatureTypeStyle that haven't been loaded yet and resolve when done.
+Promise will resolve immediately when all graphics have already been loaded. Images that failed to load are also considered loaded.
+For images that failed to load, the image cache will contain a red cross as image.
+
+**Kind**: global function  
+**Returns**: <code>Promise</code> - A Promise that resolves when all images are ready.  
+**Access**: public  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| featureTypeStyle | <code>FeatureTypeStyle</code> | Feature Type Style object. |
+
 <a name="getLayerNames"></a>
 
 ## getLayerNames(sld) ⇒ <code>Array.&lt;string&gt;</code>
