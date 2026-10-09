@@ -138,7 +138,8 @@ export function addStylesForFeature(
             symbolizer,
             featureTypeStyle,
             context.imageLoadedCallback,
-            context.callbackRef
+            context.callbackRef,
+            context.crossOriginMode
           );
 
           appendOlStylesForFeature(
@@ -168,7 +169,8 @@ export function addStylesForFeature(
             symbolizer,
             featureTypeStyle,
             context.imageLoadedCallback,
-            context.callbackRef
+            context.callbackRef,
+            context.crossOriginMode
           );
           appendOlStylesForFeature(
             olStyles,
@@ -267,6 +269,9 @@ function getOlFeatureProperty(feature, propertyName) {
  * an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
  * The callback will be called with (imageUrl, loadState = 'IMAGE_LOADED' or 'IMAGE_ERROR').
  * @param {function} options.getProperty Optional custom property getter: (feature, propertyName) => property value.
+ * @param {string} options.crossOriginMode Set to 'require-cors' to always load external graphics with CORS.
+ * If set to 'prefer-cors', external graphics are loaded with CORS, and if that fails, loaded again without CORS.
+ * Default behavior is to load images without CORS.
  * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
  * @example
  * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
@@ -280,7 +285,11 @@ export function createOlStyleFunction(featureTypeStyle, options = {}) {
   const callbackRef = {};
 
   // Evaluation context.
-  const context = { imageLoadedCallback, callbackRef };
+  const context = {
+    imageLoadedCallback,
+    callbackRef,
+    crossOriginMode: options.crossOriginMode ?? 'off',
+  };
 
   context.getProperty =
     typeof options.getProperty === 'function'
@@ -348,9 +357,19 @@ export function createOlStyle(styleRule, geometryType) {
  * image cache will contain an error symbol for the image url that failed to load.
  * @public
  * @param {object} FeatureTypeStyle Parsed FeatureTypeStyle object.
+ * @param {object} [options] Options.
+ * @param {string} [options.crossOriginMode] Set to 'require-cors' to always load external graphics with CORS.
+ * If set to 'prefer-cors', external graphics are loaded with CORS, and if that fails, loaded again without CORS.
+ * Default behavior is to load images without CORS.
  * @returns {Promise} Promise that resolves when all externalGraphics are available in the image cache.
  */
-export function loadExternalGraphics(featureTypeStyle) {
+export function loadExternalGraphics(featureTypeStyle, options) {
+  const defaultLoadOptions = {
+    crossOriginMode: 'off',
+  };
+
+  const loadOptions = { ...defaultLoadOptions, ...options };
+
   const allRegularSymbolizers = (featureTypeStyle?.rules ?? []).flatMap(
     rule => rule?.symbolizers ?? []
   );
@@ -381,7 +400,8 @@ export function loadExternalGraphics(featureTypeStyle) {
             resolve();
           }
         },
-        urlCache
+        urlCache,
+        loadOptions.crossOriginMode
       );
     });
 

@@ -1,4 +1,4 @@
-/* Version: 2.1.0 - September 25, 2026 14:48:44 */
+/* Version: 2.1.0 - October 9, 2026 14:40:31 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -2029,9 +2029,12 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * Create an image loader function that takes an image url and returns a promise that resolves with a HTMLImageElement.
    * The loader function also updates the internal image loading state.
    * @param {string} imageUrl Image url.
+   * @param {string} crossOriginMode Set to 'require-cors' to always load external graphics with CORS.
+   * If set to 'prefer-cors', external graphics are loaded with CORS, and if that fails, loaded again without CORS.
+   * Default behavior is to load images without CORS.
    * @returns {Promise<HTMLImageElement>} A promise that resolves with the loaded image.
    */
-  function getImageUrlLoader(imageUrl) {
+  function getImageUrlLoader(imageUrl, crossOriginMode) {
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => {
@@ -2048,6 +2051,9 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
         setImageLoadingState(imageUrl, IMAGE_ERROR);
         reject();
       };
+      if (crossOriginMode === 'prefer-cors' || crossOriginMode === 'require-cors') {
+        image.crossOrigin = 'anonymous';
+      }
       image.src = imageUrl;
     });
   }
@@ -2058,10 +2064,13 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * Calling this method with the same image url twice will return the loader promise
    * that was created when this method was called the first time for that specific image url.
    * @param {string} imageUrl Image url.
+   * @param {string} crossOriginMode Set to 'require-cors' to always load external graphics with CORS.
+   * If set to 'prefer-cors', external graphics are loaded with CORS, and if that fails, loaded again without CORS.
+   * Default behavior is to load images without CORS.
    * @returns {Promise} A promise that resolves when the image is loaded and fails when the
    * image didn't load correctly.
    */
-  function getCachingImageLoader(imageUrl) {
+  function getCachingImageLoader(imageUrl, crossOriginMode) {
     // Check of a load is already in progress for an image.
     // If so, return the loader.
     let loader = getImageLoader(imageUrl);
@@ -2075,7 +2084,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       loader = getFontSymbolImageLoader(imageUrl);
     } else {
       // If no load is in progress, create a new loader and store it in the image loader cache before returning it.
-      loader = getImageUrlLoader(imageUrl);
+      loader = getImageUrlLoader(imageUrl, crossOriginMode);
     }
 
     // Cache the new image loader and return it.
@@ -2092,11 +2101,14 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {url} imageUrl Image url.
    * @param {object} featureTypeStyle Feature type style object.
    * @param {Function} imageLoadedCallback Will be called with the image url when image
+   * @param {string} crossOriginMode Set to 'require-cors' to always load external graphics with CORS.
+   * If set to 'prefer-cors', external graphics are loaded with CORS, and if that fails, loaded again without CORS.
+   * Default behavior is to load images without CORS.
    * has loaded. Will be called with undefined if the loading the image resulted in an error.
    */
-  function loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback) {
+  function loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback, crossOriginMode) {
     invalidateExternalGraphics(featureTypeStyle, imageUrl);
-    getCachingImageLoader(imageUrl).then(() => {
+    getCachingImageLoader(imageUrl, crossOriginMode).then(() => {
       invalidateExternalGraphics(featureTypeStyle, imageUrl);
       if (typeof imageLoadedCallback === 'function') {
         imageLoadedCallback(imageUrl, IMAGE_LOADED);
@@ -2117,7 +2129,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {Function} imageLoadedCallback Function to call when an image has loaded.
    * @param {object} callbackRef A cache of url -> bool that indicates if a loading image already has a callback assigned.
    */
-  function checkAndLoadExternalGraphic(externalgraphic, featureTypeStyle, imageLoadedCallback, callbackRef) {
+  function checkAndLoadExternalGraphic(externalgraphic, featureTypeStyle, imageLoadedCallback, callbackRef, crossOriginMode) {
     if (!externalgraphic) {
       return;
     }
@@ -2131,7 +2143,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
         callbackRef[imageUrl] = true;
         // Load image and when loaded, invalidate all symbolizers referencing the image
         // and invoke the imageLoadedCallback.
-        loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback);
+        loadExternalGraphic(imageUrl, featureTypeStyle, imageLoadedCallback, crossOriginMode);
       }
     }
   }
@@ -2142,8 +2154,11 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {Array<object>} symbolizer A symbolizer that may contain external graphics.
    * @param {FeatureTypeStyle} featureTypeStyle The feature type style object for a layer.
    * @param {Function} imageLoadedCallback Function to call when an image has loaded.
+   * @param {string} crossOriginMode Set to 'require-cors' to always load external graphics with CORS.
+   * If set to 'prefer-cors', external graphics are loaded with CORS, and if that fails, loaded again without CORS.
+   * Default behavior is to load images without CORS.
    */
-  function processExternalGraphicSymbolizer(symbolizer, featureTypeStyle, imageLoadedCallback, callbackRef) {
+  function processExternalGraphicSymbolizer(symbolizer, featureTypeStyle, imageLoadedCallback, callbackRef, crossOriginMode) {
     // Walk over all symbolizers inside all given rules.
     // Dive into the symbolizers to find ExternalGraphic elements and for each ExternalGraphic,
     // check if the image url has been encountered before.
@@ -2152,7 +2167,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
       // Note: this process assumes that each symbolizer has at most one external graphic element.
       const path = externalGraphicPaths[k];
       const externalgraphic = getByPath(symbolizer, path);
-      checkAndLoadExternalGraphic(externalgraphic, featureTypeStyle, imageLoadedCallback, callbackRef);
+      checkAndLoadExternalGraphic(externalgraphic, featureTypeStyle, imageLoadedCallback, callbackRef, crossOriginMode);
     }
   }
 
@@ -4720,7 +4735,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
             // Start loading images for external graphic symbolizers and when loaded:
             // * update symbolizers to use the cached image.
             // * call imageLoadedCallback with the image url.
-            processExternalGraphicSymbolizer(symbolizer, featureTypeStyle, context.imageLoadedCallback, context.callbackRef);
+            processExternalGraphicSymbolizer(symbolizer, featureTypeStyle, context.imageLoadedCallback, context.callbackRef, context.crossOriginMode);
             appendOlStylesForFeature(olStyles, feature, symbolizer, context, internalOptions);
           }
           match = true;
@@ -4738,7 +4753,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
         if (scaleSelector(rule, context.resolution)) {
           for (let k = 0; k < rule.symbolizers.length; k += 1) {
             const symbolizer = rule.symbolizers[k];
-            processExternalGraphicSymbolizer(symbolizer, featureTypeStyle, context.imageLoadedCallback, context.callbackRef);
+            processExternalGraphicSymbolizer(symbolizer, featureTypeStyle, context.imageLoadedCallback, context.callbackRef, context.crossOriginMode);
             appendOlStylesForFeature(olStyles, feature, symbolizer, context, internalOptions);
           }
         }
@@ -4818,6 +4833,9 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image.
    * The callback will be called with (imageUrl, loadState = 'IMAGE_LOADED' or 'IMAGE_ERROR').
    * @param {function} options.getProperty Optional custom property getter: (feature, propertyName) => property value.
+   * @param {string} options.crossOriginMode Set to 'require-cors' to always load external graphics with CORS.
+   * If set to 'prefer-cors', external graphics are loaded with CORS, and if that fails, loaded again without CORS.
+   * Default behavior is to load images without CORS.
    * @returns {Function} A function that can be set as style function on an OpenLayers vector style layer.
    * @example
    * myOlVectorLayer.setStyle(SLDReader.createOlStyleFunction(featureTypeStyle, {
@@ -4833,7 +4851,8 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     // Evaluation context.
     const context = {
       imageLoadedCallback,
-      callbackRef
+      callbackRef,
+      crossOriginMode: options.crossOriginMode ?? 'off'
     };
     context.getProperty = typeof options.getProperty === 'function' ? options.getProperty : getOlFeatureProperty;
     context.getId = getOlFeatureId;
@@ -4888,9 +4907,20 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * image cache will contain an error symbol for the image url that failed to load.
    * @public
    * @param {object} FeatureTypeStyle Parsed FeatureTypeStyle object.
+   * @param {object} [options] Options.
+   * @param {string} [options.crossOriginMode] Set to 'require-cors' to always load external graphics with CORS.
+   * If set to 'prefer-cors', external graphics are loaded with CORS, and if that fails, loaded again without CORS.
+   * Default behavior is to load images without CORS.
    * @returns {Promise} Promise that resolves when all externalGraphics are available in the image cache.
    */
-  function loadExternalGraphics(featureTypeStyle) {
+  function loadExternalGraphics(featureTypeStyle, options) {
+    const defaultLoadOptions = {
+      crossOriginMode: 'off'
+    };
+    const loadOptions = {
+      ...defaultLoadOptions,
+      ...options
+    };
     const allRegularSymbolizers = (featureTypeStyle?.rules ?? []).flatMap(rule => rule?.symbolizers ?? []);
     const allElseFilterSymbolizers = (featureTypeStyle?.elseFilterRules ?? []).flatMap(rule => rule?.symbolizers ?? []);
     const allSymbolizers = [...allRegularSymbolizers, ...allElseFilterSymbolizers];
@@ -4907,7 +4937,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
           if (allDone) {
             resolve();
           }
-        }, urlCache);
+        }, urlCache, loadOptions.crossOriginMode);
       });
 
       // If the url cache is empty, all images have been loaded already.
