@@ -177,6 +177,7 @@ image icon will only become visible the next time OpenLayers draws the layer (af
 | options.convertResolution | <code>function</code> | An optional function to convert the resolution in map units/pixel to resolution in meters/pixel. When not given, the map resolution is used as-is. |
 | options.imageLoadedCallback | <code>function</code> | Optional callback that will be called with the url of an externalGraphic when an image has been loaded (successfully or not). Call .changed() inside the callback on the layer to see the loaded image. The callback will be called with (imageUrl, loadState = 'IMAGE_LOADED' or 'IMAGE_ERROR').|
 | options.getProperty | <code>function</code> | Optional custom property getter: (feature, propertyName) => property value. |
+| options.crossOriginMode | <code>string</code> | Set to <code>'require-cors'</code> to always load external graphics with CORS.<br>If set to <code>'prefer-cors'</code>, external graphics are loaded with CORS, and if that fails, loaded again without CORS.<br>Default behavior is to load images without CORS. |
 
 **Example**  
 ```js
@@ -220,6 +221,7 @@ For images that failed to load, the image cache will contain a red cross as imag
 | Param | Type | Description |
 | --- | --- | --- |
 | featureTypeStyle | <code>FeatureTypeStyle</code> | Feature Type Style object. |
+| options.crossOriginMode | <code>string</code> | Set to <code>'require-cors'</code> to always load external graphics with CORS.<br>If set to <code>'prefer-cors'</code>, external graphics are loaded with CORS, and if that fails, loaded again without CORS.<br>Default behavior is to load images without CORS. |
 
 <a name="getLayerNames"></a>
 
