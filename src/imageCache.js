@@ -215,9 +215,7 @@ function getFontSymbolImageLoader(fontUrl) {
  */
 function getImageUrlLoader(imageUrl, crossOriginMode) {
   return new Promise((resolve, reject) => {
-    const image = new Image();
-
-    image.onload = () => {
+    function storeLoadedImage(imageUrl, image) {
       setCachedImage(imageUrl, {
         url: imageUrl,
         image,
@@ -225,12 +223,35 @@ function getImageUrlLoader(imageUrl, crossOriginMode) {
         height: image.naturalHeight,
       });
       setImageLoadingState(imageUrl, IMAGE_LOADED);
+    }
+
+    const image = new Image();
+
+    image.onload = () => {
+      storeLoadedImage(imageUrl, image);
       resolve(imageUrl);
     };
 
     image.onerror = () => {
-      setImageLoadingState(imageUrl, IMAGE_ERROR);
-      reject();
+      if (crossOriginMode === 'prefer-cors') {
+        // In prefer-cors mode, try loading the image again without cross origin attribute set.
+        const image2 = new Image();
+
+        image2.onload = () => {
+          storeLoadedImage(imageUrl, image2);
+          resolve(imageUrl);
+        };
+
+        image2.onerror = () => {
+          setImageLoadingState(imageUrl, IMAGE_ERROR);
+          reject();
+        };
+
+        image2.src = imageUrl;
+      } else {
+        setImageLoadingState(imageUrl, IMAGE_ERROR);
+        reject();
+      }
     };
 
     if (
