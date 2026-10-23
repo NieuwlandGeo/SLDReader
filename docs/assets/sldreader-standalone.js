@@ -1,4 +1,4 @@
-/* Version: 2.2.0 - October 9, 2026 16:03:29 */
+/* Version: 2.2.0 - October 23, 2026 16:23:58 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -326,6 +326,12 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     if (parsed.expressions && parsed.expressions.children) {
       obj.expression1 = parsed.expressions.children[0];
       obj.expression2 = parsed.expressions.children[1];
+    } else if (parsed.expressions?.type === 'propertyname') {
+      // If this specific condition is reached, we're dealing with a comparison with an empty <Literal/>.
+      // Because the literal is empty, it gets optimized away, making the binary comparison node an expression with a single child,
+      // which in turn causes the parent expression to be replaced with the child.
+      obj.expression1 = parsed.expressions;
+      obj.expression2 = '';
     }
     return obj;
   }
