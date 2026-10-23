@@ -1,4 +1,4 @@
-/* Version: 2.2.0 - October 23, 2026 16:23:58 */
+/* Version: 2.2.0 - October 23, 2026 16:46:03 */
 var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Stroke, Circle, RegularShape, render, Point, color, colorlike, IconImageCache, ImageStyle, dom, IconImage, LineString, extent, Polygon, MultiPolygon, Text, MultiPoint) {
   'use strict';
 
@@ -161,9 +161,10 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * @param {ol/feature} feature OpenLayers feature instance.
    * @param {EvaluationContext} context Evaluation context.
    * @param {any} defaultValue Optional default value to use when feature is null.
+   * @param {bool} treatEmptyStringAsNull If true, empty strings are considered NULL. Default true.
    * Signature (feature, propertyName) => property value.
    */
-  function evaluate(expression, feature, context, defaultValue = null) {
+  function evaluate(expression, feature, context, defaultValue = null, treatEmptyStringAsNull = true) {
     // If expression is an array, evaluate it as an array of expressions.
     if (Array.isArray(expression)) {
       return expression.map(childExpression => evaluate(childExpression, feature, context, defaultValue));
@@ -232,7 +233,7 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     }
 
     // Check if value is empty/null. If so, return default value.
-    if (value === null || typeof value === 'undefined' || value === '' || Number.isNaN(value)) {
+    if (value === null || typeof value === 'undefined' || treatEmptyStringAsNull && value === '' || Number.isNaN(value)) {
       value = defaultValue;
     }
     if (expression) {
@@ -1493,52 +1494,52 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
     return aString.toLowerCase().localeCompare(bString.toLowerCase());
   }
   function propertyIsNull(comparison, feature, context) {
-    const value = evaluate(comparison.expression, feature, context);
+    const value = evaluate(comparison.expression, feature, context, null, false);
     return isNullOrUndefined(value);
   }
   function propertyIsLessThan(comparison, feature, context) {
-    const value1 = evaluate(comparison.expression1, feature, context);
+    const value1 = evaluate(comparison.expression1, feature, context, null, false);
     if (isNullOrUndefined(value1)) {
       return false;
     }
-    const value2 = evaluate(comparison.expression2, feature, context);
+    const value2 = evaluate(comparison.expression2, feature, context, null, false);
     if (isNullOrUndefined(value2)) {
       return false;
     }
     return compare(value1, value2) < 0;
   }
   function propertyIsGreaterThan(comparison, feature, context) {
-    const value1 = evaluate(comparison.expression1, feature, context);
+    const value1 = evaluate(comparison.expression1, feature, context, null, false);
     if (isNullOrUndefined(value1)) {
       return false;
     }
-    const value2 = evaluate(comparison.expression2, feature, context);
+    const value2 = evaluate(comparison.expression2, feature, context, null, false);
     if (isNullOrUndefined(value2)) {
       return false;
     }
     return compare(value1, value2) > 0;
   }
   function propertyIsBetween(comparison, feature, context) {
-    const value = evaluate(comparison.expression, feature, context);
+    const value = evaluate(comparison.expression, feature, context, null, false);
     if (isNullOrUndefined(value)) {
       return false;
     }
-    const lowerBoundary = evaluate(comparison.lowerboundary, feature, context);
+    const lowerBoundary = evaluate(comparison.lowerboundary, feature, context, null, false);
     if (isNullOrUndefined(lowerBoundary)) {
       return false;
     }
-    const upperBoundary = evaluate(comparison.upperboundary, feature, context);
+    const upperBoundary = evaluate(comparison.upperboundary, feature, context, null, false);
     if (isNullOrUndefined(upperBoundary)) {
       return false;
     }
     return compare(lowerBoundary, value) <= 0 && compare(upperBoundary, value) >= 0;
   }
   function propertyIsEqualTo(comparison, feature, context) {
-    const value1 = evaluate(comparison.expression1, feature, context);
+    const value1 = evaluate(comparison.expression1, feature, context, null, false);
     if (isNullOrUndefined(value1)) {
       return false;
     }
-    const value2 = evaluate(comparison.expression2, feature, context);
+    const value2 = evaluate(comparison.expression2, feature, context, null, false);
     if (isNullOrUndefined(value2)) {
       return false;
     }
@@ -1552,11 +1553,11 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
   // just like in databases.
   // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
   function propertyIsNotEqualTo(comparison, feature, context) {
-    const value1 = evaluate(comparison.expression1, feature, context);
+    const value1 = evaluate(comparison.expression1, feature, context, null, false);
     if (isNullOrUndefined(value1)) {
       return false;
     }
-    const value2 = evaluate(comparison.expression2, feature, context);
+    const value2 = evaluate(comparison.expression2, feature, context, null, false);
     if (isNullOrUndefined(value2)) {
       return false;
     }
@@ -1572,11 +1573,11 @@ var SLDReader = (function (exports, RenderFeature, has, Style, Icon, Fill, Strok
    * the value of a property from a feature.
    */
   function propertyIsLike(comparison, feature, context) {
-    const value = evaluate(comparison.expression1, feature, context);
+    const value = evaluate(comparison.expression1, feature, context, null, false);
     if (isNullOrUndefined(value)) {
       return false;
     }
-    const pattern = evaluate(comparison.expression2, feature, context);
+    const pattern = evaluate(comparison.expression2, feature, context, null, false);
     if (isNullOrUndefined(pattern)) {
       return false;
     }

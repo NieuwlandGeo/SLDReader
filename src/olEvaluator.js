@@ -59,13 +59,15 @@ export function isDynamicExpression(expression) {
  * @param {ol/feature} feature OpenLayers feature instance.
  * @param {EvaluationContext} context Evaluation context.
  * @param {any} defaultValue Optional default value to use when feature is null.
+ * @param {bool} treatEmptyStringAsNull If true, empty strings are considered NULL. Default true.
  * Signature (feature, propertyName) => property value.
  */
 export default function evaluate(
   expression,
   feature,
   context,
-  defaultValue = null
+  defaultValue = null,
+  treatEmptyStringAsNull = true
 ) {
   // If expression is an array, evaluate it as an array of expressions.
   if (Array.isArray(expression)) {
@@ -157,7 +159,7 @@ export default function evaluate(
   if (
     value === null ||
     typeof value === 'undefined' ||
-    value === '' ||
+    (treatEmptyStringAsNull && value === '') ||
     Number.isNaN(value)
   ) {
     value = defaultValue;
