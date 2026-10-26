@@ -82,6 +82,12 @@ function createBinaryFilterComparison(element, addParameterValueProp) {
   if (parsed.expressions && parsed.expressions.children) {
     obj.expression1 = parsed.expressions.children[0];
     obj.expression2 = parsed.expressions.children[1];
+  } else if (parsed.expressions?.type === 'propertyname') {
+    // If this specific condition is reached, we're dealing with a comparison with an empty <Literal/>.
+    // Because the literal is empty, it gets optimized away, making the binary comparison node an expression with a single child,
+    // which in turn causes the parent expression to be replaced with the child.
+    obj.expression1 = parsed.expressions;
+    obj.expression2 = '';
   }
 
   return obj;

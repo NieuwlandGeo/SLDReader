@@ -45,17 +45,29 @@ function compare(a, b, matchcase) {
 }
 
 function propertyIsNull(comparison, feature, context) {
-  const value = evaluate(comparison.expression, feature, context);
+  const value = evaluate(comparison.expression, feature, context, null, false);
   return isNullOrUndefined(value);
 }
 
 function propertyIsLessThan(comparison, feature, context) {
-  const value1 = evaluate(comparison.expression1, feature, context);
+  const value1 = evaluate(
+    comparison.expression1,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  const value2 = evaluate(comparison.expression2, feature, context);
+  const value2 = evaluate(
+    comparison.expression2,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(value2)) {
     return false;
   }
@@ -64,12 +76,24 @@ function propertyIsLessThan(comparison, feature, context) {
 }
 
 function propertyIsGreaterThan(comparison, feature, context) {
-  const value1 = evaluate(comparison.expression1, feature, context);
+  const value1 = evaluate(
+    comparison.expression1,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  const value2 = evaluate(comparison.expression2, feature, context);
+  const value2 = evaluate(
+    comparison.expression2,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(value2)) {
     return false;
   }
@@ -78,17 +102,29 @@ function propertyIsGreaterThan(comparison, feature, context) {
 }
 
 function propertyIsBetween(comparison, feature, context) {
-  const value = evaluate(comparison.expression, feature, context);
+  const value = evaluate(comparison.expression, feature, context, null, false);
   if (isNullOrUndefined(value)) {
     return false;
   }
 
-  const lowerBoundary = evaluate(comparison.lowerboundary, feature, context);
+  const lowerBoundary = evaluate(
+    comparison.lowerboundary,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(lowerBoundary)) {
     return false;
   }
 
-  const upperBoundary = evaluate(comparison.upperboundary, feature, context);
+  const upperBoundary = evaluate(
+    comparison.upperboundary,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(upperBoundary)) {
     return false;
   }
@@ -99,12 +135,24 @@ function propertyIsBetween(comparison, feature, context) {
 }
 
 function propertyIsEqualTo(comparison, feature, context) {
-  const value1 = evaluate(comparison.expression1, feature, context);
+  const value1 = evaluate(
+    comparison.expression1,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  const value2 = evaluate(comparison.expression2, feature, context);
+  const value2 = evaluate(
+    comparison.expression2,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(value2)) {
     return false;
   }
@@ -124,12 +172,24 @@ function propertyIsEqualTo(comparison, feature, context) {
 // just like in databases.
 // This means that PropertyIsNotEqualTo is not the same as NOT(PropertyIsEqualTo).
 function propertyIsNotEqualTo(comparison, feature, context) {
-  const value1 = evaluate(comparison.expression1, feature, context);
+  const value1 = evaluate(
+    comparison.expression1,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(value1)) {
     return false;
   }
 
-  const value2 = evaluate(comparison.expression2, feature, context);
+  const value2 = evaluate(
+    comparison.expression2,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(value2)) {
     return false;
   }
@@ -146,12 +206,18 @@ function propertyIsNotEqualTo(comparison, feature, context) {
  * the value of a property from a feature.
  */
 function propertyIsLike(comparison, feature, context) {
-  const value = evaluate(comparison.expression1, feature, context);
+  const value = evaluate(comparison.expression1, feature, context, null, false);
   if (isNullOrUndefined(value)) {
     return false;
   }
 
-  const pattern = evaluate(comparison.expression2, feature, context);
+  const pattern = evaluate(
+    comparison.expression2,
+    feature,
+    context,
+    null,
+    false
+  );
   if (isNullOrUndefined(pattern)) {
     return false;
   }

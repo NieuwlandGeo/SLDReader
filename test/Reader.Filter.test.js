@@ -67,6 +67,26 @@ describe('Filter parsing tests', () => {
     expect(filter.expression2).to.equal('42');
   });
 
+  it('PropertyIsEqualTo empty string', () => {
+    const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
+      <PropertyIsEqualTo>
+        <PropertyName>answer</PropertyName>
+        <Literal/>
+      </PropertyIsEqualTo>
+    </Filter></StyledLayerDescriptor>`;
+
+    const { filter } = Reader(filterXml);
+
+    expect(filter.type).to.equal('comparison');
+    expect(filter.operator).to.equal('propertyisequalto');
+    expect(filter.expression1).to.deep.equal({
+      type: 'propertyname',
+      value: 'answer',
+      typeHint: 'string',
+    });
+    expect(filter.expression2).to.equal('');
+  });
+
   it('PropertyIsLike', () => {
     const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
       <PropertyIsLike wildCard="%" singleChar="?" escapeChar="\\">

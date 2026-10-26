@@ -70,6 +70,18 @@ describe('filter rules', () => {
       expect(filterSelector(filter, feature, context)).to.be.true;
     });
 
+    it('propertyisequalto - empty string', () => {
+      const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsEqualTo>
+          <PropertyName>title</PropertyName>
+          <Literal/>
+        </PropertyIsEqualTo>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const feature = { properties: { title: '' } };
+      expect(filterSelector(filter, feature, context)).to.be.true;
+    });
+
     it('propertyisequalto for non existent prop', () => {
       const filterXml = `<StyledLayerDescriptor xmlns="http://www.opengis.net/ogc"><Filter>
         <PropertyIsEqualTo>
@@ -107,6 +119,17 @@ describe('filter rules', () => {
       expect(filterSelector(filter, featureeq, context)).to.be.false;
       const featureuneq = { properties: { PERIMETER: null } };
       expect(filterSelector(filter, featureuneq, context)).to.be.true;
+    });
+
+    it('propertyisnull - false for empty string', () => {
+      const filterXml = `<StyledLayerDescriptor  xmlns="http://www.opengis.net/ogc"><Filter>
+        <PropertyIsNull>
+          <PropertyName>title</PropertyName>
+        </PropertyIsNull>
+      </Filter></StyledLayerDescriptor>`;
+      const { filter } = Reader(filterXml);
+      const feature = { properties: { title: '' } };
+      expect(filterSelector(filter, feature, context)).to.be.false;
     });
 
     it('propertyislessthanorequalto', () => {
